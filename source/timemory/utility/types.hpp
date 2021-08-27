@@ -617,19 +617,12 @@ struct config : public data_type
         if(is_tree<ForceTreeT::value, ForceTimeT::value>() ||
            is_flat<ForceFlatT::value>())
         {
-            // printf("compute_hash is tree or flat at %i\n", (int) _depth);
             _id = get_combined_hash_id(_id, _depth);
-            // _id ^= _depth;
         }
         if(ForceTimeT::value || is_timeline())
         {
-            // printf("compute_hash is timeline at %i\n", (int) _depth);
             _id = get_combined_hash_id(_id, _counter++);
-            // _id ^= _counter++;
         }
-        // printf("compute_hash is %i at depth %i (counter = %i)\n", (int) _id, (int)
-        // _depth,
-        //       (int) _counter);
         return _id;
     }
 };

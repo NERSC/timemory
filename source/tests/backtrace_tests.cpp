@@ -26,7 +26,7 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "timemory/timemory.hpp"
+#include "timemory/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -76,48 +76,6 @@ get_test_name()
 {
     return std::string(::testing::UnitTest::GetInstance()->current_test_suite()->name()) +
            "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
-}
-
-// this function consumes approximately "n" milliseconds of real time
-inline void
-do_sleep(long n)
-{
-    std::this_thread::sleep_for(std::chrono::milliseconds(n));
-}
-
-// this function consumes an unknown number of cpu resources
-inline long
-fibonacci(long n)
-{
-    return (n < 2) ? n : (fibonacci(n - 1) + fibonacci(n - 2));
-}
-
-// this function consumes approximately "t" milliseconds of cpu time
-void
-consume(long n)
-{
-    // a mutex held by one lock
-    mutex_t mutex;
-    // acquire lock
-    lock_t hold_lk(mutex);
-    // associate but defer
-    lock_t try_lk(mutex, std::defer_lock);
-    // get current time
-    auto now = std::chrono::steady_clock::now();
-    // try until time point
-    while(std::chrono::steady_clock::now() < (now + std::chrono::milliseconds(n)))
-        try_lk.try_lock();
-}
-
-// get a random entry from vector
-template <typename Tp>
-size_t
-random_entry(const std::vector<Tp>& v)
-{
-    std::mt19937 rng;
-    rng.seed(std::random_device()());
-    std::uniform_int_distribution<std::mt19937::result_type> dist(0, v.size() - 1);
-    return v.at(dist(rng));
 }
 
 static inline auto&

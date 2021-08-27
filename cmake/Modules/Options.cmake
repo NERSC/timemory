@@ -374,11 +374,13 @@ add_option(
 add_option(TIMEMORY_BUILD_OMPT "Enable building OpenMP-Tools from submodule" OFF)
 add_option(TIMEMORY_BUILD_DEVELOPER "Enable building with developer flags" OFF)
 add_option(TIMEMORY_FORCE_GPERFTOOLS_PYTHON
-           "Enable gperftools + Python (may cause termination errors)" OFF)
-add_option(TIMEMORY_BUILD_QUIET "Disable verbose messages" OFF NO_FEATURE)
-add_option(TIMEMORY_REQUIRE_PACKAGES "All find_package(...) use REQUIRED" ON)
-add_option(TIMEMORY_BUILD_GOTCHA "Enable building GOTCHA (set to OFF for external)"
-           ${_BUILD_GOTCHA})
+    "Enable gperftools + Python (may cause termination errors)" ON)
+add_option(TIMEMORY_BUILD_QUIET
+    "Disable verbose messages" OFF NO_FEATURE)
+add_option(TIMEMORY_REQUIRE_PACKAGES
+    "All find_package(...) use REQUIRED" ON)
+add_option(TIMEMORY_BUILD_GOTCHA
+    "Enable building GOTCHA (set to OFF for external)" ${_BUILD_GOTCHA})
 add_option(TIMEMORY_UNITY_BUILD
            "Same as CMAKE_UNITY_BUILD but is not propagated to submodules" ON)
 add_option(
@@ -526,6 +528,10 @@ if(TIMEMORY_BUILD_EXAMPLES
     set(BUILD_ERT
         OFF
         CACHE BOOL "Disable ERT example")
+endif()
+
+if(NOT TIMEMORY_USE_GPERFTOOLS)
+    set(TIMEMORY_FORCE_GPERFTOOLS_PYTHON OFF)
 endif()
 
 # disable these for Debug builds

@@ -407,8 +407,8 @@ get_unw_backtrace()
     static_assert(Depth > 0, "Error !(Depth > 0)");
     static_assert(Offset >= 0, "Error !(Offset >= 0)");
 
-    unw_cursor_t  cursor;
-    unw_context_t context;
+    unw_cursor_t  cursor{};
+    unw_context_t context{};
 
     // destination
     std::array<char[512], Depth> btrace{};
@@ -425,8 +425,8 @@ get_unw_backtrace()
     size_t tot_idx = 0;
     while(unw_step(&cursor) > 0)
     {
-        unw_word_t ip;   // stack pointer
-        unw_word_t off;  // offset
+        unw_word_t ip{};   // stack pointer
+        unw_word_t off{};  // offset
         auto       _idx = ++tot_idx;
         if(_idx >= Depth + Offset)
             break;
@@ -791,6 +791,8 @@ public:
 
 //--------------------------------------------------------------------------------------//
 
+inline namespace hash
+{
 template <typename T>
 TIMEMORY_INLINE size_t
 get_hash(T&& obj)
@@ -798,15 +800,11 @@ get_hash(T&& obj)
     return std::hash<decay_t<T>>()(std::forward<T>(obj));
 }
 
-//--------------------------------------------------------------------------------------//
-
 TIMEMORY_INLINE size_t
 get_hash(const string_view_t& str)
 {
     return std::hash<string_view_t>{}(str);
 }
-
-//--------------------------------------------------------------------------------------//
 
 TIMEMORY_INLINE size_t
 get_hash(const char* cstr)
@@ -814,71 +812,16 @@ get_hash(const char* cstr)
     return std::hash<string_view_t>{}(cstr);
 }
 
-//--------------------------------------------------------------------------------------//
-
 template <typename T>
 struct hasher
 {
     inline size_t operator()(T&& val) const { return get_hash(std::forward<T>(val)); }
     inline size_t operator()(const T& val) const { return get_hash(val); }
 };
-
-//--------------------------------------------------------------------------------------//
-/*
-#if defined(TIMEMORY_UNIX) && \ (defined(TIMEMORY_UTILITY_SOURCE) ||
-defined(TIMEMORY_USE_UTILITY_EXTERN))
-//
-extern template auto
-get_backtrace<2, 1>();
-extern template auto
-get_backtrace<3, 1>();
-extern template auto
-get_backtrace<4, 1>();
-extern template auto
-get_backtrace<8, 1>();
-extern template auto
-get_backtrace<16, 1>();
-extern template auto
-get_backtrace<32, 1>();
-//
-extern template auto
-get_demangled_backtrace<3, 2>();
-extern template auto
-get_demangled_backtrace<4, 2>();
-extern template auto
-get_demangled_backtrace<8, 2>();
-extern template auto
-get_demangled_backtrace<16, 2>();
-extern template auto
-get_demangled_backtrace<32, 2>();
-//
-extern template auto
-get_backtrace<3, 2>();
-extern template auto
-get_backtrace<4, 2>();
-extern template auto
-get_backtrace<8, 2>();
-extern template auto
-get_backtrace<16, 2>();
-extern template auto
-get_backtrace<32, 2>();
-//
-extern template auto
-get_demangled_backtrace<4, 3>();
-extern template auto
-get_demangled_backtrace<8, 3>();
-extern template auto
-get_demangled_backtrace<16, 3>();
-extern template auto
-get_demangled_backtrace<32, 3>();
-//
-#endif
-*/
+}
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
-
-//--------------------------------------------------------------------------------------//
 
 #if defined(TIMEMORY_UTILITY_HEADER_MODE)
 #    include "timemory/utility/utility.cpp"

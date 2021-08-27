@@ -766,14 +766,14 @@ private:
     template <size_t N>
     static void check_error(error_t _ret, const std::string& _prefix)
     {
-        if(_ret != GOTCHA_SUCCESS)
+        if(_ret != GOTCHA_SUCCESS && (settings::verbose() > -1 || settings::debug()))
         {
             auto&             _data = get_data()[N];
             std::stringstream msg;
             msg << _prefix << " at index '" << N << "' for function '" << _data.wrap_id
                 << "' returned error code " << static_cast<int>(_ret) << ": "
                 << backend::gotcha::get_error(_ret) << "\n";
-            std::cerr << msg.str() << std::endl;
+            std::cerr << msg.str();
         }
         else if(settings::verbose() > 1 || settings::debug())
         {

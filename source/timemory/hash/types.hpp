@@ -26,6 +26,7 @@
 
 #include "timemory/api.hpp"
 #include "timemory/hash/macros.hpp"
+#include "timemory/hash/static_string.hpp"
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/mpl/concepts.hpp"
@@ -78,6 +79,8 @@ get_shared_ptr_lone_instance();
 //
 //--------------------------------------------------------------------------------------//
 //
+inline namespace hash
+{
 using hash_value_t        = size_t;
 using hash_map_t          = std::unordered_map<hash_value_t, std::string>;
 using hash_alias_map_t    = std::unordered_map<hash_value_t, hash_value_t>;
@@ -215,7 +218,9 @@ void
 add_hash_id(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
             hash_value_t _hash_id, hash_value_t _alias_hash_id) TIMEMORY_HOT;
 //
-//--------------------------------------------------------------------------------------//
+void
+add_hash_id(const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id,
+            hash_value_t _alias_hash_id) TIMEMORY_HOT;
 //
 void
 add_hash_id(hash_value_t _hash_id, hash_value_t _alias_hash_id) TIMEMORY_HOT;
@@ -287,4 +292,5 @@ get_demangled_hash_identifier(Args&&... _args)
 //
 //--------------------------------------------------------------------------------------//
 //
+}
 }  // namespace tim
