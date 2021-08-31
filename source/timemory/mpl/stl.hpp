@@ -47,6 +47,10 @@ inline namespace stl
 /// \brief the namespace provides overloads to output complex data types w/ streams
 namespace ostream
 {
+template <template <typename...> class Tuple, typename... Types, size_t... Idx>
+void
+tuple_printer(const Tuple<Types...>& obj, std::ostream& os, index_sequence<Idx...>);
+
 //--------------------------------------------------------------------------------------//
 //
 //      operator <<
@@ -108,6 +112,23 @@ operator<<(std::ostream& os, const std::array<Tp, N>& p)
         os << p.at(i) << ((i + 1 < p.size()) ? "," : "");
     os << ")";
     return os;
+}
+
+template <template <typename...> class Tuple, typename... Types, size_t... Idx>
+void
+tuple_printer(const Tuple<Types...>& obj, std::ostream& os, index_sequence<Idx...>)
+{
+    using namespace ::tim::stl::ostream;
+    constexpr size_t N = sizeof...(Types);
+
+    if(N > 0)
+        os << "(";
+    char delim[N];
+    TIMEMORY_FOLD_EXPRESSION(delim[Idx] = ',');
+    delim[N - 1] = '\0';
+    TIMEMORY_FOLD_EXPRESSION(os << std::get<Idx>(obj) << delim[Idx]);
+    if(N > 0)
+        os << ")";
 }
 
 }  // namespace ostream
