@@ -191,6 +191,13 @@ perfetto_trace::start()
 
 TIMEMORY_COMPONENT_PERFETTO_INLINE
 void
+perfetto_trace::start(const char* _label)
+{
+    backend::perfetto::trace_event_start<TIMEMORY_PERFETTO_API>(_label);
+}
+
+TIMEMORY_COMPONENT_PERFETTO_INLINE
+void
 perfetto_trace::stop()
 {
     backend::perfetto::trace_event_stop<TIMEMORY_PERFETTO_API>();

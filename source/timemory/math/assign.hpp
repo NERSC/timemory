@@ -24,6 +24,25 @@
 
 #pragma once
 
-// the contents of this file have been migrated to the math folder and the
-// timemory/math.hpp file includes all those files
-#include "timemory/math.hpp"
+#include "timemory/math/fwd.hpp"
+#include "timemory/mpl/concepts.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/utility/types.hpp"
+
+#include <cassert>
+#include <cmath>
+#include <limits>
+#include <utility>
+
+namespace tim
+{
+namespace math
+{
+template <typename Tp, typename Up>
+void
+assign(Tp& _lhs, Up&& _rhs)
+{
+    _lhs = std::forward<Up>(_rhs);
+}
+}  // namespace math
+}  // namespace tim

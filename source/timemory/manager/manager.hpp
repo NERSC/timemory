@@ -122,7 +122,6 @@ public:
     void cleanup(const std::string&);
     void cleanup();
     void finalize();
-    void read_command_line();
     bool is_finalized() const { return m_is_finalized; }
 
     void add_file_output(const string_t& _category, const string_t& _label,

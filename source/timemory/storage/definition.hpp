@@ -471,19 +471,12 @@ storage<Type, true>::global_init()
 {
     if(!m_global_init)
     {
-        return [&]() {
-            m_global_init = true;
-            if(!m_is_master && master_instance())
-                master_instance()->global_init();
-            if(m_is_master)
-            {
-                using init_t = operation::init<Type>;
-                using ValueT = typename trait::collects_data<Type>::type;
-                auto upcast  = static_cast<tim::storage<Type, ValueT>*>(this);
-                init_t(upcast, operation::mode_constant<operation::init_mode::global>{});
-            }
-            return m_global_init;
-        }();
+        CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "[%s|%i]> invoking global_init",
+                               demangle<Type>().c_str(), (int) m_thread_idx);
+        if(!m_is_master && master_instance())
+            master_instance()->global_init();
+        m_global_init = true;
+        operation::init<Type>{ operation::mode_constant<operation::init_mode::global>{} };
     }
     return m_global_init;
 }
@@ -496,18 +489,13 @@ storage<Type, true>::thread_init()
 {
     if(!m_thread_init)
     {
-        return [&]() {
-            m_thread_init = true;
-            if(!m_is_master && master_instance())
-                master_instance()->thread_init();
-            bool _global_init = global_init();
-            consume_parameters(_global_init);
-            using init_t = operation::init<Type>;
-            using ValueT = typename trait::collects_data<Type>::type;
-            auto upcast  = static_cast<tim::storage<Type, ValueT>*>(this);
-            init_t(upcast, operation::mode_constant<operation::init_mode::thread>{});
-            return m_thread_init;
-        }();
+        global_init();
+        CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "[%s|%i]> invoking thread_init",
+                               demangle<Type>().c_str(), (int) m_thread_idx);
+        if(!m_is_master && master_instance())
+            master_instance()->thread_init();
+        m_thread_init = true;
+        operation::init<Type>{ operation::mode_constant<operation::init_mode::thread>{} };
     }
     return m_thread_init;
 }
@@ -520,16 +508,14 @@ storage<Type, true>::data_init()
 {
     if(!m_data_init)
     {
-        return [&]() {
-            m_data_init = true;
-            if(!m_is_master && master_instance())
-                master_instance()->data_init();
-            bool _global_init = global_init();
-            bool _thread_init = thread_init();
-            consume_parameters(_global_init, _thread_init);
-            check_consistency();
-            return m_data_init;
-        }();
+        global_init();
+        thread_init();
+        CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "[%s|%i]> invoking data_init",
+                               demangle<Type>().c_str(), (int) m_thread_idx);
+        if(!m_is_master && master_instance())
+            master_instance()->data_init();
+        m_data_init = true;
+        check_consistency();
     }
     return m_data_init;
 }
@@ -659,12 +645,11 @@ storage<Type, true>::check_consistency()
 //
 template <typename Type>
 void
-storage<Type, true>::insert_init()
+storage<Type, true>::ensure_init()
 {
-    bool _global_init = global_init();
-    bool _thread_init = thread_init();
-    bool _data_init   = data_init();
-    consume_parameters(_global_init, _thread_init, _data_init);
+    global_init();
+    thread_init();
+    data_init();
     // check this now to ensure everything is initialized
     if(m_node_ids.empty() || m_graph_data_instance == nullptr)
         initialize();

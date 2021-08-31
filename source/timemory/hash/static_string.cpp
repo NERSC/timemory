@@ -22,61 +22,72 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+#ifndef TIMEMORY_HASH_STATIC_STRING_CPP_
+#define TIMEMORY_HASH_STATIC_STRING_CPP_ 1
 
 #include "timemory/hash/macros.hpp"
 
-#include <cstddef>
-#include <memory>
-#include <unordered_set>
+#if !defined(TIMEMORY_HASH_HEADER_ONLY_MODE) ||                                          \
+    (defined(TIMEMORY_HASH_HEADER_ONLY_MODE) && TIMEMORY_HASH_HEADER_ONLY_MODE == 0)
+#    include "timemory/hash/static_string.hpp"
+#endif
 
 namespace tim
 {
 inline namespace hash
 {
-struct static_string
+TIMEMORY_HASH_INLINE
+static_string::static_string(const char* _str)
+: m_string{ _str }
 {
-    using string_registry_t = std::unordered_set<const char*>;
+    if(get_private_registry())
+        get_private_registry()->emplace(_str);
+}
 
-    static_string(const char* _str);
-    ~static_string()                        = default;
-    static_string(const static_string&)     = default;
-    static_string(static_string&&) noexcept = default;
-    static_string& operator=(const static_string&) = default;
-    static_string& operator=(static_string&&) noexcept = default;
+TIMEMORY_HASH_INLINE
+bool
+static_string::is_registered(const char* _str)
+{
+    if(!get_private_registry())
+        return false;
+    return get_private_registry()->find(_str) != get_private_registry()->end();
+}
 
-    constexpr const char* c_str() const { return m_string; }
-    std::size_t           hash() const { return reinterpret_cast<std::size_t>(m_string); }
-    std::size_t           operator()() const { return hash(); }
+TIMEMORY_HASH_INLINE
+bool
+static_string::is_registered(std::size_t _hash)
+{
+    return is_registered(reinterpret_cast<const char*>(_hash));
+}
 
-    operator const char*() const { return m_string; }
-    operator std::size_t() const { return hash(); }
+TIMEMORY_HASH_INLINE
+static_string::string_registry_t
+static_string::get_registry()
+{
+    if(!get_private_registry())
+        return string_registry_t{};
+    return *get_private_registry();
+}
 
-    static bool              is_registered(const char*);
-    static bool              is_registered(std::size_t);
-    static string_registry_t get_registry();
+TIMEMORY_HASH_INLINE
+std::unique_ptr<static_string::string_registry_t>&
+static_string::get_private_registry()
+{
+    static thread_local auto _instance = std::make_unique<string_registry_t>();
+    return _instance;
+}
 
-private:
-    static std::unique_ptr<string_registry_t>& get_private_registry();
-
-    const char* m_string = nullptr;
-};
 }  // namespace hash
 }  // namespace tim
 
 namespace stl
 {
-template <typename Key>
-struct hash;
-
-template <>
-struct hash<tim::static_string>
+TIMEMORY_HASH_INLINE
+std::size_t
+hash<tim::static_string>::operator()(const tim::static_string& _static_str)
 {
-    std::size_t operator()(const tim::static_string&);
-};
+    return _static_str.hash();
+}
 }  // namespace stl
 
-// include the definitions inline if header-only mode
-#if defined(TIMEMORY_HASH_HEADER_ONLY_MODE) && TIMEMORY_HASH_HEADER_ONLY_MODE > 0
-#    include "timemory/hash/static_string.cpp"
 #endif

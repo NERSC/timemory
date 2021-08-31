@@ -22,8 +22,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+/** \file math.hpp
+ * \headerfile math.hpp "timemory/math.hpp"
+ * Provides the template meta-programming expansions for math operations
+ *
+ */
+
 #pragma once
 
-// the contents of this file have been migrated to the math folder and the
-// timemory/math.hpp file includes all those files
-#include "timemory/math.hpp"
+#include "timemory/math/abs.hpp"
+#include "timemory/math/assign.hpp"
+#include "timemory/math/compute.hpp"
+#include "timemory/math/divide.hpp"
+#include "timemory/math/fwd.hpp"
+#include "timemory/math/max.hpp"
+#include "timemory/math/min.hpp"
+#include "timemory/math/minus.hpp"
+#include "timemory/math/multiply.hpp"
+#include "timemory/math/percent_diff.hpp"
+#include "timemory/math/plus.hpp"
+#include "timemory/math/pow.hpp"
+#include "timemory/math/sqr.hpp"
+#include "timemory/math/sqrt.hpp"
