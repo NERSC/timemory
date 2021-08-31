@@ -37,16 +37,6 @@
 
 namespace tim
 {
-// type trait specialization
-namespace trait
-{
-template <typename Tp, typename ApiT = TIMEMORY_PERFETTO_API>
-struct perfetto_buffer_size
-{
-    static constexpr size_t value = 512;
-};
-}  // namespace trait
-
 //--------------------------------------------------------------------------------------//
 //
 //                      Component declaration
@@ -78,14 +68,13 @@ struct perfetto_trace : base<perfetto_trace, void>
     static void        global_init();
     static void        global_finalize();
 
-    template <size_t N, typename Tp>
-    void store(const char (&)[N], Tp, enable_if_t<std::is_integral<Tp>::value, int> = 0);
+    template <typename Tp>
+    void store(const char*, Tp, enable_if_t<std::is_integral<Tp>::value, int> = 0);
 
     template <typename Tp>
     void store(Tp, enable_if_t<std::is_integral<Tp>::value, int> = 0);
 
-    template <size_t N>
-    void start(const char (&)[N]);
+    void start(const char*);
     void start();
     void stop();
     void set_prefix(const char*);
@@ -122,28 +111,16 @@ void
 tim::component::perfetto_trace::store(Tp _val,
                                       enable_if_t<std::is_integral<Tp>::value, int>)
 {
-    constexpr auto N =
-        trait::perfetto_buffer_size<perfetto_trace, TIMEMORY_PERFETTO_API>::value;
-    auto _n = std::min<size_t>(strlen(m_prefix), N - 1);
-    char _buff[N];
-    _buff[N - 1] = '\0';
-    strncpy(_buff, m_prefix, _n);
-    backend::perfetto::trace_counter(_buff, _val);
+    if(m_prefix)
+        backend::perfetto::trace_counter(m_prefix, _val);
 }
 
-template <size_t N, typename Tp>
+template <typename Tp>
 void
-tim::component::perfetto_trace::store(const char (&_label)[N], Tp _val,
+tim::component::perfetto_trace::store(const char* _label, Tp _val,
                                       enable_if_t<std::is_integral<Tp>::value, int>)
 {
     backend::perfetto::trace_counter<TIMEMORY_PERFETTO_API>(_label, _val);
-}
-
-template <size_t N>
-inline void
-tim::component::perfetto_trace::start(const char (&_label)[N])
-{
-    ::tim::backend::perfetto::trace_event_start<TIMEMORY_PERFETTO_API>(_label);
 }
 
 //--------------------------------------------------------------------------------------//

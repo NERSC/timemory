@@ -116,7 +116,7 @@ public:
     hash_value_t hash() const { return m_hash; }
     int64_t      laps() const { return m_laps; }
     bool         store() const { return m_store(); }
-    std::string  key() const { return std::string{ get_hash_identifier_fast(m_hash) }; }
+    std::string  key() const { return std::string{ get_hash_identifier(m_hash) }; }
 
     bool                 get_store() const { return m_store(); }
     hash_value_t         get_hash() const { return m_hash; }

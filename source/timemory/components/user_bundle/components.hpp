@@ -150,17 +150,19 @@ public:
     static void reset(opaque_array_t& _data, typeid_vec_t& _typeids, mutex_t& _mtx);
 
 public:
-    void   setup();
-    void   push();
-    void   sample();
-    void   start();
-    void   stop();
-    void   pop();
-    void   get(void*& ptr, size_t _hash) const;
-    void   set_prefix(const char* _prefix);
-    void   set_scope(const scope::config& val);
-    void   update_statistics(bool _v) const;
-    size_t size() const { return m_bundle.size(); }
+    void          setup();
+    void          push();
+    void          sample();
+    void          start();
+    void          stop();
+    void          pop();
+    void          get(void*& ptr, size_t _hash) const;
+    void          set_prefix(const char* _prefix);
+    void          set_scope(const scope::config& val);
+    void          update_statistics(bool _v) const;
+    size_t        size() const { return m_bundle.size(); }
+    const char*   get_prefix() const { return m_prefix; }
+    scope::config get_scope() const { return m_scope; }
 
 public:
     //  Configure the tool for a specific component
@@ -286,6 +288,8 @@ public:
     }
 
 public:
+    using internal::user_bundle::get_prefix;
+    using internal::user_bundle::get_scope;
     using internal::user_bundle::insert;
     using internal::user_bundle::pop;
     using internal::user_bundle::push;

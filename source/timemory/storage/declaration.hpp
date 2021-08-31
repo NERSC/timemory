@@ -233,7 +233,7 @@ public:
     void stack_push(Type* obj) { m_stack.insert(obj); }
     void stack_pop(Type* obj);
 
-    void insert_init();
+    void ensure_init();
 
     iterator insert(scope::config scope_data, const Type& obj, uint64_t hash_id);
 
@@ -324,7 +324,7 @@ template <typename Type>
 typename storage<Type, true>::iterator
 storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t hash_id)
 {
-    insert_init();
+    ensure_init();
 
     using force_tree_t = trait::tree_storage<Type>;
     using force_flat_t = trait::flat_storage<Type>;
@@ -372,7 +372,7 @@ template <typename Vp, enable_if_t<!std::is_same<decay_t<Vp>, Type>::value, int>
 typename storage<Type, true>::iterator
 storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 {
-    insert_init();
+    ensure_init();
 
     // get the iterator and check if valid
     auto&& _itr = std::get<0>(_secondary);
@@ -423,7 +423,7 @@ template <typename Vp, enable_if_t<std::is_same<decay_t<Vp>, Type>::value, int>>
 typename storage<Type, true>::iterator
 storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 {
-    insert_init();
+    ensure_init();
 
     // get the iterator and check if valid
     auto&& _itr = std::get<0>(_secondary);

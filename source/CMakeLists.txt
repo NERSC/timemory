@@ -12,29 +12,29 @@ endif()
 # Locate sources and headers for this project - headers are included so they will show up
 # in IDEs
 #
-file(GLOB c_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
-file(GLOB cxx_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
-file(GLOB cxx_headers_variadic ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp)
-file(GLOB_RECURSE cxx_headers_backends ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
-file(GLOB_RECURSE cxx_headers_components
-     ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
-file(GLOB cxx_headers_macros ${CMAKE_CURRENT_LIST_DIR}/timemory/macros/*.hpp)
-file(GLOB cxx_headers_api ${CMAKE_CURRENT_LIST_DIR}/timemory/api/*.hpp)
-file(GLOB cxx_headers_mpl ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
-file(GLOB cxx_headers_general ${CMAKE_CURRENT_LIST_DIR}/timemory/general/*.hpp)
-file(GLOB cxx_headers_data ${CMAKE_CURRENT_LIST_DIR}/timemory/data/*.hpp)
-file(GLOB cxx_headers_utility ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*.hpp)
-file(GLOB cxx_headers_bits ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.hpp
-     ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.h
-     ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.icpp)
-file(GLOB compat_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/compat/*.h
-     ${CMAKE_CURRENT_LIST_DIR}/timemory/compat/*.hpp)
-file(GLOB c_sources ${CMAKE_CURRENT_LIST_DIR}/*.c)
-file(GLOB cxx_sources ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
-file(GLOB fortran_sources ${CMAKE_CURRENT_LIST_DIR}/*.f90)
-file(GLOB_RECURSE tpl_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*.hpp
-     ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*.h)
-file(GLOB_RECURSE tpl_licenses ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*license*)
+file(GLOB c_headers                      ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
+file(GLOB cxx_headers                    ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
+file(GLOB cxx_headers_variadic           ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp)
+file(GLOB_RECURSE cxx_headers_backends   ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
+file(GLOB_RECURSE cxx_headers_components ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
+file(GLOB cxx_headers_macros        ${CMAKE_CURRENT_LIST_DIR}/timemory/macros/*.hpp)
+file(GLOB cxx_headers_api           ${CMAKE_CURRENT_LIST_DIR}/timemory/api/*.hpp)
+file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
+file(GLOB cxx_headers_math          ${CMAKE_CURRENT_LIST_DIR}/timemory/math/*.hpp)
+file(GLOB cxx_headers_general       ${CMAKE_CURRENT_LIST_DIR}/timemory/general/*.hpp)
+file(GLOB cxx_headers_data          ${CMAKE_CURRENT_LIST_DIR}/timemory/data/*.hpp)
+file(GLOB cxx_headers_utility       ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*.hpp)
+file(GLOB cxx_headers_bits          ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.hpp
+                                    ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.h
+                                    ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.icpp)
+file(GLOB compat_headers            ${CMAKE_CURRENT_LIST_DIR}/timemory/compat/*.h
+                                    ${CMAKE_CURRENT_LIST_DIR}/timemory/compat/*.hpp)
+file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/*.c)
+file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
+file(GLOB fortran_sources           ${CMAKE_CURRENT_LIST_DIR}/*.f90)
+file(GLOB_RECURSE tpl_headers       ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*.hpp
+                                    ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*.h)
+file(GLOB_RECURSE tpl_licenses      ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*license*)
 
 set(_CATEGORIES backends mpl utility variadic)
 # bits folder
@@ -51,21 +51,11 @@ endforeach()
 
 # all the headers
 set(timemory_glob_headers
-    ${c_headers}
-    ${cxx_headers}
-    ${cxx_headers_variadic}
-    ${cxx_headers_api}
-    ${cxx_headers_backends}
-    ${cxx_headers_components}
-    ${cxx_headers_mpl}
-    ${cxx_headers_utility}
-    ${cxx_headers_bits}
-    ${cxx_headers_data}
-    ${cxx_headers_category_bits}
-    ${cxx_headers_general}
-    ${cxx_headers_macros}
-    ${tpl_headers}
-    ${compat_headers})
+    ${c_headers} ${cxx_headers} ${cxx_headers_variadic} ${cxx_headers_api}
+    ${cxx_headers_backends} ${cxx_headers_components} ${cxx_headers_mpl}
+    ${cxx_headers_math} ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
+    ${cxx_headers_category_bits} ${cxx_headers_general} ${cxx_headers_macros}
+    ${tpl_headers} ${compat_headers})
 
 if(TIMEMORY_SOURCE_GROUP)
     source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${timemory_glob_headers})
