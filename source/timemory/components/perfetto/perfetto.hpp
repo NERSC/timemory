@@ -78,14 +78,13 @@ struct perfetto_trace : base<perfetto_trace, void>
     static void        global_init();
     static void        global_finalize();
 
-    template <size_t N, typename Tp>
-    void store(const char (&)[N], Tp, enable_if_t<std::is_integral<Tp>::value, int> = 0);
+    template <typename Tp>
+    void store(const char*, Tp, enable_if_t<std::is_integral<Tp>::value, int> = 0);
 
     template <typename Tp>
     void store(Tp, enable_if_t<std::is_integral<Tp>::value, int> = 0);
 
-    template <size_t N>
-    void start(const char (&)[N]);
+    void start(const char*);
     void start();
     void stop();
     void set_prefix(const char*);
@@ -131,19 +130,12 @@ tim::component::perfetto_trace::store(Tp _val,
     backend::perfetto::trace_counter(_buff, _val);
 }
 
-template <size_t N, typename Tp>
+template <typename Tp>
 void
-tim::component::perfetto_trace::store(const char (&_label)[N], Tp _val,
+tim::component::perfetto_trace::store(const char* _label, Tp _val,
                                       enable_if_t<std::is_integral<Tp>::value, int>)
 {
     backend::perfetto::trace_counter<TIMEMORY_PERFETTO_API>(_label, _val);
-}
-
-template <size_t N>
-inline void
-tim::component::perfetto_trace::start(const char (&_label)[N])
-{
-    ::tim::backend::perfetto::trace_event_start<TIMEMORY_PERFETTO_API>(_label);
 }
 
 //--------------------------------------------------------------------------------------//

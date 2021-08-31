@@ -47,18 +47,6 @@ using namespace ::perfetto;
 using tracing_init_args = ::perfetto::TracingInitArgs;
 using tracing_session   = ::perfetto::TracingSession;
 
-template <typename ApiT = TIMEMORY_PERFETTO_API, size_t N, typename Tp>
-void
-trace_counter(const char (&)[N], Tp, enable_if_t<std::is_integral<Tp>::value, int> = 0);
-
-template <typename ApiT = TIMEMORY_PERFETTO_API, size_t N>
-void
-trace_event_start(const char (&)[N]);
-
-template <typename ApiT = TIMEMORY_PERFETTO_API>
-void
-trace_event_stop();
-
 #else
 
 struct tracing_init_args
@@ -66,22 +54,20 @@ struct tracing_init_args
 struct tracing_session
 {};
 
-template <typename ApiT = TIMEMORY_PERFETTO_API, size_t N, typename Tp>
-void
-trace_counter(const char (&)[N], Tp, enable_if_t<std::is_integral<Tp>::value, int> = 0)
-{}
+#endif
 
-template <typename ApiT = TIMEMORY_PERFETTO_API, size_t N>
+template <typename ApiT = TIMEMORY_PERFETTO_API, typename Tp>
 void
-trace_event_start(const char (&)[N])
-{}
+trace_counter(const char*, Tp, enable_if_t<std::is_integral<Tp>::value, int> = 0);
 
 template <typename ApiT = TIMEMORY_PERFETTO_API>
 void
-trace_event_stop()
-{}
+trace_event_start(const char*);
 
-#endif
+template <typename ApiT = TIMEMORY_PERFETTO_API>
+void
+trace_event_stop();
+
 }  // namespace perfetto
 }  // namespace backend
 }  // namespace tim
@@ -92,39 +78,37 @@ trace_event_stop()
 //
 //--------------------------------------------------------------------------------------//
 
-#if defined(TIMEMORY_USE_PERFETTO)
-
-template <typename ApiT, size_t N, typename Tp>
+template <typename ApiT, typename Tp>
 void
-tim::backend::perfetto::trace_counter(const char (&_label)[N], Tp _val,
+tim::backend::perfetto::trace_counter(const char* _label, Tp _val,
                                       enable_if_t<std::is_integral<Tp>::value, int>)
 {
-#    if defined(TIMEMORY_USE_PERFETTO)
-    TRACE_COUNTER(::tim::trait::perfetto_category<ApiT>::value, _label, _val);
-#    else
+#if defined(TIMEMORY_USE_PERFETTO)
+    TRACE_COUNTER(::tim::trait::perfetto_category<ApiT>::value,
+                  perfetto::StaticString(_label), _val);
+#else
     (void) _label;
     (void) _val;
-#    endif
+#endif
 }
 
-template <typename ApiT, size_t N>
+template <typename ApiT>
 void
-tim::backend::perfetto::trace_event_start(const char (&_label)[N])
+tim::backend::perfetto::trace_event_start(const char* _label)
 {
-#    if defined(TIMEMORY_USE_PERFETTO)
-    TRACE_EVENT_BEGIN(::tim::trait::perfetto_category<ApiT>::value, _label);
-#    else
+#if defined(TIMEMORY_USE_PERFETTO)
+    TRACE_EVENT_BEGIN(::tim::trait::perfetto_category<ApiT>::value,
+                      perfetto::StaticString(_label));
+#else
     (void) _label;
-#    endif
+#endif
 }
 
 template <typename ApiT>
 void
 tim::backend::perfetto::trace_event_stop()
 {
-#    if defined(TIMEMORY_USE_PERFETTO)
+#if defined(TIMEMORY_USE_PERFETTO)
     TRACE_EVENT_END(::tim::trait::perfetto_category<ApiT>::value);
-#    endif
+#endif
 }
-
-#endif  // TIMEMORY_USE_PERFETTO
