@@ -80,7 +80,7 @@ static_string::get_private_registry()
 }  // namespace hash
 }  // namespace tim
 
-namespace stl
+namespace std
 {
 TIMEMORY_HASH_INLINE
 std::size_t
@@ -88,6 +88,6 @@ hash<tim::static_string>::operator()(const tim::static_string& _static_str)
 {
     return _static_str.hash();
 }
-}  // namespace stl
+}  // namespace std
 
 #endif

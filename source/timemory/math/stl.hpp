@@ -487,8 +487,6 @@ operator/(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs)
 
 }  // namespace stl
 
-using namespace stl;
-
 }  // namespace tim
 
 namespace std
