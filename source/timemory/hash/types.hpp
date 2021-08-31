@@ -250,14 +250,35 @@ get_hash_identifier_fast(hash_value_t _hash)
 //
 //--------------------------------------------------------------------------------------//
 //
+typename hash_map_t::const_iterator
+find_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
+                     hash_value_t _hash_id);
+//
 std::string
 get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
                     hash_value_t _hash_id);
 //
+bool
+get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
+                    hash_value_t _hash_id, std::string&);
+//
+bool
+get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
+                    hash_value_t _hash_id, const char*&);
+//
 //--------------------------------------------------------------------------------------//
+//
+typename hash_map_t::const_iterator
+find_hash_identifier(hash_value_t _hash_id);
 //
 std::string
 get_hash_identifier(hash_value_t _hash_id);
+//
+bool
+get_hash_identifier(hash_value_t _hash_id, std::string&);
+//
+bool
+get_hash_identifier(hash_value_t _hash_id, const char*&);
 //
 //--------------------------------------------------------------------------------------//
 //
