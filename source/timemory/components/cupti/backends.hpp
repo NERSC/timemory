@@ -337,7 +337,7 @@ struct pcdata
 //
 }  // namespace cupti
 //
-namespace stl
+inline namespace stl
 {
 //
 inline cupti::profiler::results_t&

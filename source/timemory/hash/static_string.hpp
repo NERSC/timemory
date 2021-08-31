@@ -64,7 +64,7 @@ private:
 }  // namespace hash
 }  // namespace tim
 
-namespace stl
+namespace std
 {
 template <typename Key>
 struct hash;
@@ -74,7 +74,7 @@ struct hash<tim::static_string>
 {
     std::size_t operator()(const tim::static_string&);
 };
-}  // namespace stl
+}  // namespace std
 
 // include the definitions inline if header-only mode
 #if defined(TIMEMORY_HASH_HEADER_ONLY_MODE) && TIMEMORY_HASH_HEADER_ONLY_MODE > 0

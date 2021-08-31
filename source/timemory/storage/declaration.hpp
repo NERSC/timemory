@@ -568,7 +568,7 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
 
     auto current = m_data->current();
     if(!m_data->graph().is_valid(current))
-        return _update(_insert_child());
+        _insert_child();
 
     // check children first because in general, child match is ideal
     auto fchild = graph_t::child(current, 0);
@@ -599,7 +599,7 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
             return _update(itr);
     }
 
-    return _update(_insert_child());
+    return _insert_child();
 }
 
 //
