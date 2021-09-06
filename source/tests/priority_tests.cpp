@@ -55,6 +55,7 @@ struct test_clock : public base<test_clock<Idx, StartSleep, StopSleep>>
 
     // since this is a template class, need these statements
     using base_type::accum;
+    using base_type::load;
     using base_type::set_started;
     using base_type::set_stopped;
     using base_type::value;
@@ -69,14 +70,9 @@ struct test_clock : public base<test_clock<Idx, StartSleep, StopSleep>>
     static string_t   display_unit() { return wall_clock::display_unit(); }
     static value_type record() { return wall_clock::record(); }
 
-    TIMEMORY_NODISCARD double get_display() const
-    {
-        auto val = base_type::load();
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   wall_clock::get_unit());
-    }
+    double get() const { return load() / static_cast<double>(base_type::get_unit()); }
 
-    TIMEMORY_NODISCARD double get() const { return get_display(); }
+    double get_display() const { return get(); }
 
     void start()
     {

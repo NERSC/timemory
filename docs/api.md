@@ -180,8 +180,7 @@ struct wall_clock : public base<wall_clock, int64_t>
     double get() const
     {
         // get_unit() provided by base_clock via uses_timing_units type-trait
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val) / ratio_t::den * get_unit();
+        return load() / static_cast<double>(base_type::get_unit());
     }
 
     void start()

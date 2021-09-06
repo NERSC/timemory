@@ -67,13 +67,14 @@ namespace tim
 
 namespace units
 {
-static constexpr int64_t psec = std::pico::den;
-static constexpr int64_t nsec = std::nano::den;
-static constexpr int64_t usec = std::micro::den;
-static constexpr int64_t msec = std::milli::den;
-static constexpr int64_t csec = std::centi::den;
-static constexpr int64_t dsec = std::deci::den;
-static constexpr int64_t sec  = 1;
+static constexpr int64_t nsec   = 1;
+static constexpr int64_t usec   = 1000 * nsec;
+static constexpr int64_t msec   = 1000 * usec;
+static constexpr int64_t csec   = 10 * msec;
+static constexpr int64_t dsec   = 10 * csec;
+static constexpr int64_t sec    = 10 * dsec;
+static constexpr int64_t minute = 60 * sec;
+static constexpr int64_t hour   = 60 * minute;
 
 static constexpr int64_t byte     = 1;
 static constexpr int64_t kilobyte = 1000 * byte;
@@ -146,7 +147,6 @@ time_repr(int64_t _unit)
     std::string _sunit;
     switch(_unit)
     {
-        case psec: _sunit = "psec"; break;
         case nsec: _sunit = "nsec"; break;
         case usec: _sunit = "usec"; break;
         case msec: _sunit = "msec"; break;
@@ -229,8 +229,9 @@ inline std::tuple<std::string, int64_t>
 get_timing_unit(std::string _unit)
 {
     using string_t    = std::string;
+    using strset_t    = std::unordered_set<string_t>;
     using return_type = std::tuple<string_t, int64_t>;
-    using inner_t     = std::tuple<string_t, string_t, int64_t>;
+    using inner_t     = std::tuple<string_t, strset_t, int64_t>;
 
     if(_unit.length() == 0)
         return return_type{ "sec", tim::units::sec };
@@ -238,18 +239,25 @@ get_timing_unit(std::string _unit)
     for(auto& itr : _unit)
         itr = tolower(itr);
 
-    for(const auto& itr : { inner_t{ "ps", "picosecond", tim::units::psec },
-                            inner_t{ "ns", "nanosecond", tim::units::nsec },
-                            inner_t{ "us", "microsecond", tim::units::usec },
-                            inner_t{ "ms", "millisecond", tim::units::msec },
-                            inner_t{ "cs", "centisecond", tim::units::csec },
-                            inner_t{ "ds", "decisecond", tim::units::dsec },
-                            inner_t{ "s", "second", tim::units::sec } })
+    for(const auto& itr :
+        { inner_t{ "nsec", strset_t{ "ns", "nanosecond", "nanoseconds" },
+                   tim::units::nsec },
+          inner_t{ "usec", strset_t{ "us", "microsecond", "microseconds" },
+                   tim::units::usec },
+          inner_t{ "msec", strset_t{ "ms", "millisecond", "milliseconds" },
+                   tim::units::msec },
+          inner_t{ "csec", strset_t{ "cs", "centisecond", "centiseconds" },
+                   tim::units::csec },
+          inner_t{ "dsec", strset_t{ "ds", "decisecond", "deciseconds" },
+                   tim::units::dsec },
+          inner_t{ "sec", strset_t{ "s", "second", "seconds" }, tim::units::sec },
+          inner_t{ "min", strset_t{ "minute", "minutes" }, tim::units::minute },
+          inner_t{ "hr", strset_t{ "hr", "hour", "hours" }, tim::units::hour } })
     {
-        if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr) ||
-           _unit == (std::get<0>(itr) + "ec") || _unit == (std::get<1>(itr) + "s"))
+        if(_unit == std::get<0>(itr) ||
+           std::get<1>(itr).find(_unit) != std::get<1>(itr).end())
         {
-            return return_type{ std::get<0>(itr) + "ec", std::get<2>(itr) };
+            return return_type{ std::get<0>(itr), std::get<2>(itr) };
         }
     }
 
