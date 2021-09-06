@@ -55,13 +55,13 @@ struct peak_rss : public base<peak_rss>
         return "Measures changes in the high-water mark for the amount of memory "
                "allocated in RAM. May fluctuate if swap is enabled";
     }
-    static value_type         record() { return get_peak_rss(); }
-    TIMEMORY_NODISCARD double get() const
+    static value_type record() { return get_peak_rss(); }
+    double            get() const
     {
         auto val = base_type::load();
         return val / static_cast<double>(base_type::get_unit());
     }
-    TIMEMORY_NODISCARD double get_display() const { return get(); }
+    double get_display() const { return get(); }
 
     void start() { value = record(); }
     void stop()
@@ -115,15 +115,15 @@ struct page_rss : public base<page_rss, int64_t>
         return "Amount of memory allocated in pages of memory. Unlike peak_rss, value "
                "will fluctuate as memory is freed/allocated";
     }
-    static value_type         record() { return get_page_rss(); }
-    TIMEMORY_NODISCARD double get() const
+    static value_type record() { return get_page_rss(); }
+    double            get() const
     {
         auto val = base_type::load();
         return val / static_cast<double>(base_type::get_unit());
     }
-    TIMEMORY_NODISCARD double get_display() const { return get(); }
-    void                      start() { value = record(); }
-    void                      stop()
+    double get_display() const { return get(); }
+    void   start() { value = record(); }
+    void   stop()
     {
         value = (record() - value);
         accum += value;
@@ -150,15 +150,15 @@ struct num_io_in : public base<num_io_in>
     {
         return "Number of times the filesystem had to perform input";
     }
-    static value_type             record() { return get_num_io_in(); }
-    TIMEMORY_NODISCARD value_type get() const
+    static value_type record() { return get_num_io_in(); }
+    value_type        get() const
     {
         auto val = base_type::load();
         return val;
     }
-    TIMEMORY_NODISCARD value_type get_display() const { return get(); }
-    void                          start() { value = record(); }
-    void                          stop()
+    value_type get_display() const { return get(); }
+    void       start() { value = record(); }
+    void       stop()
     {
         value = (record() - value);
         accum += value;
@@ -195,15 +195,15 @@ struct num_io_out : public base<num_io_out>
     {
         return "Number of times the filesystem had to perform output";
     }
-    static value_type             record() { return get_num_io_out(); }
-    TIMEMORY_NODISCARD value_type get() const
+    static value_type record() { return get_num_io_out(); }
+    value_type        get() const
     {
         auto val = base_type::load();
         return val;
     }
-    TIMEMORY_NODISCARD value_type get_display() const { return get(); }
-    void                          start() { value = record(); }
-    void                          stop()
+    value_type get_display() const { return get(); }
+    void       start() { value = record(); }
+    void       stop()
     {
         value = (record() - value);
         accum += value;
@@ -242,15 +242,15 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
         return "Number of page faults serviced without any I/O activity via 'reclaiming' "
                "a page frame from the list of pages awaiting reallocation";
     }
-    static value_type             record() { return get_num_minor_page_faults(); }
-    TIMEMORY_NODISCARD value_type get() const
+    static value_type record() { return get_num_minor_page_faults(); }
+    value_type        get() const
     {
         auto val = base_type::load();
         return val;
     }
-    TIMEMORY_NODISCARD value_type get_display() const { return get(); }
-    void                          start() { value = record(); }
-    void                          stop()
+    value_type get_display() const { return get(); }
+    void       start() { value = record(); }
+    void       stop()
     {
         value = (record() - value);
         accum += value;
@@ -290,15 +290,15 @@ struct num_major_page_faults : public base<num_major_page_faults>
     {
         return "Number of page faults serviced that required I/O activity";
     }
-    static value_type             record() { return get_num_major_page_faults(); }
-    TIMEMORY_NODISCARD value_type get() const
+    static value_type record() { return get_num_major_page_faults(); }
+    value_type        get() const
     {
         auto val = base_type::load();
         return val;
     }
-    TIMEMORY_NODISCARD value_type get_display() const { return get(); }
-    void                          start() { value = record(); }
-    void                          stop()
+    value_type get_display() const { return get(); }
+    void       start() { value = record(); }
+    void       stop()
     {
         value = (record() - value);
         accum += value;
@@ -341,15 +341,15 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
         return "Number of context switches due to a process voluntarily giving up the "
                "processor before its time slice was completed";
     }
-    static value_type             record() { return get_num_voluntary_context_switch(); }
-    TIMEMORY_NODISCARD value_type get_display() const
+    static value_type record() { return get_num_voluntary_context_switch(); }
+    value_type        get_display() const
     {
         auto val = base_type::load();
         return val;
     }
-    TIMEMORY_NODISCARD value_type get() const { return get_display(); }
-    void                          start() { value = record(); }
-    void                          stop()
+    value_type get() const { return get_display(); }
+    void       start() { value = record(); }
+    void       stop()
     {
         value = (record() - value);
         accum += value;
@@ -393,15 +393,15 @@ struct priority_context_switch : public base<priority_context_switch>
         return "Number of context switch due to higher priority process becoming runnable"
                " or because the current process exceeded its time slice";
     }
-    static value_type             record() { return get_num_priority_context_switch(); }
-    TIMEMORY_NODISCARD value_type get_display() const
+    static value_type record() { return get_num_priority_context_switch(); }
+    value_type        get_display() const
     {
         auto val = base_type::load();
         return val;
     }
-    TIMEMORY_NODISCARD value_type get() const { return get_display(); }
-    void                          start() { value = record(); }
-    void                          stop()
+    value_type get() const { return get_display(); }
+    void       start() { value = record(); }
+    void       stop()
     {
         value = (record() - value);
         accum += value;
@@ -437,14 +437,14 @@ struct virtual_memory : public base<virtual_memory>
     static std::string label() { return "virtual_memory"; }
     static std::string description() { return "Records the change in virtual memory"; }
     static value_type  record() { return get_virt_mem(); }
-    TIMEMORY_NODISCARD double get() const
+    double             get() const
     {
         auto val = base_type::load();
         return val / static_cast<double>(base_type::get_unit());
     }
-    TIMEMORY_NODISCARD double get_display() const { return get(); }
-    void                      start() { value = record(); }
-    void                      stop()
+    double get_display() const { return get(); }
+    void   start() { value = record(); }
+    void   stop()
     {
         value = (record() - value);
         accum += value;
@@ -470,12 +470,8 @@ struct user_mode_time : public base<user_mode_time, int64_t>
     }
     static value_type record() { return get_user_mode_time(); }
 
-    TIMEMORY_NODISCARD double get_display() const { return get(); }
-    TIMEMORY_NODISCARD double get() const
-    {
-        auto val = base_type::load();
-        return static_cast<double>(val) / ratio_t::den * get_unit();
-    }
+    double get_display() const { return get(); }
+    double get() const { return load() / static_cast<double>(base_type::get_unit()); }
 
     void start() { value = record(); }
 
@@ -525,12 +521,8 @@ struct kernel_mode_time : public base<kernel_mode_time, int64_t>
     }
     static value_type record() { return get_kernel_mode_time(); }
 
-    TIMEMORY_NODISCARD double get_display() const { return get(); }
-    TIMEMORY_NODISCARD double get() const
-    {
-        auto val = base_type::load();
-        return static_cast<double>(val) / ratio_t::den * get_unit();
-    }
+    double get_display() const { return get(); }
+    double get() const { return load() / static_cast<double>(base_type::get_unit()); }
 
     void start() { value = record(); }
 
@@ -606,7 +598,7 @@ struct current_peak_rss : public base<current_peak_rss, std::pair<int64_t, int64
     }
 
 public:
-    TIMEMORY_NODISCARD std::string get_display() const
+    std::string get_display() const
     {
         std::stringstream ss;
         std::stringstream ssv;
@@ -632,7 +624,7 @@ public:
         return ss.str();
     }
 
-    TIMEMORY_NODISCARD result_type get() const
+    result_type get() const
     {
         result_type data = base_type::load();
         data.first /= get_unit().first;

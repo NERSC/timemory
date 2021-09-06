@@ -703,7 +703,7 @@ validate(const std::string& lbl, int n)
     {
         auto tmp      = run<Tp>(lbl, n);
         std::tie(val) = tmp.get();
-        val *= tim::units::msec;
+        val *= wall_clock::get_unit() / static_cast<double>(tim::units::msec);
         EXPECT_NEAR(val, n, 150) << tmp;
         EXPECT_EQ(tmp.laps(), 2) << tmp;
         obj = std::make_shared<Tp>(details::get_test_name() + "/" + lbl,
@@ -714,7 +714,7 @@ validate(const std::string& lbl, int n)
     }
     double old    = val;
     std::tie(val) = obj->get();
-    val *= tim::units::msec;
+    val *= wall_clock::get_unit() / static_cast<double>(tim::units::msec);
     EXPECT_NEAR(val, old, 10) << *obj;
     EXPECT_EQ(obj->laps(), 2) << *obj;
 }
@@ -743,8 +743,8 @@ TEST_F(tuple_tests, addition_tests)
     {
         if(itr.prefix().find(details::get_test_name()) == std::string::npos)
             continue;
-        EXPECT_NEAR(itr.data().get(), 1.0 * wall_clock::get_unit(),
-                    5.0e-2 * wall_clock::get_unit())
+        EXPECT_NEAR(itr.data().get(), (1.0 * tim::units::sec) / wall_clock::get_unit(),
+                    (5.0e-2 * tim::units::sec) / wall_clock::get_unit())
             << itr.data();
         EXPECT_EQ(itr.data().get_laps(), 2) << itr.data();
     }

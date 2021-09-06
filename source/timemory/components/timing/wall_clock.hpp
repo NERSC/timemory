@@ -59,7 +59,7 @@ struct wall_clock : public base<wall_clock, int64_t>
 
     TIMEMORY_NODISCARD double get() const noexcept
     {
-        return static_cast<double>(load()) / ratio_t::den * get_unit();
+        return load() / static_cast<double>(get_unit());
     }
     TIMEMORY_NODISCARD auto get_display() const noexcept { return get(); }
 

@@ -758,7 +758,7 @@ TEST_F(component_bundle_tests, dont_stop_last_instance)
               std::string{ "|_" } + details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 1);
     EXPECT_EQ(wc_end.back().data().get_laps(), 6);
-    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+    EXPECT_NEAR((wc_end.back().data().get() * wall_clock::get_unit()) / tim::units::msec,
                 300., 100.);
 }
 
@@ -785,7 +785,7 @@ TEST_F(component_bundle_tests, template_stop_last_instance)
     EXPECT_EQ(details::get_substr(wc_end.back().prefix()), details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 0);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
-    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+    EXPECT_NEAR((wc_end.back().data().get() * wall_clock::get_unit()) / tim::units::msec,
                 600., 100.);
 }
 
@@ -811,7 +811,7 @@ TEST_F(component_bundle_tests, ctor_stop_last_instance)
     EXPECT_EQ(details::get_substr(wc_end.back().prefix()), details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 0);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
-    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+    EXPECT_NEAR((wc_end.back().data().get() * wall_clock::get_unit()) / tim::units::msec,
                 600., 200.);
 }
 
@@ -841,7 +841,7 @@ TEST_F(component_bundle_tests, both_stop_last_instance)
     EXPECT_EQ(details::get_substr(wc_end.back().prefix()), details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 0);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
-    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+    EXPECT_NEAR((wc_end.back().data().get() * wall_clock::get_unit()) / tim::units::msec,
                 600., 100.);
 }
 
@@ -891,7 +891,7 @@ TEST_F(component_bundle_tests, mixed_stop_last_instance)
               std::string{ "|_" } + details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 1);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
-    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+    EXPECT_NEAR((wc_end.back().data().get() * wall_clock::get_unit()) / tim::units::msec,
                 600., 100.);
 }
 

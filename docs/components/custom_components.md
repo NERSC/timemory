@@ -177,9 +177,7 @@ struct wall_clock : public base<wall_clock, int64_t>
     // return any type
     float get() const
     {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
+        return load() / static_cast<double>(unit());
     }
 
     // this defines how the value is represented in '<<' and can return any type

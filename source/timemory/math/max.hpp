@@ -65,7 +65,7 @@ max(const Tp& _lhs, const Tp& _rhs, type_list<>, ...) -> decltype(std::begin(_lh
         auto litr = std::begin(_lhs) + i;
         auto ritr = std::begin(_rhs) + i;
         auto itr  = std::begin(_ret) + i;
-        *itr      = max(*litr, *ritr);
+        *itr      = ::tim::math::max(*litr, *ritr);
     }
     return _ret;
 }
@@ -90,7 +90,7 @@ max(const Tp& _lhs, const Tp& _rhs, type_list<>) -> decltype(std::begin(_lhs), T
         auto litr   = std::begin(_lhs) + i;
         auto ritr   = std::begin(_rhs) + i;
         auto itr    = std::begin(_ret) + i;
-        itr->second = max(litr->second, ritr->second);
+        itr->second = ::tim::math::max(litr->second, ritr->second);
     }
     return _ret;
 }
@@ -102,8 +102,8 @@ max(const Tp& _lhs, const Tp& _rhs, index_sequence<Idx...>)
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     Tp _ret{};
-    TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(_ret) =
-                                 max(std::get<Idx>(_lhs), std::get<Idx>(_rhs)));
+    TIMEMORY_FOLD_EXPRESSION(
+        std::get<Idx>(_ret) = ::tim::math::max(std::get<Idx>(_lhs), std::get<Idx>(_rhs)));
     return _ret;
 }
 
