@@ -255,26 +255,21 @@ public:
     }
 
     // friend operators
-    friend this_type operator+(const this_type& lhs, const this_type& rhs)
-    {
-        return this_type{ lhs } += rhs;
-    }
+    friend this_type operator+(this_type lhs, const this_type& rhs) { return lhs += rhs; }
+    friend this_type operator-(this_type lhs, const this_type& rhs) { return lhs -= rhs; }
 
-    friend this_type operator-(const this_type& lhs, const this_type& rhs)
+    template <typename Op>
+    friend enable_if_t<!std::is_arithmetic<Op>::value, this_type> operator*(this_type lhs,
+                                                                            const Op& rhs)
     {
-        return this_type{ lhs } -= rhs;
+        return lhs *= rhs;
     }
 
     template <typename Op>
-    friend this_type operator*(const this_type& lhs, Op&& rhs)
+    friend enable_if_t<!std::is_arithmetic<Op>::value, this_type> operator/(this_type lhs,
+                                                                            const Op& rhs)
     {
-        return this_type{ lhs } *= std::forward<Op>(rhs);
-    }
-
-    template <typename Op>
-    friend this_type operator/(const this_type& lhs, Op&& rhs)
-    {
-        return this_type{ lhs } /= std::forward<Op>(rhs);
+        return lhs /= rhs;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const bundle& obj)

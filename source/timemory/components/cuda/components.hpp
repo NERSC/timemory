@@ -131,17 +131,11 @@ public:
     : m_stream(_stream)
     {}
 
-    float get_display() const
+    float get() const noexcept
     {
-        return static_cast<float>(load() / static_cast<float>(ratio_t::den) *
-                                  base_type::get_unit());
+        return load() / static_cast<float>(base_type::get_unit());
     }
-
-    float get() const
-    {
-        return static_cast<float>(load() / static_cast<float>(ratio_t::den) *
-                                  base_type::get_unit());
-    }
+    float get_display() const noexcept { return get(); }
 
     void store(explicit_streams_only, bool _v) { m_explicit_only = _v; }
 

@@ -179,62 +179,6 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename Ratio>
-struct time_units;
-
-template <>
-struct time_units<std::pico>
-{
-    static constexpr const char* str = "psec";
-};
-template <>
-struct time_units<std::nano>
-{
-    static constexpr const char* str = "nsec";
-};
-template <>
-struct time_units<std::micro>
-{
-    static constexpr const char* str = "usec";
-};
-template <>
-struct time_units<std::milli>
-{
-    static constexpr const char* str = "msec";
-};
-template <>
-struct time_units<std::centi>
-{
-    static constexpr const char* str = "csec";
-};
-template <>
-struct time_units<std::deci>
-{
-    static constexpr const char* str = "dsec";
-};
-template <>
-struct time_units<std::ratio<1>>
-{
-    static constexpr const char* str = "sec";
-};
-template <>
-struct time_units<std::ratio<60, 1>>
-{
-    static constexpr const char* str = "min";
-};
-template <>
-struct time_units<std::ratio<3600, 1>>
-{
-    static constexpr const char* str = "hr";
-};
-template <>
-struct time_units<std::ratio<3600 * 24, 1>>
-{
-    static constexpr const char* str = "day";
-};
-
-//--------------------------------------------------------------------------------------//
-
 TIMEMORY_INLINE int64_t
 clock_tick() noexcept
 {
@@ -274,12 +218,13 @@ get_clock_now(clockid_t clock_id) noexcept
 //--------------------------------------------------------------------------------------//
 // the system's real time (i.e. wall time) clock, expressed as the amount of time since
 // the epoch.
-template <typename Tp = double, typename Precision = std::ratio<1>>
+template <typename Tp = double, typename Precision = std::ratio<1>,
+          typename ClockT = std::chrono::steady_clock>
 TIMEMORY_INLINE Tp
 get_clock_real_now() noexcept
 {
-    using clock_type    = std::chrono::steady_clock;
-    using duration_type = std::chrono::duration<clock_type::rep, Precision>;
+    using clock_type    = ClockT;
+    using duration_type = std::chrono::duration<typename clock_type::rep, Precision>;
 
     // return get_clock_now<Tp, Precision>(CLOCK_REALTIME);
     return std::chrono::duration_cast<duration_type>(clock_type::now().time_since_epoch())
