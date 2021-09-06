@@ -55,15 +55,13 @@ struct system_clock : public base<system_clock>
     {
         return tim::get_clock_system_now<int64_t, ratio_t>();
     }
-    TIMEMORY_NODISCARD double get() const noexcept
+    double get() const noexcept
     {
-        auto val = load();
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
+        return load() / static_cast<double>(base_type::get_unit());
     }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -87,15 +85,13 @@ struct user_clock : public base<user_clock>
     {
         return tim::get_clock_user_now<int64_t, ratio_t>();
     }
-    TIMEMORY_NODISCARD double get() const noexcept
+    double get() const noexcept
     {
-        auto val = load();
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
+        return load() / static_cast<double>(base_type::get_unit());
     }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -122,15 +118,13 @@ struct cpu_clock : public base<cpu_clock>
     {
         return tim::get_clock_cpu_now<int64_t, ratio_t>();
     }
-    TIMEMORY_NODISCARD double get() const noexcept
+    double get() const noexcept
     {
-        auto val = load();
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
+        return load() / static_cast<double>(base_type::get_unit());
     }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -157,15 +151,13 @@ struct monotonic_clock : public base<monotonic_clock>
     {
         return tim::get_clock_monotonic_now<int64_t, ratio_t>();
     }
-    TIMEMORY_NODISCARD double get() const noexcept
+    double get() const noexcept
     {
-        auto val = load();
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
+        return load() / static_cast<double>(base_type::get_unit());
     }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -193,15 +185,13 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     {
         return tim::get_clock_monotonic_raw_now<int64_t, ratio_t>();
     }
-    TIMEMORY_NODISCARD double get() const noexcept
+    double get() const noexcept
     {
-        auto val = load();
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
+        return load() / static_cast<double>(base_type::get_unit());
     }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -226,15 +216,13 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     {
         return tim::get_clock_thread_now<int64_t, ratio_t>();
     }
-    TIMEMORY_NODISCARD double get() const noexcept
+    double get() const noexcept
     {
-        auto val = load();
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
+        return load() / static_cast<double>(base_type::get_unit());
     }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -262,15 +250,13 @@ struct process_cpu_clock : public base<process_cpu_clock>
     {
         return tim::get_clock_process_now<int64_t, ratio_t>();
     }
-    TIMEMORY_NODISCARD double get() const noexcept
+    double get() const noexcept
     {
-        auto val = load();
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
+        return load() / static_cast<double>(base_type::get_unit());
     }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept { value = record(); }
-    void                      stop() noexcept
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept { value = record(); }
+    void   stop() noexcept
     {
         value = (record() - value);
         accum += value;
@@ -299,15 +285,15 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     {
         return value_type(cpu_clock::record(), wall_clock::record());
     }
-    TIMEMORY_NODISCARD double get() const noexcept
+    double get() const noexcept
     {
         const auto& _data = load();
         double      denom = (_data.second > 0) ? _data.second : 1;
         double      numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    double                    serialization() const noexcept { return get_display(); }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
+    double serialization() const noexcept { return get_display(); }
+    double get_display() const noexcept { return get(); }
 
     void start() noexcept
     {
@@ -379,7 +365,7 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
         return false;
     }
 
-    TIMEMORY_NODISCARD bool is_derived() const noexcept { return m_derive; }
+    bool is_derived() const noexcept { return m_derive; }
 
 private:
     bool m_derive = false;
@@ -408,16 +394,16 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     {
         return value_type(process_cpu_clock::record(), wall_clock::record());
     }
-    TIMEMORY_NODISCARD double get() const noexcept
+    double get() const noexcept
     {
         const auto& _data = load();
         double      denom = (_data.second > 0) ? _data.second : 1;
         double      numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    double                    serialization() const noexcept { return get_display(); }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept
+    double serialization() const noexcept { return get_display(); }
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept
     {
         if(!m_derive)
             value = record();
@@ -465,7 +451,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
         return false;
     }
 
-    TIMEMORY_NODISCARD bool is_derived() const noexcept { return m_derive; }
+    bool is_derived() const noexcept { return m_derive; }
 
 private:
     bool m_derive = false;
@@ -494,16 +480,16 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     {
         return value_type(thread_cpu_clock::record(), wall_clock::record());
     }
-    TIMEMORY_NODISCARD double get() const noexcept
+    double get() const noexcept
     {
         const auto& _data = load();
         double      denom = (_data.second > 0) ? _data.second : 1;
         double      numer = (_data.second > 0) ? _data.first : 0;
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    double                    serialization() const noexcept { return get_display(); }
-    TIMEMORY_NODISCARD double get_display() const noexcept { return get(); }
-    void                      start() noexcept
+    double serialization() const noexcept { return get_display(); }
+    double get_display() const noexcept { return get(); }
+    void   start() noexcept
     {
         if(!m_derive)
             value = record();
@@ -551,7 +537,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
         return false;
     }
 
-    TIMEMORY_NODISCARD bool is_derived() const noexcept { return m_derive; }
+    bool is_derived() const noexcept { return m_derive; }
 
 private:
     bool m_derive = false;

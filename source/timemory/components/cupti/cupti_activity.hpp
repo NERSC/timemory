@@ -201,23 +201,13 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    TIMEMORY_NODISCARD double get_display() const
-    {
-        return static_cast<double>(load() / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
-    }
+    double get() const { return load() / static_cast<double>(base_type::get_unit()); }
+
+    double get_display() const { return get(); }
 
     //----------------------------------------------------------------------------------//
 
-    TIMEMORY_NODISCARD double get() const
-    {
-        return static_cast<double>(load() / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    TIMEMORY_NODISCARD kernel_elapsed_t get_secondary() const { return m_kernels_accum; }
+    kernel_elapsed_t get_secondary() const { return m_kernels_accum; }
 
     void set_depth_change(bool v) { m_depth_change = v; }
 
