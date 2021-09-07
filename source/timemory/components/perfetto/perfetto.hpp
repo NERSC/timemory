@@ -37,16 +37,6 @@
 
 namespace tim
 {
-// type trait specialization
-namespace trait
-{
-template <typename Tp, typename ApiT = TIMEMORY_PERFETTO_API>
-struct perfetto_buffer_size
-{
-    static constexpr size_t value = 512;
-};
-}  // namespace trait
-
 //--------------------------------------------------------------------------------------//
 //
 //                      Component declaration
@@ -121,13 +111,8 @@ void
 tim::component::perfetto_trace::store(Tp _val,
                                       enable_if_t<std::is_integral<Tp>::value, int>)
 {
-    constexpr auto N =
-        trait::perfetto_buffer_size<perfetto_trace, TIMEMORY_PERFETTO_API>::value;
-    auto _n = std::min<size_t>(strlen(m_prefix), N - 1);
-    char _buff[N];
-    _buff[N - 1] = '\0';
-    strncpy(_buff, m_prefix, _n);
-    backend::perfetto::trace_counter(_buff, _val);
+    if(m_prefix)
+        backend::perfetto::trace_counter(m_prefix, _val);
 }
 
 template <typename Tp>
