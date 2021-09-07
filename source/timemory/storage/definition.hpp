@@ -998,25 +998,21 @@ storage<Type, true>::get_shared_manager()
         if(!m_manager)
             return;
 
-        auto   _label = Type::label();
-        size_t pos    = std::string::npos;
-        // remove the namespaces
-        for(const auto* itr : { "tim::component::", "tim::project::", "tim::tpls::",
-                                "tim::api::", "tim::" })
-        {
-            while((pos = _label.find(itr)) != std::string::npos)
-                _label = _label.replace(pos, std::string(itr).length(), "");
-        }
+        auto       _label = demangle(Type::label());
+        std::regex _namespace_re{ "^(tim::[a-z_]+::|tim::)([a-z].*)" };
+        if(std::regex_search(_label, _namespace_re))
+            _label = std::regex_replace(_label, _namespace_re, "$2");
         // replace spaces with underscores
-        while((pos = _label.find(' ')) != std::string::npos)
-            _label = _label.replace(pos, 1, "_");
+        auto _pos = std::string::npos;
+        while((_pos = _label.find_first_of(" -")) != std::string::npos)
+            _label = _label.replace(_pos, 1, "_");
         // convert to upper-case
         for(auto& itr : _label)
             itr = toupper(itr);
+        // handle any remaining brackets or colons
         for(auto itr : { ':', '<', '>' })
         {
-            auto _pos = _label.find(itr);
-            while(_pos != std::string::npos)
+            while((_pos = _label.find(itr)) != std::string::npos)
                 _pos = _label.erase(_pos, 1).find(itr);
         }
         std::stringstream env_var;
@@ -1249,9 +1245,23 @@ storage<Type, false>::get_shared_manager()
         if(m_manager->is_finalizing())
             return;
 
-        auto _label = Type::label();
+        auto       _label = demangle(Type::label());
+        std::regex _namespace_re{ "^(tim::[a-z_]+::|tim::)([a-z].*)" };
+        if(std::regex_search(_label, _namespace_re))
+            _label = std::regex_replace(_label, _namespace_re, "$2");
+        // replace spaces with underscores
+        auto _pos = std::string::npos;
+        while((_pos = _label.find_first_of(" -")) != std::string::npos)
+            _label = _label.replace(_pos, 1, "_");
+        // convert to upper-case
         for(auto& itr : _label)
             itr = toupper(itr);
+        // handle any remaining brackets or colons
+        for(auto itr : { ':', '<', '>' })
+        {
+            while((_pos = _label.find(itr)) != std::string::npos)
+                _pos = _label.erase(_pos, 1).find(itr);
+        }
         std::stringstream env_var;
         env_var << "TIMEMORY_" << _label << "_ENABLED";
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
