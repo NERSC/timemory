@@ -84,8 +84,7 @@ tim::backend::perfetto::trace_counter(const char* _label, Tp _val,
                                       enable_if_t<std::is_integral<Tp>::value, int>)
 {
 #if defined(TIMEMORY_USE_PERFETTO)
-    TRACE_COUNTER(::tim::trait::perfetto_category<ApiT>::value,
-                  perfetto::StaticString(_label), _val);
+    TRACE_COUNTER(::tim::trait::perfetto_category<ApiT>::value, _label, _val);
 #else
     (void) _label;
     (void) _val;

@@ -179,14 +179,7 @@ void
 perfetto_trace::start()
 {
     if(m_prefix)
-    {
-        constexpr auto N =
-            trait::perfetto_buffer_size<perfetto_trace, TIMEMORY_PERFETTO_API>::value;
-        std::string _prefix = tim::operation::decode<TIMEMORY_PERFETTO_API>{}(m_prefix);
-        char        _buff[N];
-        snprintf(_buff, N, "%s", _prefix.c_str());
-        backend::perfetto::trace_event_start<TIMEMORY_PERFETTO_API>(_buff);
-    }
+        backend::perfetto::trace_event_start<TIMEMORY_PERFETTO_API>(m_prefix);
 }
 
 TIMEMORY_COMPONENT_PERFETTO_INLINE
