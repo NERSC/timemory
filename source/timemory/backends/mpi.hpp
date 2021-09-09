@@ -79,15 +79,15 @@ struct dummy_data_type
 
 //--------------------------------------------------------------------------------------//
 #if defined(TIMEMORY_USE_MPI)
-using comm_t                            = MPI_Comm;
-using info_t                            = MPI_Info;
-using data_type_t                       = MPI_Datatype;
-using status_t                          = MPI_Status;
-static const comm_t  comm_world_v       = MPI_COMM_WORLD;
-static const comm_t  comm_self_v        = MPI_COMM_SELF;
-static const info_t  info_null_v        = MPI_INFO_NULL;
-static const int32_t comm_type_shared_v = MPI_COMM_TYPE_SHARED;
-static const int     success_v          = MPI_SUCCESS;
+using comm_t                           = MPI_Comm;
+using info_t                           = MPI_Info;
+using data_type_t                      = MPI_Datatype;
+using status_t                         = MPI_Status;
+static const comm_t comm_world_v       = MPI_COMM_WORLD;
+static const comm_t comm_self_v        = MPI_COMM_SELF;
+static const info_t info_null_v        = MPI_INFO_NULL;
+static const int    success_v          = MPI_SUCCESS;
+static int32_t      comm_type_shared_v = MPI_COMM_TYPE_SHARED;
 namespace threading
 {
 inline auto
@@ -114,15 +114,15 @@ enum : int
 }  // namespace threading
 #else
 // dummy MPI types
-using comm_t                            = int32_t;
-using info_t                            = int32_t;
-using data_type_t                       = int32_t;
-using status_t                          = int32_t;
-static const comm_t  comm_world_v       = 0;
-static const comm_t  comm_self_v        = 0;
-static const info_t  info_null_v        = 0;
-static const int32_t comm_type_shared_v = 0;
-static const int     success_v          = 0;
+using comm_t                           = int32_t;
+using info_t                           = int32_t;
+using data_type_t                      = int32_t;
+using status_t                         = int32_t;
+static const comm_t comm_world_v       = 0;
+static const comm_t comm_self_v        = 0;
+static const info_t info_null_v        = 0;
+static const int    success_v          = 0;
+static int32_t      comm_type_shared_v = 0;
 namespace threading
 {
 inline auto

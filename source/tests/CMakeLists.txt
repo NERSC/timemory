@@ -422,13 +422,15 @@ add_timemory_google_test(user_bundle_tests
                     timemory::timemory-core
                     ${_LIBRARY})
 
-add_timemory_google_test(mangle_tests
-    DISCOVER_TESTS
-    SOURCES         mangle_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-plotting
-                    timemory::timemory-core
-                    ${_LIBRARY})
+if(NOT WIN32)
+    add_timemory_google_test(mangle_tests
+        DISCOVER_TESTS
+        SOURCES         mangle_tests.cpp
+        LINK_LIBRARIES  common-test-libs
+                        timemory::timemory-plotting
+                        timemory::timemory-core
+                        ${_LIBRARY})
+endif()
 
 add_timemory_google_test(tuple_tests
     DISCOVER_TESTS
