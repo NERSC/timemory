@@ -373,6 +373,18 @@ struct remove_type<Tp, Tuple<Types...>>
 
 //======================================================================================//
 
+template <typename LhsT, typename RhsT>
+struct subtract;
+
+template <typename... LhsT, typename... RhsT>
+struct subtract<type_list<LhsT...>, type_list<RhsT...>>
+{
+    using type = type_concat_t<conditional_t<is_one_of<LhsT, type_list<RhsT...>>::value,
+                                             type_list<>, type_list<LhsT>>...>;
+};
+
+//======================================================================================//
+
 }  // namespace impl
 
 template <typename T>
@@ -409,6 +421,9 @@ using remove_duplicates_t = typename impl::unique<T, type_list<>>::type;
 
 template <typename T, typename TupleT = type_list<>>
 using unique_t = convert_t<typename impl::unique<T, type_list<>>::type, TupleT>;
+
+template <typename LhsT, typename RhsT>
+using subtract_t = typename impl::subtract<LhsT, RhsT>::type;
 
 //======================================================================================//
 //

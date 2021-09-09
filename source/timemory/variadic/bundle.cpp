@@ -369,6 +369,25 @@ typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::
 //
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename... Tp>
+typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::push(
+    mpl::piecewise_ignore<Tp...>)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    using pw_type = mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>;
+    // reset the data
+    invoke_piecewise<operation::reset>(pw_type{});
+    // insert node or find existing node
+    invoke_piecewise<operation::push_node>(pw_type{}, m_scope, m_hash);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// insert into graph
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Tp>
 typename bundle<Tag, BundleT, TupleT>::this_type&
 bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>, scope::config _scope)
 {
@@ -380,6 +399,25 @@ bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>, scope::config _
     invoke::invoke<operation::reset, Tag>(pw_type{}, m_data);
     // insert node or find existing node
     invoke::invoke<operation::push_node, Tag>(pw_type{}, m_data, _scope, m_hash);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// insert into graph
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Tp>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_ignore<Tp...>, scope::config _scope)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    using pw_type = mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>;
+    // reset the data
+    invoke_piecewise<operation::reset>(pw_type{});
+    // insert node or find existing node
+    invoke_piecewise<operation::push_node>(pw_type{}, _scope, m_hash);
     return get_this_type();
 }
 
@@ -417,6 +455,23 @@ typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::
     using pw_type = convert_t<mpl::implemented_t<Tp...>, mpl::piecewise_select<>>;
     // set the current node to the parent node
     invoke::invoke<operation::pop_node, Tag>(pw_type{}, m_data);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// pop out of graph
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Tp>
+typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::pop(
+    mpl::piecewise_ignore<Tp...>)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    using pw_type = mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>;
+    // set the current node to the parent node
+    invoke_piecewise<operation::pop_node>(pw_type{});
     return get_this_type();
 }
 
@@ -490,15 +545,13 @@ bundle<Tag, BundleT, TupleT>::start(mpl::piecewise_select<Tp...>, Args&&... args
 
     using select_tuple_t = mpl::sort<trait::start_priority, std::tuple<Tp...>>;
 
-    TIMEMORY_FOLD_EXPRESSION(
-        operation::reset<Tp>(std::get<index_of<Tp, data_type>::value>(m_data)));
+    invoke_piecewise<operation::reset>(type_list<Tp...>{});
     IF_CONSTEXPR(!quirk_config<quirk::explicit_push>::value &&
                  !quirk_config<quirk::no_store>::value)
     {
         if(m_store() && !bundle_type::m_explicit_push())
         {
-            TIMEMORY_FOLD_EXPRESSION(operation::push_node<Tp>(
-                std::get<index_of<Tp, data_type>::value>(m_data), m_scope, m_hash));
+            invoke_piecewise<operation::push_node>(type_list<Tp...>{}, m_scope, m_hash);
         }
     }
 
@@ -506,6 +559,20 @@ bundle<Tag, BundleT, TupleT>::start(mpl::piecewise_select<Tp...>, Args&&... args
     auto&& _data = mpl::get_reference_tuple<select_tuple_t>(m_data);
     invoke::invoke<operation::standard_start, Tag>(_data, std::forward<Args>(args)...);
     return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// start/stop functions with no push/pop or assemble/derive
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Tp, typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::start(mpl::piecewise_ignore<Tp...>, Args&&... args)
+{
+    using selected_t =
+        mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>;
+    return start(convert_t<selected_t, mpl::piecewise_select<>>{},
+                 std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -522,18 +589,30 @@ bundle<Tag, BundleT, TupleT>::stop(mpl::piecewise_select<Tp...>, Args&&... args)
 
     // stop components
     auto&& _data = mpl::get_reference_tuple<select_tuple_t>(m_data);
-    invoke::invoke<operation::standard_start, Tag>(_data, std::forward<Args>(args)...);
+    invoke::invoke<operation::standard_stop, Tag>(_data, std::forward<Args>(args)...);
 
     IF_CONSTEXPR(!quirk_config<quirk::explicit_pop>::value &&
                  !quirk_config<quirk::no_store>::value)
     {
         if(m_store() && !bundle_type::m_explicit_pop())
         {
-            TIMEMORY_FOLD_EXPRESSION(operation::pop_node<Tp>(
-                std::get<index_of<Tp, data_type>::value>(m_data)));
+            invoke_piecewise<operation::pop_node>(type_list<Tp...>{});
         }
     }
     return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Tp, typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::stop(mpl::piecewise_ignore<Tp...>, Args&&... args)
+{
+    using selected_t =
+        mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>;
+    return stop(convert_t<selected_t, mpl::piecewise_select<>>{},
+                std::forward<Args>(args)...);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -767,6 +846,22 @@ bundle<Tag, BundleT, TupleT>::invoke(mpl::piecewise_select<Tp...>, Args&&... _ar
         return get_this_type();
     invoke_piecewise<OpT>(mpl::available_t<type_list<Tp...>>{},
                           std::forward<Args>(_args)...);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <template <typename> class OpT, typename... Tp, typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::invoke(mpl::piecewise_ignore<Tp...>, Args&&... _args)
+{
+    if(!m_enabled())
+        return get_this_type();
+    invoke_piecewise<OpT>(
+        mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>{},
+        std::forward<Args>(_args)...);
     return get_this_type();
 }
 
