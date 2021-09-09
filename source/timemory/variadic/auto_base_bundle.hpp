@@ -107,6 +107,8 @@ public:
     }
 
 public:
+    auto_base_bundle();
+
     template <typename... T>
     auto_base_bundle(const string_view_t&, quirk::config<T...>,
                      transient_func_t = get_initializer());
@@ -179,10 +181,12 @@ public:
     }
 
     /// push components into call-stack storage
-    this_type& push();
+    template <typename... Args>
+    this_type& push(Args&&... args);
 
     /// pop components off call-stack storage
-    this_type& pop();
+    template <typename... Args>
+    this_type& pop(Args&&... args);
 
     /// execute a measurement
     template <typename... Args>
@@ -269,21 +273,40 @@ public:
         return m_temporary.get_labeled(std::forward<Args>(args)...);
     }
 
-    TIMEMORY_NODISCARD bool     enabled() const;
-    TIMEMORY_NODISCARD bool     report_at_exit() const;
-    TIMEMORY_NODISCARD bool     store() const;
-    TIMEMORY_NODISCARD int64_t  laps() const;
-    TIMEMORY_NODISCARD uint64_t hash() const;
-    TIMEMORY_NODISCARD std::string key() const;
+    /// check whether enabled
+    bool enabled() const;
 
-    data_type&       data();
+    /// check whether reporting at exit
+    bool report_at_exit() const;
+
+    /// check whether storing data
+    bool store() const;
+
+    /// get the number of laps
+    int64_t laps() const;
+
+    /// get the key hash
+    uint64_t hash() const;
+
+    /// get the key
+    std::string key() const;
+
+    /// get tuple data
+    data_type& data();
+
+    /// get tuple data
     const data_type& data() const;
 
-    void report_at_exit(bool val);
+    /// write to stdout during destruction
+    this_type& report_at_exit(bool val);
 
-    // the string one is expensive so force hashing
-    void       rekey(const string_view_t& _key);
+    /// update key
+    this_type& rekey(const string_view_t& _key);
+
+    /// update key
     this_type& rekey(captured_location_t _loc);
+
+    /// update key
     this_type& rekey(uint64_t _hash);
 
     /// returns a stack-object for calling stop
@@ -365,6 +388,13 @@ protected:
     bool            m_report_at_exit   = false;
     component_type* m_reference_object = nullptr;
     component_type  m_temporary;
+
+private:
+    this_type& get_this_type() { return static_cast<this_type&>(*this); }
+    this_type& get_this_type() const
+    {
+        return const_cast<this_type&>(static_cast<const this_type&>(*this));
+    }
 };
 //
 }  // namespace tim

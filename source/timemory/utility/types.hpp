@@ -333,6 +333,10 @@ template <typename... Tp>
 struct piecewise_select
 {};
 //
+template <typename... Tp>
+struct piecewise_ignore
+{};
+//
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace mpl
