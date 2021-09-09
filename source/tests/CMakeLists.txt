@@ -365,7 +365,7 @@ if(WIN32) # for now just enable for Windows
                         ${_LIBRARY})
 endif()
 
-if(NOT WIN32)
+if(NOT WIN32 AND NOT TIMEMORY_USE_PERFETTO)
     # cache structures are designed for use on Windows
     add_timemory_google_test(cache_tests
         SOURCES         cache_tests.cpp

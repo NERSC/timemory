@@ -228,6 +228,26 @@ invoke(mpl::piecewise_select<Up...>, TupleT<Tp&...>& obj, Args&&... args)
         std::forward<Args>(args)...);
 }
 //
+template <template <typename...> class OpT, typename ApiT, typename... Up,
+          template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+invoke(mpl::piecewise_ignore<Up...>, TupleT<Tp...>& obj, Args&&... args)
+{
+    using data_type = mpl::subtract_t<type_list<Tp...>, type_list<Up...>>;
+    invoke(convert_t<data_type, mpl::piecewise_select<>>{}, obj,
+           std::forward<Args>(args)...);
+}
+//
+template <template <typename...> class OpT, typename ApiT, typename... Up,
+          template <typename...> class TupleT, typename... Tp, typename... Args>
+void
+invoke(mpl::piecewise_ignore<Up...>, TupleT<Tp&...>& obj, Args&&... args)
+{
+    using data_type = mpl::subtract_t<type_list<Tp...>, type_list<Up...>>;
+    invoke(convert_t<data_type, mpl::piecewise_select<>>{}, obj,
+           std::forward<Args>(args)...);
+}
+//
 //--------------------------------------------------------------------------------------//
 //                                  construct
 //--------------------------------------------------------------------------------------//

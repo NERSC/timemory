@@ -62,7 +62,6 @@ using namespace tim::component;
 
 namespace details
 {
-//--------------------------------------------------------------------------------------//
 //  Get the current tests name
 //
 inline std::string
@@ -72,12 +71,28 @@ get_test_name()
            "." + ::testing::UnitTest::GetInstance()->current_test_info()->name();
 }
 
-//--------------------------------------------------------------------------------------//
 // fibonacci calculation
 int64_t
 fibonacci(int32_t n)
 {
     return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+// this function consumes approximately "t" milliseconds of cpu time
+void
+consume(long n)
+{
+    // a mutex held by one lock
+    mutex_t mutex;
+    // acquire lock
+    lock_t hold_lk(mutex);
+    // associate but defer
+    lock_t try_lk(mutex, std::defer_lock);
+    // get current time
+    auto now = std::chrono::steady_clock::now();
+    // try until time point
+    while(std::chrono::steady_clock::now() < (now + std::chrono::milliseconds(n)))
+        try_lk.try_lock();
 }
 }  // namespace details
 
@@ -446,6 +461,81 @@ TEST_F(variadic_tests, get)
     EXPECT_NEAR(std::get<0>(dl3), 0.0, 1.e-3);
 
     std::cout << "Done" << std::endl;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(variadic_tests, piecewise_ignore)
+{
+    auto wc_beg = tim::storage<wall_clock>::instance()->get();
+    auto cc_beg = tim::storage<cpu_clock>::instance()->get();
+    auto tc_beg = tim::storage<trip_count>::instance()->get();
+
+    static_assert(
+        std::is_same<tim::mpl::subtract_t<
+                         tim::mpl::implemented_t<wall_clock, cpu_clock, trip_count>,
+                         tim::type_list<wall_clock, trip_count>>,
+                     tim::type_list<cpu_clock>>::value,
+        "Subtract error");
+
+    static auto _ign = tim::mpl::piecewise_ignore<cpu_clock, trip_count>{};
+    auto        _run = [](auto& _obj) {
+        auto _name = tim::demangle<decltype(_obj)>();
+
+        _obj.start(_ign);
+        details::consume(500);
+        _obj.stop(_ign);
+    };
+
+    tim::component_tuple<wall_clock, cpu_clock, trip_count> _ct{
+        details::get_test_name()
+    };
+    tim::component_list<wall_clock, cpu_clock, trip_count> _cl{
+        details::get_test_name(), tim::scope::get_default(),
+        [](auto& _cl) { _cl.template initialize<wall_clock, cpu_clock, trip_count>(); }
+    };
+    tim::component_bundle<TIMEMORY_API, wall_clock, cpu_clock, trip_count> _cb{
+        details::get_test_name()
+    };
+    tim::lightweight_tuple<wall_clock, cpu_clock, trip_count> _lt{
+        details::get_test_name()
+    };
+
+    _run(_ct);
+    _run(_cl);
+    _run(_cb);
+    _run(_lt);
+
+    ASSERT_TRUE(_cl.get<wall_clock>() != nullptr);
+    ASSERT_TRUE(_cl.get<cpu_clock>() != nullptr);
+    ASSERT_TRUE(_cl.get<trip_count>() != nullptr);
+
+    auto _check = [](auto& _obj) {
+        auto _name = tim::demangle<decltype(_obj)>();
+
+        ASSERT_TRUE(_obj.template get<wall_clock>() != nullptr) << _name;
+        ASSERT_TRUE(_obj.template get<cpu_clock>() != nullptr) << _name;
+        ASSERT_TRUE(_obj.template get<trip_count>() != nullptr) << _name;
+
+        EXPECT_NEAR(_obj.template get<wall_clock>()->get(), 0.5, 0.2)
+            << _name << " " << _obj;
+        EXPECT_NEAR(_obj.template get<cpu_clock>()->get(), 0.0, 1.0e-6)
+            << _name << " " << _obj;
+        EXPECT_EQ(_obj.template get<trip_count>()->get(), 0) << _name << " " << _obj;
+    };
+
+    _check(_ct);
+    _check(_cl);
+    _check(_cb);
+    _check(_lt);
+
+    auto wc_end = tim::storage<wall_clock>::instance()->get();
+    auto cc_end = tim::storage<cpu_clock>::instance()->get();
+    auto tc_end = tim::storage<trip_count>::instance()->get();
+
+    EXPECT_NE(wc_beg.size(), wc_end.size());
+    EXPECT_EQ(cc_beg.size(), cc_end.size());
+    EXPECT_EQ(tc_beg.size(), tc_end.size());
 }
 
 //--------------------------------------------------------------------------------------//

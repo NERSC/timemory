@@ -145,7 +145,39 @@ lightweight_tuple<Types...>::push()
         // insert node or find existing node
         invoke::push(m_data, m_scope, m_hash);
     }
-    return *this;
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// insert into graph
+//
+template <typename... Types>
+template <typename... Tp>
+lightweight_tuple<Types...>& lightweight_tuple<Types...>::push(
+    mpl::piecewise_select<Tp...>)
+{
+    using pw_type = mpl::implemented_t<Tp...>;
+    // reset the data
+    invoke_piecewise<operation::reset>(pw_type{});
+    // insert node or find existing node
+    invoke_piecewise<operation::push_node>(pw_type{}, m_scope, m_hash);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// insert into graph
+//
+template <typename... Types>
+template <typename... Tp>
+lightweight_tuple<Types...>& lightweight_tuple<Types...>::push(
+    mpl::piecewise_ignore<Tp...>)
+{
+    using pw_type = mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>;
+    // reset the data
+    invoke_piecewise<operation::reset>(pw_type{});
+    // insert node or find existing node
+    invoke_piecewise<operation::push_node>(pw_type{}, m_scope, m_hash);
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -162,7 +194,35 @@ lightweight_tuple<Types...>::pop()
         // avoid pushing/popping when already pushed/popped
         m_is_pushed(false);
     }
-    return *this;
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// pop out of graph
+//
+template <typename... Types>
+template <typename... Tp>
+lightweight_tuple<Types...>& lightweight_tuple<Types...>::pop(
+    mpl::piecewise_select<Tp...>)
+{
+    using pw_type = mpl::implemented_t<Tp...>;
+    // set the current node to the parent node
+    invoke_piecewise<operation::pop_node>(pw_type{});
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// pop out of graph
+//
+template <typename... Types>
+template <typename... Tp>
+lightweight_tuple<Types...>& lightweight_tuple<Types...>::pop(
+    mpl::piecewise_ignore<Tp...>)
+{
+    using pw_type = mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>;
+    // set the current node to the parent node
+    invoke_piecewise<operation::pop_node>(pw_type{});
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -174,7 +234,7 @@ lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::measure(Args&&... args)
 {
     invoke::measure(m_data, std::forward<Args>(args)...);
-    return *this;
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -186,7 +246,7 @@ lightweight_tuple<Types...>&
 lightweight_tuple<Types...>::sample(Args&&... args)
 {
     invoke::invoke<operation::sample, TIMEMORY_API>(m_data, std::forward<Args>(args)...);
-    return *this;
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -199,7 +259,36 @@ lightweight_tuple<Types...>::start(Args&&... args)
 {
     invoke::start(m_data, std::forward<Args>(args)...);
     m_is_active(true);
-    return *this;
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// start/stop functions with no push/pop or assemble/derive
+//
+template <typename... Types>
+template <typename... Tp, typename... Args>
+lightweight_tuple<Types...>&
+lightweight_tuple<Types...>::start(mpl::piecewise_select<Tp...>, Args&&... args)
+{
+    auto&& _data = mpl::get_reference_tuple<mpl::available_t<std::tuple<Tp...>>>(m_data);
+    invoke::start(_data, std::forward<Args>(args)...);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// start/stop functions with no push/pop or assemble/derive
+//
+template <typename... Types>
+template <typename... Tp, typename... Args>
+lightweight_tuple<Types...>&
+lightweight_tuple<Types...>::start(mpl::piecewise_ignore<Tp...>, Args&&... args)
+{
+    using selected_t =
+        convert_t<mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>,
+                  std::tuple<>>;
+    auto&& _data = mpl::get_reference_tuple<selected_t>(m_data);
+    invoke::start(_data, std::forward<Args>(args)...);
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -212,7 +301,36 @@ lightweight_tuple<Types...>::stop(Args&&... args)
     invoke::stop(m_data, std::forward<Args>(args)...);
     ++m_laps;
     m_is_active(false);
-    return *this;
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// start/stop functions with no push/pop or assemble/derive
+//
+template <typename... Types>
+template <typename... Tp, typename... Args>
+lightweight_tuple<Types...>&
+lightweight_tuple<Types...>::stop(mpl::piecewise_select<Tp...>, Args&&... args)
+{
+    auto&& _data = mpl::get_reference_tuple<mpl::available_t<std::tuple<Tp...>>>(m_data);
+    invoke::stop(_data, std::forward<Args>(args)...);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// start/stop functions with no push/pop or assemble/derive
+//
+template <typename... Types>
+template <typename... Tp, typename... Args>
+lightweight_tuple<Types...>&
+lightweight_tuple<Types...>::stop(mpl::piecewise_ignore<Tp...>, Args&&... args)
+{
+    using selected_t =
+        convert_t<mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>,
+                  std::tuple<>>;
+    auto&& _data = mpl::get_reference_tuple<selected_t>(m_data);
+    invoke::stop(_data, std::forward<Args>(args)...);
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -225,7 +343,7 @@ lightweight_tuple<Types...>::record(Args&&... args)
 {
     ++m_laps;
     invoke::record(m_data, std::forward<Args>(args)...);
-    return *this;
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -238,7 +356,7 @@ lightweight_tuple<Types...>::reset(Args&&... args)
 {
     invoke::reset(m_data, std::forward<Args>(args)...);
     m_laps = 0;
-    return *this;
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -272,7 +390,7 @@ lightweight_tuple<Types...>::operator-=(const this_type& rhs)
 {
     invoke::invoke_impl::invoke_data<operation::minus, TIMEMORY_API>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
-    return *this;
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -283,7 +401,7 @@ lightweight_tuple<Types...>::operator-=(this_type& rhs)
 {
     invoke::invoke_impl::invoke_data<operation::minus, TIMEMORY_API>(m_data, rhs.m_data);
     m_laps -= rhs.m_laps;
-    return *this;
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -294,7 +412,7 @@ lightweight_tuple<Types...>::operator+=(const this_type& rhs)
 {
     invoke::invoke_impl::invoke_data<operation::plus, TIMEMORY_API>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
-    return *this;
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -305,7 +423,7 @@ lightweight_tuple<Types...>::operator+=(this_type& rhs)
 {
     invoke::invoke_impl::invoke_data<operation::plus, TIMEMORY_API>(m_data, rhs.m_data);
     m_laps += rhs.m_laps;
-    return *this;
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -354,7 +472,7 @@ lightweight_tuple<Types...>::set_scope(scope::config val)
 {
     m_scope = val;
     invoke::set_scope(m_data, m_scope);
-    return *this;
+    return get_this_type();
 }
 
 //--------------------------------------------------------------------------------------//

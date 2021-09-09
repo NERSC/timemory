@@ -394,13 +394,25 @@ public:
     template <typename... Tp>
     this_type& push(mpl::piecewise_select<Tp...>);
 
+    /// selective push
+    template <typename... Tp>
+    this_type& push(mpl::piecewise_ignore<Tp...>);
+
     /// selective push with scope configuration
     template <typename... Tp>
     this_type& push(mpl::piecewise_select<Tp...>, scope::config);
 
+    /// selective push with scope configuration
+    template <typename... Tp>
+    this_type& push(mpl::piecewise_ignore<Tp...>, scope::config);
+
     /// selective pop
     template <typename... Tp>
     this_type& pop(mpl::piecewise_select<Tp...>);
+
+    /// selective pop
+    template <typename... Tp>
+    this_type& pop(mpl::piecewise_ignore<Tp...>);
 
     /// requests each component record a measurment
     template <typename... Args>
@@ -438,9 +450,17 @@ public:
     template <typename... Tp, typename... Args>
     this_type& start(mpl::piecewise_select<Tp...>, Args&&...);
 
+    /// variant of start() which gets applied to non-Tp types
+    template <typename... Tp, typename... Args>
+    this_type& start(mpl::piecewise_ignore<Tp...>, Args&&...);
+
     /// variant of stop() which only gets applied to Tp types
     template <typename... Tp, typename... Args>
     this_type& stop(mpl::piecewise_select<Tp...>, Args&&...);
+
+    /// variant of stop() which gets applied to non-Tp types
+    template <typename... Tp, typename... Args>
+    this_type& stop(mpl::piecewise_ignore<Tp...>, Args&&...);
 
     using bundle_type::get_prefix;
     using bundle_type::get_scope;
@@ -526,6 +546,12 @@ public:
     /// \tparam OpT Operation struct
     template <template <typename> class OpT, typename... Tp, typename... Args>
     this_type& invoke(mpl::piecewise_select<Tp...>, Args&&... _args);
+
+    /// generic member function for invoking user-provided operations on all types
+    /// that are not listed
+    /// \tparam OpT Operation struct
+    template <template <typename> class OpT, typename... Tp, typename... Args>
+    this_type& invoke(mpl::piecewise_ignore<Tp...>, Args&&... _args);
 
     template <bool PrintPrefix = true, bool PrintLaps = true>
     this_type& print(std::ostream& os, bool _endl = false) const;
