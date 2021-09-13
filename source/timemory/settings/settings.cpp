@@ -1182,12 +1182,30 @@ TIMEMORY_SETTINGS_INLINE
 bool
 settings::read(const string_t& inp)
 {
-    std::ifstream ifs(inp);
-    if(!ifs)
+#    if defined(TIMEMORY_UNIX)
+    auto file_exists = [](const std::string& _fname) {
+        struct stat _buffer;
+        if(stat(_fname.c_str(), &_buffer) == 0)
+            return (S_ISREG(_buffer.st_mode) != 0 || S_ISLNK(_buffer.st_mode) != 0);
+        return false;
+    };
+#    else
+    auto file_exists = [](const std::string&) { return true; };
+#    endif
+
+    if(file_exists(inp))
     {
-        TIMEMORY_EXCEPTION(string_t("Error reading configuration file: ") + inp)
+        std::ifstream ifs{ inp };
+        if(ifs.is_open())
+        {
+            return read(ifs, inp);
+        }
+        else
+        {
+            TIMEMORY_EXCEPTION(string_t("Error reading configuration file: ") + inp)
+        }
     }
-    return read(ifs, inp);
+    return false;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -1259,14 +1277,14 @@ settings::read(std::istream& ifs, std::string inp)
         if(inp.empty())
             inp = "text";
 
-        std::string line = "";
-
         auto is_comment = [](const std::string& s) {
             if(s.empty())
                 return true;
-            for(const auto& itr : s)
+            for(auto itr : s)
             {
-                if(std::isprint(itr))
+                if(itr == '\0')
+                    return true;
+                if(!std::isspace(itr) && std::isprint(itr))
                     return (itr == '#') ? true : false;
             }
             // if there were no printable characters, treat as comment
@@ -1277,14 +1295,18 @@ settings::read(std::istream& ifs, std::string inp)
         int valid    = 0;
         while(ifs)
         {
+            std::string line = {};
             std::getline(ifs, line);
-            if(!ifs)
+            if(!ifs || line.empty())
                 continue;
+            auto _pos = line.find_first_of('#');
+            if(_pos != std::string::npos)
+                line = line.substr(0, _pos);
             if(is_comment(line))
                 continue;
             ++expected;
             // tokenize the string
-            auto delim = tim::delimit(line, "\n=,; ");
+            auto delim = tim::delimit(line, "\n\t=,; ");
             if(delim.size() > 0)
             {
                 string_t key = delim.front();
