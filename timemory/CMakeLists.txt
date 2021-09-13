@@ -177,14 +177,14 @@ function(TIMEMORY_PYTHON_CONSOLE_SCRIPT SCRIPT_NAME SCRIPT_SUBMODULE SCRIPT_FUNC
             OPTIONAL)
     endif()
 
-    add_test(
-        NAME ${SCRIPT_NAME}-console-script-test
-        COMMAND ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} --help
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(
-        ${SCRIPT_NAME}-console-script-test
-        PROPERTIES ENVIRONMENT "PYTHONPATH=${PROJECT_BINARY_DIR}:$ENV{PYTHONPATH}")
-
+    if(TIMEMORY_BUILD_TESTING OR TIMEMORY_BUILD_PYTHON)
+        add_test(
+            NAME                ${SCRIPT_NAME}-console-script-test
+            COMMAND             ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} --help
+            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+        set_tests_properties(${SCRIPT_NAME}-console-script-test PROPERTIES
+            ENVIRONMENT         "PYTHONPATH=${PROJECT_BINARY_DIR}:$ENV{PYTHONPATH}")
+    endif()
 endfunction()
 
 if(NOT PYTHON_EXECUTABLE)
