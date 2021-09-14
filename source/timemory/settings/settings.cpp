@@ -39,7 +39,9 @@
 #    include "timemory/utility/utility.hpp"
 #    include "timemory/variadic/macros.hpp"
 
+#    include <cctype>
 #    include <fstream>
+#    include <locale>
 
 namespace tim
 {
@@ -1277,15 +1279,24 @@ settings::read(std::istream& ifs, std::string inp)
         if(inp.empty())
             inp = "text";
 
-        auto is_comment = [](const std::string& s) {
-            if(s.empty())
+        auto _is_comment = [](std::string _s) {
+            if(_s.empty())
                 return true;
-            for(auto itr : s)
             {
-                if(itr == '\0')
+                auto _spos = _s.find_first_of(" \t\n\r\v\f");
+                auto _cpos = _s.find_first_not_of(" \t\n\r\v\f");
+                if(_spos < _cpos && _cpos != std::string::npos)
+                    _s = _s.substr(_cpos);
+                if(_s.empty())
                     return true;
-                if(!std::isspace(itr) && std::isprint(itr))
-                    return (itr == '#') ? true : false;
+            }
+            std::locale _lc{};
+            for(size_t i = 0; i < _s.length(); ++i)
+            {
+                auto itr = _s.at(i);
+                // if graphical character is # then it a comment
+                if(std::isgraph(itr, _lc))
+                    return (itr == '#');
             }
             // if there were no printable characters, treat as comment
             return true;
@@ -1302,7 +1313,7 @@ settings::read(std::istream& ifs, std::string inp)
             auto _pos = line.find_first_of('#');
             if(_pos != std::string::npos)
                 line = line.substr(0, _pos);
-            if(is_comment(line))
+            if(_is_comment(line))
                 continue;
             ++expected;
             // tokenize the string
