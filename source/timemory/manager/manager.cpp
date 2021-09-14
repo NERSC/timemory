@@ -57,8 +57,10 @@
 
 #    include <algorithm>
 #    include <atomic>
+#    include <cctype>
 #    include <fstream>
 #    include <iosfwd>
+#    include <locale>
 #    include <memory>
 #    include <string>
 #    include <utility>
@@ -604,7 +606,8 @@ manager::internal_write_metadata(const char* context)
         PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
 
     // if first char is a control character, the statics probably got deleted
-    if(iscntrl(m_metadata_prefix[0]))
+    std::locale _lc{};
+    if(std::iscntrl(m_metadata_prefix[0], _lc))
         m_metadata_prefix = "timemory-output/";
 
     if(f_debug())
