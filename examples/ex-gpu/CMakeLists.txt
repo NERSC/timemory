@@ -48,6 +48,4 @@ add_executable(ex_kernel_instrument_v2 ex_kernel_instrument_v2.cu)
 target_link_libraries(ex_kernel_instrument_v2 PRIVATE timemory-gpu-example)
 install(TARGETS ex_kernel_instrument_v2 DESTINATION bin OPTIONAL)
 
-add_executable(ex_kernel_instrument_v3 ex_kernel_instrument_v3.cu)
-target_link_libraries(ex_kernel_instrument_v3 PRIVATE timemory-gpu-example)
-install(TARGETS ex_kernel_instrument_v3 DESTINATION bin OPTIONAL)
+add_subdirectory(v3)
