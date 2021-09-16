@@ -578,6 +578,14 @@ public:
     template <typename U>
     decltype(auto) get() const;
 
+    /// get a component from the bundle and apply function if the pointer is valid
+    template <typename U, typename FuncT>
+    decltype(auto) get(FuncT&&);
+
+    /// get a component from the bundle
+    template <typename U, typename FuncT>
+    decltype(auto) get(FuncT&&) const;
+
     /// performs an opaque search. Opaque searches are generally provided by user_bundles
     /// with a functor such as this:
     ///
@@ -921,6 +929,52 @@ decltype(auto)
 bundle<Tag, BundleT, TupleT>::get() const
 {
     return tim::variadic::impl::get<U, Tag>(m_data);
+}
+
+//----------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename U, typename FuncT>
+decltype(auto)
+bundle<Tag, BundleT, TupleT>::get(FuncT&& _func)
+{
+    auto* _obj = tim::variadic::impl::get<U, Tag>(m_data);
+    if(_obj)
+        return std::forward<FuncT>(_func)(_obj);
+    using return_type = decltype(_func(std::declval<decltype(_obj)>()));
+#if defined(CXX17)
+    if constexpr(std::is_void<decay_t<return_type>>::value)
+        return;
+    else if constexpr(std::is_pointer<decay_t<return_type>>::value)
+        return static_cast<decay_t<return_type>>{ nullptr };
+    else
+        return decltype(_func(std::declval<decltype(_obj)>())){};
+#else
+    return return_type();
+#endif
+}
+
+//----------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename U, typename FuncT>
+decltype(auto)
+bundle<Tag, BundleT, TupleT>::get(FuncT&& _func) const
+{
+    auto* _obj = tim::variadic::impl::get<U, Tag>(m_data);
+    if(_obj)
+        return std::forward<FuncT>(_func)(_obj);
+    using return_type = decltype(_func(std::declval<decltype(_obj)>()));
+#if defined(CXX17)
+    if constexpr(std::is_void<decay_t<return_type>>::value)
+        return;
+    else if constexpr(std::is_pointer<decay_t<return_type>>::value)
+        return static_cast<decay_t<return_type>>{ nullptr };
+    else
+        return decltype(_func(std::declval<decltype(_obj)>())){};
+#else
+    return return_type();
+#endif
 }
 
 //----------------------------------------------------------------------------------//

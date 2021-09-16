@@ -76,7 +76,7 @@ struct cuda_event : public base<cuda_event, float>
 
         void start(cuda::stream_t& stream)
         {
-            if(!valid)
+            if(!valid || running)
                 return;
             synced  = false;
             running = true;
@@ -98,7 +98,7 @@ struct cuda_event : public base<cuda_event, float>
             if(!synced)
                 cuda::event_sync(second);
             synced = true;
-            return cuda::event_elapsed_time(first, second);
+            return cuda::event_elapsed_time(first, second) * units::msec;
         }
     };
 
