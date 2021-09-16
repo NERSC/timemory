@@ -284,7 +284,7 @@ initialize(int& argc, char**& argv)
     if(!is_initialized())
     {
         using namespace threading;
-        bool success_v = false;
+        bool _success_v = false;
         if(use_mpi_thread())
         {
             auto _init = [&argc, &argv](int itr, const std::string& _type) {
@@ -305,27 +305,27 @@ initialize(int& argc, char**& argv)
             auto _mpi_type = use_mpi_thread_type();
             if(_mpi_type == "single")
             {
-                success_v = _init(single, _mpi_type);
+                _success_v = _init(single, _mpi_type);
             }
             else if(_mpi_type == "serialized")
             {
-                success_v = _init(serialized, _mpi_type);
+                _success_v = _init(serialized, _mpi_type);
             }
             else if(_mpi_type == "funneled")
             {
-                success_v = _init(funneled, _mpi_type);
+                _success_v = _init(funneled, _mpi_type);
             }
             else if(_mpi_type == "multiple")
             {
-                success_v = _init(multiple, _mpi_type);
+                _success_v = _init(multiple, _mpi_type);
             }
             else
             {
-                success_v = _init(multiple, "multiple");
+                _success_v = _init(multiple, "multiple");
             }
         }
 
-        if(!success_v)
+        if(!_success_v)
             TIMEMORY_MPI_ERROR_CHECK(MPI_Init(&argc, &argv));
     }
 #else
