@@ -28,6 +28,8 @@
 //--------------------------------------------------------------------------------------//
 
 void
+flush_on_signal(int);
+void
 childpid_catcher(int);
 void
 parent_process(pid_t pid);
@@ -159,7 +161,7 @@ main(int argc, char** argv)
         });
     parser
         .add_argument(
-            { "--disable-sample" },
+            { "--disable-sample", "--disable-sampling" },
             "Disable UNIX signal-based sampling.\n%{INDENT}% Sampling is the most common "
             "culprit for timem hanging (i.e. failing to exit after the child "
             "process exits)")
@@ -206,6 +208,17 @@ main(int argc, char** argv)
         .action([&](parser_t& p) {
             tim::trait::apply<tim::trait::runtime_enabled>::set<network_stats>(
                 p.get<bool>("network-stats"));
+        });
+    parser.add_argument()
+        .names({ "-F", "--flush-on-signal" })
+        .description("If any of these signals are sent to timem process, flush output "
+                     "and exit. E.g. '--flush-on-signal 2' (default behavior) will cause "
+                     "timem to dump it's output and exit if SIGINT (Cntl+C) is sent by "
+                     "the user. Use '--flush-on-signal 0' to disable this behavior.")
+        .dtype("int")
+        .min_count(1)
+        .action([&](parser_t& p) {
+            signal_flush() = p.get<std::set<int>>("flush-on-signal");
         });
 #if defined(TIMEMORY_USE_MPI)
     parser
@@ -334,11 +347,36 @@ main(int argc, char** argv)
     if(!use_sample())
         signal_types().clear();
 
+    for(auto itr : signal_flush())
+    {
+        CONDITIONAL_PRINT_HERE((debug() && verbose() > 0),
+                               "timem will stop, dump it's output, and exit if signal %i "
+                               "is sent to this process (PID: %i)",
+                               itr, (int) tim::process::get_id());
+        if(signal_types().count(itr) > 0)
+            throw std::runtime_error(TIMEMORY_JOIN(
+                " ", "Error! timem sampler is using signal", itr,
+                "to handle the sampling measurements. Flushing output on this signal "
+                "will cause immediate termination. Re-run timem with the"
+                "'--disable-sampling' option to flush output on this signal"));
+    }
+
     // set the signal handler on this process if using mpi so that we can read
     // the file providing the PID. If not, fork provides the PID so this is
     // unnecessary
     if(use_mpi())
-        create_signal_handler(TIMEM_PID_SIGNAL, get_signal_handler(), &childpid_catcher);
+    {
+        create_signal_handler(TIMEM_PID_SIGNAL, get_signal_handler(TIMEM_PID_SIGNAL),
+                              &childpid_catcher);
+        // allocate the signal handlers in map
+        for(auto itr : signal_flush())
+            (void) get_signal_handler(itr);
+    }
+    else
+    {
+        for(auto itr : signal_flush())
+            create_signal_handler(itr, get_signal_handler(itr), &flush_on_signal);
+    }
 
     for(int i = 0; i < _argc; ++i)
         argvector().emplace_back(_argv[i]);
@@ -632,7 +670,10 @@ void
 childpid_catcher(int sig)
 {
     signal_delivered() = true;
-    restore_signal_handler(sig, get_signal_handler());
+    restore_signal_handler(sig, get_signal_handler(sig));
+    // generate the signal handlers for flushing output
+    for(auto itr : signal_flush())
+        create_signal_handler(itr, get_signal_handler(itr), &flush_on_signal);
     int _worker                   = read_pid(master_pid());
     worker_pid()                  = _worker;
     tim::process::get_target_id() = _worker;
@@ -642,6 +683,32 @@ childpid_catcher(int sig)
                __FUNCTION__, getpid(), worker_pid(), _worker,
                tim::process::get_target_id());
     }
+}
+
+//--------------------------------------------------------------------------------------//
+
+void
+flush_on_signal(int sig)
+{
+    if((debug() && verbose() > 1) || verbose() > 2)
+        std::cerr << "[BEFORE STOP][" << worker_pid() << "]> " << *get_measure()
+                  << std::endl;
+
+    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "stopping sampler");
+    get_sampler()->stop();
+
+    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "ignoring signals");
+    sampler_t::ignore(signal_types());
+
+    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "barrier");
+    tim::mpi::barrier(tim::mpi::comm_world_v);
+
+    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "processing");
+    parent_process(worker_pid());
+
+    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "exit code = %i", sig);
+
+    std::exit(sig);
 }
 
 //--------------------------------------------------------------------------------------//

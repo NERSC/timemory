@@ -712,6 +712,8 @@ struct signal_handler
 static void
 create_signal_handler(int sig, signal_handler& sh, void (*func)(int))
 {
+    if(sig < 1)
+        return;
     sh.m_custom_sigaction.sa_handler = func;
     sigemptyset(&sh.m_custom_sigaction.sa_mask);
     sh.m_custom_sigaction.sa_flags = SA_RESTART;
@@ -724,6 +726,8 @@ create_signal_handler(int sig, signal_handler& sh, void (*func)(int))
 static void
 restore_signal_handler(int sig, signal_handler& sh)
 {
+    if(sig < 1)
+        return;
     if(sigaction(sig, &sh.m_original_sigaction, &sh.m_custom_sigaction) == -1)
     {
         std::cerr << "Failed to restore signal handler for " << sig << std::endl;
@@ -733,10 +737,20 @@ restore_signal_handler(int sig, signal_handler& sh)
 //--------------------------------------------------------------------------------------//
 //
 inline signal_handler&
-get_signal_handler()
+get_signal_handler(int _sig)
 {
-    static signal_handler _instance{};
-    return _instance;
+    static std::map<int, signal_handler> _instance{};
+    auto                                 itr = _instance.find(_sig);
+    if(itr == _instance.end())
+    {
+        auto eitr = _instance.emplace(_sig, signal_handler{});
+        if(eitr.second)
+            itr = eitr.first;
+    }
+    if(itr == _instance.end())
+        throw std::runtime_error("Error! Signal handler for " + std::to_string(_sig) +
+                                 " not found.");
+    return itr->second;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -762,6 +776,7 @@ struct timem_config
     pid_t         worker_pid   = getpid();
     string_t      command      = {};
     std::set<int> signal_types = { SIGALRM };
+    std::set<int> signal_flush = { SIGINT };
     std::vector<std::string> argvector = {};
 
     template <typename Archive>
@@ -802,6 +817,7 @@ TIMEM_CONFIG_FUNCTION(command)
 TIMEM_CONFIG_FUNCTION(master_pid)
 TIMEM_CONFIG_FUNCTION(worker_pid)
 TIMEM_CONFIG_FUNCTION(signal_types)
+TIMEM_CONFIG_FUNCTION(signal_flush)
 TIMEM_CONFIG_FUNCTION(argvector)
 //
 //--------------------------------------------------------------------------------------//
