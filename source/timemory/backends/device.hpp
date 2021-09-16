@@ -152,23 +152,24 @@ struct handle
     /// calls the stop member function on instance stored during construction
     TIMEMORY_DEVICE_FUNCTION ~handle();
 
+    /// calls the function call operator with given arguments on the instance
+    /// stored during construction
+    template <typename... Args>
+    TIMEMORY_DEVICE_FUNCTION void operator()(Args... _args) const;
+
     /// provides an explicit way to call stop before destruction. If this function
     /// is explicitly called, the destructor will not call stop because it will
     /// reset the pointer to null.
     TIMEMORY_DEVICE_FUNCTION void stop();
 
+    /// constructs a handle with the current instance and the arguments
     template <typename... Args>
     static TIMEMORY_DEVICE_FUNCTION handle<Tp> get(Args... _args);
 
 private:
     template <typename Up>
     friend TIMEMORY_GLOBAL_FUNCTION void set_handle(Up*);
-
-    static TIMEMORY_DEVICE_FUNCTION Tp*& get_instance()
-    {
-        static TIMEMORY_DEVICE_FUNCTION Tp* _v = nullptr;
-        return _v;
-    }
+    static TIMEMORY_DEVICE_FUNCTION Tp*& get_instance();
 
     Tp* m_targ = nullptr;
 };
@@ -178,6 +179,7 @@ TIMEMORY_GLOBAL_FUNCTION void
 set_handle(Tp* _v)
 {
     handle<Tp>::get_instance() = _v;
+    // printf("[device][set_handle] instance is %p\n", (void*) _v);
 }
 
 template <typename Tp>
@@ -210,6 +212,16 @@ TIMEMORY_DEVICE_FUNCTION handle<Tp>::~handle()
 }
 
 template <typename Tp>
+template <typename... Args>
+TIMEMORY_DEVICE_FUNCTION void
+handle<Tp>::operator()(Args... _args) const
+{
+    // printf("[device][operator()] instance is %p\n", (void*) m_targ);
+    if(m_targ)
+        (*m_targ)(std::forward<Args>(_args)...);
+}
+
+template <typename Tp>
 TIMEMORY_DEVICE_FUNCTION void
 handle<Tp>::stop()
 {
@@ -223,6 +235,14 @@ TIMEMORY_DEVICE_FUNCTION handle<Tp>
                          handle<Tp>::get(Args... _args)
 {
     return handle<Tp>{ get_instance(), _args... };
+}
+
+template <typename Tp>
+TIMEMORY_DEVICE_FUNCTION Tp*&
+                         handle<Tp>::get_instance()
+{
+    static TIMEMORY_DEVICE_FUNCTION Tp* _v = nullptr;
+    return _v;
 }
 
 //--------------------------------------------------------------------------------------//
