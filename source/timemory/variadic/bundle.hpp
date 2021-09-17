@@ -946,7 +946,7 @@ bundle<Tag, BundleT, TupleT>::get(FuncT&& _func)
     if constexpr(std::is_void<decay_t<return_type>>::value)
         return;
     else if constexpr(std::is_pointer<decay_t<return_type>>::value)
-        return static_cast<decay_t<return_type>>{ nullptr };
+        return static_cast<decay_t<return_type>>(nullptr);
     else
         return decltype(_func(std::declval<decltype(_obj)>())){};
 #else
@@ -969,7 +969,7 @@ bundle<Tag, BundleT, TupleT>::get(FuncT&& _func) const
     if constexpr(std::is_void<decay_t<return_type>>::value)
         return;
     else if constexpr(std::is_pointer<decay_t<return_type>>::value)
-        return static_cast<decay_t<return_type>>{ nullptr };
+        return static_cast<decay_t<return_type>>(nullptr);
     else
         return decltype(_func(std::declval<decltype(_obj)>())){};
 #else

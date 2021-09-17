@@ -11,7 +11,8 @@ gpu_op_tracker::gpu_op_tracker(const gpu_op_tracker& rhs)
 : base_type{ rhs }
 , m_copy{ true }
 , m_device_num{ rhs.m_device_num }
-, m_blocks{ rhs.m_blocks }
+, m_count{ rhs.m_count }
+, m_threads{ rhs.m_threads }
 , m_prefix{ rhs.m_prefix }
 , m_stream{ rhs.m_stream }
 , m_data{ rhs.m_data }
@@ -26,7 +27,8 @@ gpu_op_tracker::operator=(const gpu_op_tracker& rhs)
         base_type::operator=(rhs);
         m_copy             = true;
         m_device_num       = rhs.m_device_num;
-        m_blocks           = rhs.m_blocks;
+        m_count            = rhs.m_count;
+        m_threads          = rhs.m_threads;
         m_prefix           = rhs.m_prefix;
         m_stream           = rhs.m_stream;
         m_data             = rhs.m_data;
@@ -59,10 +61,10 @@ gpu_op_tracker::stop()
 {
     if(m_device_data)
     {
-        std::vector<unsigned long long> _host(m_blocks, 0);
+        std::vector<unsigned long long> _host(m_threads, 0);
 
-        TIMEMORY_GPU_RUNTIME_API_CALL(
-            gpu::memcpy(_host.data(), m_data, m_blocks, gpu::device_to_host_v, m_stream));
+        TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memcpy(_host.data(), m_data, m_threads,
+                                                  gpu::device_to_host_v, m_stream));
 
         gpu::stream_sync(m_stream);
 
@@ -77,12 +79,18 @@ gpu_op_tracker::stop()
             if(add_secondary())
             {
                 // secondary data
-                m_tracker.add_secondary(
-                    TIMEMORY_JOIN('_', "thread", i),
-                    [](int64_t _inp, int64_t _v) { return _inp += _v; },
-                    static_cast<int64_t>(itr));
+                m_tracker.get<data_type>([&](auto* _obj) {
+                    auto* _child = _obj->add_secondary(
+                        TIMEMORY_JOIN("_", "thread", i),
+                        [](int64_t _lhs, int64_t _rhs) { return _lhs + _rhs; },
+                        static_cast<int64_t>(itr));
+                    _child->set_laps(_child->get_laps() + m_count - 1);
+                });
             }
         }
+        auto* _data = m_tracker.get<data_type>();
+        if(_data)
+            _data->set_laps(_data->get_laps() + m_count - 1);
 
         m_tracker.stop();
     }

@@ -68,9 +68,10 @@ struct gpu_op_tracker : base<gpu_op_tracker, void>
                gpu::stream_t _stream = gpu::default_stream_v);
     void start(device::gpu, size_t nblocks = max_blocks(),
                gpu::stream_t _stream = gpu::default_stream_v);
-    void start();
 
+    void start();
     void stop();
+    void mark() { ++m_count; }
 
     template <typename... Args>
     void push(Args&&... args);
@@ -102,7 +103,8 @@ private:
 
     bool                m_copy        = false;
     int                 m_device_num  = gpu::get_device();
-    size_t              m_blocks      = 0;
+    size_t              m_count       = 0;
+    size_t              m_threads     = 0;
     size_t              m_prefix      = 0;
     gpu::stream_t       m_stream      = gpu::default_stream_v;
     unsigned long long* m_data        = nullptr;
@@ -146,17 +148,17 @@ gpu_op_tracker::allocate(device::gpu, device::params<device::gpu> _params,
 inline void
 gpu_op_tracker::allocate(device::gpu, size_t nblocks, gpu::stream_t _stream)
 {
-    if(!m_device_data || m_copy || nblocks > m_blocks)
+    if(!m_device_data || m_copy || nblocks > m_threads)
     {
         deallocate();
         m_copy        = false;
-        m_blocks      = nblocks;
+        m_threads     = nblocks;
         m_stream      = _stream;
         max_blocks()  = std::max<size_t>(max_blocks(), nblocks);
-        m_data        = gpu::malloc<unsigned long long>(m_blocks);
+        m_data        = gpu::malloc<unsigned long long>(m_threads);
         m_device_data = gpu::malloc<device_data>(1);
-        TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memset(m_data, 0, m_blocks, m_stream));
-        auto _data = device_data{ static_cast<uint32_t>(m_blocks), m_data };
+        TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memset(m_data, 0, m_threads, m_stream));
+        auto _data = device_data{ static_cast<uint32_t>(m_threads), m_data };
         TIMEMORY_GPU_RUNTIME_API_CALL(
             gpu::memcpy(m_device_data, &_data, 1, gpu::host_to_device_v, m_stream));
         device::set_handle<<<1, 1, 0, m_stream>>>(m_device_data);
@@ -170,7 +172,7 @@ gpu_op_tracker::deallocate()
     // only the instance that allocated should deallocate
     if(!m_copy && m_device_data)
     {
-        m_blocks = 0;
+        m_threads = 0;
         gpu::free(m_data);
         gpu::free(m_device_data);
         m_data        = nullptr;
