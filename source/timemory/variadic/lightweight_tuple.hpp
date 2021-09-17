@@ -414,6 +414,13 @@ public:
         return get_this_type();
     }
 
+    /// get member functions finding component and applying lambda
+    template <typename T, typename FuncT>
+    decltype(auto) get(FuncT&& _func);
+
+    template <typename T, typename FuncT>
+    decltype(auto) get(FuncT&& _func) const;
+
     //----------------------------------------------------------------------------------//
     /// this is a simple alternative to get<T>() when used from SFINAE in operation
     /// namespace which has a struct get also templated. Usage there can cause error
@@ -705,6 +712,53 @@ lightweight_tuple<Types...>::rekey(uint64_t _hash)
     m_hash = _hash;
     set_prefix(_hash);
 }
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename... Types>
+template <typename T, typename FuncT>
+decltype(auto)
+lightweight_tuple<Types...>::get(FuncT&& _func)
+{
+    auto* _obj = this->get<T>();
+    if(_obj)
+        return std::forward<FuncT>(_func)(_obj);
+    using return_type = decltype(_func(std::declval<decltype(_obj)>()));
+#if defined(CXX17)
+    if constexpr(std::is_void<decay_t<return_type>>::value)
+        return;
+    else if constexpr(std::is_pointer<decay_t<return_type>>::value)
+        return static_cast<decay_t<return_type>>(nullptr);
+    else
+        return decltype(_func(std::declval<decltype(_obj)>())){};
+#else
+    return return_type();
+#endif
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename... Types>
+template <typename T, typename FuncT>
+decltype(auto)
+lightweight_tuple<Types...>::get(FuncT&& _func) const
+{
+    auto* _obj = this->get<T>();
+    if(_obj)
+        return std::forward<FuncT>(_func)(_obj);
+    using return_type = decltype(_func(std::declval<decltype(_obj)>()));
+#if defined(CXX17)
+    if constexpr(std::is_void<decay_t<return_type>>::value)
+        return;
+    else if constexpr(std::is_pointer<decay_t<return_type>>::value)
+        return static_cast<decay_t<return_type>>(nullptr);
+    else
+        return decltype(_func(std::declval<decltype(_obj)>())){};
+#else
+    return return_type();
+#endif
+}
+
 //
 //======================================================================================//
 

@@ -203,7 +203,8 @@ run_saxpy(int nitr, int nstreams, int64_t num_threads, int64_t N)
         // mark the start of a gpu event on the stream
         TIMEMORY_CODE(_bundle.mark_begin(mpl::piecewise_select<comp::gpu_event>{}, itr));
         // increment the total kernel counter in gpu_device_timer
-        TIMEMORY_CODE(_bundle.mark(mpl::piecewise_select<comp::gpu_device_timer>{}));
+        TIMEMORY_CODE(_bundle.mark(
+            mpl::piecewise_select<comp::gpu_device_timer, comp::gpu_op_tracker>{}));
 
         saxpy<<<params.grid, params.block, 0, itr>>>(N, 1.0, d_x, d_y);
 
@@ -228,7 +229,7 @@ run_saxpy(int nitr, int nstreams, int64_t num_threads, int64_t N)
         // mark the start of a gpu event on the stream
         TIMEMORY_CODE(_bundle.mark_begin(mpl::piecewise_select<comp::gpu_event>{}, itr));
         // increment the total kernel counter in gpu_device_timer
-        TIMEMORY_CODE(_pbundle.mark(mpl::piecewise_select<comp::gpu_device_timer>{}));
+        TIMEMORY_CODE(_pbundle.mark());
 
         saxpy_params<<<params.grid, params.block, 0, itr>>>(
             N, 1.0, d_x, d_y, _pbundle.get<comp::gpu_device_timer>(_get_device_data),

@@ -58,7 +58,6 @@ gpu_device_timer::stop()
     if(m_incr && m_data)
     {
         auto _clock_rate = gpu::get_device_clock_rate(m_device_num) * 1.0e-6;  // GHz
-        auto _scope      = tim::scope::config{} + tim::scope::tree{};
 
         gpu::stream_sync(gpu::default_stream_v);
         std::vector<CLOCK_DTYPE>  _host(m_threads);
@@ -69,7 +68,7 @@ gpu_device_timer::stop()
         TIMEMORY_GPU_RUNTIME_API_CALL(
             gpu::memcpy(_incr.data(), m_incr, m_threads, gpu::device_to_host_v));
 
-        std::vector<double> _values(m_threads, 0.0f);
+        std::vector<double> _values(m_threads, 0.0);
 
         for(size_t i = 0; i < m_threads; ++i)
             _values.at(i) = _host.at(i) / static_cast<double>(_clock_rate);
