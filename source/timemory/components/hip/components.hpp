@@ -77,7 +77,7 @@ struct hip_event : public base<hip_event, float>
 
         void start(hip::stream_t& stream)
         {
-            if(!valid)
+            if(!valid || running)
                 return;
             synced  = false;
             running = true;
@@ -99,11 +99,10 @@ struct hip_event : public base<hip_event, float>
             if(!synced)
                 hip::event_sync(second);
             synced = true;
-            return hip::event_elapsed_time(first, second);
+            return hip::event_elapsed_time(first, second) * units::msec;
         }
     };
 
-    using ratio_t       = std::milli;
     using value_type    = float;
     using base_type     = base<hip_event, value_type>;
     using marker_list_t = std::vector<marker>;
@@ -112,7 +111,7 @@ struct hip_event : public base<hip_event, float>
     static std::string description()
     {
         return "Records the time interval between two points in a HIP stream. Less "
-               "accurate than 'cupti_activity' for kernel timing";
+               "accurate than 'roctracer' for kernel timing";
     }
     static value_type record() { return 0.0f; }
 

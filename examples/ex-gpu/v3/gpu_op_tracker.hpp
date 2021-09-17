@@ -83,27 +83,31 @@ struct gpu_op_tracker : base<gpu_op_tracker, void>
         TIMEMORY_DEVICE_FUNCTION uint32_t get_index();
         TIMEMORY_DEVICE_FUNCTION void     start() {}
         TIMEMORY_DEVICE_FUNCTION void     stop() {}
-        TIMEMORY_DEVICE_FUNCTION void     operator()(int _v);
+        TIMEMORY_DEVICE_FUNCTION void     operator()(unsigned long long _v);
 
-        uint32_t size = 0;
-        int*     data = nullptr;
+        uint32_t            size = 0;
+        unsigned long long* data = nullptr;
     };
 
     using device_handle = device::handle<device_data>;
 
-    device_data get_device_data() const;
+    device_data* get_device_data() const { return m_device_data; }
+
+    TIMEMORY_STATIC_ACCESSOR(bool, add_secondary,
+                             tim::get_env("TIMEMORY_GPU_ADD_SECONDARY",
+                                          settings::add_secondary()))
 
 private:
     static size_t& max_blocks();
 
-    bool          m_copy        = false;
-    int           m_device_num  = gpu::get_device();
-    size_t        m_blocks      = 0;
-    size_t        m_prefix      = 0;
-    gpu::stream_t m_stream      = gpu::default_stream_v;
-    int*          m_data        = nullptr;
-    device_data*  m_device_data = nullptr;
-    tracker_type  m_tracker     = {};
+    bool                m_copy        = false;
+    int                 m_device_num  = gpu::get_device();
+    size_t              m_blocks      = 0;
+    size_t              m_prefix      = 0;
+    gpu::stream_t       m_stream      = gpu::default_stream_v;
+    unsigned long long* m_data        = nullptr;
+    device_data*        m_device_data = nullptr;
+    tracker_type        m_tracker     = {};
 };
 
 // ************** IMPORTANT ************** //
@@ -149,10 +153,10 @@ gpu_op_tracker::allocate(device::gpu, size_t nblocks, gpu::stream_t _stream)
         m_blocks      = nblocks;
         m_stream      = _stream;
         max_blocks()  = std::max<size_t>(max_blocks(), nblocks);
-        m_data        = gpu::malloc<int>(m_blocks);
+        m_data        = gpu::malloc<unsigned long long>(m_blocks);
         m_device_data = gpu::malloc<device_data>(1);
-        TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memset(m_data, 0, m_blocks, m_stream));
-        auto _data = get_device_data();
+        TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memset(m_data, 0, m_blocks, m_stream));
+        auto _data = device_data{ static_cast<uint32_t>(m_blocks), m_data };
         TIMEMORY_GPU_RUNTIME_API_CALL(
             gpu::memcpy(m_device_data, &_data, 1, gpu::host_to_device_v, m_stream));
         device::set_handle<<<1, 1, 0, m_stream>>>(m_device_data);
@@ -216,7 +220,7 @@ gpu_op_tracker::device_data::get_index()
 
 TIMEMORY_DEVICE_FUNCTION
 inline void
-gpu_op_tracker::device_data::operator()(int _v)
+gpu_op_tracker::device_data::operator()(unsigned long long _v)
 {
     atomicAdd(&data[get_index()], _v);
 }

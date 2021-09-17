@@ -641,12 +641,13 @@ public:
     TIMEMORY_INLINE void rekey(const captured_location_t& _loc);
     TIMEMORY_INLINE void rekey(uint64_t _hash);
 
-protected:
-    // protected member functions
     data_type&       get_data();
     const data_type& get_data() const;
-    void             set_prefix(const string_t&) const;
-    void             set_prefix(size_t) const;
+
+protected:
+    // protected member functions
+    void set_prefix(const string_t&) const;
+    void set_prefix(size_t) const;
 
 protected:
     // objects

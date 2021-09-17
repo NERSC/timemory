@@ -74,7 +74,6 @@ gpu_device_timer::stop()
         for(size_t i = 0; i < m_threads; ++i)
             _values.at(i) = _host.at(i) / static_cast<double>(_clock_rate);
 
-        tracker_type _child{ "", _scope };
         for(size_t i = 0; i < m_threads; ++i)
         {
             if(_incr.at(i) == 0)
@@ -86,17 +85,13 @@ gpu_device_timer::stop()
                 [](double lhs, double rhs) { return std::max<double>(lhs, rhs); },
                 _value);
 
-            if(settings::add_secondary())
+            if(add_secondary())
             {
-                // secondary data
-                _child.rekey(TIMEMORY_JOIN("_", "thread", i));
-                _child.start();
-                _child.store(std::plus<double>{}, _value);
-                auto* _data = _child.get<gpu_device_timer_data>();
-                if(_data)
-                    _data->set_laps(_data->get_laps() + _incr.at(i) - 1);
-                _child.stop();
-                _child.reset();
+                m_tracker.get<gpu_device_timer_data>([&](auto* _obj) {
+                    auto* _child = _obj->add_secondary(TIMEMORY_JOIN("_", "thread", i),
+                                                       std::plus<double>{}, _value);
+                    _child->set_laps(_child->get_laps() + _incr.at(i) - 1);
+                });
             }
         }
 
