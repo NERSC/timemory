@@ -214,12 +214,6 @@ private:
     using enable_if_acceptable_t =
         enable_if_t<concepts::is_acceptable_conversion<decay_t<T>, InpT>::value, U>;
 
-    template <typename FuncT, typename T, typename U = int>
-    using enable_if_acceptable_and_func_t =
-        enable_if_t<concepts::is_acceptable_conversion<decay_t<T>, InpT>::value &&
-                        std::is_function<FuncT>::value,
-                    U>;
-
     using value_ptr_t     = std::shared_ptr<value_type>;
     using secondary_map_t = vector_map<std::string, this_type>;
     using secondary_ptr_t = std::shared_ptr<secondary_map_t>;
@@ -387,14 +381,14 @@ public:
     /// handler updates the values
     template <typename FuncT, typename T>
     this_type* add_secondary(const std::string& _key, FuncT&& f, T&& val,
-                             enable_if_acceptable_and_func_t<FuncT, T, int> = 0);
+                             enable_if_acceptable_t<T, int> = 0);
 
     /// overload which uses a lambda to bypass the default behavior of how the
     /// handler updates the values and takes a handler to ensure proper
     /// overload resolution
     template <typename FuncT, typename T>
     this_type* add_secondary(const std::string& _key, handler_type&& h, FuncT&& f,
-                             T&& val, enable_if_acceptable_and_func_t<FuncT, T, int> = 0);
+                             T&& val, enable_if_acceptable_t<T, int> = 0);
 
     //----------------------------------------------------------------------------------//
     //
@@ -648,7 +642,7 @@ data_tracker<InpT, Tag>::add_secondary(const std::string& _key, T&& val,
     if(get_is_running())
         stop_t{ _tmp };
     auto& _map = *get_secondary_map();
-    _map.emplace(_key, _tmp);
+    _map.emplace(_key, std::move(_tmp));
     return &(_map[_key]);
 }
 //
@@ -665,7 +659,9 @@ data_tracker<InpT, Tag>::add_secondary(const std::string& _key, handler_type&& h
     if(get_is_running())
         stop_t{ _tmp };
     auto& _map = *get_secondary_map();
-    _map.emplace(_key, _tmp);
+    if(_map.empty())
+        _map.reserve(20);
+    _map.emplace(_key, std::move(_tmp));
     return &(_map[_key]);
 }
 //
@@ -673,7 +669,7 @@ template <typename InpT, typename Tag>
 template <typename FuncT, typename T>
 data_tracker<InpT, Tag>*
 data_tracker<InpT, Tag>::add_secondary(const std::string& _key, FuncT&& f, T&& val,
-                                       enable_if_acceptable_and_func_t<FuncT, T, int>)
+                                       enable_if_acceptable_t<T, int>)
 {
     this_type _tmp{};
     if(get_is_running())
@@ -682,7 +678,9 @@ data_tracker<InpT, Tag>::add_secondary(const std::string& _key, FuncT&& f, T&& v
     if(get_is_running())
         stop_t{ _tmp };
     auto& _map = *get_secondary_map();
-    _map.emplace(_key, _tmp);
+    if(_map.empty())
+        _map.reserve(20);
+    _map.emplace(_key, std::move(_tmp));
     return &(_map[_key]);
 }
 //
@@ -690,8 +688,7 @@ template <typename InpT, typename Tag>
 template <typename FuncT, typename T>
 data_tracker<InpT, Tag>*
 data_tracker<InpT, Tag>::add_secondary(const std::string& _key, handler_type&& h,
-                                       FuncT&& f, T&& val,
-                                       enable_if_acceptable_and_func_t<FuncT, T, int>)
+                                       FuncT&& f, T&& val, enable_if_acceptable_t<T, int>)
 {
     this_type _tmp{};
     if(get_is_running())
@@ -701,7 +698,9 @@ data_tracker<InpT, Tag>::add_secondary(const std::string& _key, handler_type&& h
     if(get_is_running())
         stop_t{ _tmp };
     auto& _map = *get_secondary_map();
-    _map.emplace(_key, _tmp);
+    if(_map.empty())
+        _map.reserve(20);
+    _map.emplace(_key, std::move(_tmp));
     return &(_map[_key]);
 }
 //

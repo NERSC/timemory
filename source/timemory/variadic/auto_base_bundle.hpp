@@ -332,16 +332,16 @@ public:
     template <typename... Tail>
     void disable();
 
-    template <typename Tp>
-    decltype(auto) get()
+    template <typename Tp, typename... Args>
+    decltype(auto) get(Args&&... args)
     {
-        return m_temporary.template get<Tp>();
+        return m_temporary.template get<Tp>(std::forward<Args>(args)...);
     }
 
-    template <typename Tp>
-    decltype(auto) get() const
+    template <typename Tp, typename... Args>
+    decltype(auto) get(Args&&... args) const
     {
-        return m_temporary.template get<Tp>();
+        return m_temporary.template get<Tp>(std::forward<Args>(args)...);
     }
 
     void get(void*& ptr, size_t hash) const { m_temporary.get(ptr, hash); }

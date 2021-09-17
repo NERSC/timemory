@@ -59,14 +59,13 @@ gpu_op_tracker::stop()
 {
     if(m_device_data)
     {
-        std::vector<int> _host(m_blocks, 0);
+        std::vector<unsigned long long> _host(m_blocks, 0);
 
         TIMEMORY_GPU_RUNTIME_API_CALL(
             gpu::memcpy(_host.data(), m_data, m_blocks, gpu::device_to_host_v, m_stream));
 
         gpu::stream_sync(m_stream);
 
-        tracker_type _child{ "", tim::scope::tree{} };
         for(size_t i = 0; i < _host.size(); ++i)
         {
             auto itr = _host[i];
@@ -75,27 +74,18 @@ gpu_op_tracker::stop()
 
             m_tracker.store(std::plus<int64_t>{}, static_cast<int64_t>(itr));
 
-            if(settings::add_secondary())
+            if(add_secondary())
             {
                 // secondary data
-                _child.rekey(TIMEMORY_JOIN('_', "thread", i));
-                _child.push()
-                    .start()
-                    .store(std::plus<int64_t>{}, static_cast<int64_t>(itr))
-                    .stop()
-                    .pop()
-                    .reset();
+                m_tracker.add_secondary(
+                    TIMEMORY_JOIN('_', "thread", i),
+                    [](int64_t _inp, int64_t _v) { return _inp += _v; },
+                    static_cast<int64_t>(itr));
             }
         }
 
         m_tracker.stop();
     }
-}
-
-gpu_op_tracker::device_data
-gpu_op_tracker::get_device_data() const
-{
-    return device_data{ static_cast<uint32_t>(m_blocks), m_data };
 }
 
 size_t&

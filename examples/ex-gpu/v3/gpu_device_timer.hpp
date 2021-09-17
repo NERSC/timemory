@@ -79,7 +79,11 @@ struct gpu_device_timer : base<gpu_device_timer, void>
 
     using device_handle = device::handle<device_data>;
 
-    auto get_device_data() const { return device_data{ 0, m_incr, m_data }; }
+    device_data* get_device_data() const { return m_device_data; }
+
+    TIMEMORY_STATIC_ACCESSOR(bool, add_secondary,
+                             tim::get_env("TIMEMORY_GPU_ADD_SECONDARY",
+                                          settings::add_secondary()))
 
 private:
     static size_t& max_threads();
@@ -127,7 +131,7 @@ gpu_device_timer::allocate(device::gpu, size_t nthreads)
         max_threads() = std::max<size_t>(max_threads(), nthreads);
         gpu::check(gpu::get_last_error());
         m_device_data = gpu::malloc<device_data>(1);
-        auto _data    = get_device_data();
+        auto _data    = device_data{ 0, m_incr, m_data };
         TIMEMORY_HIP_RUNTIME_API_CALL(
             gpu::memcpy(m_device_data, &_data, 1, gpu::host_to_device_v));
         device::set_handle<<<1, 1>>>(m_device_data);
@@ -205,6 +209,7 @@ TIMEMORY_DEVICE_FUNCTION
 inline void
 gpu_device_timer::device_data::stop()
 {
+    __syncthreads();
     auto _time = clock64();
     if(_time > m_buff)
     {

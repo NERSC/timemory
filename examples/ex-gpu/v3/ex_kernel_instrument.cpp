@@ -62,30 +62,52 @@ using gpu_event  = hip_event;
 }  // namespace component
 }  // namespace tim
 
-auto _timer = device::handle<gpu_device_timer::device_timer>::get();
+using gpu_device_timer_t = comp::gpu_device_timer::device_data;
+using gpu_device_count_t = comp::gpu_op_tracker::device_data;
+
 //--------------------------------------------------------------------------------------//
 // saxpy calculation
 //
 TIMEMORY_GLOBAL_FUNCTION void
-saxpy_inst(int64_t n, float a, float* x, float* y)
+saxpy(int64_t n, float a, float* x, float* y)
 {
-    TIMEMORY_CODE(auto _timer =
-                      device::handle<comp::gpu_device_timer::device_data>::get());
-    TIMEMORY_CODE(auto _count = device::handle<comp::gpu_op_tracker::device_data>::get());
+    TIMEMORY_CODE(auto _htimer = device::handle<gpu_device_timer_t>::get());
+    TIMEMORY_CODE(auto _hcount = device::handle<gpu_device_count_t>::get());
+
     auto range = device::grid_strided_range<default_device, 0>(n);
     for(int i = range.begin(); i < range.end(); i += range.stride())
     {
-        TIMEMORY_CODE(_count(2));
+        TIMEMORY_CODE(_hcount(2));
         y[i] = a * x[i] + y[i];
     }
 
-    _timer.stop();  // optional
+    TIMEMORY_CODE(_htimer.stop());  // optional
+}
+
+//--------------------------------------------------------------------------------------//
+// saxpy calculation
+//
+TIMEMORY_GLOBAL_FUNCTION void
+saxpy_params(int64_t n, float a, float* x, float* y, gpu_device_timer_t* _timer,
+             gpu_device_count_t* _count)
+{
+    TIMEMORY_CODE(auto _htimer = device::handle<gpu_device_timer_t>{ _timer });
+    TIMEMORY_CODE(auto _hcount = device::handle<gpu_device_count_t>{ _count });
+
+    auto range = device::grid_strided_range<default_device, 0>(n);
+    for(int i = range.begin(); i < range.end(); i += range.stride())
+    {
+        TIMEMORY_CODE(_hcount(2));
+        y[i] = a * x[i] + y[i];
+    }
+
+    TIMEMORY_CODE(_htimer.stop());  // optional
 }
 
 //--------------------------------------------------------------------------------------//
 
 void
-run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N);
+run_saxpy(int nitr, int nstreams, int64_t num_threads, int64_t N);
 
 //--------------------------------------------------------------------------------------//
 
@@ -94,10 +116,10 @@ main(int argc, char** argv)
 {
     using parser_t = tim::argparse::argument_parser;
 
-    int           nitr    = 1000;
-    int           nstream = 1;
-    int           npow    = 20;
-    std::set<int> nblocks = { 1024 };
+    int           nitr     = 1000;
+    int           nstream  = 1;
+    int           npow     = 21;
+    std::set<int> nthreads = { 32 };
 
     parser_t _parser{ "ex_kernel_instrument_v2" };
     _parser.add_argument({ "-n", "--num-iter" }, "Number of iterations")
@@ -108,9 +130,9 @@ main(int argc, char** argv)
         .dtype("int")
         .count(1)
         .action([&](parser_t& p) { nstream = p.get<int>("num-streams"); });
-    _parser.add_argument({ "-b", "--num-blocks" }, "Thread-block sizes")
+    _parser.add_argument({ "-t", "--num-threads" }, "Number of threads per block")
         .dtype("int")
-        .action([&](parser_t& p) { nblocks = p.get<std::set<int>>("num-blocks"); });
+        .action([&](parser_t& p) { nthreads = p.get<std::set<int>>("num-threads"); });
     _parser
         .add_argument({ "-p", "--num-pow" },
                       "Data size (powers of 2, e.g. '20' in 1 << 20)")
@@ -120,7 +142,7 @@ main(int argc, char** argv)
     tim::timemory_init(argc, argv);
     tim::timemory_argparse(&argc, &argv, &_parser);
 
-    for(auto bitr : nblocks)
+    for(auto bitr : nthreads)
         run_saxpy(nitr, nstream, bitr, 50 * (1 << npow));
 
     tim::timemory_finalize();
@@ -130,18 +152,18 @@ main(int argc, char** argv)
 //--------------------------------------------------------------------------------------//
 
 void
-run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N)
+run_saxpy(int nitr, int nstreams, int64_t num_threads, int64_t N)
 {
     using params_t = device::params<default_device>;
     using stream_t = default_device::stream_t;
-    using tuple_t  = component_tuple<comp::wall_clock, comp::cpu_clock, comp::cpu_util,
-                                    comp::gpu_event, comp::gpu_marker,
-                                    comp::gpu_device_timer, comp::gpu_op_tracker>;
+    using bundle_t = component_tuple<comp::wall_clock, comp::cpu_clock, comp::cpu_util,
+                                     comp::gpu_event, comp::gpu_marker,
+                                     comp::gpu_device_timer, comp::gpu_op_tracker>;
 
-    params_t params(params_t::compute(N, block_size), block_size);
-    tuple_t  tot{ __FUNCTION__ };
-    tot.store(comp::gpu_event::explicit_streams_only{}, true);
-    tot.start(device::gpu{}, params);
+    params_t params(params_t::compute(N, num_threads), num_threads);
+    bundle_t _bundle{ __FUNCTION__ };
+    _bundle.store(comp::gpu_event::explicit_streams_only{}, true);
+    _bundle.start(device::gpu{}, params);
 
     float*                x         = device::cpu::alloc<float>(N);
     float*                y         = device::cpu::alloc<float>(N);
@@ -166,26 +188,62 @@ run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N)
 
     float* d_x = device::gpu::alloc<float>(N);
     float* d_y = device::gpu::alloc<float>(N);
-    TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memcpy(d_x, x, N, gpu::host_to_device_v, stream));
-    TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memcpy(d_y, y, N, gpu::host_to_device_v, stream));
+    TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memcpy(d_x, x, N, gpu::host_to_device_v, stream));
+    TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memcpy(d_y, y, N, gpu::host_to_device_v, stream));
 
     sync_streams();
-    for(int i = 0; i < nitr; ++i)
+    for(int i = 0; i < 3 * nitr / 4; ++i)
     {
         auto& itr     = streams.at(i % streams.size());
         params.stream = itr;
-        std::cout << __FUNCTION__ << " launching on " << default_device::name()
-                  << " with parameters: " << params << std::endl;
-        tot.mark(mpl::piecewise_select<comp::gpu_device_timer>{});
-        tot.mark_begin(mpl::piecewise_select<comp::gpu_event>{}, itr);
-        device::launch(params, saxpy_inst, N, 1.0, d_x, d_y);
-        tot.mark_end(mpl::piecewise_select<comp::gpu_event>{}, itr);
+        std::cout << TIMEMORY_JOIN(" ", "[saxpy] launching on", default_device::name(),
+                                   "with parameters:", params)
+                  << std::endl;
+
+        // mark the start of a gpu event on the stream
+        TIMEMORY_CODE(_bundle.mark_begin(mpl::piecewise_select<comp::gpu_event>{}, itr));
+        // increment the total kernel counter in gpu_device_timer
+        TIMEMORY_CODE(_bundle.mark(mpl::piecewise_select<comp::gpu_device_timer>{}));
+
+        saxpy<<<params.grid, params.block, 0, itr>>>(N, 1.0, d_x, d_y);
+
+        // mark the end of a gpu event on the stream
+        TIMEMORY_CODE(_bundle.mark_end(mpl::piecewise_select<comp::gpu_event>{}, itr));
     }
+
+    tim::component_tuple<comp::gpu_device_timer, comp::gpu_op_tracker> _pbundle{
+        "saxpy_params"
+    };
+    _pbundle.start(device::gpu{}, params);
+
+    for(int i = 3 * nitr / 4; i < nitr; ++i)
+    {
+        auto  _get_device_data = [](auto* _v) { return _v->get_device_data(); };
+        auto& itr              = streams.at(i % streams.size());
+        params.stream          = itr;
+        std::cout << TIMEMORY_JOIN(" ", "[saxpy_params] launching on",
+                                   default_device::name(), "with parameters:", params)
+                  << std::endl;
+
+        // mark the start of a gpu event on the stream
+        TIMEMORY_CODE(_bundle.mark_begin(mpl::piecewise_select<comp::gpu_event>{}, itr));
+        // increment the total kernel counter in gpu_device_timer
+        TIMEMORY_CODE(_pbundle.mark(mpl::piecewise_select<comp::gpu_device_timer>{}));
+
+        saxpy_params<<<params.grid, params.block, 0, itr>>>(
+            N, 1.0, d_x, d_y, _pbundle.get<comp::gpu_device_timer>(_get_device_data),
+            _pbundle.get<comp::gpu_op_tracker>(_get_device_data));
+
+        // mark the end of a gpu event on the stream
+        TIMEMORY_CODE(_bundle.mark_end(mpl::piecewise_select<comp::gpu_event>{}, itr));
+    }
+
+    _pbundle.stop();
     sync_streams();
 
-    TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memcpy(y, d_y, N, gpu::device_to_host_v, stream));
+    TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memcpy(y, d_y, N, gpu::device_to_host_v, stream));
     gpu::device_sync();
-    tot.stop();
+    _bundle.stop();
     gpu::free(d_x);
     gpu::free(d_y);
 
@@ -200,8 +258,8 @@ run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N)
     device::cpu::free(x);
     device::cpu::free(y);
 
-    auto ce = tot.get<comp::gpu_event>();
-    auto rc = tot.get<comp::wall_clock>();
+    auto ce = _bundle.get<comp::gpu_event>();
+    auto rc = _bundle.get<comp::wall_clock>();
 
     printf("Max error: %8.4e\n", (double) maxError);
     printf("Sum error: %8.4e\n", (double) sumError);
@@ -217,7 +275,7 @@ run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N)
         std::cout << __FUNCTION__ << " gpu event : " << *ce << std::endl;
     if(rc)
         std::cout << __FUNCTION__ << " real clock: " << *rc << std::endl;
-    std::cout << tot << std::endl;
+    std::cout << _bundle << std::endl;
     std::cout << std::endl;
 
     for(auto& itr : streams)

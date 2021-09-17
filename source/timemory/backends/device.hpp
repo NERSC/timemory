@@ -179,7 +179,6 @@ TIMEMORY_GLOBAL_FUNCTION void
 set_handle(Tp* _v)
 {
     handle<Tp>::get_instance() = _v;
-    // printf("[device][set_handle] instance is %p\n", (void*) _v);
 }
 
 template <typename Tp>
