@@ -81,6 +81,10 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
         // copy over mapping of hashes to strings
         if(rhs.get_hash_ids() && lhs.get_hash_ids())
         {
+            auto_lock_t _lk{ type_mutex<hash_map_t>(), std::defer_lock };
+            if(!_lk.owns_lock())
+                _lk.lock();
+
             CONDITIONAL_PRINT_HERE(
                 _debug, "[%s]> merging %lu hash-ids into existing set of %lu hash-ids!",
                 Type::get_label().c_str(), (unsigned long) rhs.get_hash_ids()->size(),
@@ -96,6 +100,10 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
         // copy over aliases
         if(rhs.get_hash_aliases() && lhs.get_hash_aliases())
         {
+            auto_lock_t _lk{ type_mutex<hash_alias_map_t>(), std::defer_lock };
+            if(!_lk.owns_lock())
+                _lk.lock();
+
             CONDITIONAL_PRINT_HERE(_debug,
                                    "[%s]> merging %lu hash-aliases into existing set of "
                                    "%lu hash-aliases!",
