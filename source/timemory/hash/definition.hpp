@@ -52,7 +52,21 @@ get_hash_ids()
 {
     static thread_local auto _inst =
         get_shared_ptr_pair_instance<hash_map_t, TIMEMORY_API>();
+    static thread_local auto _dtor = scope::destructor{ []() {
+        auto                 _main = get_shared_ptr_pair_main_instance<hash_map_t, TIMEMORY_API>();
+        if(!_inst || !_main || _inst == _main)
+            return;
+        auto_lock_t          _lk{ type_mutex<hash_map_t>(), std::defer_lock };
+        if(!_lk.owns_lock())
+            _lk.lock();
+        for(const auto& itr : *_inst)
+        {
+            if(_main->find(itr.first) == _main->end())
+                _main->emplace(itr.first, itr.second);
+        }
+    } };
     return _inst;
+    (void) _dtor;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -62,7 +76,21 @@ get_hash_aliases()
 {
     static thread_local auto _inst =
         get_shared_ptr_pair_instance<hash_alias_map_t, TIMEMORY_API>();
+    static thread_local auto _dtor = scope::destructor{ []() {
+        auto                 _main = get_shared_ptr_pair_main_instance<hash_alias_map_t, TIMEMORY_API>();
+        if(!_inst || !_main || _inst == _main)
+            return;
+        auto_lock_t          _lk{ type_mutex<hash_alias_map_t>(), std::defer_lock };
+        if(!_lk.owns_lock())
+            _lk.lock();
+        for(const auto& itr : *_inst)
+        {
+            if(_main->find(itr.first) == _main->end())
+                _main->emplace(itr.first, itr.second);
+        }
+    } };
     return _inst;
+    (void) _dtor;
 }
 //
 //--------------------------------------------------------------------------------------//
