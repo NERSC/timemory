@@ -34,6 +34,7 @@
 
 // types
 #include "timemory/tpls/cereal/cereal/types/array.hpp"
+#include "timemory/tpls/cereal/cereal/types/chrono.hpp"
 #include "timemory/tpls/cereal/cereal/types/common.hpp"
 #include "timemory/tpls/cereal/cereal/types/map.hpp"
 #include "timemory/tpls/cereal/cereal/types/memory.hpp"

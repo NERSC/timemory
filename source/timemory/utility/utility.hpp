@@ -147,16 +147,18 @@ isfinite(const Tp& arg)
 /// \tparam Tp data type for lock
 /// \tparam ApiT API for lock
 /// \tparam N max size
+/// \tparam MutexT mutex data type
 ///
 /// \brief A simple way to get a mutex for a class or common behavior, e.g.
 /// `type_mutex<decltype(std::cout)>()` provides a mutex for synchronizing output streams.
 /// Recommend using in conjunction with auto-lock:
 /// `tim::auto_lock_t _lk{ type_mutex<Foo>() }`.
-template <typename Tp, typename ApiT = TIMEMORY_API, size_t N = 4>
-mutex_t&
+template <typename Tp, typename ApiT = TIMEMORY_API, size_t N = 4,
+          typename MutexT = mutex_t>
+MutexT&
 type_mutex(uint64_t _n = 0)
 {
-    static std::array<mutex_t, N> _mutexes{};
+    static std::array<MutexT, N> _mutexes{};
     return _mutexes.at(_n % N);
 }
 

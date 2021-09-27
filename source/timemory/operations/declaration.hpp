@@ -57,9 +57,14 @@
 #        define SFINAE_WARNING(TYPE)                                                     \
             if(::tim::trait::is_available<TYPE>::value)                                  \
             {                                                                            \
-                fprintf(stderr, "[%s@%s:%i]> Warning! SFINAE disabled for %s\n",         \
-                        __FUNCTION__, __FILE__, __LINE__,                                \
-                        ::tim::demangle<TYPE>().c_str());                                \
+                static bool _once = false;                                               \
+                if(!_once)                                                               \
+                {                                                                        \
+                    _once = true;                                                        \
+                    fprintf(stderr, "[%s@%s:%i]> Warning! SFINAE disabled for %s\n",     \
+                            __FUNCTION__, __FILE__, __LINE__,                            \
+                            ::tim::demangle<TYPE>().c_str());                            \
+                }                                                                        \
             }
 #    else
 #        define SFINAE_WARNING(...)

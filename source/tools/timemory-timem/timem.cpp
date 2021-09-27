@@ -27,8 +27,17 @@
 
 //--------------------------------------------------------------------------------------//
 
+namespace
+{
+std::exception_ptr global_exception_pointer = nullptr;
+}
+
 void
 flush_on_signal(int);
+void
+handle_exception();
+void
+store_history(timem_bundle_t*);
 void
 childpid_catcher(int);
 void
@@ -120,7 +129,10 @@ main(int argc, char** argv)
         .names({ "--debug" })
         .description("Debug output")
         .count(0)
-        .action([](parser_t&) { debug() = true; });
+        .action([](parser_t&) {
+            debug() = true;
+            tim::enable_signal_detection();
+        });
     parser.add_argument()
         .names({ "-v", "--verbose" })
         .description("Verbose output")
@@ -167,12 +179,25 @@ main(int argc, char** argv)
             "process exits)")
         .count(0)
         .action([](parser_t&) { use_sample() = false; });
+    parser
+        .add_argument(
+            { "-b", "--buffer-size" },
+            "If set to value > 0, timem will record a history of every sample.\n"
+            "%{INDENT}%This requires spawning an extra thread which will periodically "
+            "wake and flush the buffer.")
+        .count(1)
+        .dtype("size_t")
+        .set_default(buffer_size())
+        .action([](parser_t& p) { buffer_size() = p.get<size_t>("buffer-size"); });
     parser.add_argument({ "-e", "--events", "--papi-events" },
                         "Set the hardware counter events to record (ref: `timemory-avail "
                         "-H | grep PAPI`)");
     parser.add_argument({ "--disable-papi" }, "Disable hardware counters")
         .count(0)
-        .action([](parser_t&) { use_papi() = false; });
+        .action([](parser_t&) {
+            use_papi() = false;
+            tim::trait::runtime_enabled<papi_array_t>::set(false);
+        });
     parser
         .add_argument({ "-o", "--output" },
                       // indented 35 spaces
@@ -211,10 +236,11 @@ main(int argc, char** argv)
         });
     parser.add_argument()
         .names({ "-F", "--flush-on-signal" })
-        .description("If any of these signals are sent to timem process, flush output "
-                     "and exit. E.g. '--flush-on-signal 2' (default behavior) will cause "
-                     "timem to dump it's output and exit if SIGINT (Cntl+C) is sent by "
-                     "the user. Use '--flush-on-signal 0' to disable this behavior.")
+        .description(
+            "If any of these signals are sent to timem process, flush output and "
+            "exit.\n%{INDENT}%E.g. '--flush-on-signal 2' (default behavior) will cause "
+            "timem to dump it's output and exit if SIGINT (Cntl+C)\n%{INDENT}%is sent by "
+            "the user. Use '--flush-on-signal 0' to disable this behavior.")
         .dtype("int")
         .min_count(1)
         .action([&](parser_t& p) {
@@ -523,7 +549,13 @@ main(int argc, char** argv)
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
         tim::process::get_target_id() = worker_pid();
         tim::settings::papi_attach()  = true;
-        get_sampler()                 = new sampler_t(compose_prefix(), signal_types());
+        get_sampler()                 = new sampler_t{ compose_prefix(), signal_types() };
+        if(use_sample() && !signal_types().empty())
+        {
+            get_measure()->set_buffer_size(buffer_size());
+            buffer_thread() =
+                std::make_unique<std::thread>(&store_history, get_measure());
+        }
     }
 
     auto failed_fork = [&]() {
@@ -564,7 +596,7 @@ main(int argc, char** argv)
 
         if(!output_file().empty() && (debug() || verbose() > 1))
         {
-            auto fname = get_config().get_output_filename();
+            auto fname = get_config().get_output_filename({}, ".txt");
             ofs        = std::make_unique<std::ofstream>(fname.c_str());
         }
 
@@ -623,6 +655,9 @@ main(int argc, char** argv)
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "processing");
         parent_process(pid);
+
+        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "barrier");
+        tim::mpi::barrier(tim::mpi::comm_world_v);
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "exit code = %i", status);
         ec = status;
@@ -706,6 +741,9 @@ flush_on_signal(int sig)
     CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "processing");
     parent_process(worker_pid());
 
+    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "barrier");
+    tim::mpi::barrier(tim::mpi::comm_world_v);
+
     CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "exit code = %i", sig);
 
     std::exit(sig);
@@ -714,35 +752,166 @@ flush_on_signal(int sig)
 //--------------------------------------------------------------------------------------//
 
 void
+handle_exception()
+{
+    if(global_exception_pointer)
+    {
+        try
+        {
+            std::rethrow_exception(global_exception_pointer);
+        } catch(const std::exception& ex)
+        {
+            std::cerr << "Thread exited with exception: " << ex.what() << "\n";
+            std::rethrow_exception(global_exception_pointer);
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+void
+store_history(timem_bundle_t* _bundle)
+{
+    using hist_type = typename timem_bundle_t::hist_type;
+
+    auto _scompleted = []() { return completed() ? "y" : "n"; };
+    auto _sfullbuff  = []() { return full_buffer() ? "y" : "n"; };
+    tim::consume_parameters(_scompleted, _sfullbuff);
+
+    try
+    {
+        _bundle->set_notify([]() {
+            full_buffer() = true;
+            buffer_cv().notify_one();
+        });
+        while(!completed())
+        {
+            std::vector<hist_type> _buff{};
+            _buff.reserve(_bundle->get_buffer_size());
+
+            CONDITIONAL_PRINT_HERE(debug() && verbose() > 2,
+                                   "thread entering wait. completed: %s, full buffer: "
+                                   "%s, buffer: %zu, history: %zu",
+                                   _scompleted(), _sfullbuff(), _buff.size(),
+                                   history().size());
+
+            auto_lock_t _lk{ type_mutex<hist_type>() };
+            buffer_cv().wait(_lk, []() { return completed() || full_buffer(); });
+
+            CONDITIONAL_PRINT_HERE(debug() && verbose() > 2,
+                                   "thread swapping history. completed: %s, full buffer: "
+                                   "%s, buffer: %zu, history: %zu",
+                                   _scompleted(), _sfullbuff(), _buff.size(),
+                                   history().size());
+
+            if(_lk.owns_lock())
+                _lk.unlock();
+            _buff = _bundle->swap_history(_buff);
+
+            CONDITIONAL_PRINT_HERE(debug() && verbose() > 2,
+                                   "thread transferring buffer contents. completed: %s, "
+                                   "full buffer: %s, buffer: %zu, history: %zu",
+                                   _scompleted(), _sfullbuff(), _buff.size(),
+                                   history().size());
+
+            full_buffer() = false;
+            history().reserve(history().size() + _buff.size());
+            for(auto& itr : _buff)
+                history().emplace_back(std::move(itr));
+        }
+        CONDITIONAL_PRINT_HERE(
+            debug(), "thread completed. completed: %s, full buffer: %s, history: %zu",
+            _scompleted(), _sfullbuff(), history().size());
+
+        _bundle->set_buffer_size(0);
+        _bundle->set_notify([]() {
+            completed() = true;
+            buffer_cv().notify_one();
+        });
+
+        CONDITIONAL_PRINT_HERE(
+            debug(),
+            "thread sorting history. completed: %s, full buffer: %s, history: %zu",
+            _scompleted(), _sfullbuff(), history().size());
+
+        std::sort(history().begin(), history().end(),
+                  [](const hist_type& _lhs, const hist_type& _rhs) {
+                      return _lhs.first.time_since_epoch().count() <
+                             _rhs.first.time_since_epoch().count();
+                  });
+
+        CONDITIONAL_PRINT_HERE(
+            debug(),
+            "thread setting history. completed: %s, full buffer: %s, history: %zu",
+            _scompleted(), _sfullbuff(), history().size());
+
+        _bundle->set_history(&history());
+    } catch(...)
+    {
+        // Set the global exception pointer in case of an exception
+        global_exception_pointer = std::current_exception();
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+void
 parent_process(pid_t pid)
 {
-    // auto comm_size = tim::mpi::size();
-    // auto comm_rank = tim::mpi::rank();
+    // mark as completed and wake buffer thread so it can exit
+    completed() = true;
+    get_measure()->set_buffer_size(0);
+    get_measure()->set_notify([]() {
+        completed() = true;
+        buffer_cv().notify_one();
+    });
+
+    if(buffer_thread())
+    {
+        using hist_type = typename timem_bundle_t::hist_type;
+        auto_lock_t _lk{ type_mutex<hist_type>() };
+        _lk.unlock();
+        for(size_t i = 0; i < 10; ++i)
+        {
+            buffer_cv().notify_all();
+            std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
+        }
+        buffer_thread()->join();
+        buffer_thread().reset();
+        handle_exception();
+    }
 
     if((debug() && verbose() > 1) || verbose() > 2)
         std::cerr << "[AFTER STOP][" << pid << "]> " << *get_measure() << std::endl;
 
-    std::vector<timem_bundle_t> _measurements;
+    std::vector<timem_bundle_t> _measurements{};
 
     if(use_mpi() || tim::mpi::size() > 1)
     {
+        CONDITIONAL_PRINT_HERE(debug(), "%s (size: %i)", "Getting MPI measurements",
+                               (int) tim::mpi::size());
         _measurements = get_measure()->mpi_get();
     }
     else
     {
         if(get_measure())
         {
+            CONDITIONAL_PRINT_HERE(debug(), "%s", "Getting serial measurement");
             _measurements = { *get_measure() };
         }
         else
         {
+            CONDITIONAL_PRINT_HERE(debug(), "%s", "No measurements");
             _measurements = {};
         }
     }
 
+    tim::mpi::barrier(tim::mpi::comm_world_v);
+
     if(_measurements.empty())
     {
-        CONDITIONAL_PRINT_HERE(debug(), "%s", "No measurements. Returning");
+        CONDITIONAL_PRINT_HERE(debug(), "No measurements on rank %i. Returning",
+                               tim::mpi::rank());
         return;
     }
 
@@ -752,14 +921,14 @@ parent_process(pid_t pid)
         auto& itr = _measurements.at(i);
         if(itr.empty())
         {
-            CONDITIONAL_PRINT_HERE(debug(), "%s (iteration: %lu)",
-                                   "Empty measurement. Continuing", (unsigned long) i);
+            CONDITIONAL_PRINT_HERE(debug(), "%s (iteration: %zu)",
+                                   "Empty measurement. Continuing", i);
             continue;
         }
         if(!_measurements.empty() && (use_mpi() || tim::mpi::size() > 1))
             itr.set_rank(i);
 
-        CONDITIONAL_PRINT_HERE(debug(), "streaming iteration: %lu", (unsigned long) i);
+        CONDITIONAL_PRINT_HERE(debug(), "streaming iteration: %zu", i);
         _oss << itr << std::flush;
     }
 
@@ -782,8 +951,7 @@ parent_process(pid_t pid)
                tim::cereal::make_nvp("config", get_config()));
         };
 
-        auto fname = get_config().get_output_filename();
-        fname += ".json";
+        auto fname = get_config().get_output_filename({}, ".json");
         fprintf(stderr, "%s[%s]> Outputting '%s'...\n", (verbose() < 0) ? "" : "\n",
                 command().c_str(), fname.c_str());
         tim::generic_serialization<json_type>(fname, _measurements, "timemory", "timem",
