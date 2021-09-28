@@ -31,4 +31,7 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 target_link_libraries(${EXE_NAME} timemory-cxx-overhead-example)
-install(TARGETS ${EXE_NAME} DESTINATION bin OPTIONAL)
+install(
+    TARGETS ${EXE_NAME}
+    DESTINATION bin
+    OPTIONAL)

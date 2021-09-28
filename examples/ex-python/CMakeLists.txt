@@ -18,16 +18,13 @@ endif()
 function(CONFIGURE_PYTHON_SCRIPT)
     foreach(_TYPE ${ARGN})
         set(FILENAME ex_python_${_TYPE})
-        configure_file(
-            ${PROJECT_SOURCE_DIR}/ex_${_TYPE}.py
-            ${TARGET_BINARY_DIR}/ex_python_${_TYPE}
-            @ONLY)
-        install(FILES   ${TARGET_BINARY_DIR}/ex_python_${_TYPE}
+        configure_file(${PROJECT_SOURCE_DIR}/ex_${_TYPE}.py
+                       ${TARGET_BINARY_DIR}/ex_python_${_TYPE} @ONLY)
+        install(
+            FILES ${TARGET_BINARY_DIR}/ex_python_${_TYPE}
             DESTINATION bin
-            PERMISSIONS
-                OWNER_EXECUTE OWNER_READ OWNER_WRITE
-                GROUP_EXECUTE GROUP_READ
-                WORLD_EXECUTE WORLD_READ
+            PERMISSIONS OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ
+                        WORLD_EXECUTE WORLD_READ
             COMPONENT examples
             OPTIONAL)
     endforeach()
@@ -62,7 +59,10 @@ endif()
 configure_python_script(bindings)
 
 set(TIMEMORY_INTERFACE_LIBRARY timemory-ex-python-bindings)
-find_package(timemory COMPONENTS headers OPTIONAL_COMPONENTS mpi cxx shared)
+find_package(
+    timemory
+    COMPONENTS headers
+    OPTIONAL_COMPONENTS mpi cxx shared)
 
 pybind11_add_module(libex_python_bindings ${PROJECT_SOURCE_DIR}/libex_bindings.cpp)
 
@@ -87,29 +87,25 @@ if(cxx_no_unused_value)
 endif()
 
 target_compile_definitions(libex_python_bindings PRIVATE USE_MPI)
-target_link_libraries(libex_python_bindings PRIVATE
-    MPI::MPI_C
-    MPI::MPI_CXX
-    ${_OMP}
-    ${_COMPILE_OPTS}
-    libex_python_bindings_flags)
+target_link_libraries(
+    libex_python_bindings PRIVATE MPI::MPI_C MPI::MPI_CXX ${_OMP} ${_COMPILE_OPTS}
+                                  libex_python_bindings_flags)
 
-set_target_properties(libex_python_bindings PROPERTIES
-    INSTALL_RPATH_USE_LINK_PATH ON)
+set_target_properties(libex_python_bindings PROPERTIES INSTALL_RPATH_USE_LINK_PATH ON)
 
 configure_file(${PROJECT_SOURCE_DIR}/ex_bindings.py
-    ${TARGET_BINARY_DIR}/ex_python_bindings @ONLY)
-
-install(TARGETS libex_python_bindings DESTINATION bin
-    COMPONENT examples OPTIONAL)
+               ${TARGET_BINARY_DIR}/ex_python_bindings @ONLY)
 
 install(
-    FILES
-        ${TARGET_BINARY_DIR}/ex_python_bindings
+    TARGETS libex_python_bindings
     DESTINATION bin
-    PERMISSIONS
-        OWNER_EXECUTE OWNER_READ OWNER_WRITE
-        GROUP_EXECUTE GROUP_READ
-        WORLD_EXECUTE WORLD_READ
+    COMPONENT examples
+    OPTIONAL)
+
+install(
+    FILES ${TARGET_BINARY_DIR}/ex_python_bindings
+    DESTINATION bin
+    PERMISSIONS OWNER_EXECUTE OWNER_READ OWNER_WRITE GROUP_EXECUTE GROUP_READ
+                WORLD_EXECUTE WORLD_READ
     COMPONENT examples
     OPTIONAL)

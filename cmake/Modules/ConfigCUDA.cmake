@@ -1,42 +1,45 @@
 #
-#  Configures CUDA for timemory
+# Configures CUDA for timemory
 #
 
 get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
 
 function(timemory_add_cuda_arch ARCH FLAG)
-  list(APPEND TIMEMORY_CUDA_ARCH_FLAGS ${FLAG})
-  set(TIMEMORY_CUDA_ARCH_FLAGS ${TIMEMORY_CUDA_ARCH_FLAGS} PARENT_SCOPE)
-  list(APPEND TIMEMORY_CUDA_ARCH_LIST ${ARCH})
-  set(TIMEMORY_CUDA_ARCH_LIST ${TIMEMORY_CUDA_ARCH_LIST} PARENT_SCOPE)
+    list(APPEND TIMEMORY_CUDA_ARCH_FLAGS ${FLAG})
+    set(TIMEMORY_CUDA_ARCH_FLAGS
+        ${TIMEMORY_CUDA_ARCH_FLAGS}
+        PARENT_SCOPE)
+    list(APPEND TIMEMORY_CUDA_ARCH_LIST ${ARCH})
+    set(TIMEMORY_CUDA_ARCH_LIST
+        ${TIMEMORY_CUDA_ARCH_LIST}
+        PARENT_SCOPE)
 endfunction()
 
-
 # none
-timemory_add_cuda_arch(auto      0)
+timemory_add_cuda_arch(auto 0)
 # generic
-timemory_add_cuda_arch(kepler    30)
-timemory_add_cuda_arch(tesla     35)
-timemory_add_cuda_arch(maxwell   50)
-timemory_add_cuda_arch(pascal    60)
-timemory_add_cuda_arch(volta     70)
-timemory_add_cuda_arch(turing    75)
-timemory_add_cuda_arch(ampere    80)
+timemory_add_cuda_arch(kepler 30)
+timemory_add_cuda_arch(tesla 35)
+timemory_add_cuda_arch(maxwell 50)
+timemory_add_cuda_arch(pascal 60)
+timemory_add_cuda_arch(volta 70)
+timemory_add_cuda_arch(turing 75)
+timemory_add_cuda_arch(ampere 80)
 # specific
-timemory_add_cuda_arch(kepler30  30)
-timemory_add_cuda_arch(kepler32  32)
-timemory_add_cuda_arch(kepler35  35)
-timemory_add_cuda_arch(kepler37  37)
+timemory_add_cuda_arch(kepler30 30)
+timemory_add_cuda_arch(kepler32 32)
+timemory_add_cuda_arch(kepler35 35)
+timemory_add_cuda_arch(kepler37 37)
 timemory_add_cuda_arch(maxwell50 50)
 timemory_add_cuda_arch(maxwell52 52)
 timemory_add_cuda_arch(maxwell53 53)
-timemory_add_cuda_arch(pascal60  60)
-timemory_add_cuda_arch(pascal61  61)
-timemory_add_cuda_arch(volta70   70)
-timemory_add_cuda_arch(volta72   72)
-timemory_add_cuda_arch(turing75  75)
-timemory_add_cuda_arch(ampere80  80)
-timemory_add_cuda_arch(ampere86  86)
+timemory_add_cuda_arch(pascal60 60)
+timemory_add_cuda_arch(pascal61 61)
+timemory_add_cuda_arch(volta70 70)
+timemory_add_cuda_arch(volta72 72)
+timemory_add_cuda_arch(turing75 75)
+timemory_add_cuda_arch(ampere80 80)
+timemory_add_cuda_arch(ampere86 86)
 
 if("CUDA" IN_LIST LANGUAGES)
 
@@ -45,13 +48,11 @@ if("CUDA" IN_LIST LANGUAGES)
     # copy our test to .cu so cmake compiles as CUDA
     configure_file(
         ${PROJECT_SOURCE_DIR}/cmake/Templates/cuda_compute_capability.cu
-        ${PROJECT_BINARY_DIR}/compile-tests/cuda_compute_capability.cu
-        COPYONLY)
+        ${PROJECT_BINARY_DIR}/compile-tests/cuda_compute_capability.cu COPYONLY)
 
     # run test again
     try_run(
-        _RESULT
-        _COMPILE_RESULT
+        _RESULT _COMPILE_RESULT
         ${PROJECT_BINARY_DIR}/compile-tests/cuda-compute-capability-workdir
         ${PROJECT_BINARY_DIR}/compile-tests/cuda_compute_capability.cu
         COMPILE_DEFINITIONS -DSM_ONLY
@@ -65,22 +66,25 @@ if("CUDA" IN_LIST LANGUAGES)
         unset(_CUDA_COMPUTE_CAPABILITY)
     endif()
 
-    target_compile_definitions(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-        ${PROJECT_USE_CUDA_OPTION})
-    target_include_directories(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-        ${CUDA_INCLUDE_DIRS}
-        ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    target_compile_definitions(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
+                               INTERFACE ${PROJECT_USE_CUDA_OPTION})
+    target_include_directories(
+        ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
+        INTERFACE ${CUDA_INCLUDE_DIRS} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
-    set_target_properties(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda PROPERTIES
-        INTERFACE_CUDA_STANDARD                 ${CMAKE_CUDA_STANDARD}
-        INTERFACE_CUDA_STANDARD_REQUIRED        ${CMAKE_CUDA_STANDARD_REQUIRED}
-        INTERFACE_CUDA_RESOLVE_DEVICE_SYMBOLS   ON
-        INTERFACE_CUDA_SEPARABLE_COMPILATION    ON)
+    set_target_properties(
+        ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
+        PROPERTIES INTERFACE_CUDA_STANDARD ${CMAKE_CUDA_STANDARD}
+                   INTERFACE_CUDA_STANDARD_REQUIRED ${CMAKE_CUDA_STANDARD_REQUIRED}
+                   INTERFACE_CUDA_RESOLVE_DEVICE_SYMBOLS ON
+                   INTERFACE_CUDA_SEPARABLE_COMPILATION ON)
 
     set(CUDA_AUTO_ARCH "auto")
-    set(TIMEMORY_CUDA_ARCH "${CUDA_AUTO_ARCH}" CACHE STRING
-        "CUDA architecture (options: ${TIMEMORY_CUDA_ARCH_LIST})")
-    add_feature(TIMEMORY_CUDA_ARCH "CUDA architecture (options: ${TIMEMORY_CUDA_ARCH_LIST})")
+    set(TIMEMORY_CUDA_ARCH
+        "${CUDA_AUTO_ARCH}"
+        CACHE STRING "CUDA architecture (options: ${TIMEMORY_CUDA_ARCH_LIST})")
+    add_feature(TIMEMORY_CUDA_ARCH
+                "CUDA architecture (options: ${TIMEMORY_CUDA_ARCH_LIST})")
     set_property(CACHE TIMEMORY_CUDA_ARCH PROPERTY STRINGS ${TIMEMORY_CUDA_ARCH_LIST})
 
     set(_CUDA_ARCHES ${TIMEMORY_CUDA_ARCH})
@@ -91,7 +95,10 @@ if("CUDA" IN_LIST LANGUAGES)
             continue()
         endif()
         if(NOT "${_ARCH}" IN_LIST TIMEMORY_CUDA_ARCH_LIST)
-            message(WARNING "CUDA architecture \"${_ARCH}\" not known. Options: ${TIMEMORY_CUDA_ARCH_LIST}")
+            message(
+                WARNING
+                    "CUDA architecture \"${_ARCH}\" not known. Options: ${TIMEMORY_CUDA_ARCH_LIST}"
+                )
             if(NOT "auto" IN_LIST TIMEMORY_CUDA_ARCH)
                 list(APPEND TIMEMORY_CUDA_ARCH "auto")
             endif()
@@ -114,13 +121,15 @@ if("CUDA" IN_LIST LANGUAGES)
             set(${PROJECT_CUDA_USE_HALF_OPTION} OFF)
         endif()
         if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
-            target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-                $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_${_ARCH_NUM}
-                -gencode=arch=compute_${_ARCH_NUM},code=sm_${_ARCH_NUM}
-                -gencode=arch=compute_${_ARCH_NUM},code=compute_${_ARCH_NUM}>)
+            target_compile_options(
+                ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
+                INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_${_ARCH_NUM}
+                          -gencode=arch=compute_${_ARCH_NUM},code=sm_${_ARCH_NUM}
+                          -gencode=arch=compute_${_ARCH_NUM},code=compute_${_ARCH_NUM}>)
         else()
-            target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-                $<$<COMPILE_LANGUAGE:CUDA>:--cuda-gpu-arch=sm_${_ARCH_NUM}>)
+            target_compile_options(
+                ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
+                INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:--cuda-gpu-arch=sm_${_ARCH_NUM}>)
         endif()
     endforeach()
 
@@ -131,31 +140,39 @@ if("CUDA" IN_LIST LANGUAGES)
 
     if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
         if("${CUDA_VERSION}" VERSION_LESS 11.0)
-            target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-                $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--expt-extended-lambda>>)
+            target_compile_options(
+                ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
+                INTERFACE
+                    $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--expt-extended-lambda>>
+                )
         else()
-            target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-                $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--extended-lambda>>)
+            target_compile_options(
+                ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
+                INTERFACE
+                    $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--extended-lambda>>
+                )
         endif()
 
         if(NOT WIN32)
             get_filename_component(_COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
-            target_compile_options(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda-compiler INTERFACE
-                $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--compiler-bindir=${_COMPILER_DIR}>>
-                $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:-lineinfo>>)
+            target_compile_options(
+                ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda-compiler
+                INTERFACE
+                    $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--compiler-bindir=${_COMPILER_DIR}>>
+                    $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:-lineinfo>>)
         endif()
     endif()
 
     add_user_flags(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda "CUDA")
 
     if(DEFINED PROJECT_CUDA_USE_HALF_OPTION AND ${PROJECT_CUDA_USE_HALF_OPTION})
-        target_compile_definitions(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-            ${PROJECT_CUDA_USE_HALF_DEFINITION})
+        target_compile_definitions(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
+                                   INTERFACE ${PROJECT_CUDA_USE_HALF_DEFINITION})
     endif()
 
-    target_include_directories(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
-        ${CUDA_INCLUDE_DIRS}
-        ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    target_include_directories(
+        ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
+        INTERFACE ${CUDA_INCLUDE_DIRS} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
     if(NOT CUDA_dl_LIBRARY)
         if(dl_LIBRARY)
@@ -182,16 +199,18 @@ if("CUDA" IN_LIST LANGUAGES)
         list(APPEND CUDA_extra_LIBS ${CUDA_rt_LIBRARY})
     endif()
 
-    target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart INTERFACE
-        ${CUDA_CUDART_LIBRARY} ${CUDA_extra_LIBS})
+    target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart
+                          INTERFACE ${CUDA_CUDART_LIBRARY} ${CUDA_extra_LIBS})
 
-    target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-device INTERFACE
-        ${CUDA_cudadevrt_LIBRARY} ${CUDA_extra_LIBS})
+    target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-device
+                          INTERFACE ${CUDA_cudadevrt_LIBRARY} ${CUDA_extra_LIBS})
 
-    target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-static INTERFACE
-        ${CUDA_cudart_static_LIBRARY} ${CUDA_extra_LIBS})
+    target_link_libraries(${PROJECT_CUDA_INTERFACE_PREFIX}-cudart-static
+                          INTERFACE ${CUDA_cudart_static_LIBRARY} ${CUDA_extra_LIBS})
 
 else()
-    message(FATAL_ERROR
-        "CUDA is not supported! ${PROJECT_USE_CUDA_OPTION}=${${PROJECT_USE_CUDA_OPTION}}")
+    message(
+        FATAL_ERROR
+            "CUDA is not supported! ${PROJECT_USE_CUDA_OPTION}=${${PROJECT_USE_CUDA_OPTION}}"
+        )
 endif()

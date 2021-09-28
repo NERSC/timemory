@@ -1,5 +1,5 @@
 #
-#   Only valid for the build tree
+# Only valid for the build tree
 #
 
 set(timemory_ROOT_DIR "@PROJECT_BINARY_DIR@")

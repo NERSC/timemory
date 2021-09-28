@@ -15,4 +15,7 @@ find_package(timemory REQUIRED COMPONENTS fortran)
 
 add_executable(${EXE_NAME} ${EXE_NAME}.f90)
 target_link_libraries(${EXE_NAME} timemory::fortran-example)
-install(TARGETS ${EXE_NAME} DESTINATION bin OPTIONAL)
+install(
+    TARGETS ${EXE_NAME}
+    DESTINATION bin
+    OPTIONAL)
