@@ -121,7 +121,7 @@ done
 #   UPDATE ALTERNATIVES -- CLANG TOOLS
 #-----------------------------------------------------------------------------#
 priority=10
-for i in 7.0 7 8 9 10 11 ${CLANG_VERSION} 6.0
+for i in 7.0 7 8 9 10 11 ${CLANG_VERSION} 9
 do
     for j in tools tidy format
     do
