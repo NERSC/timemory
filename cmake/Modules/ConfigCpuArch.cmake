@@ -8,7 +8,19 @@ if(TIMEMORY_BUILD_PORTABLE)
     if(MSVC)
         set(_CpuArch_COMPONENTS OPTIONAL_COMPONENTS sse sse2 avx avx2)
     else()
-        set(_CpuArch_COMPONENTS OPTIONAL_COMPONENTS sse sse2 sse3 ssse3 sse4 sse4_1 sse4_2 fma avx avx2 altivec)
+        set(_CpuArch_COMPONENTS
+            OPTIONAL_COMPONENTS
+            sse
+            sse2
+            sse3
+            ssse3
+            sse4
+            sse4_1
+            sse4_2
+            fma
+            avx
+            avx2
+            altivec)
     endif()
 endif()
 
@@ -36,7 +48,7 @@ if(CpuArch_FOUND)
         endif()
         timemory_message(STATUS "Compiling with vector width: ${TIMEMORY_VEC}")
         timemory_target_compile_definitions(${VECTOR_INTERFACE_TARGET} INTERFACE
-            ${VECTOR_DEFINITION}=${TIMEMORY_VEC})
+                                            ${VECTOR_DEFINITION}=${TIMEMORY_VEC})
     endif()
 
     if(ARCH_INTERFACE_TARGET)

@@ -9,12 +9,12 @@ if(NOT timemory_FOUND)
     return()
 endif()
 
-add_executable(ex_compiler_instrument
-    ex_compiler_instrument.cpp)
+add_executable(ex_compiler_instrument ex_compiler_instrument.cpp)
 
-target_link_libraries(ex_compiler_instrument PRIVATE
-    compiler-instrument-example)
+target_link_libraries(ex_compiler_instrument PRIVATE compiler-instrument-example)
 
-install(TARGETS ex_compiler_instrument
-	DESTINATION bin
-    COMPONENT examples OPTIONAL)
+install(
+    TARGETS ex_compiler_instrument
+    DESTINATION bin
+    COMPONENT examples
+    OPTIONAL)

@@ -1,99 +1,86 @@
-# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
-# file Copyright.txt or https://cmake.org/licensing for details.
+# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying file
+# Copyright.txt or https://cmake.org/licensing for details.
 
 include(FindPackageHandleStandardArgs)
 include(CMakeParseArguments)
 
-#----------------------------------------------------------------------------------------#
-#   Useful config variables:
+# ----------------------------------------------------------------------------------------#
+# Useful config variables:
 #
-#           gperftools_PREFER_STATIC
-#           gperftools_PERFER_SHARED
-#           gperftools_INTERFACE_LIBRARY
-#           gperftools_INTERFACE_COMPILE_DEFINITIONS
+# gperftools_PREFER_STATIC gperftools_PERFER_SHARED gperftools_INTERFACE_LIBRARY
+# gperftools_INTERFACE_COMPILE_DEFINITIONS
 #
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 # make invocable more than once
 #
-foreach(_VAR gperftools_INCLUDE_DIRS gperftools_LIBRARIES
-        gperftools_STATIC_LIBRARIES gperftools_SHARED_LIBRARIES
-        _gperftools_MISSING_LIBRARIES _gperftools_MISSING_COMPONENTS
-        _gperftools_LIBRARY_BASE)
+foreach(
+    _VAR
+    gperftools_INCLUDE_DIRS gperftools_LIBRARIES gperftools_STATIC_LIBRARIES
+    gperftools_SHARED_LIBRARIES _gperftools_MISSING_LIBRARIES
+    _gperftools_MISSING_COMPONENTS _gperftools_LIBRARY_BASE)
     unset(${_VAR})
 endforeach()
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 function(FIND_STATIC_LIBRARY)
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
     find_library(${ARGN})
 endfunction()
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 function(FIND_SHARED_LIBRARY)
     set(CMAKE_FIND_LIBRARY_SUFFIXES .so .dylib .dll)
     find_library(${ARGN})
 endfunction()
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
-if (CMAKE_VERSION VERSION_GREATER 2.8.7)
-  set(gperftools_CHECK_COMPONENTS FALSE)
+if(CMAKE_VERSION VERSION_GREATER 2.8.7)
+    set(gperftools_CHECK_COMPONENTS FALSE)
 else(CMAKE_VERSION VERSION_GREATER 2.8.7)
-  set(gperftools_CHECK_COMPONENTS TRUE)
+    set(gperftools_CHECK_COMPONENTS TRUE)
 endif()
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 # Component options
 set(gperftools_COMPONENT_OPTIONS
-    profiler
-    tcmalloc
-    tcmalloc_and_profiler
-    tcmalloc_debug
-    tcmalloc_minimal
+    profiler tcmalloc tcmalloc_and_profiler tcmalloc_debug tcmalloc_minimal
     tcmalloc_minimal_debug
-    CACHE STRING "gperftools possible components"
-)
+    CACHE STRING "gperftools possible components")
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 set(_gperftools_POSSIBLE_LIB_SUFFIXES lib lib64 lib32)
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
-find_path(gperftools_ROOT_DIR
-    NAMES
-        include/gperftools/tcmalloc.h
-        include/gperftools/profiler.h
-        include/google/tcmalloc.h
-        include/google/profiler.h
+find_path(
+    gperftools_ROOT_DIR
+    NAMES include/gperftools/tcmalloc.h include/gperftools/profiler.h
+          include/google/tcmalloc.h include/google/profiler.h
     DOC "Google perftools root directory")
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
-find_path(gperftools_INCLUDE_DIR
-    NAMES
-        gperftools/tcmalloc.h
-        gperftools/profiler.h
-        google/tcmalloc.h
-        google/profiler.h
-    HINTS
-        ${gperftools_ROOT_DIR}
-    PATH_SUFFIXES
-        include
+find_path(
+    gperftools_INCLUDE_DIR
+    NAMES gperftools/tcmalloc.h gperftools/profiler.h google/tcmalloc.h google/profiler.h
+    HINTS ${gperftools_ROOT_DIR}
+    PATH_SUFFIXES include
     DOC "Google perftools profiler include directory")
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 if(gperftools_INCLUDE_DIR)
     set(gperftools_INCLUDE_DIRS ${gperftools_INCLUDE_DIR})
 endif()
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 # Find components
 
 foreach(_gperftools_COMPONENT ${gperftools_FIND_COMPONENTS})
@@ -106,13 +93,19 @@ foreach(_gperftools_COMPONENT ${gperftools_FIND_COMPONENTS})
 
     set(_gperftools_LIBRARY_NAME ${_gperftools_COMPONENT})
 
-    find_shared_library(${_gperftools_LIBRARY_BASE}_SHARED
-        NAMES ${_gperftools_LIBRARY_NAME}
-        HINTS ${gperftools_ROOT_DIR}
-        PATH_SUFFIXES ${_gperftools_POSSIBLE_LIB_SUFFIXES}
-        DOC "gperftools ${_gperftools_COMPONENT} library (shared)")
+    find_shared_library(
+        ${_gperftools_LIBRARY_BASE}_SHARED
+        NAMES
+        ${_gperftools_LIBRARY_NAME}
+        HINTS
+        ${gperftools_ROOT_DIR}
+        PATH_SUFFIXES
+        ${_gperftools_POSSIBLE_LIB_SUFFIXES}
+        DOC
+        "gperftools ${_gperftools_COMPONENT} library (shared)")
 
-    find_static_library(${_gperftools_LIBRARY_BASE}_STATIC
+    find_static_library(
+        ${_gperftools_LIBRARY_BASE}_STATIC
         NAMES ${_gperftools_LIBRARY_NAME}
         HINTS ${gperftools_ROOT_DIR}
         PATH_SUFFIXES ${_gperftools_POSSIBLE_LIB_SUFFIXES}
@@ -143,13 +136,12 @@ foreach(_gperftools_COMPONENT ${gperftools_FIND_COMPONENTS})
         endif()
     endif()
 
-    MARK_AS_ADVANCED(
-        ${_gperftools_LIBRARY_BASE}_SHARED
-        ${_gperftools_LIBRARY_BASE}_STATIC)
+    mark_as_advanced(${_gperftools_LIBRARY_BASE}_SHARED
+                     ${_gperftools_LIBRARY_BASE}_STATIC)
 
     set(gperftools_${_gperftools_COMPONENT_LOWER}_FOUND TRUE)
 
-    if (NOT ${_gperftools_LIBRARY_BASE})
+    if(NOT ${_gperftools_LIBRARY_BASE})
         # Component missing: record it for a later report
         list(APPEND _gperftools_MISSING_COMPONENTS ${_gperftools_COMPONENT})
         set(gperftools_${_gperftools_COMPONENT_LOWER}_FOUND FALSE)
@@ -158,7 +150,7 @@ foreach(_gperftools_COMPONENT ${gperftools_FIND_COMPONENTS})
     set(gperftools_${_gperftools_COMPONENT}_FOUND
         ${gperftools_${_gperftools_COMPONENT_LOWER}_FOUND})
 
-    if (${_gperftools_LIBRARY_BASE})
+    if(${_gperftools_LIBRARY_BASE})
         # setup the gperftools_<COMPONENT>_LIBRARIES variable
         set(gperftools_${_gperftools_COMPONENT_LOWER}_LIBRARIES
             ${${_gperftools_LIBRARY_BASE}})
@@ -168,23 +160,23 @@ foreach(_gperftools_COMPONENT ${gperftools_FIND_COMPONENTS})
     endif()
 
     foreach(_TYPE STATIC SHARED)
-        if (${_gperftools_LIBRARY_BASE}_${_TYPE})
+        if(${_gperftools_LIBRARY_BASE}_${_TYPE})
             # setup the gperftools_<COMPONENT>_${_TYPE}_LIBRARIES variable
             set(gperftools_${_gperftools_COMPONENT_LOWER}_${_TYPE}_LIBRARIES
                 ${${_gperftools_LIBRARY_BASE}_${_TYPE}})
-            list(APPEND gperftools_${_TYPE}_LIBRARIES ${${_gperftools_LIBRARY_BASE}_${_TYPE}})
+            list(APPEND gperftools_${_TYPE}_LIBRARIES
+                 ${${_gperftools_LIBRARY_BASE}_${_TYPE}})
         endif()
     endforeach()
 
 endforeach()
 
-
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 # handle missing components
 #
-if (DEFINED _gperftools_MISSING_COMPONENTS AND _gperftools_CHECK_COMPONENTS)
-    if (NOT gperftools_FIND_QUIETLY)
-        message (STATUS "One or more gperftools components were not found:")
+if(DEFINED _gperftools_MISSING_COMPONENTS AND _gperftools_CHECK_COMPONENTS)
+    if(NOT gperftools_FIND_QUIETLY)
+        message(STATUS "One or more gperftools components were not found:")
         # Display missing components indented, each on a separate line
         foreach(_gperftools_MISSING_COMPONENT ${_gperftools_MISSING_COMPONENTS})
             message(STATUS "    ${_gperftools_MISSING_COMPONENT}")
@@ -192,21 +184,21 @@ if (DEFINED _gperftools_MISSING_COMPONENTS AND _gperftools_CHECK_COMPONENTS)
             # NOTE: let 'find_package_handle_standard_args' handle this
             #
             # if(gperftools_FIND_REQUIRED_${_gperftools_MISSING_COMPONENT})
-            #    message(FATAL_ERROR "Missing required component ${_gperftools_MISSING_COMPONENT}")
-            # endif()
+            # message(FATAL_ERROR "Missing required component
+            # ${_gperftools_MISSING_COMPONENT}") endif()
         endforeach()
     endif()
 endif()
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 mark_as_advanced(gperftools_INCLUDE_DIR gperftools_COMPONENTS gperftools_ROOT_DIR)
 
-find_package_handle_standard_args(gperftools DEFAULT_MSG
-    gperftools_ROOT_DIR
-    gperftools_INCLUDE_DIRS ${_gperftools_MISSING_LIBRARIES})
+find_package_handle_standard_args(
+    gperftools DEFAULT_MSG gperftools_ROOT_DIR gperftools_INCLUDE_DIRS
+    ${_gperftools_MISSING_LIBRARIES})
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 # generate an interface library if desired
 #
 if(gperftools_INTERFACE_LIBRARY)
@@ -216,15 +208,15 @@ if(gperftools_INTERFACE_LIBRARY)
     endif()
     # add the libraries is found
     if(gperftools_LIBRARIES)
-        target_link_libraries(${gperftools_INTERFACE_LIBRARY} INTERFACE
-            ${gperftools_LIBRARIES})
+        target_link_libraries(${gperftools_INTERFACE_LIBRARY}
+                              INTERFACE ${gperftools_LIBRARIES})
     endif()
     # add the include directory
-    target_include_directories(${gperftools_INTERFACE_LIBRARY} SYSTEM INTERFACE
-        ${gperftools_INCLUDE_DIRS})
+    target_include_directories(${gperftools_INTERFACE_LIBRARY} SYSTEM
+                               INTERFACE ${gperftools_INCLUDE_DIRS})
     # if compile definitions
     if(gperftools_INTERFACE_COMPILE_DEFINITIONS)
-        target_compile_definitions(${gperftools_INTERFACE_LIBRARY} INTERFACE
-            ${gperftools_INTERFACE_COMPILE_DEFINITIONS})
+        target_compile_definitions(${gperftools_INTERFACE_LIBRARY}
+                                   INTERFACE ${gperftools_INTERFACE_COMPILE_DEFINITIONS})
     endif()
 endif()

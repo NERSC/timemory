@@ -1,3 +1,3 @@
 #
-#   Empty CMakeLists.txt for PyCTest tests
+# Empty CMakeLists.txt for PyCTest tests
 #

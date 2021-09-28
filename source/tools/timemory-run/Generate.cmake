@@ -1,4 +1,3 @@
-
 foreach(_VAR INPUT_LIST_DIR EXE_BINARY_DIR FILE_BINARY_DIR)
     if(NOT DEFINED ${_VAR})
         message(WARNING "Warning! Aborting script because ${_VAR} not provided")
@@ -7,7 +6,7 @@ foreach(_VAR INPUT_LIST_DIR EXE_BINARY_DIR FILE_BINARY_DIR)
 endforeach()
 
 configure_file(${INPUT_LIST_DIR}/generated/timemory-instr.sh
-    ${EXE_BINARY_DIR}/timemory-instr COPYONLY)
+               ${EXE_BINARY_DIR}/timemory-instr COPYONLY)
 
 file(GLOB COLLECTION_FILES "${INPUT_LIST_DIR}/collections/*")
 foreach(_FILE ${COLLECTION_FILES})

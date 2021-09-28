@@ -1,12 +1,11 @@
-
-##########################################################################################
+# ########################################################################################
 #
-#        timemory (Python)
+# timemory (Python)
 #
-##########################################################################################
+# ########################################################################################
 
 include(ProcessorCount)
-ProcessorCount(NCPU)
+processorcount(NCPU)
 
 # if set, will screw up loading library
 unset(CMAKE_DEBUG_POSTFIX)
@@ -16,7 +15,8 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN OFF)
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME python)
 
 # handle unity build for python
-option(TIMEMORY_BUILD_PYTHON_UNITY "Build python interface with unity build support" ${TIMEMORY_UNITY_BUILD})
+option(TIMEMORY_BUILD_PYTHON_UNITY "Build python interface with unity build support"
+       ${TIMEMORY_UNITY_BUILD})
 mark_as_advanced(TIMEMORY_BUILD_PYTHON_UNITY)
 set(CMAKE_UNITY_BUILD ${TIMEMORY_BUILD_PYTHON_UNITY})
 if(NOT NCPU GREATER 2 OR "$ENV{CI}" STREQUAL "true")
@@ -31,7 +31,7 @@ if(TIMEMORY_BUILD_PYTHON_HIDDEN)
     set(_visibility timemory::timemory-hidden-visibility)
 endif()
 
-##########################################################################################
+# ########################################################################################
 
 function(TIMEMORY_CONFIGURE_PYTARGET _TARGET)
 
@@ -47,15 +47,16 @@ function(TIMEMORY_CONFIGURE_PYTARGET _TARGET)
         set(EXTRA_PROPERTIES LINKER_LANGUAGE CUDA)
     endif()
 
-    set_target_properties(${_TARGET} PROPERTIES
-        PREFIX                      ""
-        SUFFIX                      "${PYTHON_MODULE_EXTENSION}"
-        LIBRARY_OUTPUT_DIRECTORY    ${PROJECT_BINARY_DIR}/timemory${_SUBDIR}
-        ARCHIVE_OUTPUT_DIRECTORY    ${PROJECT_BINARY_DIR}/timemory${_SUBDIR}
-        RUNTIME_OUTPUT_DIRECTORY    ${PROJECT_BINARY_DIR}/timemory${_SUBDIR}
-        PDB_OUTPUT_DIRECTORY        ${PROJECT_BINARY_DIR}/timemory${_SUBDIR}
-        INSTALL_RPATH_USE_LINK_PATH ON
-        ${EXTRA_PROPERTIES})
+    set_target_properties(
+        ${_TARGET}
+        PROPERTIES PREFIX ""
+                   SUFFIX "${PYTHON_MODULE_EXTENSION}"
+                   LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory${_SUBDIR}
+                   ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory${_SUBDIR}
+                   RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory${_SUBDIR}
+                   PDB_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory${_SUBDIR}
+                   INSTALL_RPATH_USE_LINK_PATH ON
+                   ${EXTRA_PROPERTIES})
 
     set(_PYLIB ${CMAKE_INSTALL_PYTHONDIR}/timemory${_SUBDIR})
     if(NOT IS_ABSOLUTE "${_PYLIB}")
@@ -63,14 +64,19 @@ function(TIMEMORY_CONFIGURE_PYTARGET _TARGET)
     endif()
 
     file(RELATIVE_PATH LIB_RELPATH "${_PYLIB}"
-        "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+         "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 
     if(UNIX AND NOT APPLE)
-        set_target_properties(${_TARGET} PROPERTIES INSTALL_RPATH
-            "\$ORIGIN:\$ORIGIN/${LIB_RELPATH}:\$ORIGIN/${LIB_RELPATH}/timemory${_SUBDIR}:\$ORIGIN/../../..:\$ORIGIN/../../../timemory${_SUBDIR}:\$ORIGIN:${CMAKE_INSTALL_RPATH}")
+        set_target_properties(
+            ${_TARGET}
+            PROPERTIES
+                INSTALL_RPATH
+                "\$ORIGIN:\$ORIGIN/${LIB_RELPATH}:\$ORIGIN/${LIB_RELPATH}/timemory${_SUBDIR}:\$ORIGIN/../../..:\$ORIGIN/../../../timemory${_SUBDIR}:\$ORIGIN:${CMAKE_INSTALL_RPATH}"
+            )
     endif()
 
-    install(TARGETS ${_TARGET}
+    install(
+        TARGETS ${_TARGET}
         DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/timemory${_SUBDIR}
         OPTIONAL)
 
@@ -79,13 +85,13 @@ function(TIMEMORY_CONFIGURE_PYTARGET _TARGET)
     endif()
 endfunction()
 
-##########################################################################################
+# ########################################################################################
 
 if(TIMEMORY_USE_PYTHON)
 
     add_library(timemory-python-compile-options INTERFACE)
     add_library(timemory::timemory-python-compile-options ALIAS
-        timemory-python-compile-options)
+                timemory-python-compile-options)
     add_cxx_flag_if_avail("-frtti" timemory-python-compile-options)
     add_cxx_flag_if_avail("-Wno-unused-value" timemory-python-compile-options)
     add_cxx_flag_if_avail("-Wno-range-loop-analysis" timemory-python-compile-options)
@@ -114,10 +120,11 @@ if(TIMEMORY_USE_PYTHON)
         ${CMAKE_CURRENT_LIST_DIR}/libpytimemory-units.cpp
         ${CMAKE_CURRENT_LIST_DIR}/libpytimemory.cpp)
 
-    if(TIMEMORY_USE_CUDA AND CMAKE_CUDA_COMPILER AND TIMEMORY_BUILD_PYTHON_CUDA)
-        set_source_files_properties(${pysources} PROPERTIES
-            LANGUAGE CUDA
-            LINKER_LANGUAGE CUDA)
+    if(TIMEMORY_USE_CUDA
+       AND CMAKE_CUDA_COMPILER
+       AND TIMEMORY_BUILD_PYTHON_CUDA)
+        set_source_files_properties(${pysources} PROPERTIES LANGUAGE CUDA LINKER_LANGUAGE
+                                                                          CUDA)
     endif()
 
     set(pybind_libs pybind11::module)
@@ -131,27 +138,29 @@ if(TIMEMORY_USE_PYTHON)
     endif()
 
     add_library(libpytimemory-interface INTERFACE)
-    target_link_libraries(libpytimemory-interface INTERFACE
-        ${pybind_libs}
-        timemory::timemory-python
-        timemory::timemory-headers
-        timemory::timemory-cxx-${_LINK}
-        timemory::timemory-compile-options
-        timemory::timemory-external-${_LINK}
-        timemory::timemory-mpip-library
-        timemory::timemory-ompt-library
-        timemory::timemory-ncclp-library
-        timemory::timemory-mallocp-library
-        timemory::timemory-python-compile-options
-        ${_visibility})
+    target_link_libraries(
+        libpytimemory-interface
+        INTERFACE ${pybind_libs}
+                  timemory::timemory-python
+                  timemory::timemory-headers
+                  timemory::timemory-cxx-${_LINK}
+                  timemory::timemory-compile-options
+                  timemory::timemory-external-${_LINK}
+                  timemory::timemory-mpip-library
+                  timemory::timemory-ompt-library
+                  timemory::timemory-ncclp-library
+                  timemory::timemory-mallocp-library
+                  timemory::timemory-python-compile-options
+                  ${_visibility})
 
-    target_compile_definitions(libpytimemory-interface INTERFACE
-        TIMEMORY_PYBIND11_SOURCE)
+    target_compile_definitions(libpytimemory-interface INTERFACE TIMEMORY_PYBIND11_SOURCE)
 
-    target_include_directories(libpytimemory-interface SYSTEM INTERFACE
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/pybind11/include>)
+    target_include_directories(
+        libpytimemory-interface SYSTEM
+        INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/pybind11/include>)
 
-    add_library(libpytimemory MODULE ${TIMEMORY_EXCLUDE_FROM_ALL} ${pysources} ${pyheaders} ${pybind_headers})
+    add_library(libpytimemory MODULE ${TIMEMORY_EXCLUDE_FROM_ALL} ${pysources}
+                                     ${pyheaders} ${pybind_headers})
     timemory_configure_pytarget(libpytimemory libs)
 
     timemory_message(STATUS "Adding source/python/tools...")
@@ -160,52 +169,50 @@ if(TIMEMORY_USE_PYTHON)
     # if(APPLE)
     if(APPLE AND "$ENV{TRAVIS}" STREQUAL "true")
         #
-        file(WRITE ${PROJECT_BINARY_DIR}/.pdbrc
-"r
+        file(
+            WRITE ${PROJECT_BINARY_DIR}/.pdbrc
+            "r
 bt
 q
-"
-        )
+")
 
-        file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/deadlock-trace.py
-"#!/usr/bin/env python
+        file(
+            WRITE ${CMAKE_CURRENT_BINARY_DIR}/deadlock-trace.py
+            "#!/usr/bin/env python
 
 print('importing timemory')
 import timemory
 print('timemory imported')
-"
-        )
+")
 
         set(_IGNORE
             # --ignore-module=_bootstrap
             # --ignore-module=_bootstrap_external
             # --ignore-module=sre_parse
             # --ignore-module=sre_compile
-        )
+            )
 
-        set(_FILE
-            ${CMAKE_CURRENT_BINARY_DIR}/deadlock-trace.py
-        )
+        set(_FILE ${CMAKE_CURRENT_BINARY_DIR}/deadlock-trace.py)
 
         add_test(
-            NAME                python-deadlock-pdb
-            COMMAND             ${PYTHON_EXECUTABLE} -m pdb ${_FILE}
-            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+            NAME python-deadlock-pdb
+            COMMAND ${PYTHON_EXECUTABLE} -m pdb ${_FILE}
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
         add_test(
-            NAME                python-deadlock-trace
-            COMMAND             ${PYTHON_EXECUTABLE} -m trace -t ${_IGNORE} ${_FILE}
-            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+            NAME python-deadlock-trace
+            COMMAND ${PYTHON_EXECUTABLE} -m trace -t ${_IGNORE} ${_FILE}
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
         add_test(
-            NAME                python-deadlock-listfuncs
-            COMMAND             ${PYTHON_EXECUTABLE} -m trace -l ${_IGNORE} ${_FILE}
-            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+            NAME python-deadlock-listfuncs
+            COMMAND ${PYTHON_EXECUTABLE} -m trace -l ${_IGNORE} ${_FILE}
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
         add_test(
-            NAME                python-deadlock-trackcalls
-            COMMAND             ${PYTHON_EXECUTABLE} -m trace -T ${_IGNORE} ${_FILE}
-            WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+            NAME python-deadlock-trackcalls
+            COMMAND ${PYTHON_EXECUTABLE} -m trace -T ${_IGNORE} ${_FILE}
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
         set_tests_properties(python-deadlock-pdb PROPERTIES DEPENDS libpytimemory)
         set_tests_properties(python-deadlock-trace PROPERTIES DEPENDS libpytimemory)
@@ -217,13 +224,12 @@ print('timemory imported')
             file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pylldb-run "run\nrun\n")
             file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/pylldb-crash "bt")
             add_test(
-                NAME                python-deadlock-lldb
-                COMMAND             ${LLDB_EXE} -b
-                                    -s ${CMAKE_CURRENT_BINARY_DIR}/pylldb-run
-                                    --source-on-crash ${CMAKE_CURRENT_BINARY_DIR}/pylldb-crash
-                                    --
-                                    ${PYTHON_EXECUTABLE} ${_FILE}
-                WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
+                NAME python-deadlock-lldb
+                COMMAND
+                    ${LLDB_EXE} -b -s ${CMAKE_CURRENT_BINARY_DIR}/pylldb-run
+                    --source-on-crash ${CMAKE_CURRENT_BINARY_DIR}/pylldb-crash --
+                    ${PYTHON_EXECUTABLE} ${_FILE}
+                WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
             set_tests_properties(python-deadlock-lldb PROPERTIES DEPENDS libpytimemory)
         endif()
     endif()

@@ -3,26 +3,42 @@ cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
 set(timemory_EMPTY_INTERFACE_LIBRARIES @TIMEMORY_EMPTY_INTERFACE_LIBRARIES@)
 
-#----------------------------------------------------------------------------------------#
-#   function to get the component name from a short-hand expression
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# function to get the component name from a short-hand expression
+# ----------------------------------------------------------------------------------------#
 
 function(TIMEMORY_GET_TARGET_NAME _OUT _IN)
     if(TARGET ${_IN})
-        set(${_OUT} ${_IN} PARENT_SCOPE)
+        set(${_OUT}
+            ${_IN}
+            PARENT_SCOPE)
     elseif(TARGET timemory::timemory-${_IN})
-        set(${_OUT} timemory-${_IN} PARENT_SCOPE)
+        set(${_OUT}
+            timemory-${_IN}
+            PARENT_SCOPE)
     elseif(TARGET timemory-${_IN})
-        set(${_OUT} timemory-${_IN} PARENT_SCOPE)
+        set(${_OUT}
+            timemory-${_IN}
+            PARENT_SCOPE)
     endif()
 endfunction()
 
-#----------------------------------------------------------------------------------------#
-#   timemory component interface library
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# timemory component interface library
+# ----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_ENABLE_OPTIONS)
-    foreach(_TYPE CALIPER PAPI MPI GPERFTOOLS GPERFTOOLS_CPU GPERFTOOLS_HEAP VECTOR EXTERN_INIT EXTERN_TEMPLATES)
+    foreach(
+        _TYPE
+        CALIPER
+        PAPI
+        MPI
+        GPERFTOOLS
+        GPERFTOOLS_CPU
+        GPERFTOOLS_HEAP
+        VECTOR
+        EXTERN_INIT
+        EXTERN_TEMPLATES)
         string(TOLOWER "${_TYPE}" _COMP)
         string(REPLACE "_" "-" _COMP "${_COMP}")
         if(USE_${_TYPE})
@@ -35,9 +51,9 @@ if(TIMEMORY_ENABLE_OPTIONS)
     endforeach()
 endif()
 
-set(_LINK )
-set(_LANGUAGES )
-set(_COMPONENT_LIST )
+set(_LINK)
+set(_LANGUAGES)
+set(_COMPONENT_LIST)
 
 # always add headers
 list(APPEND timemory_FIND_COMPONENTS headers)
@@ -85,7 +101,7 @@ endforeach()
 macro(timemory_LINK_TARGET_IF_EXISTS _TARGET)
 
     # namespaced name in install tree
-    TIMEMORY_GET_TARGET_NAME(_TARGET_REAL ${_TARGET})
+    timemory_get_target_name(_TARGET_REAL ${_TARGET})
     if(NOT "${_TARGET_REAL}" STREQUAL "")
         set(_TARGET ${_TARGET_REAL})
     endif()
@@ -109,7 +125,7 @@ macro(timemory_LINK_TARGET_IF_EXISTS _TARGET)
                 endif()
                 target_link_libraries(${_INTERFACE_LIB} INTERFACE ${_TARGET_NAME})
                 list(APPEND timemory_FOUND_COMPONENTS ${_TARGET})
-             endif()
+            endif()
         else()
             if(DEFINED timemory_DEBUG)
                 message(STATUS "${_TARGET_NAME} not found for ${_INTERFACE_LIB}")
@@ -139,28 +155,28 @@ foreach(_LANGUAGE ${_LANGUAGES})
     # handle special case of cuda
     if("${_LANGUAGE}" STREQUAL "cuda")
         # link to timemory-cuda
-        timemory_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE})
+        timemory_link_target_if_exists(timemory-${_LANGUAGE})
 
         set(_CUDART_DEV OFF)
-        set(_CUDART     OFF)
+        set(_CUDART OFF)
 
         # if cudart-device specified, only link to timemory-cudart-device
         if("cudart-device" IN_LIST timemory_FIND_COMPONENTS)
             set(_CUDART_DEV ON)
             set(_CUDART OFF)
-            timemory_LINK_TARGET_IF_EXISTS(timemory-cudart-device)
+            timemory_link_target_if_exists(timemory-cudart-device)
         endif()
 
-        if("cudart" IN_LIST timemory_FIND_COMPONENTS OR
-            "cudart-static" IN_LIST timemory_FIND_COMPONENTS)
-                set(_CUDART ON)
+        if("cudart" IN_LIST timemory_FIND_COMPONENTS OR "cudart-static" IN_LIST
+                                                        timemory_FIND_COMPONENTS)
+            set(_CUDART ON)
         endif()
 
         if(_CUDART)
             if("${_LINK}" STREQUAL "static")
-                timemory_LINK_TARGET_IF_EXISTS(timemory-cudart-static)
+                timemory_link_target_if_exists(timemory-cudart-static)
             else()
-                timemory_LINK_TARGET_IF_EXISTS(timemory-cudart)
+                timemory_link_target_if_exists(timemory-cudart)
             endif()
         endif()
 
@@ -168,19 +184,19 @@ foreach(_LANGUAGE ${_LANGUAGES})
         unset(_CUDART_DEV)
     else()
         if(TARGET timemory::timemory-${_LANGUAGE}-${_LINK})
-            timemory_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE}-${_LINK})
+            timemory_link_target_if_exists(timemory-${_LANGUAGE}-${_LINK})
         elseif(TARGET timemory-${_LANGUAGE}-${_LINK})
-            timemory_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE}-${_LINK})
+            timemory_link_target_if_exists(timemory-${_LANGUAGE}-${_LINK})
         endif()
     endif()
 endforeach()
 
 foreach(_COMPONENT ${timemory_FIND_COMPONENTS})
-    if(TARGET timemory-${_COMPONENT}-${_LINK} OR
-       TARGET timemory::timemory-${_LANGUAGE}-${_LINK})
-        timemory_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT}-${_LINK} ${_COMPONENT})
+    if(TARGET timemory-${_COMPONENT}-${_LINK} OR TARGET
+                                                 timemory::timemory-${_LANGUAGE}-${_LINK})
+        timemory_link_target_if_exists(timemory-${_COMPONENT}-${_LINK} ${_COMPONENT})
     else()
-        timemory_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT} ${_COMPONENT})
+        timemory_link_target_if_exists(timemory-${_COMPONENT} ${_COMPONENT})
     endif()
 endforeach()
 
@@ -191,22 +207,24 @@ endif()
 
 # remove empty interface libraries
 if(timemory_EMPTY_INTERFACE_LIBRARIES)
-    list(REMOVE_ITEM timemory_FOUND_COMPONENTS
-        ${timemory_EMPTY_INTERFACE_LIBRARIES})
+    list(REMOVE_ITEM timemory_FOUND_COMPONENTS ${timemory_EMPTY_INTERFACE_LIBRARIES})
 endif()
 
 #
-#   Display message
+# Display message
 #
 list(SORT timemory_FOUND_COMPONENTS)
 set(_COMPONENT_LIST ${timemory_FOUND_COMPONENTS})
 string(REPLACE ";" ", " _COMPONENT_LIST "${_COMPONENT_LIST}")
 string(REPLACE "timemory-" "" _COMPONENT_LIST "${_COMPONENT_LIST}")
-message(STATUS
-    "[${PROJECT_NAME}] timemory : \"${_INTERFACE_LIB}\" components: ${_COMPONENT_LIST}")
+message(
+    STATUS
+        "[${PROJECT_NAME}] timemory : \"${_INTERFACE_LIB}\" components: ${_COMPONENT_LIST}"
+    )
 
 function(TIMEMORY_CHECK_MISMATCHED_COMPILER _LANG _CURR)
-    if(NOT "${CMAKE_${_LANG}_COMPILER_ID}" STREQUAL "${_CURR}" AND NOT timemory_FIND_QUIETLY)
+    if(NOT "${CMAKE_${_LANG}_COMPILER_ID}" STREQUAL "${_CURR}" AND NOT
+                                                                   timemory_FIND_QUIETLY)
         set(_MSG " Mismatched ${_LANG} compiler IDs!")
         set(_MSG "${_MSG}\n \ttimemory : ${_CURR}")
         set(_MSG "${_MSG}\n \t    vs.")

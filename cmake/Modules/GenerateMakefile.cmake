@@ -1,38 +1,41 @@
+set_property(DIRECTORY PROPERTY PROCESSED)
 
-
-set_property(DIRECTORY PROPERTY PROCESSED )
-
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 function(TIMEMORY_MAKEFILE_TARGET _VAR _TARG)
     string(REPLACE "-" "_" _FILE_TARG "${_TARG}")
     string(REGEX REPLACE ".*::" "" _FILE_TARG "${_FILE_TARG}")
-    set(${_VAR} ${_FILE_TARG} PARENT_SCOPE)
+    set(${_VAR}
+        ${_FILE_TARG}
+        PARENT_SCOPE)
 endfunction()
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 function(TIMEMORY_MAKEFILE_TARGET_NAME _VAR _TARG)
     string(REPLACE "-" "_" _FILE_TARG "${_TARG}")
     string(REGEX REPLACE ".*::" "" _FILE_TARG "${_FILE_TARG}")
     string(TOUPPER "${_FILE_TARG}" _NAME)
-    set(${_VAR} ${_NAME} PARENT_SCOPE)
+    set(${_VAR}
+        ${_NAME}
+        PARENT_SCOPE)
 endfunction()
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 macro(TIMEMORY_MAKEFILE_REMOVE_COMPILE_LANGUAGE)
     foreach(_ARG ${ARGN})
         if(NOT "${${_ARG}}" MATCHES "COMPILE_LANGUAGE")
             continue()
         endif()
-        string(REPLACE "\$<\$<COMPILE_LANGUAGE:" "<<COMPILE_LANGUAGE:" ${_ARG} "${${_ARG}}")
+        string(REPLACE "\$<\$<COMPILE_LANGUAGE:" "<<COMPILE_LANGUAGE:" ${_ARG}
+                       "${${_ARG}}")
         string(REGEX REPLACE "<<COMPILE_LANGUAGE:(C|CXX|CUDA)>:" "" ${_ARG} "${${_ARG}}")
         string(REGEX REPLACE ">$" "" ${_ARG} "${${_ARG}}")
     endforeach()
 endmacro()
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 macro(TIMEMORY_MAKEFILE_REMOVE_COMPILER_ID)
     foreach(_ARG ${ARGN})
@@ -44,7 +47,7 @@ macro(TIMEMORY_MAKEFILE_REMOVE_COMPILER_ID)
     endforeach()
 endmacro()
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 function(TIMEMORY_MAKEFILE_TARGET_EXTRACT _TARG _TYPE)
 
@@ -54,8 +57,14 @@ function(TIMEMORY_MAKEFILE_TARGET_EXTRACT _TARG _TYPE)
         set(_TARG ${_BASE_TARG})
     endif()
 
-    get_property(GLOBAL_PROCESSED DIRECTORY PROPERTY GLOBAL_PROCESSED)
-    get_property(PROCESSED DIRECTORY PROPERTY PROCESSED)
+    get_property(
+        GLOBAL_PROCESSED
+        DIRECTORY
+        PROPERTY GLOBAL_PROCESSED)
+    get_property(
+        PROCESSED
+        DIRECTORY
+        PROPERTY PROCESSED)
     # first
     set(_GLOBAL_FIRST OFF)
     set(_FIRST OFF)
@@ -68,12 +77,16 @@ function(TIMEMORY_MAKEFILE_TARGET_EXTRACT _TARG _TYPE)
     if(NOT "${_TARG}" IN_LIST GLOBAL_PROCESSED)
         set(_GLOBAL_FIRST ON)
     endif()
-    set_property(DIRECTORY APPEND PROPERTY GLOBAL_PROCESSED ${_TARG})
-    set_property(DIRECTORY APPEND PROPERTY PROCESSED ${_TARG})
+    set_property(
+        DIRECTORY
+        APPEND
+        PROPERTY GLOBAL_PROCESSED ${_TARG})
+    set_property(
+        DIRECTORY
+        APPEND
+        PROPERTY PROCESSED ${_TARG})
 
-    #if(_GLOBAL_FIRST)
-    #    message(STATUS "|_ Processing ${_TARG}...")
-    #endif()
+    # if(_GLOBAL_FIRST) message(STATUS "|_ Processing ${_TARG}...") endif()
 
     timemory_makefile_target(_FILE_TARG ${_TARG})
     timemory_makefile_target_name(_NAME ${_TARG})
@@ -135,17 +148,18 @@ function(TIMEMORY_MAKEFILE_TARGET_EXTRACT _TARG _TYPE)
             string(REPLACE ";" " " ${_TYPE}_OPTS "${${_TYPE}_OPTS}")
         endforeach()
 
-        # message(STATUS "[${_FILE_TARG}]> Compile C     : ${C_OPTS}")
-        # message(STATUS "[${_FILE_TARG}]> Compile CXX   : ${CXX_OPTS}")
-        # message(STATUS "[${_FILE_TARG}]> Compile CUDA  : ${CUDA_OPTS}")
-        # message(STATUS "[${_FILE_TARG}]> Compile EXTRA : ${EXTRA_OPTS}")
+        # message(STATUS "[${_FILE_TARG}]> Compile C     : ${C_OPTS}") message(STATUS
+        # "[${_FILE_TARG}]> Compile CXX   : ${CXX_OPTS}") message(STATUS "[${_FILE_TARG}]>
+        # Compile CUDA  : ${CUDA_OPTS}") message(STATUS "[${_FILE_TARG}]> Compile EXTRA :
+        # ${EXTRA_OPTS}")
     endif()
 
     if(COMPILE_DEFS)
         foreach(_DEF ${COMPILE_DEFS})
             # skip configuration generator expressions
-            if("${_DEF}" MATCHES "<CONFIG:" OR "${_DEF}" MATCHES "<BUILD_INTERFACE:" OR
-                "${_DEF}" MATCHES "TIMEMORY_CMAKE")
+            if("${_DEF}" MATCHES "<CONFIG:"
+               OR "${_DEF}" MATCHES "<BUILD_INTERFACE:"
+               OR "${_DEF}" MATCHES "TIMEMORY_CMAKE")
                 continue()
             endif()
             timemory_makefile_remove_compile_language(_DEF)
@@ -174,8 +188,8 @@ function(TIMEMORY_MAKEFILE_TARGET_EXTRACT _TARG _TYPE)
                 timemory_makefile_target_name(_DEP ${_LINK})
                 list(APPEND DEPEND ${_DEP})
                 get_target_property(_LINK_TARGET_TYPE ${_LINK} TYPE)
-                if("${_LINK_TARGET_TYPE}" MATCHES "SHARED_LIBRARY" OR
-                        "${_LINK_TARGET_TYPE}" MATCHES "STATIC_LIBRARY")
+                if("${_LINK_TARGET_TYPE}" MATCHES "SHARED_LIBRARY"
+                   OR "${_LINK_TARGET_TYPE}" MATCHES "STATIC_LIBRARY")
                     get_target_property(_LINK_OUTPUT_NAME ${_LINK} OUTPUT_NAME)
                     if(_LINK_OUTPUT_NAME)
                         list(APPEND LINKED "-l${_LINK_OUTPUT_NAME}")
@@ -208,7 +222,9 @@ function(TIMEMORY_MAKEFILE_TARGET_EXTRACT _TARG _TYPE)
     # if called recursively, set variables in parent scope and return
     if(NOT _FIRST)
         foreach(_VAR ${VARS})
-            set(${_NAME}_${_VAR} "${${_VAR}}" PARENT_SCOPE)
+            set(${_NAME}_${_VAR}
+                "${${_VAR}}"
+                PARENT_SCOPE)
         endforeach()
         if(NOT _GLOBAL_FIRST)
             return()
@@ -232,55 +248,69 @@ function(TIMEMORY_MAKEFILE_TARGET_EXTRACT _TARG _TYPE)
         endif()
     endforeach()
 
-    file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc "#
+    file(
+        APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc
+        "#
 #   TARGET: ${_NAME}
 #
 
 ")
 
     if(INCLUDE)
-        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc "${_NAME}_INCLUDE = ${INCLUDE}\n")
+        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc
+             "${_NAME}_INCLUDE = ${INCLUDE}\n")
     endif()
 
     if(LINKED)
-        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc "${_NAME}_LIBS = ${LINKED}\n")
+        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc
+             "${_NAME}_LIBS = ${LINKED}\n")
     endif()
 
     if(DEFINE)
-        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc "${_NAME}_DEFS = ${DEFINE}\n")
+        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc
+             "${_NAME}_DEFS = ${DEFINE}\n")
     endif()
 
     if(C_OPTS)
-        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc "${_NAME}_CFLAGS = ${C_OPTS}\n")
+        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc
+             "${_NAME}_CFLAGS = ${C_OPTS}\n")
     endif()
 
     if(CXX_OPTS)
-        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc "${_NAME}_CPPFLAGS = ${CXX_OPTS}\n")
+        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc
+             "${_NAME}_CPPFLAGS = ${CXX_OPTS}\n")
     endif()
 
     if(CUDA_OPTS)
-        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc "${_NAME}_CUFLAGS = ${CUDA_OPTS}\n")
+        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc
+             "${_NAME}_CUFLAGS = ${CUDA_OPTS}\n")
     endif()
 
     if(DEPEND)
         list(REMOVE_DUPLICATES DEPEND)
         string(REPLACE ";" " " DEPEND "${DEPEND}")
-        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc "${_NAME}_DEPENDS = ${DEPEND}\n")
+        file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc
+             "${_NAME}_DEPENDS = ${DEPEND}\n")
     endif()
 
-    if(INCLUDE OR LINKED OR DEFINE OR C_OPTS OR CXX_OPTS OR CUDA_OPTS OR DEPEND)
+    if(INCLUDE
+       OR LINKED
+       OR DEFINE
+       OR C_OPTS
+       OR CXX_OPTS
+       OR CUDA_OPTS
+       OR DEPEND)
         file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc "\n")
     endif()
 
 endfunction()
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 message(STATUS "Generating Makefile.timemory.inc...")
 
 set(TIMEMORY_MAKEFILE_LIBRARIES
-    ${TIMEMORY_MAKEFILE_INTERFACE_LIBRARIES}
-    ${TIMEMORY_MAKEFILE_COMPILED_LIBRARIES}
+    ${TIMEMORY_MAKEFILE_INTERFACE_LIBRARIES} ${TIMEMORY_MAKEFILE_COMPILED_LIBRARIES}
     ${TIMEMORY_TOOL_LIBRARIES})
 
 list(REMOVE_DUPLICATES TIMEMORY_MAKEFILE_LIBRARIES)
@@ -293,8 +323,9 @@ foreach(_LIB ${TIMEMORY_MAKEFILE_LIBRARIES})
 endforeach()
 string(REPLACE ";" " " MAKEFILE_LIBS "${MAKEFILE_LIBS}")
 
-file(WRITE ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc
-"
+file(
+    WRITE ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc
+    "
 #
 # This file was auto-generated by the timemory CMake build system
 #
@@ -303,7 +334,7 @@ TIMEMORY_MAKEFILE_LIBRARIES = ${MAKEFILE_LIBS}
 
 ")
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 list(SORT TIMEMORY_MAKEFILE_LIBRARIES)
 
@@ -314,14 +345,15 @@ endforeach()
 
 file(APPEND ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc "\n")
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 message(STATUS "Generated outputs/Makefile.timemory.inc")
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_INSTALL_CONFIG)
-    install(FILES ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc
+    install(
+        FILES ${PROJECT_BINARY_DIR}/outputs/Makefile.timemory.inc
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
         OPTIONAL)
 endif()

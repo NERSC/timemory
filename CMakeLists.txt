@@ -1,12 +1,11 @@
-
-#----------------------------------------------------------------------------------------#
-#   recommend out-of-source builds
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# recommend out-of-source builds
+# ----------------------------------------------------------------------------------------#
 
 cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 
-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND
-   CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND CMAKE_CURRENT_SOURCE_DIR STREQUAL
+                                                  CMAKE_SOURCE_DIR)
     set(MSG "")
     message(STATUS "Warning! Building from the source directory is not recommended")
     message(STATUS "If unintented, please remove 'CMakeCache.txt' and 'CMakeFiles'")
@@ -14,20 +13,21 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR AND
     message(AUTHOR_WARNING "In-source build")
 endif()
 
-# if(APPLE AND NOT "$ENV{CONDA_PYTHON_EXE}" STREQUAL "")
-#    # disable by default bc conda will set these and cause problem with python bindings
-#    set(CMAKE_C_FLAGS "" CACHE STRING "")
-#    set(CMAKE_CXX_FLAGS "" CACHE STRING "")
-# endif()
+# if(APPLE AND NOT "$ENV{CONDA_PYTHON_EXE}" STREQUAL "") # disable by default bc conda
+# will set these and cause problem with python bindings set(CMAKE_C_FLAGS "" CACHE STRING
+# "") set(CMAKE_CXX_FLAGS "" CACHE STRING "") endif()
 
-#----------------------------------------------------------------------------------------#
-#   project
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# project
+# ----------------------------------------------------------------------------------------#
 
 # sets version info, policies, some options, and other miscellaneous stuff
 include("${CMAKE_CURRENT_LIST_DIR}/cmake/Modules/ProjectSetup.cmake")
 
-project(timemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
+project(
+    timemory
+    LANGUAGES C CXX
+    VERSION ${TIMEMORY_VERSION})
 
 cmake_policy(SET CMP0010 NEW)
 cmake_policy(SET CMP0022 NEW)
@@ -49,15 +49,19 @@ endif()
 
 # Check if project is being used directly or via add_subdirectory
 set(${PROJECT_NAME}_MAIN_PROJECT ON)
-if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR OR
-   NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR OR NOT "${CMAKE_PROJECT_NAME}"
+                                                             STREQUAL "${PROJECT_NAME}")
     set(${PROJECT_NAME}_MAIN_PROJECT OFF)
 endif()
 
 # set these as the defaults
 if(timemory_MAIN_PROJECT)
-    set(CMAKE_ENABLE_EXPORTS ON CACHE BOOL "Executable exports symbols for loadable modules")
-    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON CACHE BOOL "Append directories in the linker search path")
+    set(CMAKE_ENABLE_EXPORTS
+        ON
+        CACHE BOOL "Executable exports symbols for loadable modules")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH
+        ON
+        CACHE BOOL "Append directories in the linker search path")
     # set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
     mark_as_advanced(CMAKE_ENABLE_EXPORTS)
     foreach(_FILE version.h defines.h)
@@ -74,13 +78,15 @@ endif()
 # install directories
 include(GNUInstallDirs)
 # cmake installation folder -- change CMAKE_INSTALL_DATAROOTDIR to tweak this
-set(CMAKE_INSTALL_CONFIGDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME})
+set(CMAKE_INSTALL_CONFIGDIR ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME})
 
 if(UNIX AND NOT APPLE)
     set(CMAKE_INSTALL_RPATH
         "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\$ORIGIN/timemory:\$ORIGIN")
     if(NOT SKBUILD AND NOT SPACK_BUILD)
-        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_RPATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/timemory")
+        set(CMAKE_INSTALL_RPATH
+            "${CMAKE_INSTALL_RPATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/timemory"
+            )
     endif()
 endif()
 
@@ -90,9 +96,9 @@ foreach(_TYPE DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
     set(PROJECT_INSTALL_${_TYPE}DIR ${CMAKE_INSTALL_${TYPE}DIR})
 endforeach()
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
-    ${CMAKE_CURRENT_LIST_DIR}/external/pybind11/tools
-    ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH
+    ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
+    ${CMAKE_CURRENT_LIST_DIR}/external/pybind11/tools ${CMAKE_MODULE_PATH})
 set(CMAKE_DIRECTORY_LABELS "${PROJECT_NAME}")
 set(CMAKE_INSTALL_MESSAGE LAZY)
 
@@ -103,7 +109,7 @@ endforeach()
 set(timemory_VERSION ${PROJECT_VERSION})
 set(LIBNAME timemory)
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 # set the output directory (critical for Windows and Xcode)
 #
 foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
@@ -127,29 +133,39 @@ if(WIN32)
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
 
-#----------------------------------------------------------------------------------------#
-#   configuration
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# configuration
+# ----------------------------------------------------------------------------------------#
 
 include(MacroUtilities)
 include(Options)
 
-#----------------------------------------------------------------------------------------#
-#   compile-timing-perf
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# compile-timing-perf
+# ----------------------------------------------------------------------------------------#
 
 option(TIMEMORY_USE_CTP "Enable compile-time-perf" OFF)
 mark_as_advanced(TIMEMORY_USE_CTP)
 if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_USE_CTP)
     find_package(compile-time-perf)
     if(compile-time-perf_FOUND)
-        enable_compile_time_perf(timemory-compile-time
+        enable_compile_time_perf(
+            timemory-compile-time
             LINK
             ANALYZER_OPTIONS
-                -s "${PROJECT_BINARY_DIR}/" "${PROJECT_SOURCE_DIR}/"
-                -f "lang-all" "so" "a" "dylib" "dll"
-                -i "^-"
-                -e "^(@rpath).*")
+            -s
+            "${PROJECT_BINARY_DIR}/"
+            "${PROJECT_SOURCE_DIR}/"
+            -f
+            "lang-all"
+            "so"
+            "a"
+            "dylib"
+            "dll"
+            -i
+            "^-"
+            -e
+            "^(@rpath).*")
         set(TIMEMORY_USE_CTP ON)
     else()
         set(TIMEMORY_USE_CTP OFF)
@@ -160,9 +176,9 @@ if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_BUILD_TESTING)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
 
-#----------------------------------------------------------------------------------------#
-#   handle some additional configuration before other includes
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# handle some additional configuration before other includes
+# ----------------------------------------------------------------------------------------#
 
 set(_BUILD_SHARED_CXX ${BUILD_SHARED_LIBS})
 set(_BUILD_STATIC_CXX ${BUILD_STATIC_LIBS})
@@ -178,25 +194,39 @@ if(SKBUILD)
         set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     endif()
 else()
-    if(BUILD_STATIC_LIBS AND NOT BUILD_SHARED_LIBS AND TIMEMORY_USE_PYTHON AND NOT CMAKE_POSITION_INDEPENDENT_CODE)
-        message(FATAL_ERROR "Error! Python compilation with static libraries requires CMAKE_POSITION_INDEPENDENT_CODE to be ON")
+    if(BUILD_STATIC_LIBS
+       AND NOT BUILD_SHARED_LIBS
+       AND TIMEMORY_USE_PYTHON
+       AND NOT CMAKE_POSITION_INDEPENDENT_CODE)
+        message(
+            FATAL_ERROR
+                "Error! Python compilation with static libraries requires CMAKE_POSITION_INDEPENDENT_CODE to be ON"
+            )
     endif()
 endif()
 
-#----------------------------------------------------------------------------------------#
-#   thread-local static settings.
-#   NOTE: if building Python, the thread-local storage MUST be global-dynamic
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# thread-local static settings. NOTE: if building Python, the thread-local storage MUST be
+# global-dynamic
+# ----------------------------------------------------------------------------------------#
 
-set(_TLS_DESCRIPT "Thread-local static model: 'global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'")
+set(_TLS_DESCRIPT
+    "Thread-local static model: 'global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'"
+    )
 set(_TLS_OPTIONS "global-dynamic" "local-dynamic" "initial-exec" "local-exec")
 
-if(SKBUILD OR TIMEMORY_USE_PYTHON OR TIMEMORY_USE_DYNINST)
-    set(TIMEMORY_TLS_MODEL "global-dynamic" CACHE STRING "${_TLS_DESCRIPT}")
+if(SKBUILD
+   OR TIMEMORY_USE_PYTHON
+   OR TIMEMORY_USE_DYNINST)
+    set(TIMEMORY_TLS_MODEL
+        "global-dynamic"
+        CACHE STRING "${_TLS_DESCRIPT}")
     # ensure local override
     set(TIMEMORY_TLS_MODEL "global-dynamic")
 else()
-    set(TIMEMORY_TLS_MODEL "initial-exec" CACHE STRING "${_TLS_DESCRIPT}")
+    set(TIMEMORY_TLS_MODEL
+        "initial-exec"
+        CACHE STRING "${_TLS_DESCRIPT}")
 endif()
 
 set_property(CACHE TIMEMORY_TLS_MODEL PROPERTY STRINGS "${_TLS_OPTIONS}")
@@ -208,9 +238,9 @@ add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
 unset(_TLS_DESCRIPT)
 unset(_TLS_OPTIONS)
 
-#----------------------------------------------------------------------------------------#
-#   rest of configuration
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# rest of configuration
+# ----------------------------------------------------------------------------------------#
 
 include(CMakeParseArguments)
 
@@ -229,32 +259,41 @@ include(Packages)
 # only after submodules have been added
 if(TIMEMORY_USE_COVERAGE)
     set(CMAKE_UNITY_BUILD OFF)
-    set(TIMEMORY_UNITY_BUILD OFF CACHE BOOL "" FORCE)
+    set(TIMEMORY_UNITY_BUILD
+        OFF
+        CACHE BOOL "" FORCE)
 else()
     set(CMAKE_UNITY_BUILD ${TIMEMORY_UNITY_BUILD})
 endif()
 
 # set these as the defaults
 if(timemory_MAIN_PROJECT)
-    set(CMAKE_VISIBILITY_INLINES_HIDDEN OFF CACHE BOOL
-        "Add compile flag to hide symbols of inline functions")
-    set(CMAKE_C_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
-    set(CMAKE_CXX_VISIBILITY_PRESET "default" CACHE STRING "Default visibility")
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN
+        OFF
+        CACHE BOOL "Add compile flag to hide symbols of inline functions")
+    set(CMAKE_C_VISIBILITY_PRESET
+        "default"
+        CACHE STRING "Default visibility")
+    set(CMAKE_CXX_VISIBILITY_PRESET
+        "default"
+        CACHE STRING "Default visibility")
 else()
     set(CMAKE_VISIBILITY_INLINES_HIDDEN OFF)
     set(CMAKE_C_VISIBILITY_PRESET "default")
     set(CMAKE_CXX_VISIBILITY_PRESET "default")
 endif()
 
-#----------------------------------------------------------------------------------------#
-#   timemory source
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# timemory source
+# ----------------------------------------------------------------------------------------#
 
 if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     _timemory_activate_clang_tidy() # activate clang-tidy if enabled
 endif()
 
-set(timemory_DIR ${PROJECT_BINARY_DIR} CACHE PATH "Path to timemory" FORCE)
+set(timemory_DIR
+    ${PROJECT_BINARY_DIR}
+    CACHE PATH "Path to timemory" FORCE)
 
 timemory_message(STATUS "Adding timemory (python)...")
 add_subdirectory(timemory)
@@ -268,15 +307,16 @@ add_subdirectory(external)
 # Install the export set for use with the install-tree
 if(TIMEMORY_INSTALL_CONFIG)
     timemory_message(STATUS "Exporting library dependencies...")
-    install(EXPORT ${PROJECT_NAME}-library-depends
+    install(
+        EXPORT ${PROJECT_NAME}-library-depends
         DESTINATION ${CMAKE_INSTALL_CONFIGDIR}
         NAMESPACE ${PROJECT_NAME}::
         OPTIONAL)
 endif()
 
-#----------------------------------------------------------------------------------------#
-#   Examples and Testing
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# Examples and Testing
+# ----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_EXAMPLES)
     timemory_message(STATUS "Adding examples...")
@@ -287,18 +327,16 @@ elseif(TIMEMORY_USE_PYTHON AND TIMEMORY_CI)
     function(CONFIGURE_PYTHON_SCRIPT)
         foreach(_TYPE ${ARGN})
             set(FILENAME ex_python_${_TYPE})
-            configure_file(
-                ${PROJECT_SOURCE_DIR}/examples/ex-python/ex_${_TYPE}.py
-                ${PROJECT_BINARY_DIR}/ex_python_${_TYPE}
-                @ONLY)
+            configure_file(${PROJECT_SOURCE_DIR}/examples/ex-python/ex_${_TYPE}.py
+                           ${PROJECT_BINARY_DIR}/ex_python_${_TYPE} @ONLY)
         endforeach()
     endfunction()
     configure_python_script(sample tracer profiler general builtin external)
 endif()
 
-#----------------------------------------------------------------------------------------#
-#   Documentation
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# Documentation
+# ----------------------------------------------------------------------------------------#
 
 if(timemory_MAIN_PROJECT)
 
@@ -306,11 +344,11 @@ if(timemory_MAIN_PROJECT)
 
     if(TIMEMORY_BUILD_DOCS)
         timemory_message(STATUS "Adding documentation...")
-        Generate_Documentation(Doxyfile.${PROJECT_NAME})
+        generate_documentation(Doxyfile.${PROJECT_NAME})
     endif()
 
     option(TIMEMORY_PRINT_FEATURES
-        "Print the list of enabled/disabled options and interface libraries" ON)
+           "Print the list of enabled/disabled options and interface libraries" ON)
     mark_as_advanced(TIMEMORY_PRINT_FEATURES)
 
     if(TIMEMORY_PRINT_FEATURES AND NOT TIMEMORY_QUIET_CONFIG)
@@ -319,20 +357,21 @@ if(timemory_MAIN_PROJECT)
 
 endif()
 
-#----------------------------------------------------------------------------------------#
-#   Makefile.timemory.inc
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# Makefile.timemory.inc
+# ----------------------------------------------------------------------------------------#
 
 option(TIMEMORY_GENERATE_MAKEFILE_INCLUDE
-    "Generate a Makefile.timemory.inc for Makefile build systems" ${TIMEMORY_INSTALL_CONFIG})
+       "Generate a Makefile.timemory.inc for Makefile build systems"
+       ${TIMEMORY_INSTALL_CONFIG})
 mark_as_advanced(TIMEMORY_GENERATE_MAKEFILE_INCLUDE)
 
 if(TIMEMORY_GENERATE_MAKEFILE_INCLUDE)
     include(GenerateMakefile)
 endif()
 
-# remove testing configure warnings:
-#   "Manually-specified variables were not used by the project: ... etc. ..."
+# remove testing configure warnings: "Manually-specified variables were not used by the
+# project: ... etc. ..."
 #
 foreach(_EXAMPLE_OPTION MPI TAU CUDA PAPI CUPTI KOKKOS CALIPER)
     set(_IGNORE ${USE_${_EXAMPLE_OPTION}})

@@ -20,7 +20,13 @@ if(USE_CALIPER)
 endif()
 
 set(TIMEMORY_EXTRACT_INTERFACE ON)
-find_package(timemory REQUIRED COMPONENTS ${COMPONENTS} OPTIONAL_COMPONENTS cxx)
+find_package(
+    timemory REQUIRED
+    COMPONENTS ${COMPONENTS}
+    OPTIONAL_COMPONENTS cxx)
 add_executable(ex_cxx_basic ex_cxx_basic.cpp)
 target_link_libraries(ex_cxx_basic timemory-cxx-basic-example)
-install(TARGETS ex_cxx_basic DESTINATION bin OPTIONAL)
+install(
+    TARGETS ex_cxx_basic
+    DESTINATION bin
+    OPTIONAL)
