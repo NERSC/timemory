@@ -31,6 +31,7 @@
 #define TIMEMORY_CEREAL_TYPES_MAP_HPP_
 
 #include "timemory/tpls/cereal/cereal/types/concepts/pair_associative_container.hpp"
+
 #include <map>
 
 #endif  // TIMEMORY_CEREAL_TYPES_MAP_HPP_

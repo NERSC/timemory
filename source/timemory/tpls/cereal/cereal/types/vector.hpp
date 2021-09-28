@@ -31,6 +31,7 @@
 #define TIMEMORY_CEREAL_TYPES_VECTOR_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+
 #include <vector>
 
 namespace tim

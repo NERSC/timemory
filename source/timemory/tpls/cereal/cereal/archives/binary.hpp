@@ -30,6 +30,7 @@
 #define TIMEMORY_CEREAL_ARCHIVES_BINARY_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+
 #include <sstream>
 
 namespace tim

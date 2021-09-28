@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/components/craypat/extern.hpp"
+
 #include "timemory/components/craypat/backends.hpp"
 
 #if !defined(CRAYPAT)

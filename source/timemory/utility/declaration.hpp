@@ -31,12 +31,11 @@
 
 #include "timemory/backends/signals.hpp"
 
+#include <cfenv>
+#include <csignal>
 #include <functional>
 #include <set>
 #include <string>
-
-#include <cfenv>
-#include <csignal>
 
 namespace tim
 {

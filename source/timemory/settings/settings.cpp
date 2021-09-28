@@ -26,6 +26,7 @@
 #    define TIMEMORY_SETTINGS_SETTINGS_CPP_
 
 #    include "timemory/settings/settings.hpp"
+
 #    include "timemory/backends/dmp.hpp"
 #    include "timemory/defines.h"
 #    include "timemory/mpl/policy.hpp"

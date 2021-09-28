@@ -26,6 +26,7 @@
 #define TIMEMORY_VARIADIC_BUNDLE_CPP_
 
 #include "timemory/variadic/bundle.hpp"
+
 #include "timemory/backends/dmp.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types/set.hpp"

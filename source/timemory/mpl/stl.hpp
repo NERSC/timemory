@@ -30,14 +30,14 @@
 
 #pragma once
 
+#include "timemory/math/stl.hpp"
+#include "timemory/utility/macros.hpp"
+
 #include <array>
 #include <ostream>
 #include <tuple>
 #include <utility>
 #include <vector>
-
-#include "timemory/math/stl.hpp"
-#include "timemory/utility/macros.hpp"
 
 namespace tim
 {

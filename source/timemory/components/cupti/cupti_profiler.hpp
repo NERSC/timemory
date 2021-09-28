@@ -45,9 +45,8 @@
 #    include <cupti_profiler_target.h>
 #    include <cupti_target.h>
 //
-#    include <cuda.h>
-
 #    include <cstdint>
+#    include <cuda.h>
 #    include <fstream>
 #    include <iostream>
 #    include <string>

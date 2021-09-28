@@ -36,11 +36,11 @@
 #    endif  // gcc 4.7 or earlier
 #endif      // __clang__
 
-#include <type_traits>
-#include <typeindex>
-
 #include "timemory/tpls/cereal/cereal/access.hpp"
 #include "timemory/tpls/cereal/cereal/macros.hpp"
+
+#include <type_traits>
+#include <typeindex>
 
 namespace tim
 {

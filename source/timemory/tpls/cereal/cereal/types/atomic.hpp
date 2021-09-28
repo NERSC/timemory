@@ -31,6 +31,7 @@
 #define TIMEMORY_CEREAL_TYPES_ATOMIC_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+
 #include <atomic>
 
 namespace tim

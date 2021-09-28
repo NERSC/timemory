@@ -26,11 +26,10 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "gtest/gtest.h"
-
 #include "timemory/backends/device.hpp"
 #include "timemory/timemory.hpp"
 
+#include "gtest/gtest.h"
 #include <chrono>
 #include <iostream>
 #include <random>

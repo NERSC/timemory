@@ -27,7 +27,6 @@
 #include "timemory/timemory.hpp"
 
 #include <dlfcn.h>
-
 #include <memory>
 #include <set>
 #include <unordered_map>

@@ -25,14 +25,11 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/units.hpp"
-
-#include "timemory/components/base.hpp"
 #include "timemory/components/cupti/backends.hpp"
-#include "timemory/components/cupti/types.hpp"
-
 #include "timemory/components/cupti/cupti_activity.hpp"
 #include "timemory/components/cupti/cupti_counters.hpp"
 #include "timemory/components/cupti/cupti_pcsampling.hpp"
+#include "timemory/components/cupti/types.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/units.hpp"

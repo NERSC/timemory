@@ -26,18 +26,16 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "gtest/gtest.h"
+#include "PTL/TaskGroup.hh"
+#include "PTL/TaskRunManager.hh"
+#include "timemory/timemory.hpp"
 
+#include "gtest/gtest.h"
 #include <chrono>
 #include <iostream>
 #include <random>
 #include <thread>
 #include <vector>
-
-#include "timemory/timemory.hpp"
-
-#include "PTL/TaskGroup.hh"
-#include "PTL/TaskRunManager.hh"
 
 using namespace tim::component;
 using tuple_t =

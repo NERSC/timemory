@@ -31,6 +31,7 @@
 #define TIMEMORY_CEREAL_TYPES_STD_VARIANT_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+
 #include <cstdint>
 #include <variant>
 

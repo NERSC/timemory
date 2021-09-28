@@ -23,7 +23,6 @@
 // SOFTWARE.
 
 #include "kp_timemory.hpp"
-
 #include "timemory/timemory.hpp"
 
 #include <cassert>

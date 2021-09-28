@@ -30,15 +30,12 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/components/cupti/components.hpp"
+#include "timemory/components/papi/components.hpp"
+#include "timemory/components/roofline/backends.hpp"
+#include "timemory/components/roofline/cpu_roofline.hpp"
+#include "timemory/components/roofline/gpu_roofline.hpp"
+#include "timemory/components/roofline/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
-
-#include "timemory/components/roofline/backends.hpp"
-#include "timemory/components/roofline/types.hpp"
-
-#include "timemory/components/cupti/components.hpp"
-#include "timemory/components/papi/components.hpp"
-
-#include "timemory/components/roofline/cpu_roofline.hpp"
-#include "timemory/components/roofline/gpu_roofline.hpp"

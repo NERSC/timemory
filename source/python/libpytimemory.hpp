@@ -30,15 +30,6 @@
 
 #include "timemory/utility/macros.hpp"
 //
-#include "timemory/enum.h"
-#include "timemory/runtime/configure.hpp"
-#include "timemory/runtime/enumerate.hpp"
-#include "timemory/runtime/initialize.hpp"
-#include "timemory/runtime/insert.hpp"
-#include "timemory/runtime/invoker.hpp"
-#include "timemory/runtime/properties.hpp"
-#include "timemory/timemory.hpp"
-
 #include "pybind11/cast.h"
 #include "pybind11/embed.h"
 #include "pybind11/eval.h"
@@ -48,6 +39,14 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/pytypes.h"
 #include "pybind11/stl.h"
+#include "timemory/enum.h"
+#include "timemory/runtime/configure.hpp"
+#include "timemory/runtime/enumerate.hpp"
+#include "timemory/runtime/initialize.hpp"
+#include "timemory/runtime/insert.hpp"
+#include "timemory/runtime/invoker.hpp"
+#include "timemory/runtime/properties.hpp"
+#include "timemory/timemory.hpp"
 
 #include <atomic>
 #include <chrono>

@@ -41,13 +41,12 @@
 //@HEADER
 */
 
+#include <Kokkos_Core.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
 #include <sys/time.h>
-
-#include <Kokkos_Core.hpp>
 
 void
 checkSizes(int& N, int& M, int& S, int& nrepeat);

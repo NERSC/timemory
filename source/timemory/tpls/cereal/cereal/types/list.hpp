@@ -31,6 +31,7 @@
 #define TIMEMORY_CEREAL_TYPES_LIST_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+
 #include <list>
 
 namespace tim

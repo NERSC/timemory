@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/settings/vsettings.hpp"
+
 #include "timemory/settings/declaration.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/types.hpp"

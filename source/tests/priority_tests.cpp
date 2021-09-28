@@ -26,16 +26,15 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "gtest/gtest.h"
+#include "timemory/timemory.hpp"
 
+#include "gtest/gtest.h"
 #include <chrono>
 #include <iostream>
 #include <mutex>
 #include <random>
 #include <thread>
 #include <vector>
-
-#include "timemory/timemory.hpp"
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;

@@ -26,6 +26,7 @@
 #define TIMEMORY_VARIADIC_LIGHTWEIGHT_TUPLE_CPP_ 1
 
 #include "timemory/variadic/lightweight_tuple.hpp"
+
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types/set.hpp"
 #include "timemory/utility/macros.hpp"

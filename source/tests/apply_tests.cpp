@@ -26,11 +26,10 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "gtest/gtest.h"
-
 #include "timemory/mpl/apply.hpp"
 #include "timemory/timemory.hpp"
 
+#include "gtest/gtest.h"
 #include <array>
 #include <chrono>
 #include <iostream>

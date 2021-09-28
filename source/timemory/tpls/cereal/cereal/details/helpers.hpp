@@ -30,15 +30,15 @@
 #ifndef TIMEMORY_CEREAL_DETAILS_HELPERS_HPP_
 #define TIMEMORY_CEREAL_DETAILS_HELPERS_HPP_
 
+#include "timemory/tpls/cereal/cereal/details/static_object.hpp"
+#include "timemory/tpls/cereal/cereal/macros.hpp"
+
 #include <cstdint>
 #include <memory>
 #include <stdexcept>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
-
-#include "timemory/tpls/cereal/cereal/details/static_object.hpp"
-#include "timemory/tpls/cereal/cereal/macros.hpp"
 
 namespace tim
 {

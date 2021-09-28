@@ -28,14 +28,13 @@
 #include "timemory/sampling.hpp"
 #include "timemory/timemory.hpp"
 
-#include <nvml.h>
-
 #include <cerrno>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <nvml.h>
 #include <thread>
 #include <vector>
 

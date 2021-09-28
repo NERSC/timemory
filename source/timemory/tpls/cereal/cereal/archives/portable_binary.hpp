@@ -31,6 +31,7 @@
 
 #include "timemory/macros/attributes.hpp"
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+
 #include <limits>
 #include <sstream>
 

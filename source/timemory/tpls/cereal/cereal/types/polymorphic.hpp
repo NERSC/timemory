@@ -31,12 +31,11 @@
 #define TIMEMORY_CEREAL_TYPES_POLYMORPHIC_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
-#include "timemory/tpls/cereal/cereal/types/memory.hpp"
-
 #include "timemory/tpls/cereal/cereal/details/helpers.hpp"
 #include "timemory/tpls/cereal/cereal/details/polymorphic_impl.hpp"
 #include "timemory/tpls/cereal/cereal/details/traits.hpp"
 #include "timemory/tpls/cereal/cereal/details/util.hpp"
+#include "timemory/tpls/cereal/cereal/types/memory.hpp"
 
 #ifdef _MSC_VER
 #    define TIMEMORY_CEREAL_STATIC_CONSTEXPR static

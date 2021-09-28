@@ -30,13 +30,12 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/components/gperftools/backends.hpp"
+#include "timemory/components/gperftools/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
-
-#include "timemory/components/gperftools/backends.hpp"
-#include "timemory/components/gperftools/types.hpp"
 
 //======================================================================================//
 //

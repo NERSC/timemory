@@ -26,18 +26,18 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "gtest/gtest.h"
+#include "timemory/timemory.hpp"
 
+#include "gtest/gtest.h"
 #include <chrono>
 #include <iostream>
 #include <random>
 #include <thread>
 #include <vector>
 
-#include "timemory/timemory.hpp"
-
 #if defined(_OPENMP)
 #    include "timemory/components/ompt.hpp"
+
 #    include <omp.h>
 #endif
 

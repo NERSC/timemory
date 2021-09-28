@@ -25,12 +25,11 @@
 #pragma once
 
 #include "timemory/components/base/declaration.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/units.hpp"
-
 #include "timemory/components/timing/backends.hpp"
 #include "timemory/components/timing/types.hpp"
 #include "timemory/components/timing/wall_clock.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/units.hpp"
 
 #include <utility>
 

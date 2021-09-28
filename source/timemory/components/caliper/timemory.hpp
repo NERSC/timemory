@@ -26,7 +26,6 @@
 
 #include "caliper/ConfigManager.h"
 #include "caliper/cali.h"
-
 #include "timemory/api.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/settings/declaration.hpp"

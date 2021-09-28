@@ -28,12 +28,11 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "gtest/gtest.h"
-
 #include "timemory/timemory.hpp"
 #include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/component_hybrid.hpp"
 
+#include "gtest/gtest.h"
 #include <chrono>
 #include <condition_variable>
 #include <functional>
