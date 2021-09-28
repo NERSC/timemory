@@ -25,7 +25,6 @@
 #pragma once
 
 #include "gpu_common.hpp"
-
 #include "timemory/operations.hpp"
 #include "timemory/variadic.hpp"
 

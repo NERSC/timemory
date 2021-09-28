@@ -29,17 +29,16 @@
 
 #pragma once
 
-#include <memory>
-
 #include "timemory/backends/device.hpp"
 #include "timemory/components/base.hpp"
+#include "timemory/components/hip/backends.hpp"
+#include "timemory/components/hip/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
 
-#include "timemory/components/hip/backends.hpp"
-#include "timemory/components/hip/types.hpp"
+#include <memory>
 
 #if defined(TIMEMORY_PYBIND11_SOURCE)
 #    include "pybind11/cast.h"

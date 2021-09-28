@@ -27,6 +27,8 @@
 #include "timemory/macros.hpp"
 #include "timemory/mpl/types.hpp"
 
+#include <cstdint>
+
 TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_runtime_enabled, TIMEMORY_API, false_type)
 
 #include "timemory/runtime/configure.hpp"
