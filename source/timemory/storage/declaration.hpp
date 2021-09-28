@@ -64,8 +64,8 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-TIMEMORY_NOINLINE TIMEMORY_NOCLONE storage_singleton<Tp>*
-                                   get_storage_singleton();
+TIMEMORY_NOINLINE storage_singleton<Tp>*
+                  get_storage_singleton();
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -75,8 +75,9 @@ get_storage_singleton()
 {
     using singleton_type  = tim::storage_singleton<Tp>;
     using component_type  = typename Tp::component_type;
-    static auto _instance = std::unique_ptr<singleton_type>(
-        (trait::runtime_enabled<component_type>::get()) ? new singleton_type{} : nullptr);
+    static auto _instance = (trait::runtime_enabled<component_type>::get())
+                                ? std::make_unique<singleton_type>()
+                                : std::unique_ptr<singleton_type>{};
     static auto _dtor = scope::destructor{ []() { _instance.reset(); } };
     return _instance.get();
     consume_parameters(_dtor);
