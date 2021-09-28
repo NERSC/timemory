@@ -38,6 +38,7 @@
 #endif
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+
 #include <boost/variant/static_visitor.hpp>
 #include <boost/variant/variant_fwd.hpp>
 

@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/timemory.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 

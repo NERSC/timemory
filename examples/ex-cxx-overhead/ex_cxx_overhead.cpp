@@ -23,13 +23,13 @@
 // SOFTWARE.
 //
 
-#include <cstdint>
-
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/invoker.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/utility/testing.hpp"
+
+#include <cstdint>
 
 // TIMEMORY_DEFINE_CONCRETE_TRAIT(supports_runtime_enabled, TIMEMORY_API, false_type)
 

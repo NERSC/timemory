@@ -28,15 +28,14 @@
 #include "nvml_temperature.hpp"
 #include "nvml_utilization_rate.hpp"
 
+#include <chrono>
+#include <map>
+#include <thread>
 #include <timemory/general/serialization.hpp>
 #include <timemory/storage/ring_buffer.hpp>
 #include <timemory/timemory.hpp>
 #include <timemory/tpls/cereal/cereal.hpp>
 #include <timemory/variadic/lightweight_tuple.hpp>
-
-#include <chrono>
-#include <map>
-#include <thread>
 #include <vector>
 
 using bundle_t = tim::lightweight_tuple<nvml_processes, nvml_memory_info,

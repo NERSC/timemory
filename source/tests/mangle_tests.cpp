@@ -22,9 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "gtest/gtest.h"
-
 #include "timemory/timemory.hpp"
+
+#include "gtest/gtest.h"
 #include <chrono>
 #include <iostream>
 #include <random>

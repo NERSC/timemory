@@ -32,6 +32,7 @@
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include "timemory/tpls/cereal/cereal/types/string.hpp"
+
 #include <bitset>
 
 namespace tim

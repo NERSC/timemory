@@ -26,8 +26,10 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "gtest/gtest.h"
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
 
+#include "gtest/gtest.h"
 #include <cassert>
 #include <chrono>
 #include <cmath>
@@ -39,9 +41,6 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include <thread>
 #include <unordered_map>
 #include <vector>
-
-#include "timemory/timemory.hpp"
-#include "timemory/utility/signals.hpp"
 
 using namespace tim::component;
 using namespace tim::stl;
@@ -217,7 +216,9 @@ TEST_F(tuple_tests, usage)
     std::cout << "usage (end):   " << _use_end << std::endl;
 
     std::vector<std::pair<std::string, full_measurement_t>> measurements = {
-        { "begin", _use_beg }, { "delta", _use_delta }, { "end", _use_end }
+        { "begin", _use_beg },
+        { "delta", _use_delta },
+        { "end", _use_end }
     };
     // serialize("rusage.json", "usage", measurements);
     test_1_marker.stop();

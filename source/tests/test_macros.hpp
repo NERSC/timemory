@@ -31,7 +31,6 @@
 #endif
 
 #include "gtest/gtest.h"
-
 #include <chrono>
 #include <condition_variable>
 #include <iostream>

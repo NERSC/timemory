@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "nvml.hpp"
+
 #include "timemory/general/serialization.hpp"
 #include "timemory/mpl/policy.hpp"
 

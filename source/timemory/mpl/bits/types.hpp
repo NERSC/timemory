@@ -31,6 +31,8 @@
 
 #pragma once
 
+#include "timemory/mpl/types.hpp"
+
 #include <array>
 #include <ostream>
 #include <sstream>
@@ -38,8 +40,6 @@
 #include <tuple>
 #include <utility>
 #include <vector>
-
-#include "timemory/mpl/types.hpp"
 
 namespace tim
 {

@@ -23,5 +23,6 @@
 // SOFTWARE.
 
 #include "timemory/storage/extern.hpp"
+
 #include "timemory/environment/declaration.hpp"
 #include "timemory/storage/definition.hpp"

@@ -29,10 +29,9 @@
 #include "timemory/units.hpp"
 #include "timemory/utility/types.hpp"
 
-#include <nvml.h>
-
 #include <array>
 #include <cassert>
+#include <nvml.h>
 #include <ostream>
 #include <sys/types.h>
 #include <unistd.h>

@@ -33,7 +33,6 @@
 #include "timemory/macros/attributes.hpp"
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include "timemory/tpls/cereal/cereal/details/util.hpp"
-
 #include "timemory/tpls/cereal/cereal/external/base64.hpp"
 #include "timemory/tpls/cereal/cereal/external/rapidxml/rapidxml.hpp"
 #include "timemory/tpls/cereal/cereal/external/rapidxml/rapidxml_print.hpp"

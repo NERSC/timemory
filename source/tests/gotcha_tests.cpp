@@ -28,12 +28,10 @@
 TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "gotcha_tests_lib.hpp"
-
-#include "gtest/gtest.h"
-
 #include "timemory/components/gotcha/memory_allocations.hpp"
 #include "timemory/timemory.hpp"
 
+#include "gtest/gtest.h"
 #include <chrono>
 #include <cmath>
 #include <condition_variable>

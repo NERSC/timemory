@@ -53,6 +53,7 @@
 #include "timemory/tpls/cereal/cereal/details/util.hpp"
 #include "timemory/tpls/cereal/cereal/types/memory.hpp"
 #include "timemory/tpls/cereal/cereal/types/string.hpp"
+
 #include <functional>
 #include <limits>
 #include <map>

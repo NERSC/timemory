@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define TIMEMORY_CEREAL_TYPES_VALARRAY_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+
 #include <valarray>
 
 namespace tim

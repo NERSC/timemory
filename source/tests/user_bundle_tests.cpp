@@ -28,8 +28,6 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "gtest/gtest.h"
-
 #include "timemory/components/user_bundle/overloads.hpp"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/insert.hpp"
@@ -37,6 +35,7 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/component_hybrid.hpp"
 
+#include "gtest/gtest.h"
 #include <chrono>
 #include <condition_variable>
 #include <functional>

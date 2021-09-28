@@ -25,11 +25,10 @@
 #include "timemory/backends/process.hpp"
 #include "timemory/environment.hpp"
 
-#include <dlfcn.h>
-
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <dlfcn.h>
 #include <limits>
 #include <memory>
 #include <string>

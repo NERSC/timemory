@@ -26,18 +26,16 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
+#include "timemory/library.h"
+
 #include "gtest/gtest.h"
-
-#include <omp.h>
-
 #include <atomic>
 #include <chrono>
 #include <iostream>
+#include <omp.h>
 #include <random>
 #include <thread>
 #include <vector>
-
-#include "timemory/library.h"
 
 extern "C"
 {

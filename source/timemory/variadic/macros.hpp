@@ -31,15 +31,15 @@
 
 #pragma once
 
-#include <cstdint>
-#include <string>
-
 #include "timemory/compat/macros.h"
 #include "timemory/general/source_location.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
+
+#include <cstdint>
+#include <string>
 
 //======================================================================================//
 //

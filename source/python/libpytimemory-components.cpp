@@ -35,6 +35,7 @@
 #endif
 
 #include "libpytimemory-components.hpp"
+
 #include "timemory/components/extern.hpp"
 #include "timemory/enum.h"
 #include "timemory/operations/types/python_class_name.hpp"
@@ -302,7 +303,8 @@ template <typename T, typename... Args>
 static inline void
 get_unit(py::class_<pytuple_t<T>>& _pyclass, long, long)
 {
-    _pyclass.def_static("unit", []() { return 1; }, "Get the units of the object");
+    _pyclass.def_static(
+        "unit", []() { return 1; }, "Get the units of the object");
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -339,8 +341,8 @@ template <typename T, typename... Args>
 static inline void
 get_display_unit(py::class_<pytuple_t<T>>& _pyclass, long, long)
 {
-    _pyclass.def_static("display_unit", []() { return ""; },
-                        "Get the display units of the object");
+    _pyclass.def_static(
+        "display_unit", []() { return ""; }, "Get the display units of the object");
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -712,11 +714,11 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
                      []() { return py::cast(new bundle_t{}); } };
 
     auto idx = static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx);
-    _pycomp.def_static("index", [idx]() { return idx; },
-                       "Enumeration ID for the component");
+    _pycomp.def_static(
+        "index", [idx]() { return idx; }, "Enumeration ID for the component");
 
-    _pycomp.def_static("id", [cid]() { return cid; },
-                       "(Primary) String ID for the component");
+    _pycomp.def_static(
+        "id", [cid]() { return cid; }, "(Primary) String ID for the component");
 
     // generate_properties<Idx, T>(_pycomp);
 }
@@ -779,9 +781,10 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
 
     auto _false = [](py::object) { return false; };
 
-    _pycomp.def_static("unit", []() { return 1; }, "Get the units for the type");
-    _pycomp.def_static("display_unit", []() { return ""; },
-                       "Get the unit repr for the type");
+    _pycomp.def_static(
+        "unit", []() { return 1; }, "Get the units for the type");
+    _pycomp.def_static(
+        "display_unit", []() { return ""; }, "Get the unit repr for the type");
     _pycomp.def_property_readonly_static("available", _false,
                                          "Whether the component is available");
     _pycomp.def_property_readonly_static("has_value", _false,
@@ -793,11 +796,11 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _keygen[Idx]  = { cinfo{ false, id, cid, _keys }, []() { return py::none{}; } };
 
     auto idx = static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx);
-    _pycomp.def_static("index", [idx]() { return idx; },
-                       "Enumeration ID for the component");
+    _pycomp.def_static(
+        "index", [idx]() { return idx; }, "Enumeration ID for the component");
 
-    _pycomp.def_static("id", [cid]() { return cid; },
-                       "(Primary) String ID for the component");
+    _pycomp.def_static(
+        "id", [cid]() { return cid; }, "(Primary) String ID for the component");
 
     // generate_properties<Idx, T>(_pycomp);
 }
@@ -911,11 +914,13 @@ generate(py::module& _pymod)
     _pycomp.def("get_generator", _indexgenerator,
                 "Get a functor for generating the component whose enumeration ID (see "
                 "`help(timemory.component.id)`) match the given enumeration ID");
-    _pycomp.def("get_types", [_names]() { return _names; },
-                "Get the names of all the component types regardless of whether "
-                "available or not");
-    _pycomp.def("get_available_types", [_available_names]() { return _available_names; },
-                "Get the names of all the component types which are available");
+    _pycomp.def(
+        "get_types", [_names]() { return _names; },
+        "Get the names of all the component types regardless of whether "
+        "available or not");
+    _pycomp.def(
+        "get_available_types", [_available_names]() { return _available_names; },
+        "Get the names of all the component types which are available");
 
     return _pycomp;
 }

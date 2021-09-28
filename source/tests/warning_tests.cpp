@@ -25,7 +25,6 @@
 #include "timemory/timemory.hpp"
 
 #include "gtest/gtest.h"
-
 #include <chrono>
 #include <thread>
 

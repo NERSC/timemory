@@ -26,6 +26,13 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
+#include "timemory/timemory.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/tpls/cereal/cereal/archives/binary.hpp"
+#include "timemory/tpls/cereal/cereal/archives/json.hpp"
+#include "timemory/tpls/cereal/cereal/archives/portable_binary.hpp"
+#include "timemory/tpls/cereal/cereal/archives/xml.hpp"
+
 #include <chrono>
 #include <condition_variable>
 #include <iostream>
@@ -33,13 +40,6 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include <random>
 #include <thread>
 #include <vector>
-
-#include "timemory/timemory.hpp"
-#include "timemory/tpls/cereal/archives.hpp"
-#include "timemory/tpls/cereal/cereal/archives/binary.hpp"
-#include "timemory/tpls/cereal/cereal/archives/json.hpp"
-#include "timemory/tpls/cereal/cereal/archives/portable_binary.hpp"
-#include "timemory/tpls/cereal/cereal/archives/xml.hpp"
 
 //--------------------------------------------------------------------------------------//
 

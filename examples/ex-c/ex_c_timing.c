@@ -1,10 +1,10 @@
 
+#include "timemory/library.h"
+#include "timemory/timemory.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "timemory/library.h"
-#include "timemory/timemory.h"
 
 static long nlaps = 0;
 

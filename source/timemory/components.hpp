@@ -32,17 +32,16 @@
 #pragma once
 
 // forward declare any types
-#include "timemory/components/types.hpp"
-#include "timemory/ert/types.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/variadic/types.hpp"
-
 #include "timemory/components/data_tracker/components.hpp"
 #include "timemory/components/io/components.hpp"
 #include "timemory/components/network/components.hpp"
 #include "timemory/components/rusage/components.hpp"
 #include "timemory/components/timing/components.hpp"
 #include "timemory/components/trip_count/components.hpp"
+#include "timemory/components/types.hpp"
+#include "timemory/ert/types.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/variadic/types.hpp"
 
 // allinea components
 #if defined(TIMEMORY_USE_ALLINEA_MAP)

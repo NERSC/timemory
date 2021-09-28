@@ -30,12 +30,11 @@
 #include "timemory/components/roofline/backends.hpp"
 #include "timemory/components/roofline/types.hpp"
 #include "timemory/components/timing/wall_clock.hpp"
-#include "timemory/settings/declaration.hpp"
-
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/extern.hpp"
 #include "timemory/operations/types/fini.hpp"
 #include "timemory/operations/types/init.hpp"
+#include "timemory/settings/declaration.hpp"
 
 #include <array>
 #include <cassert>

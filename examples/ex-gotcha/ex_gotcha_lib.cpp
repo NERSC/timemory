@@ -70,15 +70,17 @@ do_exp_work(int nitr)
     printf("\n");
 #endif
 
-    auto fsum = work<float>("expf", nitr, [](float val) -> float { return expf(val); },
-                            [](float val, int i) -> float { return val + 0.25 * i; });
+    auto fsum = work<float>(
+        "expf", nitr, [](float val) -> float { return expf(val); },
+        [](float val, int i) -> float { return val + 0.25 * i; });
 
 #if defined(VERBOSE)
     printf("\n");
 #endif
 
-    auto dsum = work<double>("exp", nitr, [](double val) -> double { return exp(val); },
-                             [](double val, int i) -> double { return val + 0.25 * i; });
+    auto dsum = work<double>(
+        "exp", nitr, [](double val) -> double { return exp(val); },
+        [](double val, int i) -> double { return val + 0.25 * i; });
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     return tuple_t(fsum, dsum);

@@ -345,8 +345,9 @@ generate(py::module& _pymod)
     py::class_<config> _pyconfig(_prof, "config", "Profiler configuration");
 
 #define CONFIGURATION_PROPERTY(NAME, TYPE, DOC, ...)                                     \
-    _pyconfig.def_property_static(NAME, [](py::object) { return __VA_ARGS__; },          \
-                                  [](py::object, TYPE val) { __VA_ARGS__ = val; }, DOC);
+    _pyconfig.def_property_static(                                                       \
+        NAME, [](py::object) { return __VA_ARGS__; },                                    \
+        [](py::object, TYPE val) { __VA_ARGS__ = val; }, DOC);
 
     CONFIGURATION_PROPERTY("_is_running", bool, "Profiler is currently running",
                            get_config().is_running)

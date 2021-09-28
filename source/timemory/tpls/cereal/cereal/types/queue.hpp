@@ -31,6 +31,7 @@
 #define TIMEMORY_CEREAL_TYPES_QUEUE_HPP_
 
 #include "timemory/tpls/cereal/cereal/details/helpers.hpp"
+
 #include <queue>
 
 // The default container for queue is deque, so let's include that too

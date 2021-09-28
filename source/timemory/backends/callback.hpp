@@ -34,12 +34,11 @@
 #if defined(TIMEMORY_USE_CUDA)
 
 #    include <condition_variable>
+#    include <cuda.h>
+#    include <cuda_runtime_api.h>
 #    include <memory>
 #    include <mutex>
 #    include <thread>
-
-#    include <cuda.h>
-#    include <cuda_runtime_api.h>
 
 namespace tim
 {
@@ -171,7 +170,7 @@ postprocess(void* data)
 //
 //
 static void CUDART_CB
-            cutStreamCallback(cudaStream_t event, cudaError_t status, void* data)
+cutStreamCallback(cudaStream_t event, cudaError_t status, void* data)
 {
     cutStartThread(postprocess, data);
 }

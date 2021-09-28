@@ -28,6 +28,7 @@
 #if !defined(TIMEMORY_WINDOWS)
 
 #    include "timemory/utility/popen.hpp"
+
 #    include <limits>
 
 #    if !defined(OPEN_MAX)

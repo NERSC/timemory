@@ -29,6 +29,11 @@
 #ifndef TIMEMORY_CEREAL_TIMEMORY_CEREAL_HPP_
 #define TIMEMORY_CEREAL_TIMEMORY_CEREAL_HPP_
 
+#include "timemory/tpls/cereal/cereal/details/helpers.hpp"
+#include "timemory/tpls/cereal/cereal/details/traits.hpp"
+#include "timemory/tpls/cereal/cereal/macros.hpp"
+#include "timemory/tpls/cereal/cereal/types/base_class.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -38,11 +43,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-#include "timemory/tpls/cereal/cereal/details/helpers.hpp"
-#include "timemory/tpls/cereal/cereal/details/traits.hpp"
-#include "timemory/tpls/cereal/cereal/macros.hpp"
-#include "timemory/tpls/cereal/cereal/types/base_class.hpp"
 
 namespace tim
 {

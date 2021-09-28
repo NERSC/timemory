@@ -22,8 +22,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "gtest/gtest.h"
+#include "timemory/config.hpp"
+#include "timemory/manager.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/utility/argparse.hpp"
+#include "timemory/variadic/macros.hpp"
 
+#include "gtest/gtest.h"
 #include <chrono>
 #include <condition_variable>
 #include <iostream>
@@ -31,12 +36,6 @@
 #include <random>
 #include <thread>
 #include <vector>
-
-#include "timemory/config.hpp"
-#include "timemory/manager.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/utility/argparse.hpp"
-#include "timemory/variadic/macros.hpp"
 
 static int         _argc     = 0;
 static char**      _argv     = nullptr;

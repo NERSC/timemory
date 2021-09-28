@@ -31,10 +31,6 @@
 
 #if !defined(TIMEMORY_WINDOWS)
 
-#    include <sstream>
-#    include <string>
-#    include <vector>
-
 #    include <cerrno>
 #    include <cstdio>
 #    include <cstdlib>
@@ -43,11 +39,14 @@
 #    include <fcntl.h>
 #    include <grp.h>
 #    include <paths.h>
+#    include <sstream>
+#    include <string>
 #    include <sys/param.h>
 #    include <sys/stat.h>
 #    include <sys/types.h>
 #    include <sys/wait.h>
 #    include <unistd.h>
+#    include <vector>
 
 namespace tim
 {

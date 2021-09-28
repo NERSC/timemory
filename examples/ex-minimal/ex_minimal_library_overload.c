@@ -24,6 +24,7 @@
 
 #include "timemory/library.h"
 #include "timemory/timemory.h"
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

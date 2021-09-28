@@ -24,6 +24,7 @@
 //
 
 #include "timemory/timemory.hpp"
+
 #include <chrono>
 #include <thread>
 
