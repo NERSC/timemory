@@ -23,7 +23,6 @@
 // SOFTWARE.
 
 #include "kp_timemory.hpp"
-
 #include "timemory/operations/types/storage_initializer.hpp"
 #include "timemory/timemory.hpp"
 

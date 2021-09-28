@@ -26,15 +26,13 @@
 
 #include "nvml_backends.hpp"
 #include "nvml_types.hpp"
-
 #include "timemory/components/base/declaration.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/units.hpp"
 
-#include <nvml.h>
-
 #include <cassert>
+#include <nvml.h>
 #include <string>
 #include <tuple>
 #include <utility>

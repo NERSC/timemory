@@ -30,6 +30,7 @@
 
 #if defined(TIMEMORY_USE_CUPTI)
 #    include "timemory/backends/cupti.hpp"
+
 #    include <cuda.h>
 #    include <cupti.h>
 #    if defined(TIMEMORY_USE_CUPTI_PCSAMPLING)

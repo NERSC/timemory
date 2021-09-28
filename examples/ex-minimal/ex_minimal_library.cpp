@@ -24,6 +24,7 @@
 
 #include "timemory/library.h"
 #include "timemory/variadic/macros.hpp"
+
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>

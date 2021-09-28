@@ -286,9 +286,9 @@ public:
         TIMEMORY_VISIBILITY("default");
 
 public:
-    TIMEMORY_NODISCARD auto ordering() const { return m_order; }
-    iterator                begin() { return m_data.begin(); }
-    iterator                end() { return m_data.end(); }
+    TIMEMORY_NODISCARD auto           ordering() const { return m_order; }
+    iterator                          begin() { return m_data.begin(); }
+    iterator                          end() { return m_data.end(); }
     TIMEMORY_NODISCARD const_iterator begin() const { return m_data.cbegin(); }
     TIMEMORY_NODISCARD const_iterator end() const { return m_data.cend(); }
     TIMEMORY_NODISCARD const_iterator cbegin() const { return m_data.cbegin(); }
@@ -427,8 +427,7 @@ std::time_t* settings::get_launch_time(Tag)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag>
-std::shared_ptr<settings>&
-settings::private_shared_instance(
+std::shared_ptr<settings>& settings::private_shared_instance(
     enable_if_t<std::is_same<Tag, TIMEMORY_API>::value, int>)
 {
     // this is the original
@@ -439,8 +438,7 @@ settings::private_shared_instance(
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag>
-std::shared_ptr<settings>&
-settings::private_shared_instance(
+std::shared_ptr<settings>& settings::private_shared_instance(
     enable_if_t<!std::is_same<Tag, TIMEMORY_API>::value, long>)
 {
     // make a copy of the original

@@ -479,8 +479,7 @@ construct(py::module&, long)
 //--------------------------------------------------------------------------------------//
 //
 template <size_t... Idx>
-constexpr auto
-construct(std::index_sequence<Idx...>)
+constexpr auto construct(std::index_sequence<Idx...>)
 {
     return tim::mpl::available_t<tim::type_list<tim::component::enumerator_t<Idx>...>>{};
 }

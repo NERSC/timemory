@@ -29,15 +29,15 @@
 #ifndef TIMEMORY_CEREAL_ACCESS_HPP_
 #define TIMEMORY_CEREAL_ACCESS_HPP_
 
+#include "timemory/tpls/cereal/cereal/details/helpers.hpp"
+#include "timemory/tpls/cereal/cereal/macros.hpp"
+#include "timemory/tpls/cereal/cereal/specialize.hpp"
+
 #include <cstdint>
 #include <functional>
 #include <iostream>
 #include <type_traits>
 #include <utility>
-
-#include "timemory/tpls/cereal/cereal/details/helpers.hpp"
-#include "timemory/tpls/cereal/cereal/macros.hpp"
-#include "timemory/tpls/cereal/cereal/specialize.hpp"
 
 namespace tim
 {

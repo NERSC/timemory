@@ -23,4 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/runtime/extern.hpp"
+
 #include "timemory/runtime/types.hpp"

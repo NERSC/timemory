@@ -32,14 +32,14 @@
 
 //----------------------------------------------------------------------------//
 
+#include "timemory/utility/macros.hpp"
+
 #include <cmath>
 #include <fstream>
 #include <functional>
 #include <iomanip>
 #include <iostream>
 #include <limits>
-
-#include "timemory/utility/macros.hpp"
 
 namespace tim
 {

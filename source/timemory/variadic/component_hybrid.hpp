@@ -31,7 +31,7 @@ namespace tim
 {
 //
 template <typename CompTuple, typename CompList>
-class[[deprecated("Use component_bundle<T..., L*...>")]] component_hybrid;
+class [[deprecated("Use component_bundle<T..., L*...>")]] component_hybrid;
 //
 template <template <typename...> class TupleT, template <typename...> class ListT,
           typename... TupleTypes, typename... ListTypes>

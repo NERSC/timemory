@@ -23,7 +23,6 @@
 // SOFTWARE.
 
 #include "test_macros.hpp"
-
 #include "timemory/api/kokkosp.hpp"
 #include "timemory/timemory.hpp"
 

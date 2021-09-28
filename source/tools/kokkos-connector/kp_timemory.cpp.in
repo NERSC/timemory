@@ -23,7 +23,6 @@
 // SOFTWARE.
 
 #include "kp_timemory.hpp"
-
 #include "timemory/timemory.hpp"
 
 #include <cassert>
@@ -77,8 +76,8 @@ struct kp_timemory_section
 //--------------------------------------------------------------------------------------//
 
 template <typename... Tp>
-std::enable_if_t<sizeof...(Tp) != 0, std::string>
-get_types_string(tim::component_tuple<Tp...>)
+std::enable_if_t<sizeof...(Tp) != 0, std::string> get_types_string(
+    tim::component_tuple<Tp...>)
 {
     return TIMEMORY_JOIN(" + ", tim::demangle<Tp>()...);
 }
@@ -86,8 +85,8 @@ get_types_string(tim::component_tuple<Tp...>)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Tp>
-std::enable_if_t<sizeof...(Tp) == 0, std::string>
-get_types_string(tim::component_tuple<Tp...>)
+std::enable_if_t<sizeof...(Tp) == 0, std::string> get_types_string(
+    tim::component_tuple<Tp...>)
 {
     return TIMEMORY_JOIN("", "NONE [the requested types in ",
                          tim::demangle<profile_entry_t>(),

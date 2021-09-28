@@ -27,6 +27,7 @@
 
 #if !defined(TIMEMORY_OPERATIONS_TYPES_SERIALIZATION_HPP_)
 #    include "timemory/operations/types/serialization.hpp"
+
 #    include "timemory/tpls/cereal/archives.hpp"
 #endif
 

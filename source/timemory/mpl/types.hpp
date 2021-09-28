@@ -54,10 +54,10 @@ namespace tim
 #if defined(TIMEMORY_USE_DEPRECATED)
 //
 template <typename TupleT, typename ListT>
-class[[deprecated("Use component_bundle<T..., L*...>")]] component_hybrid;
+class [[deprecated("Use component_bundle<T..., L*...>")]] component_hybrid;
 //
 template <typename TupleT, typename ListT>
-class[[deprecated("Use auto_bundle<T..., L*...>")]] auto_hybrid;
+class [[deprecated("Use auto_bundle<T..., L*...>")]] auto_hybrid;
 //
 #endif
 //

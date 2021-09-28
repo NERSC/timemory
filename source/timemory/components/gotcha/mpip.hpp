@@ -26,14 +26,13 @@
 
 #include "timemory/api.hpp"
 #include "timemory/components/base.hpp"
+#include "timemory/components/gotcha/backends.hpp"
+#include "timemory/components/gotcha/types.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 #include "timemory/variadic/types.hpp"
-
-#include "timemory/components/gotcha/backends.hpp"
-#include "timemory/components/gotcha/types.hpp"
 
 #include <memory>
 #include <set>

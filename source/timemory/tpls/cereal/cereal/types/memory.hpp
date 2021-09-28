@@ -31,6 +31,7 @@
 #define TIMEMORY_CEREAL_TYPES_SHARED_PTR_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+
 #include <cstring>
 #include <memory>
 

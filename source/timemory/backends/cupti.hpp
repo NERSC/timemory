@@ -231,8 +231,8 @@ struct kernel_data_t
 // CUPTI subscriber
 //
 static void CUPTIAPI
-            get_value_callback(void* userdata, CUpti_CallbackDomain domain, CUpti_CallbackId cbid,
-                               const CUpti_CallbackData* cbInfo)
+get_value_callback(void* userdata, CUpti_CallbackDomain domain, CUpti_CallbackId cbid,
+                   const CUpti_CallbackData* cbInfo)
 {
     using map_type = map_t<uint64_t, kernel_data_t>;
     static std::atomic<uint64_t> correlation_data(0);
@@ -1165,17 +1165,29 @@ get_name(CUpti_Activity* record)
             _CUPTI_CAST_RECORD(CUpti_ActivityDevice2, obj);
             return obj->name;
         }
-        case CUPTI_ACTIVITY_KIND_MEMCPY: { return "cudaMemcpy";
+        case CUPTI_ACTIVITY_KIND_MEMCPY:
+        {
+            return "cudaMemcpy";
         }
-        case CUPTI_ACTIVITY_KIND_MEMSET: { return "cudaMemset";
+        case CUPTI_ACTIVITY_KIND_MEMSET:
+        {
+            return "cudaMemset";
         }
-        case CUPTI_ACTIVITY_KIND_DRIVER: { return "cudaDriver";
+        case CUPTI_ACTIVITY_KIND_DRIVER:
+        {
+            return "cudaDriver";
         }
-        case CUPTI_ACTIVITY_KIND_RUNTIME: { return "cudaRuntime";
+        case CUPTI_ACTIVITY_KIND_RUNTIME:
+        {
+            return "cudaRuntime";
         }
-        case CUPTI_ACTIVITY_KIND_CONTEXT: { return "cudaContext";
+        case CUPTI_ACTIVITY_KIND_CONTEXT:
+        {
+            return "cudaContext";
         }
-        case CUPTI_ACTIVITY_KIND_OVERHEAD: { return "cuptiOverhead";
+        case CUPTI_ACTIVITY_KIND_OVERHEAD:
+        {
+            return "cuptiOverhead";
         }
         case CUPTI_ACTIVITY_KIND_MARKER_DATA:
         case CUPTI_ACTIVITY_KIND_DEVICE_ATTRIBUTE:
@@ -1391,7 +1403,7 @@ print(CUpti_Activity* record)
 //--------------------------------------------------------------------------------------//
 
 static void CUPTIAPI
-            request_buffer(uint8_t** buffer, size_t* size, size_t* maxNumRecords)
+request_buffer(uint8_t** buffer, size_t* size, size_t* maxNumRecords)
 {
     uint8_t* bfr =
         (uint8_t*) malloc(TIMEMORY_CUPTI_BUFFER_SIZE + TIMEMORY_CUPTI_ALIGN_SIZE);
@@ -1411,8 +1423,8 @@ static void CUPTIAPI
 //--------------------------------------------------------------------------------------//
 
 static void CUPTIAPI
-            buffer_completed(CUcontext ctx, uint32_t streamId, uint8_t* buffer, size_t /*size*/,
-                             size_t validSize)
+buffer_completed(CUcontext ctx, uint32_t streamId, uint8_t* buffer, size_t /*size*/,
+                 size_t validSize)
 {
     CUptiResult     status;
     CUpti_Activity* record = nullptr;

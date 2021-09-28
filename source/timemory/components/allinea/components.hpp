@@ -29,14 +29,13 @@
 
 #pragma once
 
+#include "timemory/components/allinea/backends.hpp"
+#include "timemory/components/allinea/types.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
-
-#include "timemory/components/allinea/backends.hpp"
-#include "timemory/components/allinea/types.hpp"
 
 //======================================================================================//
 //

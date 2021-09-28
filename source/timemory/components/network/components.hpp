@@ -25,12 +25,11 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/components/network/backends.hpp"
+#include "timemory/components/network/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
-
-#include "timemory/components/network/backends.hpp"
-#include "timemory/components/network/types.hpp"
 
 //======================================================================================//
 //

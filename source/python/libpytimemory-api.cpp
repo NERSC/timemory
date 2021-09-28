@@ -89,78 +89,88 @@ generate_papi(py::module& _pymod)
         "init", []() { tim::papi::init(); },
         "Initialize library and multiplexing (if settings.papi_multiplexing is True)");
 
-    _papi.def("init_threading", []() { tim::papi::details::init_threading(); },
-              "Initialize threading support");
+    _papi.def(
+        "init_threading", []() { tim::papi::details::init_threading(); },
+        "Initialize threading support");
 
-    _papi.def("init_multiplexing", []() { tim::papi::details::init_multiplexing(); },
-              "Initialize multiplexing support");
+    _papi.def(
+        "init_multiplexing", []() { tim::papi::details::init_multiplexing(); },
+        "Initialize multiplexing support");
 
-    _papi.def("init_library", []() { tim::papi::details::init_library(); },
-              "Initialize PAPI library");
+    _papi.def(
+        "init_library", []() { tim::papi::details::init_library(); },
+        "Initialize PAPI library");
 
-    _papi.def("attach",
-              [](int event_set, unsigned long tid) {
-                  return tim::papi::attach(event_set, tid);
-              },
-              "Attach specified event set to a specific process or thread id",
-              py::arg("event_set"), py::arg("tid"));
+    _papi.def(
+        "attach",
+        [](int event_set, unsigned long tid) {
+            return tim::papi::attach(event_set, tid);
+        },
+        "Attach specified event set to a specific process or thread id",
+        py::arg("event_set"), py::arg("tid"));
 
-    _papi.def("get_event_code",
-              [](std::string s) { return tim::papi::get_event_code(s); },
-              "Get the hardware event code");
+    _papi.def(
+        "get_event_code", [](std::string s) { return tim::papi::get_event_code(s); },
+        "Get the hardware event code");
 
-    _papi.def("create_event_set",
-              [](bool enable_multiplex) {
-                  auto evtset = new int{};
-                  tim::papi::create_event_set(evtset, enable_multiplex);
-                  return evtset;
-              },
-              "Create an event set", py::arg("enable_multiplex") = true);
+    _papi.def(
+        "create_event_set",
+        [](bool enable_multiplex) {
+            auto evtset = new int{};
+            tim::papi::create_event_set(evtset, enable_multiplex);
+            return evtset;
+        },
+        "Create an event set", py::arg("enable_multiplex") = true);
 
-    _papi.def("stop",
-              [](int evtset, int evtsz) {
-                  auto vec = new std::vector<long long>(evtsz, 0);
-                  tim::papi::stop(evtset, vec->data());
-                  return vec;
-              },
-              "Stop an event set", py::arg("event_set"), py::arg("event_set_size"));
+    _papi.def(
+        "stop",
+        [](int evtset, int evtsz) {
+            auto vec = new std::vector<long long>(evtsz, 0);
+            tim::papi::stop(evtset, vec->data());
+            return vec;
+        },
+        "Stop an event set", py::arg("event_set"), py::arg("event_set_size"));
 
-    _papi.def("read",
-              [](int evtset, int evtsz) {
-                  auto vec = new std::vector<long long>(evtsz, 0);
-                  tim::papi::read(evtset, vec->data());
-                  return vec;
-              },
-              "Read an event set", py::arg("event_set"), py::arg("event_set_size"));
+    _papi.def(
+        "read",
+        [](int evtset, int evtsz) {
+            auto vec = new std::vector<long long>(evtsz, 0);
+            tim::papi::read(evtset, vec->data());
+            return vec;
+        },
+        "Read an event set", py::arg("event_set"), py::arg("event_set_size"));
 
-    _papi.def("write",
-              [](int evtset, std::vector<long long> values) {
-                  tim::papi::write(evtset, values.data());
-              },
-              "Write values to an event set", py::arg("event_set"), py::arg("values"));
+    _papi.def(
+        "write",
+        [](int evtset, std::vector<long long> values) {
+            tim::papi::write(evtset, values.data());
+        },
+        "Write values to an event set", py::arg("event_set"), py::arg("values"));
 
-    _papi.def("accum",
-              [](int evtset, int evtsz) {
-                  auto vec = new std::vector<long long>(evtsz, 0);
-                  tim::papi::accum(evtset, vec->data());
-                  return vec;
-              },
-              "Accumulate and reset hardware events for an event set",
-              py::arg("event_set"), py::arg("event_set_size"));
+    _papi.def(
+        "accum",
+        [](int evtset, int evtsz) {
+            auto vec = new std::vector<long long>(evtsz, 0);
+            tim::papi::accum(evtset, vec->data());
+            return vec;
+        },
+        "Accumulate and reset hardware events for an event set", py::arg("event_set"),
+        py::arg("event_set_size"));
 
-    _papi.def("add_events",
-              [](int evtset, std::vector<int> evts) {
-                  tim::papi::add_events(evtset, evts.data(), evts.size());
-              },
-              "Add hardware events to an event set", py::arg("event_set"),
-              py::arg("events"));
+    _papi.def(
+        "add_events",
+        [](int evtset, std::vector<int> evts) {
+            tim::papi::add_events(evtset, evts.data(), evts.size());
+        },
+        "Add hardware events to an event set", py::arg("event_set"), py::arg("events"));
 
-    _papi.def("remove_events",
-              [](int evtset, std::vector<int> evts) {
-                  tim::papi::remove_events(evtset, evts.data(), evts.size());
-              },
-              "Remove hardware events from an event set", py::arg("event_set"),
-              py::arg("events"));
+    _papi.def(
+        "remove_events",
+        [](int evtset, std::vector<int> evts) {
+            tim::papi::remove_events(evtset, evts.data(), evts.size());
+        },
+        "Remove hardware events from an event set", py::arg("event_set"),
+        py::arg("events"));
 
     return _papi;
 }

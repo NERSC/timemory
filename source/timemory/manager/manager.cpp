@@ -27,6 +27,7 @@
 #define TIMEMORY_MANAGER_MANAGER_CPP_ 1
 
 #include "timemory/manager/manager.hpp"
+
 #include "timemory/backends/process.hpp"
 #include "timemory/manager/macros.hpp"
 #include "timemory/manager/types.hpp"

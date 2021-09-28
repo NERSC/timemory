@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/storage/ring_buffer.hpp"
+
 #include "timemory/macros/os.hpp"
 #include "timemory/settings/settings.hpp"
 #include "timemory/units.hpp"

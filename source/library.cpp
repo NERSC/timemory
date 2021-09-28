@@ -27,6 +27,7 @@
 #endif
 
 #include "timemory/compat/library.h"
+
 #include "timemory/config.hpp"
 #include "timemory/library.h"
 #include "timemory/runtime/configure.hpp"

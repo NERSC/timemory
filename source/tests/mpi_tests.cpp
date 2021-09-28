@@ -26,8 +26,10 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "gtest/gtest.h"
+#include "timemory/timemory.hpp"
+#include "timemory/utility/signals.hpp"
 
+#include "gtest/gtest.h"
 #include <cassert>
 #include <chrono>
 #include <cmath>
@@ -39,9 +41,6 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include <thread>
 #include <unordered_map>
 #include <vector>
-
-#include "timemory/timemory.hpp"
-#include "timemory/utility/signals.hpp"
 
 using namespace tim::stl;
 using namespace tim::component;

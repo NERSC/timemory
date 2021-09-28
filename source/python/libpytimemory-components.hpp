@@ -31,14 +31,6 @@
 //======================================================================================//
 // disables a bunch of warnings
 //
-#include "timemory/components/types.hpp"
-#include "timemory/enum.h"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/available.hpp"
-#include "timemory/runtime/enumerate.hpp"
-#include "timemory/types.hpp"
-#include "timemory/utility/macros.hpp"
-
 #include "pybind11/cast.h"
 #include "pybind11/embed.h"
 #include "pybind11/eval.h"
@@ -50,6 +42,13 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/pytypes.h"
 #include "pybind11/stl.h"
+#include "timemory/components/types.hpp"
+#include "timemory/enum.h"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/available.hpp"
+#include "timemory/runtime/enumerate.hpp"
+#include "timemory/types.hpp"
+#include "timemory/utility/macros.hpp"
 
 namespace py = pybind11;
 using namespace py::literals;

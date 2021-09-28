@@ -26,6 +26,7 @@
 #define TIMEMORY_VARIADIC_BUNDLE_CPP_
 
 #include "timemory/variadic/bundle.hpp"
+
 #include "timemory/backends/dmp.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types/set.hpp"
@@ -349,8 +350,8 @@ bundle<Tag, BundleT, TupleT>::push()
 //
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename... Tp>
-typename bundle<Tag, BundleT, TupleT>::this_type&
-bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>)
+typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::push(
+    mpl::piecewise_select<Tp...>)
 {
     if(!m_enabled())
         return get_this_type();
@@ -407,8 +408,8 @@ bundle<Tag, BundleT, TupleT>::pop()
 //
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename... Tp>
-typename bundle<Tag, BundleT, TupleT>::this_type&
-bundle<Tag, BundleT, TupleT>::pop(mpl::piecewise_select<Tp...>)
+typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::pop(
+    mpl::piecewise_select<Tp...>)
 {
     if(!m_enabled())
         return get_this_type();

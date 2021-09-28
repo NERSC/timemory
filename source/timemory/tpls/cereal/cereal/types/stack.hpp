@@ -31,6 +31,7 @@
 #define TIMEMORY_CEREAL_TYPES_STACK_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+
 #include <stack>
 
 // The default container for stack is deque, so let's include that too

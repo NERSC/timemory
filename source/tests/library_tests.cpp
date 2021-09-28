@@ -22,11 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "gtest/gtest.h"
-
 #include "timemory/compat/timemory_c.h"
 #include "timemory/library.h"
 
+#include "gtest/gtest.h"
 #include <chrono>
 #include <condition_variable>
 #include <functional>

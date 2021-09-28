@@ -31,6 +31,7 @@
 #define TIMEMORY_CEREAL_ARCHIVES_ADAPTERS_HPP_
 
 #include "timemory/tpls/cereal/cereal/details/helpers.hpp"
+
 #include <utility>
 
 namespace tim

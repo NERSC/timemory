@@ -30,12 +30,11 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
+#include "timemory/components/tau_marker/backends.hpp"
+#include "timemory/components/tau_marker/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
-
-#include "timemory/components/tau_marker/backends.hpp"
-#include "timemory/components/tau_marker/types.hpp"
 
 //======================================================================================//
 //

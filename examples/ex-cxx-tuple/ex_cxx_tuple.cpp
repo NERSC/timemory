@@ -214,7 +214,9 @@ test_1_usage()
     std::cout << "usage (end):   " << _use_end << std::endl;
 
     std::vector<std::pair<std::string, measurement_t>> measurements = {
-        { "begin", _use_beg }, { "delta", _use_delta }, { "end", _use_end }
+        { "begin", _use_beg },
+        { "delta", _use_delta },
+        { "end", _use_end }
     };
     // serialize("rusage.json", "usage", measurements);
     test_1_marker.stop();

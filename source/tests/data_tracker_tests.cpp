@@ -26,8 +26,9 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "gtest/gtest.h"
+#include "timemory/timemory.hpp"
 
+#include "gtest/gtest.h"
 #include <chrono>
 #include <condition_variable>
 #include <iostream>
@@ -35,8 +36,6 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include <random>
 #include <thread>
 #include <vector>
-
-#include "timemory/timemory.hpp"
 
 using namespace tim::component;
 

@@ -28,6 +28,7 @@
 #endif
 
 #include "timemory/api/kokkosp.hpp"
+
 #include "timemory/timemory.hpp"
 
 namespace kokkosp = tim::kokkosp;

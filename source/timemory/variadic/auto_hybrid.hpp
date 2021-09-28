@@ -31,7 +31,7 @@ namespace tim
 {
 //
 template <typename CompTuple, typename CompList>
-class[[deprecated("Use auto_bundle<T..., L*...>")]] auto_hybrid;
+class [[deprecated("Use auto_bundle<T..., L*...>")]] auto_hybrid;
 //
 template <template <typename...> class TupleT, template <typename...> class ListT,
           typename... TupleTypes, typename... ListTypes>

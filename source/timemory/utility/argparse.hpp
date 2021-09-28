@@ -305,10 +305,10 @@ struct argument_vector : std::vector<std::string>
     explicit argument_vector(int& argc, const char**& argv);
     explicit argument_vector(int& argc, const char* const*& argv);
     TIMEMORY_NODISCARD cargs_t
-                       get_execv(const base_type& _prepend, size_t _beg = 0,
-                                 size_t _end = std::numeric_limits<size_t>::max()) const;
+    get_execv(const base_type& _prepend, size_t _beg = 0,
+              size_t _end = std::numeric_limits<size_t>::max()) const;
     TIMEMORY_NODISCARD cargs_t
-                       get_execv(size_t _beg = 0, size_t _end = std::numeric_limits<size_t>::max()) const;
+    get_execv(size_t _beg = 0, size_t _end = std::numeric_limits<size_t>::max()) const;
 
     // helper function to free the memory created by get_execv, pass by reference
     // so that we can set values to nullptr and avoid multiple delete errors

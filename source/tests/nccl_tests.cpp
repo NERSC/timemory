@@ -26,8 +26,15 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "gtest/gtest.h"
+#include "nccl_test/all_gather.h"
+#include "nccl_test/all_reduce.h"
+#include "nccl_test/alltoall.h"
+#include "nccl_test/broadcast.h"
+#include "nccl_test/reduce.h"
+#include "nccl_test/reduce_scatter.h"
+#include "timemory/timemory.hpp"
 
+#include "gtest/gtest.h"
 #include <chrono>
 #include <condition_variable>
 #include <iostream>
@@ -35,15 +42,6 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include <random>
 #include <thread>
 #include <vector>
-
-#include "timemory/timemory.hpp"
-
-#include "nccl_test/all_gather.h"
-#include "nccl_test/all_reduce.h"
-#include "nccl_test/alltoall.h"
-#include "nccl_test/broadcast.h"
-#include "nccl_test/reduce.h"
-#include "nccl_test/reduce_scatter.h"
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;

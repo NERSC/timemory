@@ -202,8 +202,8 @@ public:
 
     /// get number of measurement
     TIMEMORY_NODISCARD TIMEMORY_INLINE int64_t get_laps() const { return laps; }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE auto get_iterator() const { return graph_itr; }
-    TIMEMORY_INLINE void                    set_laps(int64_t v) { laps = v; }
+    TIMEMORY_NODISCARD TIMEMORY_INLINE auto    get_iterator() const { return graph_itr; }
+    TIMEMORY_INLINE void                       set_laps(int64_t v) { laps = v; }
     TIMEMORY_INLINE void set_iterator(graph_iterator itr) { graph_itr = itr; }
 
     using base_state::get_depth_change;
@@ -382,9 +382,9 @@ public:
     /// get the opaque binding for user-bundle
     static opaque get_opaque(scope::config);
 
-    void               set_started();
-    void               set_stopped();
-    void               reset();
+    void                                       set_started();
+    void                                       set_stopped();
+    void                                       reset();
     TIMEMORY_NODISCARD TIMEMORY_INLINE int64_t get_laps() const { return 0; }
     TIMEMORY_NODISCARD TIMEMORY_INLINE void* get_iterator() const { return nullptr; }
 

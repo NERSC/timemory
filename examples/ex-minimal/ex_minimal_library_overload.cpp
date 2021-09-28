@@ -36,6 +36,7 @@
 #include "timemory/plotting/definition.hpp"
 #include "timemory/storage/definition.hpp"
 #include "timemory/variadic/definition.hpp"
+
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>

@@ -32,7 +32,6 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include "timemory/utility/signals.hpp"
 
 #include "gtest/gtest.h"
-
 #include <chrono>
 #include <condition_variable>
 #include <iostream>

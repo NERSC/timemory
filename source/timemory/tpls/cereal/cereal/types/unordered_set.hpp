@@ -31,6 +31,7 @@
 #define TIMEMORY_CEREAL_TYPES_UNORDERED_SET_HPP_
 
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+
 #include <unordered_set>
 
 namespace tim

@@ -26,9 +26,9 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "gtest/gtest.h"
-
 #include "timemory/timemory.hpp"
+
+#include "gtest/gtest.h"
 
 using namespace tim::component;
 

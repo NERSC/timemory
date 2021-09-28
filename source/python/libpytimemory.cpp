@@ -24,6 +24,7 @@
 //
 
 #include "libpytimemory.hpp"
+
 #include "libpytimemory-components.hpp"
 #include "timemory/enum.h"
 #include "timemory/library.h"
@@ -695,21 +696,27 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     tim.def("report", report, "Print the data", py::arg("filename") = "");
     //----------------------------------------------------------------------------------//
-    tim.def("toggle", [](bool on) { tim::settings::enabled() = on; },
-            "Enable/disable timemory", py::arg("on") = true);
+    tim.def(
+        "toggle", [](bool on) { tim::settings::enabled() = on; },
+        "Enable/disable timemory", py::arg("on") = true);
     //----------------------------------------------------------------------------------//
-    tim.def("enable", []() { tim::settings::enabled() = true; }, "Enable timemory");
+    tim.def(
+        "enable", []() { tim::settings::enabled() = true; }, "Enable timemory");
     //----------------------------------------------------------------------------------//
-    tim.def("disable", []() { tim::settings::enabled() = false; }, "Disable timemory");
+    tim.def(
+        "disable", []() { tim::settings::enabled() = false; }, "Disable timemory");
     //----------------------------------------------------------------------------------//
-    tim.def("is_enabled", []() { return tim::settings::enabled(); },
-            "Return if timemory is enabled or disabled");
+    tim.def(
+        "is_enabled", []() { return tim::settings::enabled(); },
+        "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
-    tim.def("enabled", []() { return tim::settings::enabled(); },
-            "Return if timemory is enabled or disabled");
+    tim.def(
+        "enabled", []() { return tim::settings::enabled(); },
+        "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
-    tim.def("has_mpi_support", []() { return tim::mpi::is_supported(); },
-            "Return if the timemory library has MPI support");
+    tim.def(
+        "has_mpi_support", []() { return tim::mpi::is_supported(); },
+        "Return if the timemory library has MPI support");
     //----------------------------------------------------------------------------------//
     tim.def("set_rusage_children", set_rusage_child,
             "Set the rusage to record child processes");
@@ -749,16 +756,17 @@ PYBIND11_MODULE(libpytimemory, tim)
             "argument will return the size for all available types",
             py::arg("components") = py::list{});
     //----------------------------------------------------------------------------------//
-    tim.def("get_hash", [](const std::string& _id) { return tim::add_hash_id(_id); },
-            "Get timemory's hash for a key (string)", py::arg("key"));
+    tim.def(
+        "get_hash", [](const std::string& _id) { return tim::add_hash_id(_id); },
+        "Get timemory's hash for a key (string)", py::arg("key"));
     //----------------------------------------------------------------------------------//
     tim.def("get_hash_identifier",
             py::overload_cast<tim::hash_value_t>(&tim::get_hash_identifier),
             "Get the string associated with a hash identifer", py::arg("hash_id"));
     //----------------------------------------------------------------------------------//
-    tim.def("add_hash_id", [](const std::string& _id) { return tim::add_hash_id(_id); },
-            "Add a key (string) to the database and return the hash for it",
-            py::arg("key"));
+    tim.def(
+        "add_hash_id", [](const std::string& _id) { return tim::add_hash_id(_id); },
+        "Add a key (string) to the database and return the hash for it", py::arg("key"));
     //----------------------------------------------------------------------------------//
     tim.def("mpi_init", _init_mpi, "Initialize MPI");
     //----------------------------------------------------------------------------------//
@@ -898,50 +906,51 @@ PYBIND11_MODULE(libpytimemory, tim)
         "Start profiling MPI (mpip), OpenMP (ompt), NCCL (ncclp), and/or memory "
         "allocations (mallocp). Example: start_function_wrappers(mpi=True, ...)");
     //----------------------------------------------------------------------------------//
-    tim.def("stop_function_wrappers",
-            [PyProfilingIndex_names](PyProfilingIndex_array_t _arg) {
-                auto _print_arg = [=, &_arg](const std::string& _label) {
-                    std::cerr << "[stop_function_wrappers|" << _label << "]> values :";
-                    for(auto itr : _arg)
-                        std::cerr << " " << itr;
-                    std::cerr << std::endl;
-                };
-                auto _print_entry = [=, &_arg](uint64_t _idx) {
-                    std::cerr << "stopping " << (*PyProfilingIndex_names.at(_idx).begin())
-                              << " : " << _arg.at(_idx) << std::endl;
-                };
+    tim.def(
+        "stop_function_wrappers",
+        [PyProfilingIndex_names](PyProfilingIndex_array_t _arg) {
+            auto _print_arg = [=, &_arg](const std::string& _label) {
+                std::cerr << "[stop_function_wrappers|" << _label << "]> values :";
+                for(auto itr : _arg)
+                    std::cerr << " " << itr;
+                std::cerr << std::endl;
+            };
+            auto _print_entry = [=, &_arg](uint64_t _idx) {
+                std::cerr << "stopping " << (*PyProfilingIndex_names.at(_idx).begin())
+                          << " : " << _arg.at(_idx) << std::endl;
+            };
 
+            if(tim::settings::debug())
+                _print_arg("input");
+            for(size_t i = 0; i < _arg.size(); ++i)
+            {
                 if(tim::settings::debug())
-                    _print_arg("input");
-                for(size_t i = 0; i < _arg.size(); ++i)
+                    _print_entry(i);
+                switch(i)
                 {
-                    if(tim::settings::debug())
-                        _print_entry(i);
-                    switch(i)
-                    {
-                        case PyProfilingIndex_MPIP:
-                            _arg.at(i) = timemory_stop_mpip(_arg.at(i));
-                            break;
-                        case PyProfilingIndex_OMPT:
-                            _arg.at(i) = timemory_stop_ompt(_arg.at(i));
-                            break;
-                        case PyProfilingIndex_NCCLP:
-                            _arg.at(i) = timemory_stop_ncclp(_arg.at(i));
-                            break;
-                        case PyProfilingIndex_MALLOCP:
-                            _arg.at(i) = timemory_stop_mallocp(_arg.at(i));
-                            break;
-                        case PyProfilingIndex_END: break;
-                    }
+                    case PyProfilingIndex_MPIP:
+                        _arg.at(i) = timemory_stop_mpip(_arg.at(i));
+                        break;
+                    case PyProfilingIndex_OMPT:
+                        _arg.at(i) = timemory_stop_ompt(_arg.at(i));
+                        break;
+                    case PyProfilingIndex_NCCLP:
+                        _arg.at(i) = timemory_stop_ncclp(_arg.at(i));
+                        break;
+                    case PyProfilingIndex_MALLOCP:
+                        _arg.at(i) = timemory_stop_mallocp(_arg.at(i));
+                        break;
+                    case PyProfilingIndex_END: break;
                 }
-                if(tim::settings::debug())
-                    _print_arg("return");
-                return _arg;
-            },
-            "Stop profiling MPI (mpip), OpenMP (ompt), NCCL (ncclp), and/or memory "
-            "allocations (mallocp). Provide return value from "
-            "start_function_wrappers(mpi=True, "
-            "...)");
+            }
+            if(tim::settings::debug())
+                _print_arg("return");
+            return _arg;
+        },
+        "Stop profiling MPI (mpip), OpenMP (ompt), NCCL (ncclp), and/or memory "
+        "allocations (mallocp). Provide return value from "
+        "start_function_wrappers(mpi=True, "
+        "...)");
 
     //==================================================================================//
     //

@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "timem.hpp"
+
 #include "timemory/utility/argparse.hpp"
 
 //--------------------------------------------------------------------------------------//

@@ -31,7 +31,6 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include "timemory/variadic/functional.hpp"
 
 #include "gtest/gtest.h"
-
 #include <cassert>
 #include <chrono>
 #include <cmath>

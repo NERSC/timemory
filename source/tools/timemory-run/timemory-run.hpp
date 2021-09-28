@@ -25,16 +25,6 @@
 
 #pragma once
 
-#include "timemory/backends/dmp.hpp"
-#include "timemory/backends/process.hpp"
-#include "timemory/environment.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/settings.hpp"
-#include "timemory/utility/argparse.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/popen.hpp"
-#include "timemory/variadic/macros.hpp"
-
 #include "BPatch.h"
 #include "BPatch_Vector.h"
 #include "BPatch_addressSpace.h"
@@ -45,6 +35,15 @@
 #include "BPatch_process.h"
 #include "BPatch_snippet.h"
 #include "BPatch_statement.h"
+#include "timemory/backends/dmp.hpp"
+#include "timemory/backends/process.hpp"
+#include "timemory/environment.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/settings.hpp"
+#include "timemory/utility/argparse.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/popen.hpp"
+#include "timemory/variadic/macros.hpp"
 
 #include <cstring>
 #include <limits>
