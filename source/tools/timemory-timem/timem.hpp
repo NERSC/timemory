@@ -525,10 +525,6 @@ public:
         {
             m_hist_buff.reserve(std::max<size_t>(m_hist_buff.capacity(), _v));
         }
-        else
-        {
-            m_hist_buff.clear();
-        }
     }
 
     std::vector<hist_type>& swap_history(std::vector<hist_type>& _v)

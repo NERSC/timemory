@@ -185,10 +185,19 @@ main(int argc, char** argv)
             "If set to value > 0, timem will record a history of every sample.\n"
             "%{INDENT}%This requires spawning an extra thread which will periodically "
             "wake and flush the buffer.")
-        .count(1)
+        .max_count(1)
         .dtype("size_t")
         .set_default(buffer_size())
-        .action([](parser_t& p) { buffer_size() = p.get<size_t>("buffer-size"); });
+        .action([](parser_t& p) {
+            if(p.get_count("buffer-size") == 0)
+            {
+                buffer_size() = 500;
+            }
+            else
+            {
+                buffer_size() = p.get<size_t>("buffer-size");
+            }
+        });
     parser.add_argument({ "-e", "--events", "--papi-events" },
                         "Set the hardware counter events to record (ref: `timemory-avail "
                         "-H | grep PAPI`)");
