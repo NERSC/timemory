@@ -47,48 +47,28 @@ add_interface_library(timemory-papi-static
 add_interface_library(timemory-cuda "Enables CUDA support")
 add_interface_library(timemory-cuda-compiler "Enables some CUDA compiler flags")
 add_interface_library(timemory-cupti
-    "Enables CUPTI support (requires linking to libcuda)")
-add_interface_library(timemory-cudart
-    "Link to CUDA runtime (shared library)")
-add_interface_library(timemory-cudart-device
-    "Link to CUDA device runtime")
-add_interface_library(timemory-cudart-static
-    "Link to CUDA runtime (static library)")
-add_interface_library(timemory-nccl
-    "Enables CUDA NCCL support")
-add_interface_library(timemory-hip
-    "Enables HIP support")
-add_interface_library(timemory-hip-device
-    "Enables HIP support (device code)")
-add_interface_library(timemory-nvml
-    "Enables NVML support (NVIDIA)")
-add_interface_library(timemory-caliper
-    "Enables Caliper support")
-add_interface_library(timemory-gotcha
-    "Enables Gotcha support")
-add_interface_library(timemory-likwid
-    "Enables LIKWID support")
-add_interface_library(timemory-vtune
-    "Enables VTune support (ittnotify)")
-add_interface_library(timemory-tau
-    "Enables TAU support")
-add_interface_library(timemory-ompt
-    "Enables OpenMP-tools support")
-add_interface_library(timemory-python
-    "Enables python support (embedded interpreter)")
-add_interface_library(timemory-plotting
-    "Enables python plotting support (system call)")
-add_interface_library(timemory-allinea-map
-    "Enables Allinea-MAP support")
-add_interface_library(timemory-craypat
-    "Enables CrayPAT support")
-add_interface_library(timemory-libunwind
-    "Enables libunwind support")
-add_interface_library(timemory-perfetto
-    "Enables perfetto support")
+                      "Enables CUPTI support (requires linking to libcuda)")
+add_interface_library(timemory-cudart "Link to CUDA runtime (shared library)")
+add_interface_library(timemory-cudart-device "Link to CUDA device runtime")
+add_interface_library(timemory-cudart-static "Link to CUDA runtime (static library)")
+add_interface_library(timemory-nccl "Enables CUDA NCCL support")
+add_interface_library(timemory-hip "Enables HIP support")
+add_interface_library(timemory-hip-device "Enables HIP support (device code)")
+add_interface_library(timemory-nvml "Enables NVML support (NVIDIA)")
+add_interface_library(timemory-caliper "Enables Caliper support")
+add_interface_library(timemory-gotcha "Enables Gotcha support")
+add_interface_library(timemory-likwid "Enables LIKWID support")
+add_interface_library(timemory-vtune "Enables VTune support (ittnotify)")
+add_interface_library(timemory-tau "Enables TAU support")
+add_interface_library(timemory-ompt "Enables OpenMP-tools support")
+add_interface_library(timemory-python "Enables python support (embedded interpreter)")
+add_interface_library(timemory-plotting "Enables python plotting support (system call)")
+add_interface_library(timemory-allinea-map "Enables Allinea-MAP support")
+add_interface_library(timemory-craypat "Enables CrayPAT support")
+add_interface_library(timemory-libunwind "Enables libunwind support")
+add_interface_library(timemory-perfetto "Enables perfetto support")
 
-add_interface_library(timemory-coverage
-    "Enables code-coverage flags")
+add_interface_library(timemory-coverage "Enables code-coverage flags")
 add_interface_library(timemory-gperftools
                       "Enables user-selected gperftools component (${_GPERF_COMPONENTS})")
 
@@ -956,9 +936,9 @@ endif()
 
 # ----------------------------------------------------------------------------------------#
 #
-#                                   HIP
+# HIP
 #
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_HIP)
     find_package(hip ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
@@ -967,21 +947,23 @@ endif()
 if(TIMEMORY_USE_HIP AND hip_FOUND)
     target_link_libraries(timemory-headers INTERFACE timemory-hip)
 
-    target_compile_definitions(timemory-hip        INTERFACE TIMEMORY_USE_HIP TIMEMORY_USE_GPU)
-    target_compile_definitions(timemory-hip-device INTERFACE TIMEMORY_USE_HIP TIMEMORY_USE_GPU)
+    target_compile_definitions(timemory-hip INTERFACE TIMEMORY_USE_HIP TIMEMORY_USE_GPU)
+    target_compile_definitions(timemory-hip-device INTERFACE TIMEMORY_USE_HIP
+                                                             TIMEMORY_USE_GPU)
 
-    find_library(ROCM_roctx64_LIBRARY
+    find_library(
+        ROCM_roctx64_LIBRARY
         NAMES roctx64
         PATH_SUFFIXES lib64 lib
         HINTS ${hip_DIR}/../../..
         PATHS ${hip_DIR}/../../..)
 
     if(ROCM_roctx64_LIBRARY)
-        target_link_libraries(timemory-hip        INTERFACE ${ROCM_roctx64_LIBRARY})
+        target_link_libraries(timemory-hip INTERFACE ${ROCM_roctx64_LIBRARY})
         target_link_libraries(timemory-hip-device INTERFACE ${ROCM_roctx64_LIBRARY})
     endif()
 
-    target_link_libraries(timemory-hip        INTERFACE hip::host)
+    target_link_libraries(timemory-hip INTERFACE hip::host)
     target_link_libraries(timemory-hip-device INTERFACE hip::device)
 
     add_user_flags(timemory-hip "HIP")
@@ -991,9 +973,9 @@ else()
     inform_empty_interface(timemory-hip-device "HIP (device)")
 endif()
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 #
-#                               LIBUNWIND
+# LIBUNWIND
 #
 # ----------------------------------------------------------------------------------------#
 
@@ -1130,7 +1112,9 @@ if(TIMEMORY_BUILD_CALIPER)
     set(_ORIG_TESTING ${BUILD_TESTING})
     set(CMAKE_C_EXTENSIONS ON)
     set(BUILD_TESTING OFF)
-    set(BUILD_TESTING OFF CACHE BOOL "")
+    set(BUILD_TESTING
+        OFF
+        CACHE BOOL "")
     timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/caliper)
@@ -1334,8 +1318,10 @@ if(TIMEMORY_USE_OMPT)
         set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/llvm-ompt)
         timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
-        target_include_directories(timemory-ompt SYSTEM INTERFACE
-            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/llvm-ompt/runtime/src>)
+        target_include_directories(
+            timemory-ompt SYSTEM
+            INTERFACE
+                $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/llvm-ompt/runtime/src>)
         foreach(_TARGET omp omptarget)
             if(TARGET ${_TARGET})
                 list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_TARGET})
@@ -1370,9 +1356,9 @@ endif()
 
 # ----------------------------------------------------------------------------------------#
 #
-#                               Perfetto
+# Perfetto
 #
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_PERFETTO)
     checkout_git_submodule(
@@ -1384,42 +1370,43 @@ if(TIMEMORY_USE_PERFETTO)
 
     timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
-    add_library(perfetto-object OBJECT ${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.cc)
+    add_library(perfetto-object OBJECT
+                ${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.cc)
     add_library(timemory::perfetto-object ALIAS perfetto-object)
-    target_include_directories(perfetto-object PUBLIC "${PROJECT_SOURCE_DIR}/external/perfetto/sdk")
+    target_include_directories(perfetto-object
+                               PUBLIC "${PROJECT_SOURCE_DIR}/external/perfetto/sdk")
     target_compile_definitions(perfetto-object INTERFACE TIMEMORY_USE_PERFETTO)
     target_link_libraries(perfetto-object PUBLIC timemory::timemory-threading)
-    set_target_properties(perfetto-object PROPERTIES
-        POSITION_INDEPENDENT_CODE ON)
+    set_target_properties(perfetto-object PROPERTIES POSITION_INDEPENDENT_CODE ON)
     target_sources(perfetto-object INTERFACE $<TARGET_OBJECTS:perfetto-object>)
     target_compile_definitions(timemory-perfetto INTERFACE TIMEMORY_USE_PERFETTO)
-    target_include_directories(timemory-perfetto INTERFACE
-        $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/perfetto/sdk>)
+    target_include_directories(
+        timemory-perfetto
+        INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/perfetto/sdk>)
     if(TIMEMORY_INSTALL_HEADER_FILES)
         install(
-            FILES       ${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.h
+            FILES ${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.h
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
             OPTIONAL)
     endif()
     build_library(
         PIC
-        TYPE                STATIC
-        TARGET_NAME         timemory-perfetto-static
-        OUTPUT_NAME         timemory-perfetto
-        LANGUAGE            CXX
-        LINKER_LANGUAGE     CXX
-        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
-        SOURCES             $<TARGET_OBJECTS:perfetto-object>
+        TYPE STATIC
+        TARGET_NAME timemory-perfetto-static
+        OUTPUT_NAME timemory-perfetto
+        LANGUAGE CXX
+        LINKER_LANGUAGE CXX
+        OUTPUT_DIR ${PROJECT_BINARY_DIR}
+        SOURCES $<TARGET_OBJECTS:perfetto-object>
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_USE_EXTERN})
     target_link_libraries(timemory-perfetto-static INTERFACE timemory-perfetto)
     timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
 endif()
 
-
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 #
-#                               VTune
+# VTune
 #
 # ----------------------------------------------------------------------------------------#
 
@@ -1495,7 +1482,9 @@ if(TIMEMORY_USE_DYNINST)
     endif()
 endif()
 
-if(TIMEMORY_USE_DYNINST AND Dyninst_FOUND AND Boost_FOUND)
+if(TIMEMORY_USE_DYNINST
+   AND Dyninst_FOUND
+   AND Boost_FOUND)
 
     set(_Dyninst)
     # some installs of dyninst don't set this properly

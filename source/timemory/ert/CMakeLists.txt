@@ -15,27 +15,22 @@ elseif(TIMEMORY_USE_HIP)
     file(GLOB_RECURSE cu_source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cu)
     set_source_files_properties(${cu_source_files} PROPERTIES LANGUAGE CXX)
     add_library(timemory-ert-hip-object EXCLUDE_FROM_ALL OBJECT ${cu_source_files})
-    target_link_libraries(timemory-ert-hip-object PRIVATE
-        timemory::timemory-vector
-        timemory::timemory-hip
-        timemory::timemory-core
-        timemory::timemory-roofline-options
-        hip::device)
-    set_target_properties(timemory-ert-hip-object PROPERTIES
-        POSITION_INDEPENDENT_CODE ON)
+    target_link_libraries(
+        timemory-ert-hip-object
+        PRIVATE timemory::timemory-vector timemory::timemory-hip timemory::timemory-core
+                timemory::timemory-roofline-options hip::device)
+    set_target_properties(timemory-ert-hip-object PROPERTIES POSITION_INDEPENDENT_CODE ON)
     list(APPEND source_files $<TARGET_OBJECTS:timemory-ert-hip-object>)
 endif()
 
 build_intermediate_library(
     USE_INTERFACE
-    NAME                ert
-    TARGET              ert
-    CATEGORY            GLOBAL
-    FOLDER              components
-    HEADERS             ${header_files}
-    SOURCES             ${source_files}
-    DEPENDS             timemory::timemory-vector
-                        timemory::timemory-cuda
-                        timemory::timemory-hip
-                        timemory::timemory-core
-    PRIVATE_LINK        timemory::timemory-roofline-options)
+    NAME ert
+    TARGET ert
+    CATEGORY GLOBAL
+    FOLDER components
+    HEADERS ${header_files}
+    SOURCES ${source_files}
+    DEPENDS timemory::timemory-vector timemory::timemory-cuda timemory::timemory-hip
+            timemory::timemory-core
+    PRIVATE_LINK timemory::timemory-roofline-options)

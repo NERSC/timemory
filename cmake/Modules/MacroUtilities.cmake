@@ -876,7 +876,8 @@ function(TIMEMORY_INSTALL_HEADER_FILES)
             continue()
         endif()
         if(NOT EXISTS "${_header}")
-            timemory_message(AUTHOR_WARNING
+            timemory_message(
+                AUTHOR_WARNING
                 "Skipping install of non-existant timemory header: '${_header}'")
         endif()
         file(RELATIVE_PATH _relative ${PROJECT_SOURCE_DIR}/source ${_header})

@@ -161,10 +161,11 @@ endif()
 
 if(TIMEMORY_BUILD_LTO)
     include(CheckIPOSupported)
-    check_ipo_supported(RESULT IPO_SUPPORTED
-        OUTPUT IPO_CHECK_OUTPUT)
+    check_ipo_supported(RESULT IPO_SUPPORTED OUTPUT IPO_CHECK_OUTPUT)
     if(NOT IPO_SUPPORTED)
-        timemory_message(STATUS "TIMEMORY_BUILD_LTO must be disabled due to check_ipo_supported() failure")
+        timemory_message(
+            STATUS
+            "TIMEMORY_BUILD_LTO must be disabled due to check_ipo_supported() failure")
         timemory_message(AUTHOR_WARNING "${IPO_CHECK_OUTPUT}")
         message(FATAL_ERROR "TIMEMORY_BUILD_LTO not supported")
     endif()
@@ -172,8 +173,7 @@ if(TIMEMORY_BUILD_LTO)
     set(TIMEMORY_BUILD_LTO ${IPO_SUPPORTED})
 endif()
 
-timemory_save_variables(FLTO
-    VARIABLES CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+timemory_save_variables(FLTO VARIABLES CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
 set(CMAKE_C_FLAGS "-flto=thin ${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "-flto=thin ${CMAKE_CXX_FLAGS}")
 
@@ -197,10 +197,9 @@ if(TIMEMORY_BUILD_LTO)
     target_link_libraries(timemory-compile-options INTERFACE timemory::timemory-lto)
 endif()
 
-timemory_restore_variables(FLTO
-    VARIABLES CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+timemory_restore_variables(FLTO VARIABLES CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 # print compilation timing reports (Clang compiler)
 #
 add_interface_library(timemory-compile-timing

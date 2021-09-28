@@ -152,10 +152,19 @@ if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_USE_CTP)
             timemory-compile-time
             LINK
             ANALYZER_OPTIONS
-                -s "${PROJECT_BINARY_DIR}/" "${PROJECT_SOURCE_DIR}/"
-                -f "lang-all" "so" "a" "dylib" "dll"
-                -i "^-"
-                -e "^(@rpath).*")
+            -s
+            "${PROJECT_BINARY_DIR}/"
+            "${PROJECT_SOURCE_DIR}/"
+            -f
+            "lang-all"
+            "so"
+            "a"
+            "dylib"
+            "dll"
+            -i
+            "^-"
+            -e
+            "^(@rpath).*")
         set(TIMEMORY_USE_CTP ON)
     else()
         set(TIMEMORY_USE_CTP OFF)
@@ -166,9 +175,9 @@ if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_BUILD_TESTING)
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 endif()
 
-#----------------------------------------------------------------------------------------#
-#   handle some additional configuration before other includes
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
+# handle some additional configuration before other includes
+# ----------------------------------------------------------------------------------------#
 
 set(_BUILD_SHARED_CXX ${BUILD_SHARED_LIBS})
 set(_BUILD_STATIC_CXX ${BUILD_STATIC_LIBS})

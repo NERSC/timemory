@@ -119,10 +119,12 @@ if(Python3_INCLUDE_DIR AND NOT Python3_INCLUDE_DIRS)
     set(Python3_INCLUDE_DIRS ${Python3_INCLUDE_DIR})
 endif()
 if(Python3_INCLUDE_DIRS)
-    set(PYTHON_INCLUDE_DIR "${Python3_INCLUDE_DIRS}" CACHE PATH
-        "Set via Python3_INCLUDE_DIR (timemory)" FORCE)
-    set(PYTHON_INCLUDE_DIRS "${Python3_INCLUDE_DIRS}" CACHE PATH
-        "Set via Python3_INCLUDE_DIRS (timemory)" FORCE)
+    set(PYTHON_INCLUDE_DIR
+        "${Python3_INCLUDE_DIRS}"
+        CACHE PATH "Set via Python3_INCLUDE_DIR (timemory)" FORCE)
+    set(PYTHON_INCLUDE_DIRS
+        "${Python3_INCLUDE_DIRS}"
+        CACHE PATH "Set via Python3_INCLUDE_DIRS (timemory)" FORCE)
 endif()
 # libraries
 set(PYTHON_LIBRARY_DEBUG
@@ -333,20 +335,20 @@ if(TIMEMORY_BUILD_PYTHON OR pybind11_FOUND)
         target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
     endif()
     if(PYTHON_INCLUDE_DIRS)
-        target_include_directories(timemory-python SYSTEM INTERFACE
-            ${PYTHON_INCLUDE_DIRS})
+        target_include_directories(timemory-python SYSTEM
+                                   INTERFACE ${PYTHON_INCLUDE_DIRS})
     endif()
     if(PYBIND11_INCLUDE_DIRS)
-        target_include_directories(timemory-python SYSTEM INTERFACE
-            ${PYBIND11_INCLUDE_DIRS})
+        target_include_directories(timemory-python SYSTEM
+                                   INTERFACE ${PYBIND11_INCLUDE_DIRS})
     endif()
     if(PYBIND11_INCLUDE_DIR)
-        target_include_directories(timemory-python SYSTEM INTERFACE
-            $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>)
+        target_include_directories(timemory-python SYSTEM
+                                   INTERFACE $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>)
     endif()
     if(_PYBIND11_INCLUDE_DIRS)
-        target_include_directories(timemory-python SYSTEM INTERFACE
-            $<BUILD_INTERFACE:${_PYBIND11_INCLUDE_DIRS}>)
+        target_include_directories(timemory-python SYSTEM
+                                   INTERFACE $<BUILD_INTERFACE:${_PYBIND11_INCLUDE_DIRS}>)
     endif()
 endif()
 
