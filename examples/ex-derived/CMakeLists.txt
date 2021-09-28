@@ -13,4 +13,7 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
 # headers are always available
 add_executable(ex_derived ex_derived.cpp)
 target_link_libraries(ex_derived timemory-derived-example)
-install(TARGETS ex_derived DESTINATION bin OPTIONAL)
+install(
+    TARGETS ex_derived
+    DESTINATION bin
+    OPTIONAL)

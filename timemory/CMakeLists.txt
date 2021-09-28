@@ -1,9 +1,8 @@
-
-##########################################################################################
+# ########################################################################################
 #
-#        timemory (Python)
+# timemory (Python)
 #
-##########################################################################################
+# ########################################################################################
 
 if(SKBUILD)
     set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX})
@@ -14,23 +13,37 @@ if(NOT IS_ABSOLUTE "${_PYLIB}")
     set(_PYLIB ${CMAKE_INSTALL_PREFIX}/${_PYLIB})
 endif()
 file(RELATIVE_PATH LIB_RELPATH "${_PYLIB}"
-    "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+     "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 #
-#   Always install these files since timemory has python scripts which
-#   do not depend on the library being built
+# Always install these files since timemory has python scripts which do not depend on the
+# library being built
 #
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 
 set(PYTHON_SUBMODULE_FOLDERS
-    analyze api ert mpi mpi_support plotting profiler roofline
-    util bundle component hardware_counters test trace region
-    tools libs)
+    analyze
+    api
+    ert
+    mpi
+    mpi_support
+    plotting
+    profiler
+    roofline
+    util
+    bundle
+    component
+    hardware_counters
+    test
+    trace
+    region
+    tools
+    libs)
 
 file(GLOB PYTHON_SUBMODULE_FILES ${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/*.py)
-string(REPLACE "${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/" ""
-    PYTHON_SUBMODULE_FILES "${PYTHON_SUBMODULE_FILES}")
+string(REPLACE "${PROJECT_SOURCE_DIR}/${PROJECT_NAME}/" "" PYTHON_SUBMODULE_FILES
+               "${PYTHON_SUBMODULE_FILES}")
 
 foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
     set(SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${_SUBMODULE})
@@ -43,20 +56,21 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
         string(REPLACE "${PROJECT_SOURCE_DIR}/" "" _DIR "${_DIR}")
         if(EXISTS ${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py)
             configure_file(${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py
-                ${PROJECT_BINARY_DIR}/${_DIR}/${_FILE}.py @ONLY)
+                           ${PROJECT_BINARY_DIR}/${_DIR}/${_FILE}.py @ONLY)
         elseif(EXISTS ${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py.in)
             configure_file(${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py.in
-                ${PROJECT_BINARY_DIR}/${_DIR}/${_FILE}.py @ONLY)
+                           ${PROJECT_BINARY_DIR}/${_DIR}/${_FILE}.py @ONLY)
         endif()
         if(CMAKE_INSTALL_PYTHONDIR)
-            install(FILES ${PROJECT_BINARY_DIR}/${_DIR}/${_FILE}.py
+            install(
+                FILES ${PROJECT_BINARY_DIR}/${_DIR}/${_FILE}.py
                 DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_DIR}
                 OPTIONAL)
         endif()
     endforeach()
 endforeach()
 
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # MPI info
 #
 set(MPI_EXE_INFO "MPI not supported")
@@ -64,22 +78,22 @@ set(MPI_C_INFO "MPI not supported")
 set(MPI_CXX_INFO "MPI not supported")
 if(TIMEMORY_USE_MPI AND MPI_FOUND)
 
-    execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
+    execute_process(
+        COMMAND ${MPIEXEC_EXECUTABLE} --version
         OUTPUT_VARIABLE MPI_EXE_INFO
-        ERROR_QUIET
-        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
 
-    execute_process(COMMAND ${MPI_C_COMPILER} --version
+    execute_process(
+        COMMAND ${MPI_C_COMPILER} --version
         OUTPUT_VARIABLE MPI_C_INFO
-        ERROR_QUIET
-        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
 
-    execute_process(COMMAND ${MPI_CXX_COMPILER} --version
+    execute_process(
+        COMMAND ${MPI_CXX_COMPILER} --version
         OUTPUT_VARIABLE MPI_CXX_INFO
-        ERROR_QUIET
-        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
 
 endif()
@@ -90,7 +104,8 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/mpi_support/mpi_cxx_info.txt "${MPI_CXX_I
 
 if(CMAKE_INSTALL_PYTHONDIR)
     foreach(_TYPE exe c cxx)
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mpi_support/mpi_${_TYPE}_info.txt
+        install(
+            FILES ${CMAKE_CURRENT_BINARY_DIR}/mpi_support/mpi_${_TYPE}_info.txt
             DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/mpi_support
             OPTIONAL)
     endforeach()
@@ -101,27 +116,29 @@ foreach(_FILE ${BIN_FILES})
     get_filename_component(_NAME ${_FILE} NAME)
     configure_file(${_FILE} ${CMAKE_CURRENT_BINARY_DIR}/bin/${_NAME} COPYONLY)
     if(CMAKE_INSTALL_PYTHONDIR)
-        install(PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/bin/${_NAME}
+        install(
+            PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/bin/${_NAME}
             DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/bin
             OPTIONAL)
     endif()
 endforeach()
 
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # Install the python stuff
 #
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/__init__.py.in
-    ${CMAKE_CURRENT_BINARY_DIR}/__init__.py @ONLY)
+               ${CMAKE_CURRENT_BINARY_DIR}/__init__.py @ONLY)
 
-configure_file(${PROJECT_SOURCE_DIR}/pytest.ini
-    ${PROJECT_BINARY_DIR}/pytest.ini COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/pytest.ini ${PROJECT_BINARY_DIR}/pytest.ini COPYONLY)
 
 if(CMAKE_INSTALL_PYTHONDIR)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/__init__.py
+    install(
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/__init__.py
         DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}
         OPTIONAL)
     if(SKBUILD)
-        install(FILES ${PROJECT_BINARY_DIR}/pytest.ini
+        install(
+            FILES ${PROJECT_BINARY_DIR}/pytest.ini
             DESTINATION ${CMAKE_INSTALL_PYTHONDIR}
             OPTIONAL)
     endif()
@@ -130,16 +147,17 @@ endif()
 foreach(PYLIB_SUBMODULE ${PYTHON_SUBMODULE_FILES})
     get_filename_component(PYLIB_SUBMODULE "${PYLIB_SUBMODULE}" NAME_WE)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${PYLIB_SUBMODULE}.py
-        ${CMAKE_CURRENT_BINARY_DIR}/${PYLIB_SUBMODULE}.py @ONLY)
+                   ${CMAKE_CURRENT_BINARY_DIR}/${PYLIB_SUBMODULE}.py @ONLY)
 
     if(CMAKE_INSTALL_PYTHONDIR)
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PYLIB_SUBMODULE}.py
+        install(
+            FILES ${CMAKE_CURRENT_BINARY_DIR}/${PYLIB_SUBMODULE}.py
             DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}
             OPTIONAL)
     endif()
 endforeach()
 
-#----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------
 # console scripts
 #
 if(SKBUILD)
@@ -150,20 +168,22 @@ function(TIMEMORY_PYTHON_CONSOLE_SCRIPT SCRIPT_NAME SCRIPT_SUBMODULE SCRIPT_FUNC
     set(CONSOLE_EXTRA "${ARGN}")
 
     configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/console-script.py.in
-        ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} @ONLY)
+                   ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} @ONLY)
 
     if(CMAKE_INSTALL_PYTHONDIR)
-        install(PROGRAMS ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME}
+        install(
+            PROGRAMS ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME}
             DESTINATION ${CMAKE_INSTALL_BINDIR}
             OPTIONAL)
     endif()
 
     add_test(
-        NAME                ${SCRIPT_NAME}-console-script-test
-        COMMAND             ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} --help
-        WORKING_DIRECTORY   ${PROJECT_BINARY_DIR})
-    set_tests_properties(${SCRIPT_NAME}-console-script-test PROPERTIES
-        ENVIRONMENT         "PYTHONPATH=${PROJECT_BINARY_DIR}:$ENV{PYTHONPATH}")
+        NAME ${SCRIPT_NAME}-console-script-test
+        COMMAND ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} --help
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    set_tests_properties(
+        ${SCRIPT_NAME}-console-script-test
+        PROPERTIES ENVIRONMENT "PYTHONPATH=${PROJECT_BINARY_DIR}:$ENV{PYTHONPATH}")
 
 endfunction()
 
@@ -172,8 +192,9 @@ if(NOT PYTHON_EXECUTABLE)
 endif()
 
 timemory_python_console_script("timemory-plotter" "timemory.plotting" "try_plot")
-timemory_python_console_script("timemory-roofline" "timemory.roofline" "try_plot"
-	"import os\n    os.environ[\"TIMEMORY_CXX_PLOT_MODE\"] = \"ON\"")
+timemory_python_console_script(
+    "timemory-roofline" "timemory.roofline" "try_plot"
+    "import os\n    os.environ[\"TIMEMORY_CXX_PLOT_MODE\"] = \"ON\"")
 timemory_python_console_script("timemory-analyze" "timemory.analyze" "try_analyze")
 
 if(TIMEMORY_USE_PYTHON)
@@ -181,6 +202,7 @@ if(TIMEMORY_USE_PYTHON)
     timemory_python_console_script("timemory-python-trace" "timemory.trace" "main")
 
     if(TIMEMORY_BUILD_PYTHON_LINE_PROFILER)
-        timemory_python_console_script("timemory-python-line-profiler" "timemory.line_profiler" "main")
+        timemory_python_console_script("timemory-python-line-profiler"
+                                       "timemory.line_profiler" "main")
     endif()
 endif()

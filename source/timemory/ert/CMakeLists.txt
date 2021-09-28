@@ -1,4 +1,3 @@
-
 if(NOT TIMEMORY_BUILD_ERT)
     return()
 endif()
@@ -15,14 +14,12 @@ endif()
 
 build_intermediate_library(
     USE_INTERFACE
-    NAME                ert
-    TARGET              ert
-    CATEGORY            GLOBAL
-    FOLDER              components
-    HEADERS             ${header_files}
-    SOURCES             ${source_files}
-    DEPENDS             timemory::timemory-vector
-                        timemory::timemory-cuda
-                        timemory::timemory-core
-                        timemory::timemory-manager
-    PRIVATE_LINK        timemory::timemory-roofline-options)
+    NAME ert
+    TARGET ert
+    CATEGORY GLOBAL
+    FOLDER components
+    HEADERS ${header_files}
+    SOURCES ${source_files}
+    DEPENDS timemory::timemory-vector timemory::timemory-cuda timemory::timemory-core
+            timemory::timemory-manager
+    PRIVATE_LINK timemory::timemory-roofline-options)

@@ -4,13 +4,13 @@ cmake_policy(PUSH)
 cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
 
-#----------------------------------------------------------------------------------------#
-#   timemory examples project
+# ----------------------------------------------------------------------------------------#
+# timemory examples project
 #
 project(timemory-Examples C CXX)
 
-#----------------------------------------------------------------------------------------#
-#   Add the examples
+# ----------------------------------------------------------------------------------------#
+# Add the examples
 #
 
 # disable unity builds
@@ -36,9 +36,12 @@ option(TIMEMORY_BUILD_TPL_EXAMPLES "Enable building these examples" ${DEFAULT_CH
 option(TIMEMORY_BUILD_CUDA_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_PYTHON_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_FORTRAN_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
-option(TIMEMORY_BUILD_ROOFLINE_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
-option(TIMEMORY_BUILD_DYNAMIC_INSTRUMENT_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
-option(TIMEMORY_BUILD_COMPILER_INSTRUMENT_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_ROOFLINE_EXAMPLES "Enable building these examples"
+       ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_DYNAMIC_INSTRUMENT_EXAMPLES "Enable building these examples"
+       ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_COMPILER_INSTRUMENT_EXAMPLES "Enable building these examples"
+       ${DEFAULT_CHOICE})
 
 # C language related
 if(TIMEMORY_BUILD_C_EXAMPLES)

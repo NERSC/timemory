@@ -1,11 +1,11 @@
 # include guard
 include_guard(DIRECTORY)
 
-##########################################################################################
+# ########################################################################################
 #
-#        Creates a 'format' target that runs clang-format
+# Creates a 'format' target that runs clang-format
 #
-##########################################################################################
+# ########################################################################################
 
 set(_FMT ON)
 # Visual Studio GUI reports "errors" occasionally
@@ -25,19 +25,16 @@ if("${CLANG_FORMATTER}" MATCHES "6")
     unset(CLANG_FORMATTER CACHE)
 endif()
 
-find_program(CLANG_FORMATTER
-    NAMES
-        clang-format-9
-        clang-format-9.0
-        clang-format-mp-9.0
-        clang-format)
+find_program(CLANG_FORMATTER NAMES clang-format-9 clang-format-9.0 clang-format-mp-9.0
+                                   clang-format)
 
 # python formatting
-find_program(BLACK_FORMATTER
-    NAMES black)
+find_program(BLACK_FORMATTER NAMES black)
 
 if(CLANG_FORMATTER)
-    file(GLOB_RECURSE _headers
+    file(
+        GLOB_RECURSE
+        _headers
         ${PROJECT_SOURCE_DIR}/source/tools/*.hpp
         ${PROJECT_SOURCE_DIR}/source/tests/*.hpp
         ${PROJECT_SOURCE_DIR}/source/python/*.hpp
@@ -46,7 +43,9 @@ if(CLANG_FORMATTER)
     if(TIMEMORY_SOURCE_GROUP)
         source_group(TREE ${PROJECT_SOURCE_DIR}/source FILES ${headers})
     endif()
-    file(GLOB_RECURSE sources
+    file(
+        GLOB_RECURSE
+        sources
         ${PROJECT_SOURCE_DIR}/source/*.c
         ${PROJECT_SOURCE_DIR}/source/*.cu
         ${PROJECT_SOURCE_DIR}/source/*.cpp
@@ -63,7 +62,9 @@ if(CLANG_FORMATTER)
         source_group(TREE ${PROJECT_SOURCE_DIR}/source FILES ${sources})
     endif()
     if(TIMEMORY_BUILD_EXAMPLES)
-        file(GLOB_RECURSE examples
+        file(
+            GLOB_RECURSE
+            examples
             ${PROJECT_SOURCE_DIR}/examples/ex-*/*.h
             ${PROJECT_SOURCE_DIR}/examples/ex-*/*.c
             ${PROJECT_SOURCE_DIR}/examples/ex-*/*.hpp
@@ -85,10 +86,10 @@ if(CLANG_FORMATTER)
     set(tpl_headers)
     foreach(_h ${_headers})
         if(NOT "${_h}" IN_LIST _tpl_headers)
-	        list(APPEND headers ${_h})
+            list(APPEND headers ${_h})
         elseif(NOT "${_h}" IN_LIST _ext_headers)
-	        list(APPEND tpl_headers ${_h})
-    	endif()
+            list(APPEND tpl_headers ${_h})
+        endif()
     endforeach()
     unset(_tpl_headers)
     unset(_ext_headers)
@@ -101,30 +102,27 @@ if(CLANG_FORMATTER)
     endif()
 
     # always have files
-    set(_COMMAND
-        COMMAND ${CLANG_FORMATTER} -i ${headers}
-        COMMAND ${CLANG_FORMATTER} -i ${sources})
+    set(_COMMAND COMMAND ${CLANG_FORMATTER} -i ${headers} COMMAND ${CLANG_FORMATTER} -i
+                 ${sources})
 
     # might have many files
     if(tpl_headers)
-        set(_COMMAND ${_COMMAND}
-            COMMAND ${CLANG_FORMATTER} -i ${tpl_headers})
+        set(_COMMAND ${_COMMAND} COMMAND ${CLANG_FORMATTER} -i ${tpl_headers})
     endif()
 
     # might be empty
     if(TIMEMORY_BUILD_EXAMPLES)
-        set(_COMMAND ${_COMMAND}
-            COMMAND ${CLANG_FORMATTER} -i ${examples})
+        set(_COMMAND ${_COMMAND} COMMAND ${CLANG_FORMATTER} -i ${examples})
     endif()
 
     set(_MSG "'${CLANG_FORMATTER}'")
     if(BLACK_FORMATTER)
-        set(_COMMAND ${_COMMAND}
-            COMMAND ${BLACK_FORMATTER} -q ${PROJECT_SOURCE_DIR})
+        set(_COMMAND ${_COMMAND} COMMAND ${BLACK_FORMATTER} -q ${PROJECT_SOURCE_DIR})
         set(_MSG "${_MSG} and '${BLACK_FORMATTER}'")
     endif()
 
-    add_custom_target(${FORMAT_NAME}
+    add_custom_target(
+        ${FORMAT_NAME}
         ${_COMMAND}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "[${PROJECT_NAME}] Running ${_MSG}..."

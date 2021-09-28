@@ -1,4 +1,3 @@
-
 if(TIMEMORY_USE_OMPT)
     set(NAME ompt)
     set(DEPS timemory-ompt)
@@ -8,12 +7,12 @@ if(TIMEMORY_USE_OMPT)
 
     build_intermediate_library(
         USE_INTERFACE
-        NAME                ${NAME}
-        TARGET              ${NAME}-component
-        CATEGORY            COMPONENT
-        FOLDER              components
-        HEADERS             ${header_files}
-        SOURCES             ${source_files}
-        DEPENDS             ${DEPS}
-        PROPERTY_DEPENDS    GLOBAL)
+        NAME ${NAME}
+        TARGET ${NAME}-component
+        CATEGORY COMPONENT
+        FOLDER components
+        HEADERS ${header_files}
+        SOURCES ${source_files}
+        DEPENDS ${DEPS}
+        PROPERTY_DEPENDS GLOBAL)
 endif()
