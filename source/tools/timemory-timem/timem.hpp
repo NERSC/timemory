@@ -69,6 +69,7 @@ struct pretty_archive<void> : true_type
 
 #include "timemory/components/timing/child.hpp"
 #include "timemory/general.hpp"
+#include "timemory/operations/types/finalize/mpi_get.hpp"
 #include "timemory/sampling.hpp"
 #include "timemory/timemory.hpp"
 
@@ -127,13 +128,25 @@ extern "C"
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <random>
+#include <condition_variable>
+#include <mutex>
 
 template <typename Tp>
 using vector_t       = std::vector<Tp>;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
+using mutex_t        = std::mutex;
+using auto_lock_t    = std::unique_lock<mutex_t>;
 
 using namespace tim::component;
+
+template <typename Tp>
+mutex_t&
+type_mutex()
+{
+    return ::tim::type_mutex<Tp, TIMEMORY_API, 1, mutex_t>(0);
+}
 
 //--------------------------------------------------------------------------------------//
 // create a custom component tuple printer
@@ -215,18 +228,6 @@ struct custom_base_printer
 
         ss << ssv.str() << " " << _label;
 
-        /*
-        if(_rank > -1)
-            ssrank << _rank << "|> ";
-
-        ssr.setf(_flags);
-        ssr << std::setw(_width) << std::setprecision(_prec) << std::get<1>(_val);
-        if(!std::get<1>(_disp).empty())
-            ssr << " " << std::get<1>(_disp);
-
-        ss << ssv.str() << " " << _label << "\n    " << ssrank.str() << ssr.str() << " "
-           << _label;
-        */
         tim::consume_parameters(_rank);
 
         _os << ss.str();
@@ -461,10 +462,13 @@ template <typename... Types>
 class timem_tuple : public lightweight_tuple<Types...>
 {
 public:
-    using base_type = lightweight_tuple<Types...>;
-    using apply_v   = tim::mpl::apply<void>;
-    using data_type = typename base_type::impl_type;
-    using this_type = timem_tuple<Types...>;
+    using base_type       = lightweight_tuple<Types...>;
+    using apply_v         = tim::mpl::apply<void>;
+    using data_type       = typename base_type::impl_type;
+    using this_type       = timem_tuple<Types...>;
+    using clock_type      = std::chrono::system_clock;
+    using time_point_type = typename clock_type::time_point;
+    using hist_type       = std::pair<time_point_type, data_type>;
 
     template <template <typename> class Op, typename Tuple = data_type>
     using custom_operation_t =
@@ -500,6 +504,39 @@ public:
 
     void set_output(std::ofstream* ofs) { m_ofs = ofs; }
 
+    template <typename FuncT>
+    void set_notify(FuncT&& _v)
+    {
+        m_notify = std::move(_v);
+    }
+
+    void set_history(std::vector<hist_type>* _v) { m_data_hist = _v; }
+
+    size_t get_buffer_size() const { return m_collect_size; }
+
+    void set_buffer_size(size_t _v)
+    {
+        ::auto_lock_t _lk{ ::type_mutex<hist_type>(), std::defer_lock };
+        if(!_lk.owns_lock())
+            _lk.lock();
+        m_collect_size = _v;
+        m_collect_hist = (m_collect_size > 0);
+        if(m_collect_hist)
+        {
+            m_hist_buff.reserve(std::max<size_t>(m_hist_buff.capacity(), _v));
+        }
+    }
+
+    std::vector<hist_type>& swap_history(std::vector<hist_type>& _v)
+    {
+        ::auto_lock_t _lk{ ::type_mutex<hist_type>(), std::defer_lock };
+        if(!_lk.owns_lock())
+            _lk.lock();
+        std::swap(m_hist_buff, _v);
+        _lk.unlock();
+        return _v;
+    }
+
     template <typename... Args>
     void sample(Args&&... args)
     {
@@ -507,6 +544,19 @@ public:
         {
             stop();
             base_type::sample(std::forward<Args>(args)...);
+            if(m_collect_hist)
+            {
+                ::auto_lock_t _lk{ ::type_mutex<hist_type>(), std::defer_lock };
+                if(!_lk.owns_lock())
+                    _lk.lock();
+
+                if(m_hist_buff.size() < m_collect_size)
+                {
+                    m_hist_buff.emplace_back(clock_type::now(), m_data);
+                    if(m_hist_buff.size() + 1 >= m_collect_size)
+                        m_notify();
+                }
+            }
             if(m_ofs)
             {
                 (*m_ofs) << get_local_datetime("[===== %r %F =====]\n") << *this
@@ -520,10 +570,24 @@ public:
     {
         constexpr auto N      = std::tuple_size<data_type>::value;
         auto           v_data = typename mpi_getter<data_type>::value_type{};
+
         // merge the data
         mpi_get(v_data, m_data, make_index_sequence<N>{});
+
+        // merge the histories
+        using hist_vec_t = std::vector<hist_type>;
+        auto _hist_add   = [](hist_vec_t& _lhs, const hist_vec_t& _rhs) -> hist_vec_t& {
+            for(auto& itr : _rhs)
+                _lhs.emplace_back(itr);
+            return _lhs;
+        };
+        std::vector<hist_vec_t> _hist{};
+        operation::finalize::mpi_get<hist_vec_t, true>{
+            _hist, (m_data_hist) ? *m_data_hist : m_hist_buff, _hist_add
+        };
+
         // return an array of this_type
-        return mpi_get(v_data, make_index_sequence<N>{});
+        return mpi_get(v_data, _hist, make_index_sequence<N>{});
     }
 
     friend std::ostream& operator<<(std::ostream& os, const timem_tuple<Types...>& obj)
@@ -561,9 +625,38 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
+        auto _timestamp_str = [](const time_point_type& _tp) {
+            char _repr[64];
+            std::memset(_repr, '\0', sizeof(_repr));
+            std::time_t _value = std::chrono::system_clock::to_time_t(_tp);
+            // alternative: "%c %Z"
+            if(std::strftime(_repr, sizeof(_repr), "%a %b %d %T %Y %Z",
+                             std::localtime(&_value)))
+                return std::string{ _repr };
+            return std::string{};
+        };
+
         using data_tuple_type = decay_t<decltype(m_data)>;
         constexpr auto N      = std::tuple_size<data_tuple_type>::value;
         serialize_tuple(ar, m_data, make_index_sequence<N>{});
+
+        auto* _hist = (m_data_hist) ? m_data_hist : &m_hist_buff;
+        ar.setNextName("history");
+        ar.startNode();
+        ar.makeArray();
+        for(auto& itr : *_hist)
+        {
+            ar.startNode();
+            ar.setNextName("sample_timestamp");
+            ar.startNode();
+            ar(cereal::make_nvp("localtime", _timestamp_str(itr.first)));
+            ar(cereal::make_nvp("time_since_epoch",
+                                itr.first.time_since_epoch().count()));
+            ar.finishNode();
+            serialize_tuple(ar, itr.second, make_index_sequence<N>{});
+            ar.finishNode();
+        }
+        ar.finishNode();
     }
 
     template <typename Up, typename Tp = decay_t<Up>>
@@ -585,6 +678,8 @@ public:
     template <typename Archive, typename Tp>
     static auto serialize_entry(Archive& ar, Tp&& _obj)
     {
+        if(!trait::runtime_enabled<decay_t<Tp>>::get())
+            return;
         auto _name = get_metadata_label<Tp>();
         ar.setNextName(_name.c_str());
         ar.startNode();
@@ -610,10 +705,12 @@ private:
     auto mpi_get(std::tuple<std::vector<Tp>...>& _data, std::tuple<Tp...>& _inp,
                  std::index_sequence<Idx...>)
     {
+        tim::mpi::barrier();
         TIMEMORY_FOLD_EXPRESSION(
             operation::finalize::mpi_get<decay_t<std::tuple_element_t<Idx, data_type>>,
                                          true>(std::get<Idx>(_data),
                                                std::get<Idx>(_inp)));
+        tim::mpi::barrier();
     }
 
     // this mpi_get overload converts the merged data into the tuples which are
@@ -622,33 +719,47 @@ private:
     auto mpi_get(std::vector<std::tuple<Tp...>>& _targ,
                  std::tuple<std::vector<Tp>...>& _data)
     {
+        tim::mpi::barrier();
         auto&& _entries = std::get<Idx>(_data);
         size_t n        = _entries.size();
         if(n > _targ.size())
             _targ.resize(n, std::tuple<Tp...>{});
         for(size_t i = 0; i < n; ++i)
             std::get<Idx>(_targ.at(i)) = std::move(_entries.at(i));
+        tim::mpi::barrier();
     }
 
     // this mpi_get overload converts the data tuples into timem_tuple instances
     template <typename... Tp, size_t... Idx>
-    auto mpi_get(std::tuple<std::vector<Tp>...>& _data, std::index_sequence<Idx...>)
+    auto mpi_get(std::tuple<std::vector<Tp>...>&      _data,
+                 std::vector<std::vector<hist_type>>& _hist, std::index_sequence<Idx...>)
     {
+        tim::mpi::barrier();
         // convert the tuple of vectors into a vector of tuples
-        std::vector<std::tuple<Tp...>> _vec;
+        std::vector<std::tuple<Tp...>> _vec{};
         TIMEMORY_FOLD_EXPRESSION(mpi_get<Idx>(_vec, _data));
         // convert the vector of tuples into a vector of this_tupe
-        std::vector<this_type> _ret;
+        std::vector<this_type> _ret{};
         _ret.reserve(_vec.size());
         for(auto&& itr : _vec)
             _ret.emplace_back(this_type(this->key(), std::move(itr)));
+        for(size_t i = 0; i < _ret.size(); ++i)
+            _ret.at(i).m_hist_buff = std::move(_hist.at(i));
+        tim::mpi::barrier();
         return _ret;
     }
 
 private:
     using base_type::m_data;
-    bool           m_empty = false;
-    std::ofstream* m_ofs   = nullptr;
+
+    bool                       m_empty        = false;
+    bool                       m_collect_hist = false;
+    size_t                     m_collect_size = 0;
+    std::ofstream*             m_ofs          = nullptr;
+    std::function<void()>      m_notify       = []() {};
+    std::vector<hist_type>*    m_data_hist    = nullptr;
+    std::vector<hist_type>     m_hist_buff    = {};
+    std::default_random_engine m_generator{ std::random_device{}() };
 };
 //
 template <typename... Types>
@@ -758,12 +869,15 @@ get_signal_handler(int _sig)
 struct timem_config
 {
     static constexpr bool papi_available = tim::trait::is_available<papi_array_t>::value;
+    using hist_type                      = typename timem_bundle_t::hist_type;
 
     bool     use_shell        = tim::get_env("TIMEM_USE_SHELL", false);
     bool     use_mpi          = tim::get_env("TIMEM_USE_MPI", false);
     bool     use_papi         = tim::get_env("TIMEM_USE_PAPI", papi_available);
     bool     use_sample       = tim::get_env("TIMEM_SAMPLE", true);
     bool     signal_delivered = false;
+    bool     completed        = false;
+    bool     full_buffer      = false;
     bool     debug            = tim::get_env("TIMEM_DEBUG", false);
     int      verbose          = tim::get_env("TIMEM_VERBOSE", 0);
     string_t shell =
@@ -774,15 +888,19 @@ struct timem_config
     double        sample_delay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 1.0e-6);
     pid_t         master_pid   = getpid();
     pid_t         worker_pid   = getpid();
+    size_t        buffer_size  = 0;
     string_t      command      = {};
     std::set<int> signal_types = { SIGALRM };
     std::set<int> signal_flush = { SIGINT };
-    std::vector<std::string> argvector = {};
+    std::vector<std::string>     argvector     = {};
+    std::vector<hist_type>       history       = {};
+    std::unique_ptr<std::thread> buffer_thread = {};
+    std::condition_variable      buffer_cv{};
 
     template <typename Archive>
     void serialize(Archive& ar, unsigned int);
 
-    std::string get_output_filename(std::string inp = {});
+    std::string get_output_filename(std::string inp = {}, std::string ext = {});
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -811,14 +929,20 @@ TIMEM_CONFIG_FUNCTION(output_file)
 TIMEM_CONFIG_FUNCTION(sample_freq)
 TIMEM_CONFIG_FUNCTION(sample_delay)
 TIMEM_CONFIG_FUNCTION(signal_delivered)
+TIMEM_CONFIG_FUNCTION(completed);
+TIMEM_CONFIG_FUNCTION(full_buffer);
 TIMEM_CONFIG_FUNCTION(debug)
 TIMEM_CONFIG_FUNCTION(verbose)
 TIMEM_CONFIG_FUNCTION(command)
+TIMEM_CONFIG_FUNCTION(buffer_size)
 TIMEM_CONFIG_FUNCTION(master_pid)
 TIMEM_CONFIG_FUNCTION(worker_pid)
 TIMEM_CONFIG_FUNCTION(signal_types)
 TIMEM_CONFIG_FUNCTION(signal_flush)
 TIMEM_CONFIG_FUNCTION(argvector)
+TIMEM_CONFIG_FUNCTION(buffer_cv);
+TIMEM_CONFIG_FUNCTION(buffer_thread);
+TIMEM_CONFIG_FUNCTION(history);
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -862,16 +986,23 @@ timem_config::serialize(Archive& ar, unsigned int)
        tim::cereal::make_nvp("shell", shell),
        tim::cereal::make_nvp("shell_flags", shell_flags),
        tim::cereal::make_nvp("sample_freq", sample_freq),
-       tim::cereal::make_nvp("sample_delay", sample_delay));
+       tim::cereal::make_nvp("sample_delay", sample_delay),
+       tim::cereal::make_nvp("buffer_size", buffer_size));
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 inline std::string
-timem_config::get_output_filename(std::string inp)
+timem_config::get_output_filename(std::string inp, std::string ext)
 {
     if(inp.empty())
         inp = output_file;
+
+    auto _rstrip = [](std::string& _inp, const std::string& _key) {
+        auto pos = std::string::npos;
+        while((pos = _inp.find(_key, _inp.length() - _key.length())) != std::string::npos)
+            _inp = _inp.replace(pos, _key.length(), "");
+    };
 
     auto _replace = [](std::string& _inp, const std::string& _key,
                        const std::string& _sub) {
@@ -879,6 +1010,13 @@ timem_config::get_output_filename(std::string inp)
         while((pos = _inp.find(_key)) != std::string::npos)
             _inp = _inp.replace(pos, _key.length(), _sub);
     };
+
+    if(!ext.empty())
+    {
+        _rstrip(inp, ext);
+        _rstrip(inp, ".json");
+        _rstrip(inp, ".txt");
+    }
 
     std::string argstring = {};
     for(size_t i = 1; i < argvector.size(); ++i)
@@ -894,5 +1032,9 @@ timem_config::get_output_filename(std::string inp)
     {
         _replace(inp, itr.first, std::to_string(itr.second));
     }
+
+    if(!ext.empty())
+        inp += ext;
+
     return inp;
 }
