@@ -219,7 +219,7 @@ tim::component::deactivate_mpip(uint64_t id)
     (!defined(TIMEMORY_USE_MPI) && !defined(TIMEMORY_USE_MPI_HEADERS))
 //
 template <typename Toolset, typename Tag>
-void configure_mpip(std::set<std::string>, std::set<std::string>)
+void tim::component::configure_mpip(std::set<std::string>, std::set<std::string>)
 {}
 //
 #else
