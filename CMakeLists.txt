@@ -61,8 +61,7 @@ if(timemory_MAIN_PROJECT)
         CACHE BOOL "Executable exports symbols for loadable modules")
     set(CMAKE_INSTALL_RPATH_USE_LINK_PATH
         ON
-        CACHE BOOL "Append directories in the linker search path")
-    # set(CMAKE_POSITION_INDEPENDENT_CODE ON CACHE BOOL "Build position independent code")
+        CACHE BOOL "Append dirs of linked libraries to the linker search path")
     mark_as_advanced(CMAKE_ENABLE_EXPORTS)
     foreach(_FILE version.h defines.h)
         if(EXISTS ${PROJECT_SOURCE_DIR}/source/timemory/${_FILE})
@@ -71,8 +70,6 @@ if(timemory_MAIN_PROJECT)
     endforeach()
 else()
     set(CMAKE_ENABLE_EXPORTS ON)
-    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
-    # set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 endif()
 
 # install directories
@@ -82,12 +79,8 @@ set(CMAKE_INSTALL_CONFIGDIR ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME})
 
 if(UNIX AND NOT APPLE)
     set(CMAKE_INSTALL_RPATH
-        "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\$ORIGIN/timemory:\$ORIGIN")
-    if(NOT SKBUILD AND NOT SPACK_BUILD)
-        set(CMAKE_INSTALL_RPATH
-            "${CMAKE_INSTALL_RPATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/timemory"
-            )
-    endif()
+        "\$ORIGIN:\$ORIGIN/timemory:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}/timemory"
+        )
 endif()
 
 # create the full path version and generic path versions

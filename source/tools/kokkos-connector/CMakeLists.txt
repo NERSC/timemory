@@ -56,7 +56,9 @@ set(CMAKE_CUDA_STANDARD
 set(CMAKE_CUDA_STANDARD_REQUIRED
     ON
     CACHE BOOL "CUDA language flags required")
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH
+    ON
+    CACHE BOOL "Enable rpath to linked libraries")
 set(TIMEMORY_KOKKOS_COMPONENTS
     ""
     CACHE STRING "Explicit list of timemory components")

@@ -39,7 +39,7 @@
 #include <string>
 #include <unordered_map>
 
-#if defined(TIMEMORY_USE_MPI)
+#if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
 #    include <mpi.h>
 #endif
 
@@ -215,7 +215,8 @@ tim::component::deactivate_mpip(uint64_t id)
 //
 //======================================================================================//
 //
-#if !defined(TIMEMORY_USE_GOTCHA) || !defined(TIMEMORY_USE_MPI)
+#if !defined(TIMEMORY_USE_GOTCHA) ||                                                     \
+    (!defined(TIMEMORY_USE_MPI) && !defined(TIMEMORY_USE_MPI_HEADERS))
 //
 template <typename Toolset, typename Tag>
 void configure_mpip(std::set<std::string>, std::set<std::string>)
