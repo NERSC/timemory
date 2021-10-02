@@ -34,7 +34,7 @@ std::exception_ptr global_exception_pointer = nullptr;
 }
 
 void
-flush_on_signal(int);
+forward_signal(int);
 void
 handle_exception();
 void
@@ -245,16 +245,16 @@ main(int argc, char** argv)
                 p.get<bool>("network-stats"));
         });
     parser.add_argument()
-        .names({ "-F", "--flush-on-signal" })
+        .names({ "-F", "--forward-signal" })
         .description(
-            "If any of these signals are sent to timem process, flush output and "
-            "exit.\n%{INDENT}%E.g. '--flush-on-signal 2' (default behavior) will cause "
-            "timem to dump it's output and exit if SIGINT (Cntl+C)\n%{INDENT}%is sent by "
-            "the user. Use '--flush-on-signal 0' to disable this behavior.")
+            "If any of these signals are sent to timem, forward them to the process.\n"
+            "%{INDENT}% E.g. '--forward-signal 2' (default behavior) will cause timem "
+            "to forward\n%{INDENT}% SIGINT to the process if (Cntl+C) is sent by the user.\n"
+            "%{INDENT}% Use '--forward-signal 0' to disable this behavior.")
         .dtype("int")
         .min_count(1)
         .action([&](parser_t& p) {
-            signal_flush() = p.get<std::set<int>>("flush-on-signal");
+            signal_forward() = p.get<std::set<int>>("forward-signal");
         });
 #if defined(TIMEMORY_USE_MPI)
     parser
@@ -383,7 +383,7 @@ main(int argc, char** argv)
     if(!use_sample())
         signal_types().clear();
 
-    for(auto itr : signal_flush())
+    for(auto itr : signal_forward())
     {
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 0),
                                "timem will stop, dump it's output, and exit if signal %i "
@@ -405,13 +405,13 @@ main(int argc, char** argv)
         create_signal_handler(TIMEM_PID_SIGNAL, get_signal_handler(TIMEM_PID_SIGNAL),
                               &childpid_catcher);
         // allocate the signal handlers in map
-        for(auto itr : signal_flush())
+        for(auto itr : signal_forward())
             (void) get_signal_handler(itr);
     }
     else
     {
-        for(auto itr : signal_flush())
-            create_signal_handler(itr, get_signal_handler(itr), &flush_on_signal);
+        for(auto itr : signal_forward())
+            create_signal_handler(itr, get_signal_handler(itr), &forward_signal);
     }
 
     for(int i = 0; i < _argc; ++i)
@@ -716,9 +716,9 @@ childpid_catcher(int sig)
 {
     signal_delivered() = true;
     restore_signal_handler(sig, get_signal_handler(sig));
-    // generate the signal handlers for flushing output
-    for(auto itr : signal_flush())
-        create_signal_handler(itr, get_signal_handler(itr), &flush_on_signal);
+    // generate the signal handlers for signal forwarding
+    for(auto itr : signal_forward())
+        create_signal_handler(itr, get_signal_handler(itr), &forward_signal);
     int _worker                   = read_pid(master_pid());
     worker_pid()                  = _worker;
     tim::process::get_target_id() = _worker;
@@ -733,30 +733,9 @@ childpid_catcher(int sig)
 //--------------------------------------------------------------------------------------//
 
 void
-flush_on_signal(int sig)
+forward_signal(int sig)
 {
-    if((debug() && verbose() > 1) || verbose() > 2)
-        std::cerr << "[BEFORE STOP][" << worker_pid() << "]> " << *get_measure()
-                  << std::endl;
-
-    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "stopping sampler");
-    get_sampler()->stop();
-
-    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "ignoring signals");
-    sampler_t::ignore(signal_types());
-
-    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "barrier");
-    tim::mpi::barrier(tim::mpi::comm_world_v);
-
-    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "processing");
-    parent_process(worker_pid());
-
-    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "barrier");
-    tim::mpi::barrier(tim::mpi::comm_world_v);
-
-    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "exit code = %i", sig);
-
-    std::exit(sig);
+    kill(worker_pid(), sig);
 }
 
 //--------------------------------------------------------------------------------------//

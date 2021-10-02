@@ -891,7 +891,7 @@ struct timem_config
     size_t        buffer_size  = 0;
     string_t      command      = {};
     std::set<int> signal_types = { SIGALRM };
-    std::set<int> signal_flush = { SIGINT };
+    std::set<int> signal_forward = { SIGINT };
     std::vector<std::string>     argvector     = {};
     std::vector<hist_type>       history       = {};
     std::unique_ptr<std::thread> buffer_thread = {};
@@ -938,7 +938,7 @@ TIMEM_CONFIG_FUNCTION(buffer_size)
 TIMEM_CONFIG_FUNCTION(master_pid)
 TIMEM_CONFIG_FUNCTION(worker_pid)
 TIMEM_CONFIG_FUNCTION(signal_types)
-TIMEM_CONFIG_FUNCTION(signal_flush)
+TIMEM_CONFIG_FUNCTION(signal_forward)
 TIMEM_CONFIG_FUNCTION(argvector)
 TIMEM_CONFIG_FUNCTION(buffer_cv);
 TIMEM_CONFIG_FUNCTION(buffer_thread);
