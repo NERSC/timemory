@@ -386,15 +386,15 @@ main(int argc, char** argv)
     for(auto itr : signal_forward())
     {
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 0),
-                               "timem will stop, dump it's output, and exit if signal %i "
-                               "is sent to this process (PID: %i)",
+                               "timem will forward signal %i to its worker "
+                               "process if it is sent to this process (PID: %i)",
                                itr, (int) tim::process::get_id());
         if(signal_types().count(itr) > 0)
             throw std::runtime_error(TIMEMORY_JOIN(
                 " ", "Error! timem sampler is using signal", itr,
-                "to handle the sampling measurements. Flushing output on this signal "
-                "will cause immediate termination. Re-run timem with the"
-                "'--disable-sampling' option to flush output on this signal"));
+                "to handle the sampling measurements. Cannot forward it. "
+                "Re-run timem with the '--disable-sampling' option to "
+                "forward this signal"));
     }
 
     // set the signal handler on this process if using mpi so that we can read
