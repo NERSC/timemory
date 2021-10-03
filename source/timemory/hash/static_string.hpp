@@ -61,7 +61,7 @@ private:
 
     const char* m_string = nullptr;
 };
-}
+}  // namespace hash
 }  // namespace tim
 
 namespace std

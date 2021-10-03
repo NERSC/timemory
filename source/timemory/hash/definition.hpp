@@ -415,7 +415,7 @@ demangle_hash_identifier(std::string inp, char bdelim, char edelim)
 //
 //--------------------------------------------------------------------------------------//
 //
-}
+}  // namespace hash
 }  // namespace tim
 
 #endif
