@@ -64,97 +64,90 @@ endfunction()
 # ----------------------------------------------------------------------------------------#
 # search for likwid marker because if this file does not exist, we cannot forward to
 # Likwid
-find_path(LIKWID_ROOT_DIR
-    NAMES
-        include/likwid.h
-    HINTS
-        ENV LIKWID_ROOT_DIR
-    DOC
-        "LIKWID root installation directory")
+find_path(
+    LIKWID_ROOT_DIR
+    NAMES include/likwid.h
+    HINTS ENV LIKWID_ROOT_DIR
+    DOC "LIKWID root installation directory")
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
-find_path(LIKWID_INCLUDE_DIR
-    NAMES
-        likwid-marker.h
-    HINTS
-        ${LIKWID_ROOT_DIR}
-        ENV LIKWID_ROOT_DIR
-        ENV CPATH
-    PATH_SUFFIXES
-        include
-    DOC
-        "Path to the LIKWID headers")
+find_path(
+    LIKWID_INCLUDE_DIR
+    NAMES likwid-marker.h
+    HINTS ${LIKWID_ROOT_DIR} ENV LIKWID_ROOT_DIR ENV CPATH
+    PATH_SUFFIXES include
+    DOC "Path to the LIKWID headers")
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
-find_library(LIKWID_LIBRARY
-    NAMES
-        likwid
-    HINTS
-        ${LIKWID_ROOT_DIR}
-        ENV LIKWID_ROOT_DIR
-        ENV LIBRARY_PATH
-        ENV LD_LIBRARY_PATH
-        ENV DYLD_LIBRARY_PATH
-    PATH_SUFFIXES
-        lib
-        lib64
-    DOC
-        "Path to the LIKWID library")
+find_library(
+    LIKWID_LIBRARY
+    NAMES likwid
+    HINTS ${LIKWID_ROOT_DIR}
+          ENV
+          LIKWID_ROOT_DIR
+          ENV
+          LIBRARY_PATH
+          ENV
+          LD_LIBRARY_PATH
+          ENV
+          DYLD_LIBRARY_PATH
+    PATH_SUFFIXES lib lib64
+    DOC "Path to the LIKWID library")
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
-find_library(LIKWID_hwloc_LIBRARY
-    NAMES
-        likwid-hwloc
-    HINTS
-        ${LIKWID_ROOT_DIR}
-        ENV LIKWID_ROOT_DIR
-        ENV LIBRARY_PATH
-        ENV LD_LIBRARY_PATH
-        ENV DYLD_LIBRARY_PATH
-    PATH_SUFFIXES
-        lib
-        lib64
-    DOC
-        "Path to the LIKWID HWLOC library")
+find_library(
+    LIKWID_hwloc_LIBRARY
+    NAMES likwid-hwloc
+    HINTS ${LIKWID_ROOT_DIR}
+          ENV
+          LIKWID_ROOT_DIR
+          ENV
+          LIBRARY_PATH
+          ENV
+          LD_LIBRARY_PATH
+          ENV
+          DYLD_LIBRARY_PATH
+    PATH_SUFFIXES lib lib64
+    DOC "Path to the LIKWID HWLOC library")
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
-find_library(LIKWID_lua_LIBRARY
-    NAMES
-        likwid-lua
-    HINTS
-        ${LIKWID_ROOT_DIR}
-        ENV LIKWID_ROOT_DIR
-        ENV LD_LIBRARY_PATH
-        ENV LIBRARY_PATH
-        ENV DYLD_LIBRARY_PATH
-    PATH_SUFFIXES
-        lib
-        lib64
-    DOC
-        "Path to the LIKWID lua library")
+find_library(
+    LIKWID_lua_LIBRARY
+    NAMES likwid-lua
+    HINTS ${LIKWID_ROOT_DIR}
+          ENV
+          LIKWID_ROOT_DIR
+          ENV
+          LD_LIBRARY_PATH
+          ENV
+          LIBRARY_PATH
+          ENV
+          DYLD_LIBRARY_PATH
+    PATH_SUFFIXES lib lib64
+    DOC "Path to the LIKWID lua library")
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
-find_static_library(LIKWID_lua_STATIC_LIBRARY
-    NAMES
-        likwid-lua
-    HINTS
-        ${LIKWID_ROOT_DIR}
-        ENV LIKWID_ROOT_DIR
-        ENV LD_LIBRARY_PATH
-        ENV LIBRARY_PATH
-        ENV DYLD_LIBRARY_PATH
-    PATH_SUFFIXES
-        lib
-        lib64
-    DOC
-        "Path to the LIKWID lua library")
+find_static_library(
+    LIKWID_lua_STATIC_LIBRARY
+    NAMES likwid-lua
+    HINTS ${LIKWID_ROOT_DIR}
+          ENV
+          LIKWID_ROOT_DIR
+          ENV
+          LD_LIBRARY_PATH
+          ENV
+          LIBRARY_PATH
+          ENV
+          DYLD_LIBRARY_PATH
+    PATH_SUFFIXES lib lib64
+    DOC "Path to the LIKWID lua library")
 
-#----------------------------------------------------------------------------------------#
+# ----------------------------------------------------------------------------------------#
 
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set LIKWID_FOUND to TRUE if all listed

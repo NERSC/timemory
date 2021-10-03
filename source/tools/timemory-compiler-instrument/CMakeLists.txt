@@ -72,8 +72,8 @@ target_link_libraries(
               timemory::timemory-hidden-visibility)
 
 # avoid timemory-compile-options because it might include timemory-lto
-target_compile_options(timemory-compiler-instrument-compile-options INTERFACE
-    ${timemory_CXX_FLAGS})
+target_compile_options(timemory-compiler-instrument-compile-options
+                       INTERFACE ${timemory_CXX_FLAGS})
 
 add_target_cxx_flag_if_avail(timemory-compiler-instrument-compile-options
                              "-ftls-model=local-dynamic")
@@ -82,30 +82,24 @@ set(LIB_TARGET timemory-compiler-instrument-base)
 set(LIB_TYPE STATIC)
 
 build_library(
-    PIC
-    NO_CACHE_LIST
-    ${_EXCLUDE}
-    TYPE                ${LIB_TYPE}
-    TARGET_NAME         ${LIB_TARGET}
-    OUTPUT_NAME         ${LIB_TARGET}
-    LANGUAGE            CXX
-    LINKER_LANGUAGE     ${_LINKER_LANGUAGE}
-    OUTPUT_DIR          ${PROJECT_BINARY_DIR}/compiler
-    SOURCES             ${CMAKE_CURRENT_LIST_DIR}/compiler-instrument-base.cpp)
+    PIC NO_CACHE_LIST ${_EXCLUDE}
+    TYPE ${LIB_TYPE}
+    TARGET_NAME ${LIB_TARGET}
+    OUTPUT_NAME ${LIB_TARGET}
+    LANGUAGE CXX
+    LINKER_LANGUAGE ${_LINKER_LANGUAGE}
+    OUTPUT_DIR ${PROJECT_BINARY_DIR}/compiler
+    SOURCES ${CMAKE_CURRENT_LIST_DIR}/compiler-instrument-base.cpp)
 
-target_compile_definitions(${LIB_TARGET} PRIVATE
-    TIMEMORY_COMPILER_INSTRUMENTATION)
+target_compile_definitions(${LIB_TARGET} PRIVATE TIMEMORY_COMPILER_INSTRUMENTATION)
 
 if(TARGET timemory::timemory-perfetto-static)
-    target_link_libraries(${LIB_TARGET} PRIVATE
-        timemory::timemory-perfetto
-        timemory::timemory-perfetto-static)
+    target_link_libraries(${LIB_TARGET} PRIVATE timemory::timemory-perfetto
+                                                timemory::timemory-perfetto-static)
 endif()
 
-target_link_libraries(${LIB_TARGET} PUBLIC
-    timemory::timemory-dmp
-    timemory::timemory-threading
-    ${LINK_LIBS})
+target_link_libraries(${LIB_TARGET} PUBLIC timemory::timemory-dmp
+                                           timemory::timemory-threading ${LINK_LIBS})
 
 # only papi and gotcha are useful TPLs here
 target_link_libraries(

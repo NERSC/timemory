@@ -205,50 +205,40 @@ if(_LIBRARY_TARGET)
     list(APPEND trace_tests_env "TIMEMORY_MPI_THREAD=ON")
     list(APPEND trace_tests_env "TIMEMORY_MPI_THREAD_TYPE=funneled")
 
-    add_timemory_google_test(trace_tests
-        MPI
-        NPROC           4
-        SOURCES         trace_tests.cpp
-        LINK_LIBRARIES  common-test-libs
-                        ${_LIBRARY_TARGET}
-                        timemory::timemory-plotting
-                        timemory::timemory-mpip-library
-                        timemory::timemory-ompt-library
-        ENVIRONMENT     ${trace_tests_env}
-        PROPERTIES      PROCESSOR_AFFINITY ON)
+    add_timemory_google_test(
+        trace_tests MPI NPROC 4
+        SOURCES trace_tests.cpp
+        LINK_LIBRARIES common-test-libs ${_LIBRARY_TARGET} timemory::timemory-plotting
+                       timemory::timemory-mpip-library timemory::timemory-ompt-library
+        ENVIRONMENT ${trace_tests_env} PROPERTIES PROCESSOR_AFFINITY ON)
 
-    add_timemory_google_test(throttle_tests
-        DISCOVER_TESTS
-        SOURCES         throttle_tests.cpp
-        LINK_LIBRARIES  common-test-libs
-                        ${_LIBRARY_TARGET}
-        PROPERTIES      PROCESSOR_AFFINITY ON)
+    add_timemory_google_test(
+        throttle_tests DISCOVER_TESTS
+        SOURCES throttle_tests.cpp
+        LINK_LIBRARIES common-test-libs ${_LIBRARY_TARGET} PROPERTIES PROCESSOR_AFFINITY
+                       ON)
 endif()
 
-add_timemory_google_test(api_tests
-    DISCOVER_TESTS
-    SOURCES         api_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-core
-                    ${_LIBRARY})
+add_timemory_google_test(
+    api_tests DISCOVER_TESTS
+    SOURCES api_tests.cpp
+    LINK_LIBRARIES common-test-libs timemory::timemory-core ${_LIBRARY})
 
-add_timemory_google_test(ring_buffer_tests
-    SOURCES         ring_buffer_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    ${_LIBRARY}
-                    test-werror-flags)
+add_timemory_google_test(
+    ring_buffer_tests
+    SOURCES ring_buffer_tests.cpp
+    LINK_LIBRARIES common-test-libs ${_LIBRARY} test-werror-flags)
 
-add_timemory_google_test(type_trait_tests
-    DISCOVER_TESTS
-    SOURCES         type_trait_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-core)
+add_timemory_google_test(
+    type_trait_tests DISCOVER_TESTS
+    SOURCES type_trait_tests.cpp
+    LINK_LIBRARIES common-test-libs timemory::timemory-core)
 
-add_timemory_google_test(warning_tests
-    SOURCES         warning_tests.cpp
-    LINK_LIBRARIES  test-werror-flags
-                    $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
-                    timemory::timemory-core)
+add_timemory_google_test(
+    warning_tests
+    SOURCES warning_tests.cpp
+    LINK_LIBRARIES test-werror-flags $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
+                   timemory::timemory-core)
 
 if(TIMEMORY_SOCKET_TESTS)
     add_timemory_google_test(
@@ -269,11 +259,11 @@ add_timemory_google_test(
     LINK_LIBRARIES common-test-libs timemory::timemory-core)
 
 if(UNIX)
-    add_timemory_google_test(backtrace_tests
-        SOURCES         backtrace_tests.cpp
-        LINK_LIBRARIES  common-test-libs
-                        test-debug-flags
-                        $<IF:$<BOOL:${TIMEMORY_USE_COVERAGE}>,timemory::timemory-core,>)
+    add_timemory_google_test(
+        backtrace_tests
+        SOURCES backtrace_tests.cpp
+        LINK_LIBRARIES common-test-libs test-debug-flags
+                       $<IF:$<BOOL:${TIMEMORY_USE_COVERAGE}>,timemory::timemory-core,>)
 endif()
 
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
@@ -361,86 +351,65 @@ add_timemory_google_test(
 
 if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
     list(APPEND ptl_tests_env "TIMEMORY_ENABLE_PTHREAD_GOTCHA_WRAPPER=ON")
-    add_timemory_google_test(ptl_tests
-        SOURCES         ptl_tests.cpp
-        LINK_LIBRARIES  common-test-libs
-                        PTL::ptl
-                        ${_LIBRARY}
-                        $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
-                        timemory::timemory-sanitizer
-        ENVIRONMENT     ${ptl_tests_env}
-        TIMEOUT         300
-        PROPERTIES      PROCESSOR_AFFINITY ON)
+    add_timemory_google_test(
+        ptl_tests
+        SOURCES ptl_tests.cpp
+        LINK_LIBRARIES
+            common-test-libs PTL::ptl ${_LIBRARY} $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
+            timemory::timemory-sanitizer
+        ENVIRONMENT ${ptl_tests_env}
+        TIMEOUT 300 PROPERTIES PROCESSOR_AFFINITY ON)
 endif()
 
-add_timemory_google_test(stl_overload_tests
-    DISCOVER_TESTS
-    SOURCES         stl_overload_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-plotting
-                    timemory::timemory-core
-                    ${_LIBRARY})
+add_timemory_google_test(
+    stl_overload_tests DISCOVER_TESTS
+    SOURCES stl_overload_tests.cpp
+    LINK_LIBRARIES common-test-libs timemory::timemory-plotting timemory::timemory-core
+                   ${_LIBRARY})
 
-add_timemory_google_test(user_bundle_tests
-    DISCOVER_TESTS
-    SOURCES         user_bundle_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-plotting
-                    timemory::timemory-core
-                    ${_LIBRARY})
+add_timemory_google_test(
+    user_bundle_tests DISCOVER_TESTS
+    SOURCES user_bundle_tests.cpp
+    LINK_LIBRARIES common-test-libs timemory::timemory-plotting timemory::timemory-core
+                   ${_LIBRARY})
 
 if(NOT WIN32)
-    add_timemory_google_test(mangle_tests
-        DISCOVER_TESTS
-        SOURCES         mangle_tests.cpp
-        LINK_LIBRARIES  common-test-libs
-                        timemory::timemory-plotting
-                        timemory::timemory-core
-                        ${_LIBRARY})
+    add_timemory_google_test(
+        mangle_tests DISCOVER_TESTS
+        SOURCES mangle_tests.cpp
+        LINK_LIBRARIES common-test-libs timemory::timemory-plotting
+                       timemory::timemory-core ${_LIBRARY})
 endif()
 
-add_timemory_google_test(tuple_tests
-    DISCOVER_TESTS
-    SOURCES         tuple_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-papi
-                    timemory::timemory-plotting
-                    timemory::timemory-caliper
-                    ${_LIBRARY})
+add_timemory_google_test(
+    tuple_tests DISCOVER_TESTS
+    SOURCES tuple_tests.cpp
+    LINK_LIBRARIES common-test-libs timemory::timemory-papi timemory::timemory-plotting
+                   timemory::timemory-caliper ${_LIBRARY})
 
-add_timemory_google_test(macro_tests
-    DISCOVER_TESTS
-    SOURCES         macro_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-plotting
-                    timemory::timemory-core
-                    ${_LIBRARY})
+add_timemory_google_test(
+    macro_tests DISCOVER_TESTS
+    SOURCES macro_tests.cpp
+    LINK_LIBRARIES common-test-libs timemory::timemory-plotting timemory::timemory-core
+                   ${_LIBRARY})
 
-add_timemory_google_test(hybrid_tests
-    DISCOVER_TESTS
-    SOURCES         hybrid_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    ${HYBRID_COMPONENTS}
-                    timemory::timemory-plotting
-                    timemory::timemory-core
-                    ${_LIBRARY})
+add_timemory_google_test(
+    hybrid_tests DISCOVER_TESTS
+    SOURCES hybrid_tests.cpp
+    LINK_LIBRARIES common-test-libs ${HYBRID_COMPONENTS} timemory::timemory-plotting
+                   timemory::timemory-core ${_LIBRARY})
 
-add_timemory_google_test(timing_tests
-    DISCOVER_TESTS
-    SOURCES         timing_tests.cpp
-    PROPERTIES      PROCESSOR_AFFINITY ON
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-plotting
-                    timemory::timemory-core
-                    ${_LIBRARY})
+add_timemory_google_test(
+    timing_tests DISCOVER_TESTS
+    SOURCES timing_tests.cpp PROPERTIES PROCESSOR_AFFINITY ON
+    LINK_LIBRARIES common-test-libs timemory::timemory-plotting timemory::timemory-core
+                   ${_LIBRARY})
 
-add_timemory_google_test(rusage_tests
-    DISCOVER_TESTS
-    SOURCES         rusage_tests.cpp
-    LINK_LIBRARIES  common-test-libs
-                    timemory::timemory-plotting
-                    timemory::timemory-core
-                    ${_LIBRARY})
+add_timemory_google_test(
+    rusage_tests DISCOVER_TESTS
+    SOURCES rusage_tests.cpp
+    LINK_LIBRARIES common-test-libs timemory::timemory-plotting timemory::timemory-core
+                   ${_LIBRARY})
 
 if(TIMEMORY_USE_LIBUNWIND)
     add_timemory_google_test(

@@ -67,8 +67,12 @@ function(TIMEMORY_CONFIGURE_PYTARGET _TARGET)
          "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 
     if(UNIX AND NOT APPLE)
-        set_target_properties(${_TARGET} PROPERTIES INSTALL_RPATH
-            "\$ORIGIN:\$ORIGIN/${LIB_RELPATH}:\$ORIGIN/${LIB_RELPATH}/timemory${_SUBDIR}:\$ORIGIN/../../..:\$ORIGIN/../../../timemory${_SUBDIR}:\$ORIGIN:${CMAKE_INSTALL_RPATH}")
+        set_target_properties(
+            ${_TARGET}
+            PROPERTIES
+                INSTALL_RPATH
+                "\$ORIGIN:\$ORIGIN/${LIB_RELPATH}:\$ORIGIN/${LIB_RELPATH}/timemory${_SUBDIR}:\$ORIGIN/../../..:\$ORIGIN/../../../timemory${_SUBDIR}:\$ORIGIN:${CMAKE_INSTALL_RPATH}"
+            )
     endif()
 
     install(
