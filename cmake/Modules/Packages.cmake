@@ -1182,6 +1182,10 @@ if(gotcha_FOUND)
         set_target_properties(
             timemory-gotcha PROPERTIES INTERFACE_LINK_DIRECTORIES
                                        $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}>)
+    else()
+        if(gotcha_INCLUDE_DIRS)
+            target_include_directories(timemory-gotcha INTERFACE ${gotcha_INCLUDE_DIRS})
+        endif()
     endif()
 else()
     set(TIMEMORY_USE_GOTCHA OFF)
