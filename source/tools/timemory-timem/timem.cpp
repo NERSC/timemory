@@ -249,7 +249,8 @@ main(int argc, char** argv)
         .description(
             "If any of these signals are sent to timem, forward them to the process.\n"
             "%{INDENT}% E.g. '--forward-signal 2' (default behavior) will cause timem "
-            "to forward\n%{INDENT}% SIGINT to the process if (Cntl+C) is sent by the user.\n"
+            "to forward\n%{INDENT}% SIGINT to the process if (Cntl+C) is sent by the "
+            "user.\n"
             "%{INDENT}% Use '--forward-signal 0' to disable this behavior.")
         .dtype("int")
         .min_count(1)
@@ -390,11 +391,11 @@ main(int argc, char** argv)
                                "process if it is sent to this process (PID: %i)",
                                itr, (int) tim::process::get_id());
         if(signal_types().count(itr) > 0)
-            throw std::runtime_error(TIMEMORY_JOIN(
-                " ", "Error! timem sampler is using signal", itr,
-                "to handle the sampling measurements. Cannot forward it. "
-                "Re-run timem with the '--disable-sampling' option to "
-                "forward this signal"));
+            throw std::runtime_error(
+                TIMEMORY_JOIN(" ", "Error! timem sampler is using signal", itr,
+                              "to handle the sampling measurements. Cannot forward it. "
+                              "Re-run timem with the '--disable-sampling' option to "
+                              "forward this signal"));
     }
 
     // set the signal handler on this process if using mpi so that we can read
