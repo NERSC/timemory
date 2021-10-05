@@ -37,6 +37,7 @@
 #    include "timemory/utility/bits/signals.hpp"
 #    include "timemory/utility/declaration.hpp"
 #    include "timemory/utility/filepath.hpp"
+#    include "timemory/utility/md5.hpp"
 #    include "timemory/utility/utility.hpp"
 #    include "timemory/variadic/macros.hpp"
 
@@ -234,8 +235,8 @@ settings::store_command_line(int argc, char** argv)
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
-settings::compose_output_filename(const std::string& _tag, std::string _ext,
-                                  bool _mpi_init, const int32_t _mpi_rank, bool fake,
+settings::compose_output_filename(std::string _tag, std::string _ext, bool _mpi_init,
+                                  const int32_t _mpi_rank, bool fake,
                                   std::string _explicit)
 {
     // if there isn't an explicit prefix, get the <OUTPUT_PATH>/<OUTPUT_PREFIX>
@@ -270,15 +271,46 @@ settings::compose_output_filename(const std::string& _tag, std::string _ext,
     // add dash if not empty, not ends in '/', and last char is alphanumeric
     if(!_prefix.empty() && _prefix[plast] != '/' && isalnum(_prefix[plast]))
         _prefix += "-";
-    // create the path
-    std::string fpath  = _prefix + _tag + _rank_suffix + _ext;
-    using strpairvec_t = std::vector<std::pair<std::string, std::string>>;
-    for(auto&& itr : strpairvec_t{ { "--", "-" }, { "__", "_" }, { "//", "/" } })
-    {
+
+    // replace special fields
+    auto _replace = [](std::string& _inp, const std::string& _key,
+                       const std::string& _sub) {
         auto pos = std::string::npos;
-        while((pos = fpath.find(itr.first)) != std::string::npos)
-            fpath.replace(pos, itr.first.length(), itr.second);
-    }
+        while((pos = _inp.find(_key)) != std::string::npos)
+            _inp = _inp.replace(pos, _key.length(), _sub);
+    };
+
+    auto        _cmdline  = instance() ? instance()->get_command_line() : strvector_t{};
+    std::string argzero   = {};
+    std::string argstring = {};
+    if(!_cmdline.empty())
+        argzero = _cmdline.at(0);
+    for(const auto& itr : _cmdline)
+        argstring.append(itr);
+
+    using strpairvec_t = std::vector<std::pair<std::string, std::string>>;
+
+    // create the path
+    std::string fpath = _prefix + _tag + _rank_suffix + _ext;
+
+    for(auto&& itr : strpairvec_t{
+            { "--", "-" },
+            { "__", "_" },
+            { "//", "/" },
+            { "%arg0%", argzero },
+            { "%argv%", argstring },
+            { "%argvhash%", utility::compute_md5(argstring) },
+            { "%pid%", std::to_string(process::get_id()) },
+            { "%jobid%", std::to_string(get_env("SLURM_JOB_ID", 0, false)) },
+            { "%rank%", std::to_string(get_env("SLURM_PROCID", dmp::rank(), false)) },
+            { "%size%", std::to_string(dmp::size()) },
+            { "%m", utility::compute_md5(argstring) },
+            { "%p", std::to_string(process::get_id()) },
+            { "%j", std::to_string(get_env("SLURM_JOB_ID", 0, false)) },
+            { "%r", std::to_string(get_env("SLURM_PROCID", dmp::rank(), false)) },
+            { "%s", std::to_string(dmp::size()) } })
+        _replace(fpath, itr.first, itr.second);
+
     return filepath::osrepr(fpath);
 }
 //

@@ -244,7 +244,7 @@ public:
     static string_t    get_global_output_prefix(bool fake = false)
         TIMEMORY_VISIBILITY("default");
     static void store_command_line(int argc, char** argv) TIMEMORY_VISIBILITY("default");
-    static string_t compose_output_filename(const string_t& _tag, string_t _ext,
+    static string_t compose_output_filename(string_t _tag, string_t _ext,
                                             bool    _mpi_init = false,
                                             int32_t _mpi_rank = -1, bool fake = false,
                                             std::string _explicit = "")
