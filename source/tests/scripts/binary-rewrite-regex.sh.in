@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 #
 # NOTE: add '--mpi' after @PROJECT_BINARY_DIR@/timemory-run to applications built with MPI
 #
@@ -21,12 +21,12 @@ rm -rf ${TIMEMORY_OUTPUT_PATH}
 # append directories to path
 export PATH=@CMAKE_CURRENT_BINARY_DIR@:@PROJECT_BINARY_DIR@:${PATH}
 # add path to libtimemory to LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:@PROJECT_BINARY_DIR@/external/dyninst/dyninstAPI_RT:${LD_LIBRARY_PATH}
 
 emit-separator "Performing binary re-write"
 
 # exclude all functions matching pattern 'impl_*'
-@PROJECT_BINARY_DIR@/timemory-run -E '^instrumentation_tests' -o ./@TEST_NAME@.inst -- @COMMAND@
+@PROJECT_BINARY_DIR@/timemory-run -E '^instrumentation_tests' --min-address-range=32 -o ./@TEST_NAME@.inst -- @COMMAND@
 
 emit-separator "Executing instrumented binary"
 
@@ -48,3 +48,6 @@ else
         exit 1
     fi
 fi
+
+echo "Instrumentation Test... Done"
+exit 0

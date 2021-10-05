@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 #
 # NOTE: remove '--mpi --mpip' after @PROJECT_BINARY_DIR@/timemory-run if application built without MPI
 #
@@ -22,7 +22,7 @@ export TIMEMORY_OUTPUT_PREFIX="orig"
 # append directories to path
 export PATH=@CMAKE_CURRENT_BINARY_DIR@:@PROJECT_BINARY_DIR@:${PATH}
 # add path to libtimemory to LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:@PROJECT_BINARY_DIR@/external/dyninst/dyninstAPI_RT:${LD_LIBRARY_PATH}
 
 emit-separator "Executing non-instrumented run"
 
@@ -74,3 +74,6 @@ if [ "${NALLR}" -eq 0 ]; then
     echo -e "$(cat ${TIMEMORY_OUTPUT_PATH}/mpip-*.txt | grep '>>>')"
     exit 1
 fi
+
+echo "Instrumentation Test... Done"
+exit 0

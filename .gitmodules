@@ -25,3 +25,6 @@
 [submodule "external/hatchet"]
 	path = external/hatchet
 	url = https://github.com/jrmadsen/hatchet.git
+[submodule "external/dyninst"]
+	path = external/dyninst
+	url = https://github.com/jrmadsen/dyninst.git
