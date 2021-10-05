@@ -25,7 +25,6 @@
 #include "gpu_common.hpp"
 #include "gpu_device_timer.hpp"
 #include "gpu_op_tracker.hpp"
-
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/gpu.hpp"
 #include "timemory/components/macros.hpp"
