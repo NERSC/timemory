@@ -1449,7 +1449,7 @@ elseif(Dyninst_FOUND AND Boost_FOUND)
                                           ${DYNINST_HEADER_DIR})
     timemory_target_compile_definitions(timemory-dyninst INTERFACE TIMEMORY_USE_DYNINST)
 
-elseif(TIMEMORY_BUILD_DYNINST)
+elseif(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_DYNINST)
 
     checkout_git_submodule(
         RELATIVE_PATH external/dyninst
@@ -1515,6 +1515,7 @@ elseif(TIMEMORY_BUILD_DYNINST)
     endif()
 else()
     set(TIMEMORY_USE_DYNINST OFF)
+    set(TIMEMORY_BUILD_DYNINST OFF)
     inform_empty_interface(timemory-dyninst "dyninst")
 endif()
 
