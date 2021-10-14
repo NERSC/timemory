@@ -126,7 +126,7 @@ public:
     template <typename Up = Tp, typename Dev = DeviceT,
               typename std::enable_if<(std::is_same<Dev, device::cpu>::value ||
                                        (std::is_same<Dev, device::gpu>::value &&
-                                        !std::is_same<Up, cuda::fp16_t>::value)),
+                                        !std::is_same<Up, gpu::fp16_t>::value)),
                                       int>::type = 0>
     Up* get_buffer()
     {
@@ -150,7 +150,7 @@ public:
     ///     uses this function if device is GPU and type is half2
     ///
     template <typename Up = Tp, typename Dev = DeviceT,
-              typename std::enable_if<(std::is_same<Up, cuda::fp16_t>::value &&
+              typename std::enable_if<(std::is_same<Up, gpu::fp16_t>::value &&
                                        std::is_same<Dev, device::gpu>::value),
                                       int>::type = 0>
     Up* get_buffer()

@@ -23,60 +23,24 @@
 // SOFTWARE.
 //
 
-#include "timemory/backends/gpu.hpp"
-#include "timemory/ert.hpp"
+#include "timemory-ert.hpp"
+
+#include "timemory/config.hpp"
 #include "timemory/timemory.hpp"
 
-#include <cstdint>
-#include <set>
-
-#if !defined(TIMEMORY_USE_CUDA_HALF)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tim::gpu::fp16_t, false_type)
-#endif
-
-#if !defined(TIMEMORY_USE_GPU)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tim::device::gpu, false_type)
-#endif
-
 //--------------------------------------------------------------------------------------//
-// make the namespace usage a little clearer
-//
-namespace ert    = tim::ert;
-namespace units  = tim::units;
-namespace device = tim::device;
-namespace gpu    = tim::gpu;
-namespace trait  = tim::trait;
 
-using settings = tim::settings;
+void*
+start_generic(const std::string& _label)
+{
+    return static_cast<void*>(new tim::auto_timer{ _label });
+}
 
-//--------------------------------------------------------------------------------------//
-// timemory has a backends that will not call MPI_Init, cudaDeviceCount, etc.
-// when that library/package is not available
-//
-namespace dmp = tim::dmp;
-
-//--------------------------------------------------------------------------------------//
-// some short-hand aliases
-//
-using counter_type   = tim::component::wall_clock;
-using fp16_t         = tim::gpu::fp16_t;
-using ert_data_t     = ert::exec_data<counter_type>;
-using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
-
-//--------------------------------------------------------------------------------------//
-//  this will invoke ERT with the specified settings
-//
-template <typename Tp, typename DeviceT>
-std::enable_if_t<trait::is_available<Tp>::value && trait::is_available<DeviceT>::value,
-                 void>
-run_ert(ert_data_ptr_t, int64_t num_threads, int64_t min_size, int64_t max_data,
-        int64_t num_streams = 0, int64_t block_size = 0, int64_t num_gpus = 0);
-
-template <typename Tp, typename DeviceT, typename... Args>
-std::enable_if_t<!trait::is_available<Tp>::value || !trait::is_available<DeviceT>::value,
-                 void>
-run_ert(Args&&...)
-{}
+void
+stop_generic(void* _ptr)
+{
+    delete static_cast<tim::auto_timer*>(_ptr);
+}
 
 //--------------------------------------------------------------------------------------//
 
@@ -176,7 +140,8 @@ main(int argc, char** argv)
     if(num_gpus > 0)
     {
         std::set<int64_t> num_gpus_choices = {};
-        for(int64_t i = 0; i < num_gpus; ++i) num_gpus_choices.insert(i + 1);
+        for(int64_t i = 0; i < num_gpus; ++i)
+            num_gpus_choices.insert(i + 1);
         parser.add_argument({ "" }, "");
         parser.add_argument({ "[GPU]" }, "");
         parser.add_argument({ "--gpu" }, "Run GPU ERT")
@@ -266,16 +231,20 @@ main(int argc, char** argv)
         // execute the single-precision ERT calculations
         for(auto nthread : cpu_num_threads)
         {
-            if(!enable_cpu) continue;
-            if(cpu_ftypes.count("fp32") == 0) continue;
+            if(!enable_cpu)
+                continue;
+            if(cpu_ftypes.count("fp32") == 0)
+                continue;
             run_ert<float, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
         }
 
         // execute the double-precision ERT calculations
         for(auto nthread : cpu_num_threads)
         {
-            if(!enable_cpu) continue;
-            if(cpu_ftypes.count("fp64") == 0) continue;
+            if(!enable_cpu)
+                continue;
+            if(cpu_ftypes.count("fp64") == 0)
+                continue;
             run_ert<double, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
         }
 
@@ -286,8 +255,10 @@ main(int argc, char** argv)
                 for(auto nstream : gpu_num_streams)
                     for(auto block : gpu_block_sizes)
                     {
-                        if(!enable_gpu) continue;
-                        if(gpu_ftypes.count("fp16") == 0) continue;
+                        if(!enable_gpu)
+                            continue;
+                        if(gpu_ftypes.count("fp16") == 0)
+                            continue;
                         run_ert<fp16_t, device::gpu>(data, nthread, gpu_min_size,
                                                      gpu_max_data, nstream, block,
                                                      num_gpus);
@@ -297,8 +268,10 @@ main(int argc, char** argv)
                 for(auto nstream : gpu_num_streams)
                     for(auto block : gpu_block_sizes)
                     {
-                        if(!enable_gpu) continue;
-                        if(gpu_ftypes.count("fp32") == 0) continue;
+                        if(!enable_gpu)
+                            continue;
+                        if(gpu_ftypes.count("fp32") == 0)
+                            continue;
                         run_ert<float, device::gpu>(data, nthread, gpu_min_size,
                                                     gpu_max_data, nstream, block,
                                                     num_gpus);
@@ -309,8 +282,10 @@ main(int argc, char** argv)
                 for(auto nstream : gpu_num_streams)
                     for(auto block : gpu_block_sizes)
                     {
-                        if(!enable_gpu) continue;
-                        if(gpu_ftypes.count("fp64") == 0) continue;
+                        if(!enable_gpu)
+                            continue;
+                        if(gpu_ftypes.count("fp64") == 0)
+                            continue;
                         run_ert<double, device::gpu>(data, nthread, gpu_min_size,
                                                      gpu_max_data, nstream, block,
                                                      num_gpus);
@@ -318,80 +293,13 @@ main(int argc, char** argv)
         }
     }
 
-    if(dmp::rank() == 0) printf("\n");
+    if(dmp::rank() == 0)
+        printf("\n");
     ert::serialize(fname, *data);
 
     tim::timemory_finalize();
     dmp::finalize();
     return 0;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Tp, typename DeviceT>
-std::enable_if_t<trait::is_available<Tp>::value && trait::is_available<DeviceT>::value,
-                 void>
-run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size, int64_t max_data,
-        int64_t num_streams, int64_t block_size, int64_t num_gpus)
-{
-    // create a label for this test
-    auto dtype = tim::demangle<Tp>();
-    auto htype = DeviceT::name();
-    auto label = TIMEMORY_JOIN("_", __FUNCTION__, dtype, htype, num_threads, "threads",
-                               min_size, "min-ws", max_data, "max-size");
-
-    if(std::is_same<DeviceT, device::gpu>::value)
-    {
-        label = TIMEMORY_JOIN("_", label, num_gpus, "gpus", num_streams, "streams",
-                              block_size, "thr-per-blk");
-    }
-
-    if(dmp::rank() == 0) printf("\n[ert-example]> Executing %s...\n", label.c_str());
-
-    using ert_executor_type = ert::executor<DeviceT, Tp, counter_type>;
-    using ert_config_type   = typename ert_executor_type::configuration_type;
-    using ert_counter_type  = ert::counter<DeviceT, Tp, counter_type>;
-
-    //
-    // simple modifications to override method number of threads, number of streams,
-    // block size, minimum working set size, and max data size
-    //
-    ert_config_type::get_num_threads()      = [=]() { return num_threads; };
-    ert_config_type::get_num_streams()      = [=]() { return num_streams; };
-    ert_config_type::get_block_size()       = [=]() { return block_size; };
-    ert_config_type::get_min_working_size() = [=]() { return min_size; };
-    ert_config_type::get_max_data_size()    = [=]() { return max_data; };
-
-    //
-    // create a callback function that sets the device based on the thread-id
-    //
-    auto set_counter_device = [=](uint64_t tid, ert_counter_type&) {
-        if(num_gpus > 0) gpu::set_device(tid % num_gpus);
-    };
-
-    //
-    // create a configuration object -- this handles a lot of the setup
-    //
-    ert_config_type config;
-    //
-    // start generic timemory timer
-    //
-    TIMEMORY_BLANK_CALIPER(config, tim::auto_timer, label);
-    TIMEMORY_CALIPER_APPLY(config, report_at_exit, true);
-    //
-    // "construct" an ert::executor that executes the configuration and inserts
-    // into the data object.
-    //
-    // NOTE: the ert::executor has callbacks that allows one to customize the
-    //       the ERT execution
-    //
-    ert_executor_type(config, data, set_counter_device);
-    if(dmp::rank() == 0)
-    {
-        if(data && (settings::verbose() > 0 || settings::debug()))
-            std::cout << "\n" << *(data) << std::endl;
-        printf("\n");
-    }
 }
 
 //======================================================================================//

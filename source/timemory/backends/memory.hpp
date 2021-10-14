@@ -90,7 +90,7 @@ Tp*
 allocate_aligned(std::size_t size, std::size_t,
                  std::enable_if_t<std::is_same<DeviceT, device::gpu>::value, int> = 0)
 {
-    return cuda::malloc<Tp>(size);
+    return gpu::malloc<Tp>(size);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -117,7 +117,7 @@ void
 free_aligned(Tp* ptr,
              std::enable_if_t<std::is_same<DeviceT, device::gpu>::value, int> = 0)
 {
-    cuda::free(ptr);
+    gpu::free(ptr);
 }
 
 }  // namespace hidden

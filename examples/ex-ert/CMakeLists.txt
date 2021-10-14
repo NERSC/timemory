@@ -57,6 +57,8 @@ endif()
 
 if(USE_CUDA)
     list(APPEND COMPONENTS cuda)
+else()
+    list(APPEND COMPONENTS hip hip-device)
 endif()
 
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
@@ -74,7 +76,9 @@ install(
 
 if(USE_CUDA OR TIMEMORY_USE_CUDA)
     set_source_files_properties(ex_ert.cpp PROPERTIES LANGUAGE CUDA LINKER_LANGUAGE CUDA)
-    target_compile_definitions(ex_ert PRIVATE USE_CUDA)
+    target_compile_definitions(ex_ert PRIVATE USE_GPU)
+elseif(TIMEMORY_USE_HIP)
+    target_compile_definitions(ex_ert PRIVATE USE_GPU)
 endif()
 
 find_package(Kokkos 3.0 QUIET)

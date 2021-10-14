@@ -171,9 +171,7 @@ if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_USE_CTP)
     endif()
 endif()
 
-if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_BUILD_TESTING)
-    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-endif()
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ----------------------------------------------------------------------------------------#
 # handle some additional configuration before other includes
