@@ -21,5 +21,4 @@ build_intermediate_library(
     HEADERS ${header_files}
     SOURCES ${source_files}
     DEPENDS timemory::timemory-vector timemory::timemory-cuda timemory::timemory-core
-            timemory::timemory-manager
     PRIVATE_LINK timemory::timemory-roofline-options)

@@ -1,5 +1,5 @@
-# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
-# file Copyright.txt or https://cmake.org/licensing for details.
+# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying file
+# Copyright.txt or https://cmake.org/licensing for details.
 
 #[=======================================================================[.rst:
 FindPython3
@@ -381,17 +381,16 @@ For ``MODULE`` library type, if option ``WITH_SOABI`` is specified, the
 module suffix will include the ``Python3_SOABI`` value, if any.
 #]=======================================================================]
 
+set(_PYTHON_PREFIX Python3)
 
-set (_PYTHON_PREFIX Python3)
+set(_Python3_REQUIRED_VERSION_MAJOR 3)
 
-set (_Python3_REQUIRED_VERSION_MAJOR 3)
+include(${CMAKE_CURRENT_LIST_DIR}/FindPython/Support.cmake)
 
-include (${CMAKE_CURRENT_LIST_DIR}/FindPython/Support.cmake)
-
-if (COMMAND __Python3_add_library)
-  macro (Python3_add_library)
-    __Python3_add_library (Python3 ${ARGV})
-  endmacro()
+if(COMMAND __Python3_add_library)
+    macro(Python3_add_library)
+        __python3_add_library(Python3 ${ARGV})
+    endmacro()
 endif()
 
-unset (_PYTHON_PREFIX)
+unset(_PYTHON_PREFIX)
