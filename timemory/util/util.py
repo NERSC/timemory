@@ -501,6 +501,8 @@ class marker(base_decorator):
                     ret.append(getattr(_component, x))
                 except AttributeError:
                     pass
+            elif callable(x):
+                ret.extend(marker.get_components(x()))
             else:
                 ret.append(x)
         return ret
@@ -519,7 +521,10 @@ class marker(base_decorator):
         super(marker, self).__init__(
             key=key, add_args=add_args, is_class=is_class, mode=mode
         )
-        self.components = marker.get_components(components)
+        self.components_cb = components if callable(components) else None
+        self.components = (
+            [] if callable(components) else marker.get_components(components)
+        )
         self.report_at_exit = report_at_exit
         self._self_obj = None
 
@@ -534,6 +539,8 @@ class marker(base_decorator):
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
+            if self.components_cb is not None:
+                self.components += marker.get_components(self.components_cb())
             self.parse_wrapped(func, args, kwargs)
             self.determine_signature(
                 is_decorator=True, is_context_manager=False
@@ -571,6 +578,8 @@ class marker(base_decorator):
         _func = FUNC(2)
         _frame = FRAME(2)
         self.determine_signature(is_decorator=False, is_context_manager=True)
+        if self.components_cb is not None:
+            self.components += marker.get_components(self.components_cb())
 
         _key = ""
         _args = self.arg_string(_frame)

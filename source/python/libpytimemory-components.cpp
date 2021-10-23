@@ -37,12 +37,50 @@
 #include "libpytimemory-components.hpp"
 
 #include "timemory/components/extern.hpp"
+#include "timemory/data/ring_buffer_allocator.hpp"
 #include "timemory/enum.h"
 #include "timemory/operations/types/python_class_name.hpp"
 #include "timemory/timemory.hpp"
 
 #include <set>
 #include <string>
+
+namespace pycomponents
+{
+/*template <typename Tp>
+auto&
+get_allocator()
+{
+    static tim::data::ring_buffer_allocator<Tp> _v{};
+    return _v;
+}
+//
+template <typename Tp, typename... Args>
+Tp*
+create(Args&&... args)
+{
+    auto& alloc = get_allocator<Tp>();
+    Tp*   ptr   = alloc.allocate(1);
+    alloc.construct(ptr, std::forward<Args>(args)...);
+    return ptr;
+}
+//
+template <typename Tp>
+void
+destroy(Tp* ptr)
+{
+    auto& alloc = get_allocator<Tp>();
+    alloc.destroy(ptr);
+    alloc.deallocate(ptr, 1);
+}*/
+//
+template <typename Tp, typename... Args>
+Tp*
+create(Args&&... args)
+{
+    return new Tp{ std::forward<Args>(args)... };
+}
+}  // namespace pycomponents
 
 namespace pyinternal
 {
@@ -428,7 +466,7 @@ struct process_args<OpT, Arg, Args...>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _init = [](Arg arg, Args... args) {
-            auto obj = new U{};
+            U* obj = pycomponents::create<U>(arg, args...);
             obj->construct(arg, args...);
             return obj;
         };
@@ -637,8 +675,8 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     std::string id  = tim::operation::python_class_name<T>{}();
     std::string cid = property_t::id();
 
-    auto _init  = []() { return new bundle_t{}; };
-    auto _sinit = [](std::string key) { return new bundle_t(key); };
+    auto _init  = []() { return pycomponents::create<bundle_t>(); };
+    auto _sinit = [](std::string key) { return pycomponents::create<bundle_t>(key); };
     auto _hash  = [](bundle_t* obj) { return obj->hash(); };
     auto _key   = [](bundle_t* obj) { return obj->key(); };
     auto _laps  = [](bundle_t* obj) { return obj->laps(); };
@@ -711,7 +749,7 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _keys.insert(id);
     _boolgen[Idx] = true;
     _keygen[Idx]  = { cinfo{ true, id, cid, _keys },
-                     []() { return py::cast(new bundle_t{}); } };
+                     []() { return py::cast(pycomponents::create<bundle_t>()); } };
 
     auto idx = static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx);
     _pycomp.def_static(
@@ -831,6 +869,7 @@ components(py::module& _pymod, std::array<bool, N>& _boolgen,
 //
 namespace pycomponents
 {
+//
 py::module
 generate(py::module& _pymod)
 {

@@ -143,7 +143,11 @@ class Tracer:
 
         input_components = []
         if isinstance(self.components, list):
-            input_components = self.components
+            for itr in self.components:
+                if callable(itr):
+                    input_components.extend(itr())
+                else:
+                    input_components.append(itr)
         else:
             input_components = ["{}".format(self.components)]
 
