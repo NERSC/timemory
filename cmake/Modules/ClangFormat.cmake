@@ -31,6 +31,8 @@ find_program(CLANG_FORMATTER NAMES clang-format-9 clang-format-9.0 clang-format-
 # python formatting
 find_program(BLACK_FORMATTER NAMES black)
 
+find_program(CMAKE_FORMATTER NAMES cmake-format)
+
 if(CLANG_FORMATTER)
     file(
         GLOB_RECURSE
@@ -119,6 +121,20 @@ if(CLANG_FORMATTER)
     if(BLACK_FORMATTER)
         set(_COMMAND ${_COMMAND} COMMAND ${BLACK_FORMATTER} -q ${PROJECT_SOURCE_DIR})
         set(_MSG "${_MSG} and '${BLACK_FORMATTER}'")
+    endif()
+
+    if(CMAKE_FORMATTER)
+        file(
+            GLOB_RECURSE
+            CMAKE_FORMAT_FILES
+            ${PROJECT_SOURCE_DIR}/cmake/*.cmake
+            ${PROJECT_SOURCE_DIR}/cmake/*.cmake.in
+            ${PROJECT_SOURCE_DIR}/source/*/CMakeLists.txt
+            ${PROJECT_SOURCE_DIR}/examples/*/CMakeLists.txt)
+        list(INSERT CMAKE_FORMAT_FILES 0 ${PROJECT_SOURCE_DIR}/CMakeLists.txt
+             ${PROJECT_SOURCE_DIR}/external/CMakeLists.txt)
+        set(_COMMAND ${_COMMAND} COMMAND ${CMAKE_FORMATTER} -i ${CMAKE_FORMAT_FILES})
+        set(_MSG "${_MSG} and '${CMAKE_FORMATTER}'")
     endif()
 
     add_custom_target(
