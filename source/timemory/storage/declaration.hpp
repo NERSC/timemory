@@ -78,7 +78,7 @@ get_storage_singleton()
     static auto _instance = (trait::runtime_enabled<component_type>::get())
                                 ? std::make_unique<singleton_type>()
                                 : std::unique_ptr<singleton_type>{};
-    static auto _dtor = scope::destructor{ []() { _instance.reset(); } };
+    static auto _dtor     = scope::destructor{ []() { _instance.reset(); } };
     return _instance.get();
     consume_parameters(_dtor);
 }
@@ -233,7 +233,7 @@ public:
     void stack_push(Type* obj) { m_stack.insert(obj); }
     void stack_pop(Type* obj);
 
-    void insert_init();
+    void ensure_init();
 
     iterator insert(scope::config scope_data, const Type& obj, uint64_t hash_id);
 
@@ -324,7 +324,7 @@ template <typename Type>
 typename storage<Type, true>::iterator
 storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t hash_id)
 {
-    insert_init();
+    ensure_init();
 
     using force_tree_t = trait::tree_storage<Type>;
     using force_flat_t = trait::flat_storage<Type>;
@@ -358,7 +358,7 @@ storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t 
     // depth and hash so it doesn't really matter which check happens first here
     // however, the query for is_timeline() is cheaper so we will check that
     // and fallback to inserting into tree without a check
-    // if(scope_data.is_timeline())
+    // if(scope_data.is_timeline() || force_time_t::value)
     //    return insert_timeline(hash_value, obj, hash_depth);
 
     // default fall-through if neither flat nor timeline
@@ -372,7 +372,7 @@ template <typename Vp, enable_if_t<!std::is_same<decay_t<Vp>, Type>::value, int>
 typename storage<Type, true>::iterator
 storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 {
-    insert_init();
+    ensure_init();
 
     // get the iterator and check if valid
     auto&& _itr = std::get<0>(_secondary);
@@ -423,7 +423,7 @@ template <typename Vp, enable_if_t<std::is_same<decay_t<Vp>, Type>::value, int>>
 typename storage<Type, true>::iterator
 storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 {
-    insert_init();
+    ensure_init();
 
     // get the iterator and check if valid
     auto&& _itr = std::get<0>(_secondary);
@@ -463,7 +463,6 @@ template <typename Type>
 typename storage<Type, true>::iterator
 storage<Type, true>::insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
 {
-    // PRINT_HERE("%s", "");
     bool has_head = _data().has_head();
     return insert_hierarchy(hash_id, obj, hash_depth, has_head);
 }
@@ -475,7 +474,6 @@ typename storage<Type, true>::iterator
 storage<Type, true>::insert_timeline(uint64_t hash_id, const Type& obj,
                                      uint64_t hash_depth)
 {
-    // PRINT_HERE("%s", "");
     auto _current = _data().current();
     return _data().emplace_child(
         _current,
@@ -488,7 +486,6 @@ template <typename Type>
 typename storage<Type, true>::iterator
 storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
 {
-    // PRINT_HERE("%s", "");
     static thread_local auto _current = _data().head();
     static thread_local bool _first   = true;
     if(_first)
@@ -528,7 +525,6 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
                                       uint64_t hash_depth, bool has_head)
 {
     using id_hash_map_t = typename iterator_hash_map_t::mapped_type;
-    // PRINT_HERE("%s", "");
 
     auto& m_data = m_graph_data_instance;
     auto  tid    = m_thread_idx;
@@ -573,7 +569,7 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
 
     auto current = m_data->current();
     if(!m_data->graph().is_valid(current))
-        _insert_child();
+        _insert_child();  // create valid current, intentional non-return
 
     // check children first because in general, child match is ideal
     auto fchild = graph_t::child(current, 0);

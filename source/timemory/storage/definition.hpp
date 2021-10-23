@@ -139,7 +139,7 @@ storage::stop_profiler()
 TIMEMORY_STORAGE_LINKAGE void
 storage::add_hash_id(uint64_t _lhs, uint64_t _rhs)
 {
-    ::tim::add_hash_id(m_hash_ids, m_hash_aliases, _lhs, _rhs);
+    ::tim::add_hash_id(m_hash_aliases, _lhs, _rhs);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -373,9 +373,10 @@ storage<Type, true>::~storage()
         }
         else
         {
-            CONDITIONAL_PRINT_HERE(
-                _debug, "[%s|%li]> skipping merge into non-existent primary instance",
-                m_label.c_str(), (long) m_instance_id);
+            CONDITIONAL_PRINT_HERE(_debug,
+                                   "[%s|%li]> skipping merge into non-existent primary "
+                                   "instance",
+                                   m_label.c_str(), (long) m_instance_id);
         }
     }
 
@@ -470,19 +471,12 @@ storage<Type, true>::global_init()
 {
     if(!m_global_init)
     {
-        return [&]() {
-            m_global_init = true;
-            if(!m_is_master && master_instance())
-                master_instance()->global_init();
-            if(m_is_master)
-            {
-                using init_t = operation::init<Type>;
-                using ValueT = typename trait::collects_data<Type>::type;
-                auto upcast  = static_cast<tim::storage<Type, ValueT>*>(this);
-                init_t(upcast, operation::mode_constant<operation::init_mode::global>{});
-            }
-            return m_global_init;
-        }();
+        CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "[%s|%i]> invoking global_init",
+                               demangle<Type>().c_str(), (int) m_thread_idx);
+        if(!m_is_master && master_instance())
+            master_instance()->global_init();
+        m_global_init = true;
+        operation::init<Type>{ operation::mode_constant<operation::init_mode::global>{} };
     }
     return m_global_init;
 }
@@ -495,18 +489,13 @@ storage<Type, true>::thread_init()
 {
     if(!m_thread_init)
     {
-        return [&]() {
-            m_thread_init = true;
-            if(!m_is_master && master_instance())
-                master_instance()->thread_init();
-            bool _global_init = global_init();
-            consume_parameters(_global_init);
-            using init_t = operation::init<Type>;
-            using ValueT = typename trait::collects_data<Type>::type;
-            auto upcast  = static_cast<tim::storage<Type, ValueT>*>(this);
-            init_t(upcast, operation::mode_constant<operation::init_mode::thread>{});
-            return m_thread_init;
-        }();
+        global_init();
+        CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "[%s|%i]> invoking thread_init",
+                               demangle<Type>().c_str(), (int) m_thread_idx);
+        if(!m_is_master && master_instance())
+            master_instance()->thread_init();
+        m_thread_init = true;
+        operation::init<Type>{ operation::mode_constant<operation::init_mode::thread>{} };
     }
     return m_thread_init;
 }
@@ -519,16 +508,14 @@ storage<Type, true>::data_init()
 {
     if(!m_data_init)
     {
-        return [&]() {
-            m_data_init = true;
-            if(!m_is_master && master_instance())
-                master_instance()->data_init();
-            bool _global_init = global_init();
-            bool _thread_init = thread_init();
-            consume_parameters(_global_init, _thread_init);
-            check_consistency();
-            return m_data_init;
-        }();
+        global_init();
+        thread_init();
+        CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "[%s|%i]> invoking data_init",
+                               demangle<Type>().c_str(), (int) m_thread_idx);
+        if(!m_is_master && master_instance())
+            master_instance()->data_init();
+        m_data_init = true;
+        check_consistency();
     }
     return m_data_init;
 }
@@ -658,12 +645,11 @@ storage<Type, true>::check_consistency()
 //
 template <typename Type>
 void
-storage<Type, true>::insert_init()
+storage<Type, true>::ensure_init()
 {
-    bool _global_init = global_init();
-    bool _thread_init = thread_init();
-    bool _data_init   = data_init();
-    consume_parameters(_global_init, _thread_init, _data_init);
+    global_init();
+    thread_init();
+    data_init();
     // check this now to ensure everything is initialized
     if(m_node_ids.empty() || m_graph_data_instance == nullptr)
         initialize();
@@ -852,7 +838,7 @@ template <typename Type>
 typename storage<Type, true>::result_array_t
 storage<Type, true>::get()
 {
-    result_array_t _ret;
+    result_array_t _ret{};
     operation::finalize::get<Type, true>{ *this }(_ret);
     return _ret;
 }
@@ -873,7 +859,7 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::mpi_get()
 {
-    dmp_result_t _ret;
+    dmp_result_t _ret{};
     operation::finalize::mpi_get<Type, true>{ *this }(_ret);
     return _ret;
 }
@@ -894,7 +880,7 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::upc_get()
 {
-    dmp_result_t _ret;
+    dmp_result_t _ret{};
     operation::finalize::upc_get<Type, true>{ *this }(_ret);
     return _ret;
 }
@@ -915,7 +901,7 @@ template <typename Type>
 typename storage<Type, true>::dmp_result_t
 storage<Type, true>::dmp_get()
 {
-    dmp_result_t _ret;
+    dmp_result_t _ret{};
     operation::finalize::dmp_get<Type, true>{ *this }(_ret);
     return _ret;
 }
@@ -1012,25 +998,21 @@ storage<Type, true>::get_shared_manager()
         if(!m_manager)
             return;
 
-        auto   _label = Type::label();
-        size_t pos    = std::string::npos;
-        // remove the namespaces
-        for(const auto* itr : { "tim::component::", "tim::project::", "tim::tpls::",
-                                "tim::api::", "tim::" })
-        {
-            while((pos = _label.find(itr)) != std::string::npos)
-                _label = _label.replace(pos, std::string(itr).length(), "");
-        }
+        auto       _label = demangle(Type::label());
+        std::regex _namespace_re{ "^(tim::[a-z_]+::|tim::)([a-z].*)" };
+        if(std::regex_search(_label, _namespace_re))
+            _label = std::regex_replace(_label, _namespace_re, "$2");
         // replace spaces with underscores
-        while((pos = _label.find(' ')) != std::string::npos)
-            _label = _label.replace(pos, 1, "_");
+        auto _pos = std::string::npos;
+        while((_pos = _label.find_first_of(" -")) != std::string::npos)
+            _label = _label.replace(_pos, 1, "_");
         // convert to upper-case
         for(auto& itr : _label)
             itr = toupper(itr);
+        // handle any remaining brackets or colons
         for(auto itr : { ':', '<', '>' })
         {
-            auto _pos = _label.find(itr);
-            while(_pos != std::string::npos)
+            while((_pos = _label.find(itr)) != std::string::npos)
                 _pos = _label.erase(_pos, 1).find(itr);
         }
         std::stringstream env_var;
@@ -1263,9 +1245,23 @@ storage<Type, false>::get_shared_manager()
         if(m_manager->is_finalizing())
             return;
 
-        auto _label = Type::label();
+        auto       _label = demangle(Type::label());
+        std::regex _namespace_re{ "^(tim::[a-z_]+::|tim::)([a-z].*)" };
+        if(std::regex_search(_label, _namespace_re))
+            _label = std::regex_replace(_label, _namespace_re, "$2");
+        // replace spaces with underscores
+        auto _pos = std::string::npos;
+        while((_pos = _label.find_first_of(" -")) != std::string::npos)
+            _label = _label.replace(_pos, 1, "_");
+        // convert to upper-case
         for(auto& itr : _label)
             itr = toupper(itr);
+        // handle any remaining brackets or colons
+        for(auto itr : { ':', '<', '>' })
+        {
+            while((_pos = _label.find(itr)) != std::string::npos)
+                _pos = _label.erase(_pos, 1).find(itr);
+        }
         std::stringstream env_var;
         env_var << "TIMEMORY_" << _label << "_ENABLED";
         auto _enabled = tim::get_env<bool>(env_var.str(), true);

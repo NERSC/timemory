@@ -891,9 +891,18 @@ bundle<Tag, BundleT, TupleT>::set_prefix(hash_value_t _hash) const
     if(!m_enabled())
         return get_this_type();
 
-    auto itr = get_hash_ids()->find(_hash);
-    if(itr != get_hash_ids()->end())
+    const auto& _hash_ids = hash::get_hash_ids();
+    auto itr = hash::find_hash_identifier(_hash_ids, hash::get_hash_aliases(), _hash);
+    if(itr != _hash_ids->end())
+    {
         invoke::set_prefix<Tag>(m_data, _hash, itr->second);
+    }
+    else
+    {
+        const char* _prefix = nullptr;
+        if(hash::get_hash_identifier(_hash, _prefix))
+            invoke::set_prefix<Tag>(m_data, _hash, _prefix);
+    }
     return get_this_type();
 }
 
@@ -949,9 +958,10 @@ bundle<Tag, BundleT, TupleT>::set_prefix(T* obj, internal_tag) const
     if(!m_enabled())
         return;
 
-    using PrefixOpT = operation::generic_operator<T, operation::set_prefix<T>, Tag>;
-    auto _key       = get_hash_identifier_fast(m_hash);
-    PrefixOpT(obj, m_hash, _key);
+    using PrefixOpT   = operation::generic_operator<T, operation::set_prefix<T>, Tag>;
+    std::string* _key = nullptr;
+    if(get_hash_identifier_fast(m_hash, _key))
+        PrefixOpT{ obj, m_hash, *_key };
 }
 
 //--------------------------------------------------------------------------------------//
