@@ -26,6 +26,7 @@
 
 #include "timemory/api.hpp"
 #include "timemory/hash/macros.hpp"
+#include "timemory/hash/static_string.hpp"
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/mpl/concepts.hpp"
@@ -78,6 +79,8 @@ get_shared_ptr_lone_instance();
 //
 //--------------------------------------------------------------------------------------//
 //
+inline namespace hash
+{
 using hash_value_t        = size_t;
 using hash_map_t          = std::unordered_map<hash_value_t, std::string>;
 using hash_alias_map_t    = std::unordered_map<hash_value_t, hash_value_t>;
@@ -215,10 +218,16 @@ void
 add_hash_id(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
             hash_value_t _hash_id, hash_value_t _alias_hash_id) TIMEMORY_HOT;
 //
-//--------------------------------------------------------------------------------------//
+void
+add_hash_id(const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id,
+            hash_value_t _alias_hash_id) TIMEMORY_HOT;
 //
 void
 add_hash_id(hash_value_t _hash_id, hash_value_t _alias_hash_id) TIMEMORY_HOT;
+//
+void
+hash_identifier_error(const hash_map_ptr_t&   _hash_map,
+                      const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id);
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -233,6 +242,12 @@ add_hash_id(hash_value_t _hash_id, hash_value_t _alias_hash_id) TIMEMORY_HOT;
 string_view_t
 get_hash_identifier_fast(hash_value_t _hash) TIMEMORY_HOT;
 //
+bool
+get_hash_identifier_fast(hash_value_t _hash, std::string*& _v) TIMEMORY_HOT;
+//
+bool
+get_hash_identifier_fast(hash_value_t _hash, const char*& _v) TIMEMORY_HOT;
+//
 inline string_view_t
 get_hash_identifier_fast(hash_value_t _hash)
 {
@@ -240,16 +255,55 @@ get_hash_identifier_fast(hash_value_t _hash)
     auto  itr       = _hash_ids->find(_hash);
     if(itr != _hash_ids->end())
         return itr->second;
-    return "";
+    return string_view_t{};
+}
+//
+inline bool
+get_hash_identifier_fast(hash_value_t _hash, std::string*& _v)
+{
+    auto& _hash_ids = get_hash_ids();
+    auto  itr       = _hash_ids->find(_hash);
+    if(itr != _hash_ids->end())
+        return (_v = &itr->second, true);
+    return false;
+}
+//
+inline bool
+get_hash_identifier_fast(hash_value_t _hash, const char*& _v)
+{
+    auto& _hash_ids = get_hash_ids();
+    auto  itr       = _hash_ids->find(_hash);
+    if(itr != _hash_ids->end())
+        return (_v = itr->second.c_str(), true);
+    return false;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
+typename hash_map_t::const_iterator
+find_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
+                     hash_value_t _hash_id);
+//
+typename hash_map_t::const_iterator
+find_hash_identifier(hash_value_t _hash_id);
+//
+bool
+get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
+                    hash_value_t _hash_id, std::string*& _ret);
+//
+bool
+get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
+                    hash_value_t _hash_id, const char*& _ret);
+//
+bool
+get_hash_identifier(hash_value_t _hash_id, std::string*& _ret);
+//
+bool
+get_hash_identifier(hash_value_t _hash_id, const char*& _ret);
+//
 std::string
 get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
                     hash_value_t _hash_id);
-//
-//--------------------------------------------------------------------------------------//
 //
 std::string
 get_hash_identifier(hash_value_t _hash_id);
@@ -287,4 +341,5 @@ get_demangled_hash_identifier(Args&&... _args)
 //
 //--------------------------------------------------------------------------------------//
 //
+}  // namespace hash
 }  // namespace tim

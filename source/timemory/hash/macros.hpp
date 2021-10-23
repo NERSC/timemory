@@ -36,8 +36,17 @@
 //
 #if defined(TIMEMORY_HASH_SOURCE)
 #    define TIMEMORY_HASH_LINKAGE(...) __VA_ARGS__
+#    define TIMEMORY_HASH_INLINE
 #elif defined(TIMEMORY_USE_HASH_EXTERN)
 #    define TIMEMORY_HASH_LINKAGE(...) extern __VA_ARGS__
+#    define TIMEMORY_HASH_INLINE
 #else
 #    define TIMEMORY_HASH_LINKAGE(...) inline __VA_ARGS__
+#    define TIMEMORY_HASH_INLINE inline
+#endif
+//
+#if !defined(TIMEMORY_HASH_SOURCE) && !defined(TIMEMORY_USE_HASH_EXTERN)
+#    if !defined(TIMEMORY_HASH_HEADER_ONLY_MODE)
+#        define TIMEMORY_HASH_HEADER_ONLY_MODE 1
+#    endif
 #endif
