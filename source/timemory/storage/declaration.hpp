@@ -30,7 +30,7 @@
 #pragma once
 
 #include "timemory/backends/dmp.hpp"
-#include "timemory/backends/gperf.hpp"
+#include "timemory/backends/gperftools.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/hash/declaration.hpp"
 #include "timemory/manager/declaration.hpp"
