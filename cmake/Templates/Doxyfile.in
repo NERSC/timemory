@@ -342,6 +342,17 @@ PREDEFINED             = TIMEMORY_VISIBLE= \
                          TIMEMORY_HOT= \
                          TIMEMORY_DLL= \
                          TIMEMORY_CDLL= \
+                         TIMEMORY_HIDDEN= \
+                         TIMEMORY_FLATTEN= \
+                         TIMEMORY_NOCLONE= \
+                         TIMEMORY_LAMBDA= \
+                         TIMEMORY_DEVICE_LAMBDA= \
+                         TIMEMORY_DEVICE_FUCTION= \
+                         TIMEMORY_GLOBAL_FUNCTION= \
+                         TIMEMORY_HOST_DEVICE_FUNCTION= \
+                         TIMEMORY_DEVICE_INLINE= \
+                         TIMEMORY_GLOBAL_INLINE= \
+                         TIMEMORY_HOST_DEVICE_INLINE= \
                          "TIMEMORY_ATTRIBUTE(...)=" \
                          "TIMEMORY_VISIBILITY(...)=" \
                          "TIMEMORY_DEFAULT_OBJECT(...)=" \
