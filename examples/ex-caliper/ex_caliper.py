@@ -1,9 +1,11 @@
 #!@PYTHON_EXECUTABLE@
 
+import os
+import sys
+import argparse
 import timemory
 from timemory.bundle import auto_tuple
 from timemory.component import CaliperConfig
-import sys
 
 
 def fib(n):
@@ -25,13 +27,43 @@ def run_fib(n):
 
 if __name__ == "__main__":
 
-    nfib = int(sys.argv[1]) if len(sys.argv) > 1 else 34
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-n",
+        "--nfib",
+        help="Fibonacci value",
+        type=int,
+        default=34,
+    )
+    parser.add_argument(
+        "-c",
+        "--config",
+        help="Caliper configuration",
+        type=str,
+        nargs="*",
+        default=["runtime-report"],
+    )
+    parser.add_argument(
+        "-C",
+        "--components",
+        help="timemory component types",
+        default=[],
+        choices=timemory.component.get_available_types(),
+        nargs="*",
+        type=str,
+    )
+
+    args = parser.parse_args()
+    nfib = args.nfib
 
     cfg = CaliperConfig()
-    cfg.configure("runtime-report")
+    cfg.configure(",".join(args.config))
     cfg.start()
 
-    with auto_tuple(get_tools(), "%s(%i)" % (sys.argv[0], nfib)):
+    with auto_tuple(
+        get_tools(args.components),
+        "%s(%i)" % (os.path.basename(sys.argv[0]), nfib),
+    ):
         ans = fib(nfib)
         ans += run_fib(nfib + 1)
 
