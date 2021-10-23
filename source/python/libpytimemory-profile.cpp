@@ -22,13 +22,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if !defined(TIMEMORY_PYUNITS_SOURCE)
-#    define TIMEMORY_PYUNITS_SOURCE
+#if !defined(TIMEMORY_PYPROFILE_SOURCE)
+#    define TIMEMORY_PYPROFILE_SOURCE
 #endif
 
 #include "libpytimemory-component-bundle.hpp"
 
+#include <cctype>
 #include <cstdint>
+#include <locale>
 
 using namespace tim::component;
 
@@ -45,29 +47,32 @@ using strset_t             = std::unordered_set<std::string>;
 //
 struct config
 {
-    bool                 is_running         = false;
-    bool                 trace_c            = true;
-    bool                 include_internal   = false;
-    bool                 include_args       = false;
-    bool                 include_line       = false;
-    bool                 include_filename   = true;
-    bool                 full_filepath      = false;
-    int32_t              max_stack_depth    = std::numeric_limits<uint16_t>::max();
-    int32_t              ignore_stack_depth = 0;
-    int32_t              base_stack_depth   = -1;
-    std::string          base_module_path   = "";
-    strset_t             include_functions  = {};
-    strset_t             include_filenames  = {};
-    tim::scope::config   profiler_scope     = tim::scope::get_default();
-    strset_t             exclude_functions  = { "FILE",       "FUNC",      "LINE",
-                                   "get_fcode",  "__exit__",  "_handle_fromlist",
-                                   "<module>",   "_shutdown", "isclass",
-                                   "isfunction", "basename",  "_get_sep" };
-    strset_t             exclude_filenames  = { "__init__.py",       "__main__.py",
-                                   "functools.py",      "<frozen importlib._bootstrap>",
-                                   "_pylab_helpers.py", "threading.py",
-                                   "encoder.py",        "decoder.py" };
-    profiler_index_map_t records            = {};
+    using scope_config              = tim::scope::config;
+    bool         is_running         = false;
+    bool         trace_c            = true;
+    bool         include_internal   = false;
+    bool         include_args       = false;
+    bool         include_line       = false;
+    bool         include_filename   = true;
+    bool         full_filepath      = false;
+    int32_t      max_stack_depth    = std::numeric_limits<uint16_t>::max();
+    int32_t      ignore_stack_depth = 0;
+    int32_t      base_stack_depth   = -1;
+    std::string  base_module_path   = "";
+    strset_t     include_functions  = {};
+    strset_t     include_filenames  = {};
+    scope_config profiler_scope     = tim::scope::get_default();
+    strset_t     exclude_functions  = { "^(FILE|FUNC|LINE)$",
+                                   "^get_fcode$",
+                                   "^_(_exit__|handle_fromlist|shutdown|get_sep)$",
+                                   "^is(function|class)$",
+                                   "^basename$",
+                                   "^<.*>$" };
+    strset_t     exclude_filenames  = {
+        "(__init__|__main__|functools|encoder|decoder|_pylab_helpers|threading).py$",
+        "^<.*>$"
+    };
+    profiler_index_map_t records = {};
     int32_t verbose = tim::settings::verbose() + ((tim::settings::debug()) ? 16 : 0);
 };
 //
@@ -110,18 +115,19 @@ get_depth(PyFrameObject* frame)
 void
 profiler_function(py::object pframe, const char* swhat, py::object arg)
 {
-    if(!tim::settings::enabled())
+    static thread_local auto& _config = get_config();
+
+    if(!tim::settings::enabled() || pframe.is_none() || pframe.ptr() == nullptr)
         return;
 
     if(user_profiler_bundle::bundle_size() == 0)
     {
-        if(tim::settings::debug())
+        if(_config.verbose > 2)
             PRINT_HERE("%s", "Profiler bundle is empty");
         return;
     }
 
-    static thread_local auto& _config        = get_config();
-    static auto               _timemory_path = _config.base_module_path;
+    static auto _timemory_path = _config.base_module_path;
 
     auto* frame = reinterpret_cast<PyFrameObject*>(pframe.ptr());
 
@@ -136,7 +142,7 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     // only support PyTrace_{CALL,C_CALL,RETURN,C_RETURN}
     if(what < 0)
     {
-        if(tim::settings::debug())
+        if(_config.verbose > 2)
             PRINT_HERE("%s :: %s", "Ignoring what != {CALL,C_CALL,RETURN,C_RETURN}",
                        swhat);
         return;
@@ -145,7 +151,7 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     // if PyTrace_C_{CALL,RETURN} is not enabled
     if(!_config.trace_c && (what == PyTrace_C_CALL || what == PyTrace_C_RETURN))
     {
-        if(tim::settings::debug())
+        if(_config.verbose > 2)
             PRINT_HERE("%s :: %s", "Ignoring C call/return", swhat);
         return;
     }
@@ -161,7 +167,7 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     // if frame exceeds max stack-depth
     if(_iscall && _sdepth > _config.max_stack_depth)
     {
-        if(tim::settings::debug())
+        if(_config.verbose > 2)
             PRINT_HERE("skipping %i > %i", (int) _sdepth, (int) _config.max_stack_depth);
         return;
     }
@@ -194,30 +200,51 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     auto _get_label = [&](auto& _func, auto& _filename, auto& _fullpath) {
         // append the arguments
         if(_config.include_args)
-            _func = TIMEMORY_JOIN("", _func, _get_args());
+            _func.append(_get_args());
         // append the filename
         if(_config.include_filename)
         {
             if(_config.full_filepath)
-                _func = TIMEMORY_JOIN('/', _func, std::move(_fullpath));
+                _func.append(TIMEMORY_JOIN("", '[', std::move(_fullpath)));
             else
-                _func = TIMEMORY_JOIN('/', _func, std::move(_filename));
+                _func.append(TIMEMORY_JOIN("", '[', std::move(_filename)));
         }
         // append the line number
-        if(_config.include_line)
-            _func = TIMEMORY_JOIN(':', _func, frame->f_lineno);
+        if(_config.include_line && _config.include_filename)
+            _func.append(TIMEMORY_JOIN("", ':', frame->f_lineno, ']'));
+        else if(_config.include_line)
+            _func.append(TIMEMORY_JOIN("", ':', frame->f_lineno));
+        else if(_config.include_filename)
+            _func += "]";
         return _func;
+    };
+
+    auto _find_matching = [](const strset_t& _expr, const std::string& _name) {
+        const auto _rconstants =
+            std::regex_constants::egrep | std::regex_constants::optimize;
+        for(const auto& itr : _expr)
+        {
+            if(std::regex_search(_name, std::regex(itr, _rconstants)))
+                return true;
+        }
+        return false;
     };
 
     auto& _only_funcs = _config.include_functions;
     auto& _skip_funcs = _config.exclude_functions;
     auto  _func       = _get_funcname();
 
-    if(!_only_funcs.empty() && _only_funcs.find(_func) == _only_funcs.end())
-        return;
-
-    if(_skip_funcs.find(_func) != _skip_funcs.end())
+    if(!_only_funcs.empty() && !_find_matching(_only_funcs, _func))
     {
+        if(_config.verbose > 1)
+            PRINT_HERE("Skipping non-included function: %s", _func.c_str());
+        return;
+    }
+
+    if(_find_matching(_skip_funcs, _func))
+    {
+        if(_config.verbose > 1)
+            PRINT_HERE("Skipping designated function: '%s'", _func.c_str());
         auto _manager = tim::manager::instance();
         if(!_manager || _manager->is_finalized() || _func == "_shutdown")
         {
@@ -238,30 +265,27 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
        strncmp(_full.c_str(), _timemory_path.c_str(), _timemory_path.length()) == 0)
         return;
 
-    if(!_only_files.empty() && (_only_files.find(_file) == _only_files.end() &&
-                                _only_files.find(_full) == _only_files.end()))
+    if(!_only_files.empty() && !_find_matching(_only_files, _full))
     {
-#if defined(DEBUG)
-        if(tim::settings::debug())
-        {
-            std::stringstream _opts;
-            for(const auto& itr : _only_files)
-                _opts << "| " << itr;
-            PRINT_HERE("Skipping: [%s | %s | %s] due to [%s]", _func.c_str(),
-                       _file.c_str(), _full.c_str(), _opts.str().substr(2).c_str());
-        }
-#endif
+        if(_config.verbose > 2)
+            PRINT_HERE("Skipping non-included file: %s", _full.c_str());
         return;
     }
 
-    if(_skip_files.find(_file) != _skip_files.end() ||
-       _skip_files.find(_full) != _skip_files.end())
+    if(_find_matching(_skip_files, _full))
+    {
+        if(_config.verbose > 2)
+            PRINT_HERE("Skipping non-included file: %s", _full.c_str());
         return;
+    }
 
-    DEBUG_PRINT_HERE("%8s | %s%s | %s | %s", swhat, _func.c_str(), _get_args().c_str(),
-                     _file.c_str(), _full.c_str());
+    CONDITIONAL_PRINT_HERE(_config.verbose > 3, "%8s | %s%s | %s | %s", swhat,
+                           _func.c_str(), _get_args().c_str(), _file.c_str(),
+                           _full.c_str());
 
     auto _label = _get_label(_func, _file, _full);
+    if(_label.empty())
+        return;
 
     // start function
     auto _profiler_call = [&]() {
@@ -391,13 +415,13 @@ generate(py::module& _pymod)
         CONFIGURATION_PROPERTY_LAMBDA(NAME, DOC, GET, SET)                               \
     }
 
-    CONFIGURATION_STRSET("only_functions", "Function names to collect exclusively",
+    CONFIGURATION_STRSET("only_functions", "Function regexes to collect exclusively",
                          get_config().include_functions)
-    CONFIGURATION_STRSET("only_filenames", "File names to collect exclusively",
+    CONFIGURATION_STRSET("only_filenames", "Filename regexes to collect exclusively",
                          get_config().include_filenames)
-    CONFIGURATION_STRSET("skip_functions", "Function names to filter out of collection",
+    CONFIGURATION_STRSET("skip_functions", "Function regexes to filter out of collection",
                          get_config().exclude_functions)
-    CONFIGURATION_STRSET("skip_filenames", "Filenames to filter out of collection",
+    CONFIGURATION_STRSET("skip_filenames", "Filename regexes to filter out of collection",
                          get_config().exclude_filenames)
 
     tim::operation::init<user_profiler_bundle>(

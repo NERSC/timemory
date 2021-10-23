@@ -140,7 +140,7 @@ def search(data, pattern, field="name"):
     return ret
 
 
-def expression(data, math_expr, metric="sum.inc"):
+def expression(data, math_expr, metric="sum.* (inc)"):
     """Find the graphframes with whose value satisfy the given expression
 
     Arguments:
@@ -160,10 +160,19 @@ def expression(data, math_expr, metric="sum.inc"):
 
             filter(data, 'x > 1.0e3 && x < 1e6', "sum.inc")
     """
+    import re
 
     def eval_math_expr(x):
-        _expr = math_expr.replace("x", "{}".format(x[metric]))
-        # print(f"Executing expression: '{_expr}'")
+        """Evaluates whether math expression is satisfied. Returning false will cause value to be filtered"""
+        _metric = None
+        for itr in x.keys():
+            cv = re.search(metric, itr)
+            if cv:
+                _metric = "{}".format(cv.group())
+                break
+        if _metric is None:
+            return True
+        _expr = math_expr.replace("x", "{}".format(x[_metric]))
         _and = _expr.split("&&")
         for itr in _and:
             if "||" in itr:
@@ -172,13 +181,10 @@ def expression(data, math_expr, metric="sum.inc"):
                 for sitr in _or:
                     _n_or += 1 if eval(sitr) else 0
                 if _n_or == 0:
-                    # print(f'    Failure! {sitr}')
                     return False
             else:
                 if not eval(itr):
-                    # print(f'    Failure! {itr}')
                     return False
-        # print(f'    Success: {_expr}')
         return True
 
     if math_expr is not None:

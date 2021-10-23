@@ -22,14 +22,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#if !defined(TIMEMORY_PYUNITS_SOURCE)
-#    define TIMEMORY_PYUNITS_SOURCE
+#if !defined(TIMEMORY_PYTRACE_SOURCE)
+#    define TIMEMORY_PYTRACE_SOURCE
 #endif
 
 #include "libpytimemory-component-bundle.hpp"
 #include "timemory/library.h"
 
+#include <cctype>
 #include <cstdint>
+#include <locale>
+#include <unordered_set>
 
 using namespace tim::component;
 
@@ -54,28 +57,30 @@ using file_line_map_t     = uomap_t<string_t, strvec_t>;
 //
 struct config
 {
-    bool                is_running        = false;
-    bool                include_internal  = false;
-    bool                include_args      = false;
-    bool                include_line      = true;
-    bool                include_filename  = true;
-    bool                full_filepath     = false;
-    int32_t             max_stack_depth   = std::numeric_limits<uint16_t>::max();
-    int32_t             base_stack_depth  = -1;
-    string_t            base_module_path  = "";
-    strset_t            include_functions = {};
-    strset_t            include_filenames = {};
-    strset_t            exclude_functions = { "FILE",      "FUNC",     "LINE",
-                                   "get_fcode", "__exit__", "_handle_fromlist",
-                                   "_shutdown", "isclass",  "isfunction",
-                                   "basename",  "_get_sep" };
-    strset_t            exclude_filenames = { "__init__.py",       "__main__.py",
-                                   "functools.py",      "<frozen importlib._bootstrap>",
-                                   "_pylab_helpers.py", "threading.py",
-                                   "encoder.py",        "decoder.py" };
-    tracer_code_map_t   records           = {};
-    function_code_map_t functions         = {};
-    tim::scope::config  tracer_scope      = tim::scope::config{ true, false, false };
+    bool     is_running        = false;
+    bool     include_internal  = false;
+    bool     include_args      = false;
+    bool     include_line      = true;
+    bool     include_filename  = true;
+    bool     full_filepath     = false;
+    int32_t  max_stack_depth   = std::numeric_limits<uint16_t>::max();
+    int32_t  base_stack_depth  = -1;
+    string_t base_module_path  = "";
+    strset_t include_functions = {};
+    strset_t include_filenames = {};
+    strset_t exclude_functions = { "^(FILE|FUNC|LINE)$",
+                                   "^get_fcode$",
+                                   "^_(_exit__|handle_fromlist|shutdown|get_sep)$",
+                                   "^is(function|class)$",
+                                   "^basename$",
+                                   "^<.*>$" };
+    strset_t exclude_filenames = {
+        "(__init__|__main__|functools|encoder|decoder|_pylab_helpers|threading).py$",
+        "^<.*>$"
+    };
+    tracer_code_map_t   records      = {};
+    function_code_map_t functions    = {};
+    tim::scope::config  tracer_scope = tim::scope::config{ true, false, false };
     int32_t verbose = tim::settings::verbose() + ((tim::settings::debug()) ? 16 : 0);
 };
 //
@@ -117,9 +122,11 @@ get_depth(frame_object_t* frame)
 py::function
 tracer_function(py::object pframe, const char* swhat, py::object arg)
 {
-    static thread_local auto& _config = get_config();
+    static thread_local auto& _config  = get_config();
+    static thread_local bool  _disable = false;
 
-    if(!tim::settings::enabled())
+    if(!tim::settings::enabled() || pframe.is_none() || pframe.ptr() == nullptr ||
+       _disable)
         return py::none{};
 
     if(user_trace_bundle::bundle_size() == 0)
@@ -145,7 +152,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
 
     auto* frame = reinterpret_cast<frame_object_t*>(pframe.ptr());
     //
-    using pushed_funcs_t = uomap_t<string_t, std::set<frame_object_t*>>;
+    using pushed_funcs_t = std::unordered_map<string_t, std::unordered_set<string_t>>;
     //
     static thread_local tracer_iterator_t _last         = {};
     static thread_local bool              _has_last     = false;
@@ -215,11 +222,13 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
         auto litr = _file_lines.find(_fullpath);
         if(litr != _file_lines.end())
             return litr->second;
+        _disable              = true;
         auto        linecache = py::module::import("linecache");
         static bool _once     = false;
         if(!_once)
             _once = (linecache.attr("clearcache")(), true);
         auto _lines = linecache.attr("getlines")(_fullpath).template cast<strvec_t>();
+        _disable = false;
         for(size_t i = 0; i < _lines.size(); ++i)
         {
             auto& itr = _lines.at(i);
@@ -242,9 +251,12 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
 
     // get the arguments
     auto _get_args = [&]() {
+        _disable     = true;
         auto inspect = py::module::import("inspect");
-        return py::cast<string_t>(
+        auto _ret    = py::cast<string_t>(
             inspect.attr("formatargvalues")(*inspect.attr("getargvalues")(pframe)));
+        _disable = false;
+        return _ret;
     };
 
     // get the final label
@@ -252,37 +264,51 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
                           const auto& _flines, auto _fline) {
         // append the arguments
         if(_config.include_args)
-            _func = TIMEMORY_JOIN("", _func, _get_args());
+            _func.append(_get_args());
         // append the filename
         if(_config.include_filename)
         {
-            if(_config.full_filepath)
-                _func = TIMEMORY_JOIN('/', _func, _fullpath);
-            else
-                _func = TIMEMORY_JOIN('/', _func, _filename);
+            _func.append("][");
+            _func.append((_config.full_filepath) ? _fullpath : _filename);
+            // append the line number
+            if(_config.include_line)
+            {
+                _func.append(":");
+                auto              _w = log10(_flines.size()) + 1;
+                std::stringstream _sline{};
+                _sline.fill('0');
+                _sline << std::setw(_w) << _fline;
+                _func.append(_sline.str());
+            }
         }
-        // append the line number
-        if(_config.include_line)
+        else if(_config.include_line)
         {
-            auto              _w = log10(_flines.size()) + 1;
-            std::stringstream _sline;
-            _sline.fill('0');
-            _sline << std::setw(_w) << _fline;
-            _func = TIMEMORY_JOIN(':', _func, _sline.str());
+            _func.append(TIMEMORY_JOIN("", ':', _fline));
         }
         return _func;
     };
 
+    auto _find_matching = [](const strset_t& _expr, const std::string& _name) {
+        const auto _rconstants =
+            std::regex_constants::egrep | std::regex_constants::optimize;
+        for(const auto& itr : _expr)
+        {
+            if(std::regex_search(_name, std::regex(itr, _rconstants)))
+                return true;
+        }
+        return false;
+    };
+
     auto _func = _get_funcname();
 
-    if(!_only_funcs.empty() && _only_funcs.find(_func) == _only_funcs.end())
+    if(!_only_funcs.empty() && !_find_matching(_only_funcs, _func))
     {
         if(_config.verbose > 1)
             PRINT_HERE("Skipping non-included function: %s", _func.c_str());
         return py::none{};
     }
 
-    if(_skip_funcs.find(_func) != _skip_funcs.end())
+    if(_find_matching(_skip_funcs, _func))
     {
         if(_config.verbose > 1)
             PRINT_HERE("Skipping designated function: '%s'", _func.c_str());
@@ -291,13 +317,16 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
         {
             if(_config.verbose > 1)
                 PRINT_HERE("Shutdown detected: %s", _func.c_str());
+            _disable       = true;
             auto sys       = py::module::import("sys");
             auto threading = py::module::import("threading");
             sys.attr("settrace")(py::none{});
             threading.attr("settrace")(py::none{});
+            _disable = false;
         }
         return py::none{};
     }
+
     auto _full = _get_filename();
     auto _base = _get_basename(_full);
 
@@ -309,30 +338,17 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
         return py::none{};
     }
 
-    if(!_only_files.empty() && (_only_files.find(_base) == _only_files.end() &&
-                                _only_files.find(_full) == _only_files.end()))
+    if(!_only_files.empty() && !_find_matching(_only_files, _full))
     {
-#if defined(DEBUG)
-        if(tim::settings::debug())
-        {
-            std::stringstream _opts;
-            for(const auto& itr : _only_files)
-                _opts << "| " << itr;
-            PRINT_HERE("Skipping: [%s | %s | %s] due to [%s]", _func.c_str(),
-                       _base.c_str(), _full.c_str(), _opts.str().substr(2).c_str());
-        }
-#else
         if(_config.verbose > 2)
-            PRINT_HERE("Skipping non-included file: %s", _base.c_str());
-#endif
+            PRINT_HERE("Skipping non-included file: %s", _full.c_str());
         return py::none{};
     }
 
-    if(_skip_files.find(_base) != _skip_files.end() ||
-       _skip_files.find(_full) != _skip_files.end())
+    if(_find_matching(_skip_files, _full))
     {
-        if(_config.verbose > 1)
-            PRINT_HERE("Skipping designated file: '%s'", _base.c_str());
+        if(_config.verbose > 2)
+            PRINT_HERE("Skipping non-included file: %s", _full.c_str());
         return py::none{};
     }
 
@@ -399,128 +415,108 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     auto& _tlines = _get_trace_lines();
 
     //----------------------------------------------------------------------------------//
-    // the first time a frame is encountered, use the inspect module to process the
-    // source lines. Essentially, this function finds all the source code lines in
-    // the frame, generates an label via the source code, and then "pushes" that
-    // label into the storage. Then we are free to call start/stop repeatedly
-    // and only when the pop is applied does the storage instance get updated.
-    // NOTE: this means the statistics are not correct.
+    // the first time a frame is encountered, use the inspect module to process
+    // the source lines. Essentially, this function finds all the source code
+    // lines in the frame, generates an label via the source code, and then
+    // "pushes" that label into the storage. Then we are free to call start/stop
+    // repeatedly and only when the pop is applied does the storage instance get
+    // updated. NOTE: this means the statistics are not correct.
     //
     auto _push_tracer = [&](auto object) {
-        if(_pushed_funcs[_full].count(frame) == 0)
+        _disable     = true;
+        auto inspect = py::module::import("inspect");
+        try
         {
-            auto inspect = py::module::import("inspect");
+            py::object srclines = py::none{};
             try
             {
-                py::object srclines = py::none{};
-                try
-                {
-                    srclines = inspect.attr("getsourcelines")(object);
-                } catch(std::exception& e)
-                {
-                    if(tim::settings::debug())
-                        std::cerr << e.what() << std::endl;
-                }
-                if(!srclines.is_none())
-                {
-                    auto _get_docstring = [](const string_t& _str, size_t _pos) {
-                        auto _q1 = _str.find("'''", _pos);
-                        auto _q2 = _str.find("\"\"\"", _pos);
-                        return std::min<size_t>(_q1, _q2);
-                    };
-
-                    auto pysrclist       = srclines.cast<py::list>()[0].cast<py::list>();
-                    auto _srclines       = strvec_t{};
-                    auto _skip_docstring = false;
-                    for(auto itr : pysrclist)
-                    {
-                        auto sline = itr.cast<std::string>();
-                        _sanitize_source_line(sline);
-                        if(sline.empty())
-                            continue;
-                        auto _pos = sline.find_first_not_of(" \t");
-                        if(_pos < sline.length() && sline[_pos] == '#')
-                            continue;
-                        // if we are not currently inside a doc-string, search for
-                        // it as the first non-whitespace character
-                        if(!_skip_docstring)
-                        {
-                            auto _dbeg = _get_docstring(sline, _pos);
-                            if(_dbeg == _pos)
-                            {
-                                DEBUG_PRINT_HERE("Doc-string detected in: %s",
-                                                 sline.c_str());
-                                // check if the doc-string is terminated in the same line
-                                auto _dend = _get_docstring(sline, _dbeg + 3);
-                                if(_dend == std::string::npos)
-                                    _skip_docstring = true;
-                                else
-                                {
-                                    DEBUG_PRINT_HERE("Doc-string terminated in: %s",
-                                                     sline.c_str());
-                                }
-                                // skip this line bc there is a doc-string
-                                continue;
-                            }
-                        }
-                        // if currently skipping, look for the terminating doc-string
-                        if(_skip_docstring)
-                        {
-                            auto _chk = _get_docstring(sline, 0);
-                            if(_chk != std::string::npos)
-                            {
-                                DEBUG_PRINT_HERE("Doc-string terminated in: %s",
-                                                 sline.c_str());
-                                _skip_docstring = false;
-                                // if the doc-string is the last set of characters
-                                // or if there is nothing but spaces/tabs/quotes/etc.
-                                // after the doc-string, skip this line
-                                if(_chk + 4 >= sline.length() ||
-                                   sline.find_first_not_of(" \t\n\r'\"") ==
-                                       std::string::npos)
-                                    continue;
-                            }
-                        }
-                        if(_skip_docstring)
-                            continue;
-                        // only add if not in doc-string
-                        _srclines.emplace_back(sline);
-                    }
-                    //
-                    if(tim::settings::debug())
-                    {
-                        std::cout << "\nSource lines:\n";
-                        for(const auto& itr : _srclines)
-                            std::cout << "    " << itr << '\n';
-                        std::cout << std::endl;
-                    }
-                    //
-                    auto ibeg = (_line == 0) ? _line : _line - 1;
-                    auto iend = std::min<size_t>(_tlines.size(), ibeg + pysrclist.size());
-                    for(size_t i = ibeg; i < iend; ++i)
-                    {
-                        auto& _tracer = _tlines.at(i);
-                        for(auto& sitr : _srclines)
-                        {
-                            if(_tracer.key().find(sitr) != std::string::npos)
-                            {
-                                _tracer.push();
-                                break;
-                            }
-                        }
-                    }
-                }
-            } catch(py::cast_error& e)
+                srclines = inspect.attr("getsourcelines")(object);
+            } catch(std::exception& e)
             {
-                std::cerr << e.what() << std::endl;
+                if(_config.verbose > 2)
+                    std::cerr << e.what() << std::endl;
             }
+            if(!srclines.is_none())
+            {
+                auto _get_docstring = [](const string_t& _str, size_t _pos) {
+                    auto _q1 = _str.find("'''", _pos);
+                    auto _q2 = _str.find("\"\"\"", _pos);
+                    return std::min<size_t>(_q1, _q2);
+                };
+
+                auto pysrclist = srclines.cast<py::list>()[0].cast<py::list>();
+                auto _srclines = strvec_t{};
+                // auto _skip_docstring = false;
+                for(auto itr : pysrclist)
+                {
+                    auto sline = itr.cast<std::string>();
+                    _sanitize_source_line(sline);
+                    _srclines.emplace_back(sline);
+                }
+                //
+                if(_config.verbose > 3)
+                {
+                    std::cout << "\nSource lines:\n";
+                    for(const auto& itr : _srclines)
+                        std::cout << "    " << itr << '\n';
+                    std::cout << std::endl;
+                }
+                //
+                bool _in_docstring = false;
+                auto ibeg          = (_line == 0) ? _line : _line - 1;
+                auto iend = std::min<size_t>(_tlines.size(), ibeg + pysrclist.size());
+                for(size_t i = ibeg; i < iend; ++i)
+                {
+                    auto& _tracer = _tlines.at(i);
+                    for(auto& sitr : _srclines)
+                    {
+                        if(sitr.empty())
+                            continue;  // skip empty lines
+                        auto _docspos = _get_docstring(sitr, 0);
+                        if(_docspos != std::string::npos)
+                        {
+                            _docspos = _get_docstring(sitr, _docspos + 4);
+                            if(_docspos != std::string::npos)
+                            {
+                                continue;  // one-line docstring
+                            }
+                            else
+                            {
+                                // multiline docstring
+                                auto _old_in_docstring = _in_docstring;
+                                _in_docstring          = !_in_docstring;
+                                if(_old_in_docstring)
+                                    continue;  // end of docstring
+                            }
+                        }
+                        if(_in_docstring)
+                        {
+                            continue;
+                        }
+                        if(sitr.find_first_of('#') < sitr.find_first_not_of(" \t#"))
+                            continue;  // skip comments
+                        if(_tracer.key().find(sitr) != std::string::npos)
+                        {
+                            _tracer.push();
+                            break;
+                        }
+                    }
+                }
+            }
+        } catch(py::cast_error& e)
+        {
+            std::cerr << e.what() << std::endl;
         }
+        _disable = false;
     };
 
     //----------------------------------------------------------------------------------//
     //
-    _push_tracer(pframe);
-    _pushed_funcs[_full].insert(frame);
+    if(_pushed_funcs[_full].find(_func) == _pushed_funcs[_full].end())
+    {
+        _pushed_funcs[_full].emplace(_func);
+        _push_tracer(pframe);
+    }
 
     //----------------------------------------------------------------------------------//
     // start function
@@ -710,13 +706,13 @@ generate(py::module& _pymod)
         CONFIGURATION_PROPERTY_LAMBDA(NAME, DOC, GET, SET)                               \
     }
 
-    CONFIGURATION_STRSET("only_functions", "Function names to collect exclusively",
+    CONFIGURATION_STRSET("only_functions", "Function regexes to collect exclusively",
                          get_config().include_functions)
-    CONFIGURATION_STRSET("only_filenames", "File names to collect exclusively",
+    CONFIGURATION_STRSET("only_filenames", "Filename regexes to collect exclusively",
                          get_config().include_filenames)
-    CONFIGURATION_STRSET("skip_functions", "Function names to filter out of collection",
+    CONFIGURATION_STRSET("skip_functions", "Function regexes to filter out of collection",
                          get_config().exclude_functions)
-    CONFIGURATION_STRSET("skip_filenames", "Filenames to filter out of collection",
+    CONFIGURATION_STRSET("skip_filenames", "Filename regexes to filter out of collection",
                          get_config().exclude_filenames)
 
     tim::operation::init<user_trace_bundle>(
