@@ -57,23 +57,35 @@ using stringstream_t = std::stringstream;
 using str_vec_t      = std::vector<string_t>;
 using info_type      = std::tuple<string_t, bool, str_vec_t>;
 
-char             global_delim           = '|';
-bool             markdown               = false;
-bool             alphabetical           = false;
-bool             all_info               = false;
-bool             force_brief            = false;
-bool             debug_msg              = false;
-int32_t          max_width              = 0;
-int32_t          num_cols               = 0;
-int32_t          min_width              = 40;
-int32_t          padding                = 4;
-string_t         regex_key              = {};
-bool             regex_hl               = false;
-constexpr size_t num_component_options  = 6;
-constexpr size_t num_settings_options   = 3;
-constexpr size_t num_hw_counter_options = 5;
+char              global_delim           = '|';
+bool              markdown               = false;
+bool              alphabetical           = false;
+bool              all_info               = false;
+bool              force_brief            = false;
+bool              debug_msg              = false;
+bool              case_insensitive       = false;
+int32_t           max_width              = 0;
+int32_t           num_cols               = 0;
+int32_t           min_width              = 40;
+int32_t           padding                = 4;
+str_vec_t         regex_keys             = {};
+bool              regex_hl               = false;
+constexpr size_t  num_component_options  = 6;
+constexpr size_t  num_settings_options   = 3;
+constexpr size_t  num_hw_counter_options = 5;
+std::stringstream lerr{};
 
 //--------------------------------------------------------------------------------------//
+
+void
+dump_log()
+{
+    if(debug_msg)
+    {
+        std::cerr << lerr.str() << std::flush;
+        lerr = std::stringstream{};
+    }
+}
 
 static std::tuple<int32_t, std::string>
 get_window_columns();
@@ -94,10 +106,10 @@ string_t
 banner(IntArrayT _breaks, std::array<bool, N> _use, char filler = '-', char delim = '|');
 
 bool
-not_filtered(const std::string& line);
+is_selected(const std::string& line);
 
 std::string
-hl_filtered(std::string line);
+hl_selected(const std::string& line);
 
 template <size_t N = num_component_options>
 void
@@ -233,11 +245,15 @@ main(int argc, char** argv)
         .add_argument({ "-r", "--filter" },
                       "Filter the output according to provided regex (egrep + "
                       "case-sensitive) [e.g. -r \"true\"]")
-        .count(1)
-        .dtype("string")
-        .action([](parser_t& p) { regex_key = p.get<std::string>("filter"); });
+        .min_count(1)
+        .dtype("list of strings")
+        .action([](parser_t& p) { regex_keys = p.get<str_vec_t>("filter"); });
+    parser.add_argument({ "-i", "--ignore-case" }, "Ignore case when filtering")
+        .max_count(1)
+        .dtype("bool")
+        .action([](parser_t& p) { case_insensitive = p.get<bool>("ignore-case"); });
     parser
-        .add_argument({ "--hl", "--highlight" },
+        .add_argument({ "-p", "--hl", "--highlight" },
                       "Highlight regex matches (only available on UNIX)")
         .max_count(1)
         .action([](parser_t&) { regex_hl = true; });
@@ -325,12 +341,8 @@ main(int argc, char** argv)
         }
     }
 
-    if(regex_key.empty())
-        regex_key = _pos_regex;
-    else if(!_pos_regex.empty())
-    {
-        regex_key.append("|" + _pos_regex);
-    }
+    if(!_pos_regex.empty())
+        regex_keys.emplace_back(_pos_regex);
 
     auto _parser_set_if_exists = [&parser](auto& _var, const std::string& _opt) {
         using Tp = decay_t<decltype(_var)>;
@@ -376,12 +388,18 @@ main(int argc, char** argv)
     if(include_components)
         write_component_info(*os, options, use_mark, fields);
 
+    dump_log();
+
     if(include_settings)
         write_settings_info(*os, { options[VAL], options[LANG], options[DESC] });
+
+    dump_log();
 
     if(include_hw_counters)
         write_hw_counter_info(
             *os, { true, !force_brief, options[LANG], !options[DESC], options[DESC] });
+
+    dump_log();
 
     return 0;
 }
@@ -470,19 +488,27 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
     for(const auto& itr : _info)
     {
         {
+            int               _selected = 0;
             std::stringstream ss;
+            _selected += (is_selected(std::get<0>(itr))) ? 1 : 0;
             write_entry(ss, std::get<0>(itr), _widths.at(0), false, true);
             if(!force_brief)
-                write_entry(ss, std::get<1>(itr), _widths.at(1), true, false);
+            {
+                std::stringstream _avss{};
+                _avss << std::boolalpha << std::get<1>(itr);
+                _selected += (is_selected(_avss.str())) ? 1 : 0;
+            }
+            write_entry(ss, std::get<1>(itr), _widths.at(1), true, false);
             for(size_t i = 0; i < std::get<2>(itr).size(); ++i)
             {
                 if(!options[i])
                     continue;
                 bool center = (i > 0) ? false : true;
+                _selected += (is_selected(std::get<2>(itr).at(i))) ? 1 : 0;
                 write_entry(ss, std::get<2>(itr).at(i), _widths.at(i + 2), center,
                             _mark.at(i));
             }
-            if(!not_filtered(ss.str()))
+            if(_selected == 0)
                 continue;
         }
 
@@ -510,6 +536,8 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
         }
     }
 
+    dump_log();
+
     _widths = compute_max_columns(_widths, _wusing);
 
     if(!markdown)
@@ -530,26 +558,36 @@ write_component_info(std::ostream& os, const array_t<bool, N>& options,
 
     for(const auto& itr : _info)
     {
+        int               _selected = 0;
         std::stringstream ss;
+        _selected += (is_selected(std::get<0>(itr))) ? 1 : 0;
         write_entry(ss, std::get<0>(itr), _widths.at(0), false, true);
         if(!force_brief)
+        {
+            std::stringstream _avss{};
+            _avss << std::boolalpha << std::get<1>(itr);
+            _selected += (is_selected(_avss.str())) ? 1 : 0;
             write_entry(ss, std::get<1>(itr), _widths.at(1), true, false);
+        }
         for(size_t i = 0; i < std::get<2>(itr).size(); ++i)
         {
             if(!options[i])
                 continue;
             bool center = (i > 0) ? false : true;
+            _selected += (is_selected(std::get<2>(itr).at(i))) ? 1 : 0;
             write_entry(ss, std::get<2>(itr).at(i), _widths.at(i + 2), center,
                         _mark.at(i));
         }
 
-        if(not_filtered(ss.str()))
+        if(_selected > 0)
         {
             os << global_delim;
-            os << hl_filtered(ss.str());
+            os << hl_selected(ss.str());
             os << "\n";
         }
     }
+
+    dump_log();
 
     if(!markdown)
         os << banner(_widths, _wusing, '-');
@@ -610,7 +648,12 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
                                       "description" };
     array_t<bool, size>     _center = { false, true, true, false, false, false, false };
 
-    std::vector<array_t<string_t, size>> _results;
+    for(size_t i = 0; i < _widths.size(); ++i)
+    {
+        _widths.at(i) = std::max<uint64_t>(_widths.at(i), _labels.at(i).size() + padding);
+    }
+
+    std::vector<array_t<string_t, size>> _results{};
     for(const auto& itr : _setting_output)
     {
         array_t<string_t, size> _tmp{};
@@ -626,23 +669,28 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
 
     for(const auto& itr : _results)
     {
-        std::stringstream ss;
+        // save the widths in case this gets filtered
+        auto              _last_widths = _widths;
+        std::stringstream ss{};
+        int               _selected = 0;
         for(size_t i = 0; i < itr.size(); ++i)
         {
             if(!_wusing.at(i))
                 continue;
+            _widths.at(i) =
+                std::max<uint64_t>(_widths.at(i), itr.at(i).length() + padding);
+            _selected += (is_selected(itr.at(i))) ? 1 : 0;
             write_entry(ss, itr.at(i), _widths.at(i), _center.at(i), _mark.at(i));
         }
 
-        if(!not_filtered(ss.str()))
-            continue;
-
-        for(size_t i = 0; i < itr.size(); ++i)
+        if(_selected == 0)
         {
-            _widths.at(i) =
-                std::max<uint64_t>(_widths.at(i), itr.at(i).length() + padding);
+            _widths = _last_widths;
+            continue;
         }
     }
+
+    dump_log();
 
     _widths = compute_max_columns(_widths, _wusing);
 
@@ -660,21 +708,25 @@ write_settings_info(std::ostream& os, const array_t<bool, N>& opts,
 
     for(const auto& itr : _results)
     {
-        std::stringstream ss;
+        std::stringstream ss{};
+        int               _selected = 0;
         for(size_t i = 0; i < itr.size(); ++i)
         {
             if(!_wusing.at(i))
                 continue;
+            _selected += (is_selected(itr.at(i))) ? 1 : 0;
             write_entry(ss, itr.at(i), _widths.at(i), _center.at(i), _mark.at(i));
         }
 
-        if(not_filtered(ss.str()))
+        if(_selected > 0)
         {
             os << global_delim;
-            os << hl_filtered(ss.str());
+            os << hl_selected(ss.str());
             os << "\n";
         }
     }
+
+    dump_log();
 
     if(!markdown)
         os << banner(_widths, _wusing, '-');
@@ -809,13 +861,18 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
         for(const auto& itr : fitr)
         {
             std::stringstream ss;
-
+            int               _selected = 0;
             if(options[0])
             {
+                _selected += (is_selected(itr.symbol())) ? 1 : 0;
                 write_entry(ss, itr.symbol(), _widths.at(0), _center.at(0), _mark.at(0));
             }
+
             if(options[1])
             {
+                std::stringstream _avss{};
+                _avss << std::boolalpha << itr.available();
+                _selected += (is_selected(_avss.str())) ? 1 : 0;
                 write_entry(ss, itr.available(), _widths.at(1), _center.at(1),
                             _mark.at(1));
             }
@@ -826,17 +883,22 @@ write_hw_counter_info(std::ostream& os, const array_t<bool, N>& options,
             for(size_t i = 2; i < N; ++i)
             {
                 if(options[i])
+                {
+                    _selected += (is_selected(_e.at(i))) ? 1 : 0;
                     write_entry(ss, _e.at(i), _widths.at(i), _center.at(i), _mark.at(i));
+                }
             }
 
-            if(not_filtered(ss.str()))
+            if(_selected > 0)
             {
                 os << global_delim;
-                os << hl_filtered(ss.str());
+                os << hl_selected(ss.str());
                 os << "\n";
             }
         }
     }
+
+    dump_log();
 
     if(!markdown)
         os << banner(_widths, _wusing, '-');
@@ -1036,7 +1098,7 @@ compute_max_columns(IntArrayT _widths, BoolArrayT _using)
             std::stringstream _msg;
             for(size_t i = 0; i < _widths.size(); ++i)
                 _msg << ", " << ((_using.at(i)) ? _widths.at(i) : 0);
-            std::cout << "[temp]>  sum_width = " << _get_sum()
+            std::cerr << "[ temp]> sum_width = " << _get_sum()
                       << ", max_width = " << _max_width
                       << ", widths = " << _msg.str().substr(2) << std::endl;
         }
@@ -1055,7 +1117,7 @@ compute_max_columns(IntArrayT _widths, BoolArrayT _using)
         std::stringstream _msg;
         for(size_t i = 0; i < _widths.size(); ++i)
             _msg << ", " << ((_using.at(i)) ? _widths.at(i) : 0);
-        std::cout << "[final]> sum_width = " << _get_sum()
+        std::cerr << "[final]> sum_width = " << _get_sum()
                   << ", max_width = " << _max_width
                   << ", widths = " << _msg.str().substr(2)
                   << ", column max width = " << max_width << std::endl;
@@ -1170,33 +1232,100 @@ banner(IntArrayT _breaks, std::array<bool, N> _use, char filler, char delim)
 
 //--------------------------------------------------------------------------------------//
 
-bool
-not_filtered(const std::string& line)
+namespace regex_const = std::regex_constants;
+
+namespace
 {
-    bool _display = regex_key.empty();
-    if(!_display)
+const auto&
+get_regex_constants()
+{
+    static auto _constants = []() {
+        auto _v = regex_const::egrep | regex_const::optimize;
+        if(case_insensitive)
+            _v |= regex_const::icase;
+        return _v;
+    }();
+    return _constants;
+}
+
+const std::string&
+get_regex_pattern()
+{
+    static std::string _pattern = []() {
+        std::string _v{};
+        for(const auto& itr : regex_keys)
+        {
+            lerr << "Adding regex key: '" << itr << "'...\n";
+            _v += "|" + itr;
+        }
+        return (_v.empty()) ? _v : _v.substr(1);
+    }();
+    return _pattern;
+}
+
+auto
+get_regex()
+{
+    static auto _rc = std::regex(get_regex_pattern(), get_regex_constants());
+    return _rc;
+}
+
+bool
+regex_match(const std::string& _line)
+{
+    if(get_regex_pattern().empty())
+        return true;
+
+    static size_t lerr_width = 0;
+    lerr_width               = std::max<size_t>(lerr_width, _line.length());
+    std::stringstream _line_ss;
+    _line_ss << "'" << _line << "'";
+
+    if(std::regex_match(_line, get_regex()))
     {
-        const auto _rc = regex_const::egrep | regex_const::optimize;
-        const auto _re = std::regex(regex_key, _rc);
-        _display       = std::regex_search(line, _re);
+        lerr << std::left << std::setw(lerr_width) << _line_ss.str()
+             << " matched pattern '" << get_regex_pattern() << "'...\n";
+        return true;
     }
-    return _display;
+    if(std::regex_search(_line, get_regex()))
+    {
+        lerr << std::left << std::setw(lerr_width) << _line_ss.str() << " found pattern '"
+             << get_regex_pattern() << "'...\n";
+        return true;
+    }
+
+    lerr << std::left << std::setw(lerr_width) << _line_ss.str() << " missing pattern '"
+         << get_regex_pattern() << "'...\n";
+    return false;
+}
+
+std::string
+regex_replace(const std::string& _line)
+{
+#if defined(TIMEMORY_UNIX)
+    if(get_regex_pattern().empty())
+        return _line;
+    if(regex_match(_line))
+        return std::regex_replace(_line, get_regex(), "\33[01;04;36;40m$&\33[0m");
+#endif
+    return _line;
+}
+}  // namespace
+
+//--------------------------------------------------------------------------------------//
+
+bool
+is_selected(const std::string& _line)
+{
+    return regex_match(_line);
 }
 
 //--------------------------------------------------------------------------------------//
 
 std::string
-hl_filtered(std::string line)
+hl_selected(const std::string& _line)
 {
-#if defined(TIMEMORY_UNIX)
-    if(regex_hl)
-    {
-        const auto _rc = regex_const::egrep | regex_const::optimize;
-        const auto _re = std::regex(regex_key, _rc);
-        line           = std::regex_replace(line, _re, "\33[01;04;36;40m$&\33[0m");
-    }
-#endif
-    return line;
+    return (regex_hl) ? regex_replace(_line) : _line;
 }
 
 //--------------------------------------------------------------------------------------//
