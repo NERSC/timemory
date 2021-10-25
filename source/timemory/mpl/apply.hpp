@@ -64,7 +64,7 @@ struct apply
     template <typename SepT, typename Arg,
               enable_if_t<std::is_same<Ret, std::string>::value, char> = 0>
     static TIMEMORY_INLINE Ret join_tail(std::stringstream& _ss, const SepT& _sep,
-                                             Arg&& _arg)
+                                         Arg&& _arg)
     {
         _ss << _sep << std::forward<Arg>(_arg);
         return _ss.str();
@@ -76,7 +76,7 @@ struct apply
     template <typename SepT, typename Arg, typename... Args,
               enable_if_t<std::is_same<Ret, std::string>::value, char> = 0>
     static TIMEMORY_INLINE Ret join_tail(std::stringstream& _ss, const SepT& _sep,
-                                             Arg&& _arg, Args&&... __args)
+                                         Arg&& _arg, Args&&... __args)
     {
         _ss << _sep << std::forward<Arg>(_arg);
         return join_tail<SepT, Args...>(_ss, _sep, std::forward<Args>(__args)...);
@@ -99,8 +99,8 @@ struct apply
     template <typename SepT, typename Arg, typename... Args,
               enable_if_t<std::is_same<Ret, std::string>::value, char> = 0,
               enable_if_t<(sizeof...(Args) > 0), int>                  = 0>
-    static TIMEMORY_INLINE Ret join(std::stringstream& _ss, const SepT& _sep,
-                                        Arg&& _arg, Args&&... __args)
+    static TIMEMORY_INLINE Ret join(std::stringstream& _ss, const SepT& _sep, Arg&& _arg,
+                                    Args&&... __args)
     {
         _ss << std::forward<Arg>(_arg);
         return join_tail<SepT, Args...>(_ss, _sep, std::forward<Args>(__args)...);
@@ -174,7 +174,7 @@ struct apply<void>
     //
     template <typename Type, typename... Args, size_t... Idx>
     static TIMEMORY_INLINE void construct_tuple(std::tuple<Args...>&& _args,
-                                                    index_sequence<Idx>...)
+                                                index_sequence<Idx>...)
     {
         construct<Type>(std::get<Idx>(_args)...);
     }
@@ -184,7 +184,7 @@ struct apply<void>
     template <template <typename> class Access, typename Tuple, typename... Args,
               size_t... Idx>
     static TIMEMORY_INLINE void unroll_access(Tuple&& __t, index_sequence<Idx...>,
-                                                  Args&&... __args)
+                                              Args&&... __args)
     {
         TIMEMORY_FOLD_EXPRESSION(Access<decay_t<decltype(std::get<Idx>(__t))>>(
             std::forward<decltype(std::get<Idx>(__t))>(std::get<Idx>(__t)),
@@ -195,7 +195,7 @@ struct apply<void>
 
     template <typename Access, typename Tuple, typename... Args, size_t... Idx>
     static TIMEMORY_INLINE void variadic_1d(Tuple&& __t, Args&&... _args,
-                                                index_sequence<Idx...>)
+                                            index_sequence<Idx...>)
     {
         TIMEMORY_FOLD_EXPRESSION(
             construct<typename std::tuple_element<Idx, Access>::type>(
@@ -206,8 +206,8 @@ struct apply<void>
 
     template <typename Access, typename TupleA, typename TupleB, typename... Args,
               size_t... Idx>
-    static TIMEMORY_INLINE void variadic_2d(TupleA&& __a, TupleB&& __b,
-                                                Args&&... _args, index_sequence<Idx...>)
+    static TIMEMORY_INLINE void variadic_2d(TupleA&& __a, TupleB&& __b, Args&&... _args,
+                                            index_sequence<Idx...>)
     {
         TIMEMORY_FOLD_EXPRESSION(
             construct<typename std::tuple_element<Idx, Access>::type>(
@@ -229,8 +229,8 @@ struct apply<void>
 
     template <typename Access, typename Tuple, typename... Args, size_t... Idx>
     static TIMEMORY_INLINE void apply_access_with_indices(Tuple&& __t,
-                                                              index_sequence<Idx...>,
-                                                              Args&&... __args)
+                                                          index_sequence<Idx...>,
+                                                          Args&&... __args)
     {
         // call constructor
         TIMEMORY_FOLD_EXPRESSION(decay_t<typename std::tuple_element<Idx, Access>::type>(
@@ -244,8 +244,7 @@ struct apply<void>
     template <typename Access, typename TupleA, typename TupleB, typename... Args,
               size_t... Idx>
     static TIMEMORY_INLINE void apply_access2(TupleA&& __ta, TupleB&& __tb,
-                                                  index_sequence<Idx...>,
-                                                  Args&&... __args)
+                                              index_sequence<Idx...>, Args&&... __args)
     {
         // call constructor
         TIMEMORY_FOLD_EXPRESSION(decay_t<typename std::tuple_element<Idx, Access>::type>(
@@ -407,7 +406,7 @@ struct apply
 
     template <typename SepT, typename Tuple, size_t... Idx>
     static TIMEMORY_INLINE string_t join(SepT&& separator, Tuple&& __tup,
-                                             index_sequence<Idx...>) noexcept
+                                         index_sequence<Idx...>) noexcept
     {
         return apply<string_t>::join(separator, std::get<Idx>(__tup)...);
     }
@@ -451,8 +450,7 @@ struct apply<std::tuple<std::string>>
               size_t N                  = std::tuple_size<decay_t<LabelTup>>::value,
               enable_if_t<(N > 0), int> = 0>
     static TIMEMORY_INLINE Ret join(LabelSep&& _label_sep, EntrySep&& _entry_sep,
-                                        LabelTup&& _label_tup,
-                                        EntryTup&& _entry_tup) noexcept
+                                    LabelTup&& _label_tup, EntryTup&& _entry_tup) noexcept
     {
         // clang-format off
         return impl::join(std::forward<LabelSep>(_label_sep),
@@ -470,7 +468,7 @@ struct apply<std::tuple<std::string>>
               size_t N                 = std::tuple_size<decay_t<LabelTup>>::value,
               enable_if_t<N == 0, int> = 0>
     static TIMEMORY_INLINE Ret join(LabelSep&&, EntrySep&&, LabelTup&&,
-                                        EntryTup&&) noexcept
+                                    EntryTup&&) noexcept
     {
         return "";
     }
@@ -572,7 +570,7 @@ struct apply<void>
 
     template <typename Tuple, typename Value, size_t... Idx>
     static TIMEMORY_INLINE void set_value_fold(Tuple&& _t, Value&& _v,
-                                                   index_sequence<Idx...>) noexcept
+                                               index_sequence<Idx...>) noexcept
     {
         TIMEMORY_FOLD_EXPRESSION(
             set_value_fold(std::get<Idx>(_t), 0, std::forward<Value>(_v)));
@@ -592,7 +590,7 @@ struct apply<void>
 
     template <typename Access, typename Tuple, size_t... Idx, typename... Args>
     static TIMEMORY_INLINE void access_fold(Tuple&& _t, index_sequence<Idx...>,
-                                                Args&&... _args)
+                                            Args&&... _args)
     {
         TIMEMORY_FOLD_EXPRESSION(
             Access_t<Idx, Access>(std::get<Idx>(_t), std::forward<Args>(_args)...));
@@ -633,7 +631,7 @@ struct apply<void>
 
     template <typename Access, typename Tuple, typename... Args>
     static TIMEMORY_INLINE void access_with_indices(Tuple&& __t,
-                                                        Args&&... __args) noexcept
+                                                    Args&&... __args) noexcept
     {
         constexpr auto N = std::tuple_size<decay_t<Tuple>>::value;
         internal::apply<void>::template apply_access_with_indices<Access, Tuple, Args...>(
@@ -645,7 +643,7 @@ struct apply<void>
 
     template <typename Access, typename TupleA, typename TupleB, typename... Args>
     static TIMEMORY_INLINE void access2(TupleA&& __ta, TupleB&& __tb,
-                                            Args&&... __args) noexcept
+                                        Args&&... __args) noexcept
     {
         constexpr size_t N  = std::tuple_size<decay_t<Access>>::value;
         constexpr size_t Na = std::tuple_size<decay_t<TupleA>>::value;
