@@ -175,7 +175,7 @@ public:
     user_bundle()
     : m_scope(scope::get_default())
     , m_typeids(get_typeids())
-    , m_bundle(get_data())
+    , m_bundle{ (persistent_init(), get_data()) }  // comma operator
     {}
 
     user_bundle(const user_bundle& rhs)
@@ -193,7 +193,7 @@ public:
     : m_scope(_scope)
     , m_prefix(_prefix)
     , m_typeids(get_typeids())
-    , m_bundle(get_data())
+    , m_bundle{ (persistent_init(), get_data()) }  // comma operator
     {}
 
     user_bundle(const char* _prefix, opaque_array_t _bundle_vec, typeid_vec_t _typeids,
@@ -448,12 +448,15 @@ public:
                                               factory::get_typeids<Types>()));
     }
 
+private:
+    static bool persistent_init();
+
 protected:
     bool           m_setup   = false;
     scope::config  m_scope   = {};
     const char*    m_prefix  = nullptr;
     typeid_vec_t   m_typeids = get_typeids();
-    opaque_array_t m_bundle  = get_data();
+    opaque_array_t m_bundle  = (persistent_init(), get_data());  // comma operator
 
 protected:
     static bool contains(size_t _val, const typeid_vec_t& _targ)
@@ -468,18 +471,20 @@ private:
 
     struct persistent_data
     {
-        bool                      m_init = false;
+        volatile bool             m_init = false;
         mutex_t                   m_lock;
         opaque_array_t            m_data     = {};
         typeid_vec_t              m_typeids  = {};
         std::shared_ptr<settings> m_settings = settings::shared_instance();
 
-        bool init()
+        bool init(bool _preinit = false)
         {
-            if(!m_init && m_settings /*&& m_settings->get_initialized()*/)
+            if(!m_init)
             {
-                m_init = true;
-                env::initialize_bundle<Idx, Tag>();
+                if(m_settings && m_settings->get_initialized())
+                    m_init = (reset(), true);  // comma operator
+                if(m_init || _preinit)
+                    env::initialize_bundle<Idx, Tag>();
             }
             return m_init;
         }
@@ -489,11 +494,7 @@ public:
     //----------------------------------------------------------------------------------//
     //  Bundle data
     //
-    static opaque_array_t& get_data()
-    {
-        get_persistent_data().init();
-        return get_persistent_data().m_data;
-    }
+    static opaque_array_t& get_data() { return get_persistent_data().m_data; }
 
     //----------------------------------------------------------------------------------//
     //  The configuration strings
@@ -514,7 +515,7 @@ user_bundle<Idx, Tag>::global_init()
 {
     if(settings::verbose() > 2 || settings::debug())
         PRINT_HERE("Global initialization of %s", demangle<this_type>().c_str());
-    get_persistent_data().init();
+    get_persistent_data().init(true);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -525,6 +526,15 @@ user_bundle<Idx, Tag>::get_persistent_data()
 {
     static persistent_data _instance{};
     return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Idx, typename Tag>
+bool
+user_bundle<Idx, Tag>::persistent_init()
+{
+    return get_persistent_data().init();
 }
 //
 //--------------------------------------------------------------------------------------//
