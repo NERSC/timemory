@@ -27,6 +27,7 @@
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/utility/filepath.hpp"
 
 #include <fstream>
 #include <string>
@@ -67,8 +68,8 @@ generic_serialization(
     const std::string& _data_name = "data",
     FuncT&& _func = [](typename policy::output_archive_t<decay_t<Tp>>::type&) {})
 {
-    std::ofstream ofs(fname.c_str());
-    if(ofs)
+    std::ofstream ofs{};
+    if(filepath::open(ofs, fname))
     {
         // ensure json write final block during destruction before the file is closed
         using policy_type = policy::output_archive_t<decay_t<Tp>>;
@@ -106,8 +107,8 @@ generic_serialization(
 {
     static_assert(concepts::is_output_archive<ArchiveT>::value,
                   "Error! Not an output archive type");
-    std::ofstream ofs(fname.c_str());
-    if(ofs)
+    std::ofstream ofs{};
+    if(filepath::open(ofs, fname))
     {
         // ensure json write final block during destruction before the file is closed
         using policy_type = policy::output_archive<ArchiveT, ApiT>;

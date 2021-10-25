@@ -39,16 +39,6 @@
 #include "timemory/utility/transient_function.hpp"
 #include "timemory/utility/types.hpp"
 
-#if defined(TIMEMORY_WINDOWS)
-// Without this include on windows launch_process is needed by makedir but is
-// missing at link time. With this include on linux there is a problem with
-// delimit not being defined before it is used in popen.hpp. I think including
-// popen.hpp at the end of this header would be portable and not need the ifdef,
-// but that would be too weird, so we may have to live with the ifdef. (At
-// least until makedir is implemented using std::filesystem.)
-#    include "timemory/utility/popen.hpp"
-#endif
-
 #if defined(TIMEMORY_USE_LIBUNWIND)
 #    include <libunwind.h>
 #endif
@@ -91,8 +81,8 @@
 using pid_t = int;
 #endif
 
-#if !defined(DEFAULT_UMASK)
-#    define DEFAULT_UMASK 0777
+#if !defined(TIMEMORY_DEFAULT_UMASK)
+#    define TIMEMORY_DEFAULT_UMASK 0777
 #endif
 
 //--------------------------------------------------------------------------------------//
@@ -113,12 +103,6 @@ using mutex_t = std::recursive_mutex;
 /// \typedef std::unique_lock<std::recursive_mutex> auto_lock_t
 /// \brief Unique lock type around \ref mutex_t
 using auto_lock_t = std::unique_lock<mutex_t>;
-
-//--------------------------------------------------------------------------------------//
-// definition in popen.hpp
-bool
-launch_process(const char* cmd, const std::string& extra = "",
-               std::ostream* os = nullptr);
 
 //--------------------------------------------------------------------------------------//
 
@@ -337,7 +321,7 @@ TIMEMORY_UTILITY_INLINE std::string
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_UTILITY_INLINE int
-makedir(std::string _dir, int umask = DEFAULT_UMASK);
+makedir(std::string _dir, int umask = TIMEMORY_DEFAULT_UMASK);
 
 //--------------------------------------------------------------------------------------//
 
@@ -783,9 +767,10 @@ public:
     TIMEMORY_UTILITY_INLINE path& insert(size_type __pos, const path& __s);
 
     // OS-dependent representation
-    static std::string osrepr(std::string _path);
-    static std::string os();
-    static std::string inverse();
+    static TIMEMORY_UTILITY_INLINE std::string osrepr(std::string _path);
+    static TIMEMORY_UTILITY_INLINE std::string os();
+    static TIMEMORY_UTILITY_INLINE std::string inverse();
+    static TIMEMORY_UTILITY_INLINE std::string canonical(std::string _path);
 };
 }  // namespace utility
 

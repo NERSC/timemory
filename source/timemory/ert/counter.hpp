@@ -42,6 +42,7 @@
 #include "timemory/mpl/apply.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/utility/filepath.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>
@@ -417,8 +418,8 @@ serialize(std::string fname, exec_data<Counter>& obj)
     {
         fname = settings::compose_output_filename(fname, ".json");
         printf("[%i]> Outputting '%s'...\n", dmp_rank, fname.c_str());
-        std::ofstream ofs(fname.c_str());
-        if(ofs)
+        std::ofstream ofs{};
+        if(filepath::open(ofs, fname))
         {
             // ensure json write final block during destruction before the file is closed
             using policy_type = policy::output_archive_t<Counter>;
