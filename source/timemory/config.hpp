@@ -33,5 +33,8 @@
 #include "timemory/config/macros.hpp"
 #include "timemory/config/types.hpp"
 //
-#include "timemory/config/declaration.hpp"
-#include "timemory/config/definition.hpp"
+#include "timemory/config/config.hpp"
+//
+#if !defined(TIMEMORY_USE_CONFIG_EXTERN)
+#    include "timemory/config/config.cpp"
+#endif

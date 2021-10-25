@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 /**
- * \file timemory/config/declaration.hpp
+ * \file timemory/config/config.hpp
  * \brief The declaration for the types for config without definitions
  */
 

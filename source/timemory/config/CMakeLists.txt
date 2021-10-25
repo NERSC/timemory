@@ -3,6 +3,7 @@ file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 build_intermediate_library(
     USE_INTERFACE
+    INSTALL_SOURCE
     NAME config
     TARGET common
     CATEGORY GLOBAL
