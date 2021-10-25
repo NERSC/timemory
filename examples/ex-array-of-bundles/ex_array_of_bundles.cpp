@@ -238,8 +238,8 @@ main(int argc, char** argv)
         // in settings to the first parameter, appends a time-stamped directory
         // if that is enabled, and so on. Then, it just tacks on the extension provided.
         std::string   outfname = tim::settings::compose_output_filename(_bname, ".json");
-        std::ofstream ofs(outfname);
-        if(ofs)
+        std::ofstream ofs{};
+        if(tim::filepath::open(ofs, outfname))
         {
             std::cout << "--> Writing " << outfname << "..." << std::endl;
             // tim::available_types_t is just a tim::type_list<...> of all the
