@@ -34,7 +34,10 @@
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/types.hpp"
 
+#include <cstring>
 #include <fstream>
+#include <iostream>
+#include <sstream>
 #include <string>
 
 #if defined(TIMEMORY_UNIX)

@@ -162,7 +162,7 @@ endforeach()
 #
 if(SKBUILD)
     return()
-else()
+elseif(TIMEMORY_USE_PYTHON AND CMAKE_INSTALL_PYTHONDIR)
     foreach(_FILE setup.py setup.cfg VERSION requirements.txt .requirements/build.txt .requirements/runtime.txt .requirements/mpi_runtime.txt)
         configure_file(${PROJECT_SOURCE_DIR}/${_FILE} ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
     endforeach()
