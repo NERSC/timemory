@@ -99,6 +99,11 @@ initialize_bundle(AltApi _api = AltApi{})
     auto  itr              = variables.find(Idx);
     if(itr != variables.end())
     {
+        CONDITIONAL_PRINT_HERE(
+            (settings::instance()) ? (settings::instance()->get_debug()) : false,
+            "getting user bundle components for type %s (%s)",
+            demangle<user_bundle_type>().c_str(), user_bundle_type::label().c_str());
+
         auto _enum = env::get_bundle_components(itr->second);
         tim::configure<user_bundle_type>(_enum);
     }
@@ -458,23 +463,37 @@ protected:
     }
 
 private:
+    struct persistent_data;
+    static persistent_data& get_persistent_data() TIMEMORY_VISIBILITY("default");
+
     struct persistent_data
     {
-        mutex_t        m_lock;
-        opaque_array_t m_data    = {};
-        typeid_vec_t   m_typeids = {};
-    };
+        bool                      m_init = false;
+        mutex_t                   m_lock;
+        opaque_array_t            m_data     = {};
+        typeid_vec_t              m_typeids  = {};
+        std::shared_ptr<settings> m_settings = settings::shared_instance();
 
-    //----------------------------------------------------------------------------------//
-    //  Persistent data
-    //
-    static persistent_data& get_persistent_data() TIMEMORY_VISIBILITY("default");
+        bool init()
+        {
+            if(!m_init && m_settings /*&& m_settings->get_initialized()*/)
+            {
+                m_init = true;
+                env::initialize_bundle<Idx, Tag>();
+            }
+            return m_init;
+        }
+    };
 
 public:
     //----------------------------------------------------------------------------------//
     //  Bundle data
     //
-    static opaque_array_t& get_data() { return get_persistent_data().m_data; }
+    static opaque_array_t& get_data()
+    {
+        get_persistent_data().init();
+        return get_persistent_data().m_data;
+    }
 
     //----------------------------------------------------------------------------------//
     //  The configuration strings
@@ -495,7 +514,7 @@ user_bundle<Idx, Tag>::global_init()
 {
     if(settings::verbose() > 2 || settings::debug())
         PRINT_HERE("Global initialization of %s", demangle<this_type>().c_str());
-    env::initialize_bundle<Idx, Tag>();
+    get_persistent_data().init();
 }
 //
 //--------------------------------------------------------------------------------------//
