@@ -37,6 +37,7 @@
 #    include "timemory/utility/bits/signals.hpp"
 #    include "timemory/utility/declaration.hpp"
 #    include "timemory/utility/filepath.hpp"
+#    include "timemory/utility/md5.hpp"
 #    include "timemory/utility/utility.hpp"
 #    include "timemory/variadic/macros.hpp"
 
@@ -179,7 +180,7 @@ settings::get_global_input_prefix()
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
-settings::get_global_output_prefix(bool fake)
+settings::get_global_output_prefix(bool _make_dir)
 {
     static auto _settings = instance();
 
@@ -210,8 +211,9 @@ settings::get_global_output_prefix(bool fake)
         }
     }
 
-    // always return zero if fake. if makedir failed, don't prefix with directory
-    auto ret = (fake) ? 0 : makedir(_dir);
+    // always return zero if not making dir. if makedir failed, don't prefix with
+    // directory
+    auto ret = (_make_dir) ? makedir(_dir) : 0;
     return (ret == 0) ? filepath::osrepr(_dir + std::string("/") + _prefix)
                       : filepath::osrepr(std::string("./") + _prefix);
 }
@@ -230,14 +232,94 @@ settings::store_command_line(int argc, char** argv)
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_SETTINGS_INLINE std::string
+                         settings::format(std::string _fpath, std::string _tag)
+{
+    auto        _cmdline     = command_line();
+    std::string _arg0_string = {};    // only the first cmdline arg
+    std::string _tag0_string = _tag;  // only the basic prefix
+    std::string _argv_string = {};    // entire argv cmd
+    std::string _argt_string = _tag;  // prefix + cmdline args
+    std::string _args_string = {};    // cmdline args
+    if(_cmdline.size() > 0)
+    {
+        _arg0_string.append(_cmdline.at(0));
+        for(size_t i = 0; i < _cmdline.size(); ++i)
+            _argv_string.append(_cmdline.at(i));
+        for(size_t i = 1; i < _cmdline.size(); ++i)
+        {
+            _argt_string.append(_cmdline.at(i));
+            _args_string.append(_cmdline.at(i));
+        }
+    }
+
+    using strpairvec_t = std::vector<std::pair<std::string, std::string>>;
+    for(auto&& itr :
+        strpairvec_t{ { "--", "-" },
+                      { "__", "_" },
+                      { "//", "/" },
+                      { "%arg0%", _arg0_string },
+                      { "%arg0_hash%", md5::compute_md5(_arg0_string) },
+                      { "%argv%", _arg0_string },
+                      { "%argv_hash%", md5::compute_md5(_argv_string) },
+                      { "%argt%", _argt_string },
+                      { "%argt_hash%", md5::compute_md5(_argt_string) },
+                      { "%args%", _args_string },
+                      { "%args_hash%", md5::compute_md5(_args_string) },
+                      { "%tag%", _tag0_string },
+                      { "%tag_hash%", md5::compute_md5(_tag0_string) },
+                      { "%pid%", std::to_string(tim::process::get_id()) },
+                      { "%job%", std::to_string(tim::get_env("SLURM_JOB_ID", 0)) },
+                      { "%rank%", std::to_string(get_env("SLURM_PROCID", dmp::rank())) },
+                      { "%size%", std::to_string(dmp::size()) },
+                      { "%m", md5::compute_md5(_argt_string) },
+                      { "%p", std::to_string(tim::process::get_id()) },
+                      { "%j", std::to_string(tim::get_env("SLURM_JOB_ID", 0)) },
+                      { "%r", std::to_string(get_env("SLURM_PROCID", dmp::rank())) },
+                      { "%s", std::to_string(dmp::size()) } })
+    {
+        auto pos = std::string::npos;
+        while((pos = _fpath.find(itr.first)) != std::string::npos)
+            _fpath.replace(pos, itr.first.length(), itr.second);
+    }
+    return _fpath;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 TIMEMORY_SETTINGS_INLINE
 std::string
-settings::compose_output_filename(const std::string& _tag, std::string _ext,
-                                  bool _mpi_init, const int32_t _mpi_rank, bool fake,
+settings::format(std::string _prefix, std::string _tag, std::string _suffix,
+                 std::string _ext)
+{
+    // add period before extension
+    if(_ext.find('.') != 0)
+        _ext = std::string(".") + _ext;
+
+    // if the tag contains the extension, remove it
+    auto _ext_pos = _tag.length() - _ext.length();
+    if(_tag.find(_ext) == _ext_pos)
+        _tag = _tag.substr(0, _ext_pos);
+
+    auto plast = static_cast<intmax_t>(_prefix.length()) - 1;
+    // add dash if not empty, not ends in '/', and last char is alphanumeric
+    if(!_prefix.empty() && _prefix[plast] != '/' && isalnum(_prefix[plast]))
+        _prefix += "-";
+
+    return format(_prefix + _tag + _suffix + _ext,
+                  (instance()) ? instance()->get_tag() : get_fallback_tag());
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_SETTINGS_INLINE
+std::string
+settings::compose_output_filename(std::string _tag, std::string _ext, bool _dmp_init,
+                                  const int32_t _dmp_rank, bool _make_dir,
                                   std::string _explicit)
 {
     // if there isn't an explicit prefix, get the <OUTPUT_PATH>/<OUTPUT_PREFIX>
-    auto _prefix = (!_explicit.empty()) ? _explicit : get_global_output_prefix(fake);
+    auto _prefix = (!_explicit.empty()) ? _explicit : get_global_output_prefix(_make_dir);
 
     // return on empty
     if(_prefix.empty())
@@ -249,7 +331,7 @@ settings::compose_output_filename(const std::string& _tag, std::string _ext,
                   _prefix.end());
 
     // if explicit prefix is provided, then make the directory
-    if(!_explicit.empty())
+    if(!_explicit.empty() && _make_dir)
     {
         auto ret = makedir(_prefix);
         if(ret != 0)
@@ -257,36 +339,22 @@ settings::compose_output_filename(const std::string& _tag, std::string _ext,
     }
 
     // add the mpi rank if not root
-    auto _rank_suffix = (_mpi_init && _mpi_rank >= 0)
-                            ? (std::string("_") + std::to_string(_mpi_rank))
-                            : std::string("");
+    auto _suffix = (_dmp_init && _dmp_rank >= 0)
+                       ? (std::string("_") + std::to_string(_dmp_rank))
+                       : std::string("");
 
-    // add period before extension
-    if(_ext.find('.') != 0)
-        _ext = std::string(".") + _ext;
-    auto plast = static_cast<intmax_t>(_prefix.length()) - 1;
-    // add dash if not empty, not ends in '/', and last char is alphanumeric
-    if(!_prefix.empty() && _prefix[plast] != '/' && isalnum(_prefix[plast]))
-        _prefix += "-";
     // create the path
-    std::string fpath  = _prefix + _tag + _rank_suffix + _ext;
-    using strpairvec_t = std::vector<std::pair<std::string, std::string>>;
-    for(auto&& itr : strpairvec_t{ { "--", "-" }, { "__", "_" }, { "//", "/" } })
-    {
-        auto pos = std::string::npos;
-        while((pos = fpath.find(itr.first)) != std::string::npos)
-            fpath.replace(pos, itr.first.length(), itr.second);
-    }
-    return filepath::osrepr(fpath);
+    std::string _fpath = format(_prefix, _tag, _suffix, _ext);
+
+    return filepath::osrepr(_fpath);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
-settings::compose_input_filename(const std::string& _tag, std::string _ext,
-                                 bool _mpi_init, const int32_t _mpi_rank,
-                                 std::string _explicit)
+settings::compose_input_filename(std::string _tag, std::string _ext, bool _dmp_init,
+                                 const int32_t _dmp_rank, std::string _explicit)
 {
     if(settings::input_path().empty())
         settings::input_path() = settings::output_path();
@@ -304,18 +372,14 @@ settings::compose_input_filename(const std::string& _tag, std::string _ext,
     if(_explicit.length() > 0)
         _prefix = filepath::osrepr(std::string("./"));
 
-    auto _rank_suffix = (_mpi_init && _mpi_rank >= 0)
-                            ? (std::string("_") + std::to_string(_mpi_rank))
-                            : std::string("");
-    if(_ext.find('.') != 0)
-        _ext = std::string(".") + _ext;
-    auto plast = _prefix.length() - 1;
-    if(_prefix.length() > 0 && _prefix[plast] != '/' && isalnum(_prefix[plast]))
-        _prefix += "_";
-    auto fpath = utility::path(_prefix + _tag + _rank_suffix + _ext);
-    while(fpath.find("//") != std::string::npos)
-        fpath.replace(fpath.find("//"), 2, "/");
-    return std::move(fpath);
+    auto _suffix = (_dmp_init && _dmp_rank >= 0)
+                       ? (std::string("_") + std::to_string(_dmp_rank))
+                       : std::string("");
+
+    // create the path
+    std::string _fpath = format(_prefix, _tag, _suffix, _ext);
+
+    return filepath::osrepr(_fpath);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -432,6 +496,60 @@ settings::operator=(const settings& rhs)
         }
     }
     return *this;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_SETTINGS_INLINE
+std::string
+settings::get_fallback_tag()
+{
+    std::string _tag = {};
+
+    if(command_line().empty())
+        command_line() = read_command_line(process::get_id());
+
+    if(command_line().empty())
+    {
+        _tag      = std::string{ TIMEMORY_SETTINGS_PREFIX };
+        auto _pos = std::string::npos;
+        while((_pos = _tag.find_last_of('_')) == _tag.length() - 1)
+            _tag = _tag.substr(0, _tag.length() - 1);
+        return _tag;
+    }
+
+    _tag = command_line().front();
+
+    while(_tag.find('\\') != std::string::npos)
+        _tag = _tag.substr(_tag.find_last_of('\\') + 1);
+
+    while(_tag.find('/') != std::string::npos)
+        _tag = _tag.substr(_tag.find_last_of('/') + 1);
+
+    for(auto&& itr : { std::string{ ".py" }, std::string{ ".exe" } })
+    {
+        if(_tag.find(itr) != std::string::npos)
+            _tag.erase(_tag.find(itr), itr.length() + 1);
+    }
+
+    return _tag;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_SETTINGS_INLINE
+std::string
+settings::get_tag() const
+{
+    if(m_tag.empty())
+    {
+        if(command_line().empty() && !m_command_line.empty())
+            command_line() = m_command_line;
+
+        const_cast<settings*>(this)->m_tag = get_fallback_tag();
+    }
+
+    return m_tag;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -1179,6 +1297,12 @@ TIMEMORY_SETTINGS_INLINE
 bool
 settings::read(std::istream& ifs, std::string inp)
 {
+    if(m_read_configs.find(inp) != m_read_configs.end())
+    {
+        PRINT_HERE("Warning! Re-reading config file: %s", inp.c_str());
+    }
+    m_read_configs.emplace(inp);
+
     if(inp.find(".json") != std::string::npos || inp == "json")
     {
         using policy_type = policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>;
@@ -1256,13 +1380,43 @@ settings::read(std::istream& ifs, std::string inp)
             return true;
         };
 
-        int expected = 0;
-        int valid    = 0;
+        int                                expected = 0;
+        int                                valid    = 0;
+        std::map<std::string, std::string> _variables{};
+
+        std::function<std::string(std::string)> _resolve_variable{};
+        _resolve_variable = [&](std::string _v) {
+            if(_v.empty())
+                return _v;
+            if(_v.at(0) != '$')
+                return _v;
+            static const char* _env_syntax = "$env:";
+            if(_v.find(_env_syntax) == 0)
+                return _resolve_variable(
+                    get_env<std::string>(_v.substr(strlen(_env_syntax)), ""));
+            auto vitr = _variables.find(_v);
+            if(vitr != _variables.end())
+                return _resolve_variable(vitr->second);
+            if(_v.at(0) == '$')
+                _v = _v.substr(1);
+            for(auto itr : *this)
+            {
+                if(itr.second->matches(_v))
+                    return _resolve_variable(itr.second->as_string());
+            }
+            return _v;
+        };
+
         while(ifs)
         {
             std::getline(ifs, line);
             if(!ifs)
                 continue;
+            if(line.empty())
+                continue;
+            if(get_debug() || get_verbose() > 4)
+                fprintf(stderr, "[timemory::settings]['%s']> %s\n", inp.c_str(),
+                        line.c_str());
             if(is_comment(line))
                 continue;
             ++expected;
@@ -1271,13 +1425,33 @@ settings::read(std::istream& ifs, std::string inp)
             if(delim.size() > 0)
             {
                 string_t key = delim.front();
-                string_t val = "";
+                string_t val = {};
                 // combine into another string separated by commas
                 for(size_t i = 1; i < delim.size(); ++i)
-                    val += "," + delim.at(i);
+                {
+                    if(delim.empty() || delim.at(i) == "#" || delim.at(i).at(0) == '#')
+                        continue;
+                    val += "," + _resolve_variable(delim.at(i));
+                }
                 // if there was any fields, remove the leading comma
                 if(val.length() > 0)
                     val = val.substr(1);
+                // extremely unlikely
+                if(key.empty())
+                    continue;
+                // handle comment
+                if(key == "#" || key.at(0) == '#')
+                    continue;
+                // this is a variable, e.g.:
+                // $MYVAR = ON      # this is a variable
+                // TIMEMORY_PRINT_STATS = $MYVAR
+                // TIMEMORY_PRINT_MIN   = $MYVAR
+                if(key.at(0) == '$')
+                {
+                    _variables.emplace(key, val);
+                    continue;
+                }
+
                 auto incr = valid;
                 for(auto itr : *this)
                 {
@@ -1293,16 +1467,79 @@ settings::read(std::istream& ifs, std::string inp)
 
                 if(incr == valid)
                 {
-                    fprintf(stderr,
-                            "[timemory::settings]['%s']> WARNING! Unknown setting "
-                            "ignored: '%s' (value = '%s')\n",
-                            inp.c_str(), key.c_str(), val.c_str());
+                    auto _key = key;
+                    for(auto& itr : _key)
+                        itr = std::toupper(itr);
+                    if(_key.find(TIMEMORY_SETTINGS_PREFIX) == 0)
+                    {
+                        if(get_debug() || get_verbose() > 0)
+                        {
+                            fprintf(stderr,
+                                    "[timemory::settings]['%s']> Unknown setting with "
+                                    "recognized prefix ('%s') exported to environment: "
+                                    "'%s' (value = '%s')\n",
+                                    inp.c_str(), TIMEMORY_SETTINGS_PREFIX, _key.c_str(),
+                                    val.c_str());
+                        }
+                        tim::set_env(key, val, 0);
+                    }
+                    else
+                    {
+                        fprintf(stderr,
+                                "[timemory::settings]['%s']> WARNING! Unknown setting "
+                                "ignored: '%s' (value = '%s')\n",
+                                inp.c_str(), key.c_str(), val.c_str());
+                    }
                 }
             }
         }
         return (expected == valid);
     }
     return false;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_SETTINGS_INLINE
+void
+settings::init_config(bool _search_default)
+{
+    if(get_debug() || get_verbose() > 3)
+        PRINT_HERE("%s", "");
+
+    static const auto _dcfgs = std::set<std::string>{
+        get_env<string_t>("HOME") + std::string("/.timemory.cfg"),
+        get_env<string_t>("HOME") + std::string("/.timemory.json"),
+        get_env<string_t>("HOME") + std::string("/.config/timemory.cfg"),
+        get_env<string_t>("HOME") + std::string("/.config/timemory.json")
+    };
+
+    auto _cfg   = get_config_file();
+    auto _files = tim::delimit(_cfg, ",;:");
+    for(const auto& citr : _files)
+    {
+        // a previous config file may have suppressed it
+        if(get_suppress_config())
+            break;
+
+        // skip defaults
+        if(!_search_default && _dcfgs.find(citr) != _dcfgs.end())
+            continue;
+
+        if(m_read_configs.find(citr) != m_read_configs.end())
+            continue;
+
+        std::ifstream ifs{ citr };
+        if(ifs)
+        {
+            if(read(ifs, citr))
+                m_read_configs.emplace(citr);
+        }
+        else if(_dcfgs.find(citr) == _dcfgs.end())
+        {
+            TIMEMORY_EXCEPTION(std::string("Error reading configuration file: ") + citr);
+        }
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
