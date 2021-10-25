@@ -27,6 +27,8 @@
 #    define VERBOSE
 #endif
 
+#pragma GCC diagnostic ignored "-Wignored-attributes"
+
 #include "ex_gotcha_lib.hpp"
 #include "timemory/timemory.hpp"
 
