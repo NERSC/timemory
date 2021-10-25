@@ -122,8 +122,40 @@ get_depth(frame_object_t* frame)
 py::function
 tracer_function(py::object pframe, const char* swhat, py::object arg)
 {
-    static thread_local auto& _config  = get_config();
-    static thread_local bool  _disable = false;
+    //
+    static thread_local tracer_iterator_t _last     = {};
+    static thread_local bool              _has_last = false;
+    //
+    if(_has_last)
+    {
+        _last->second.stop();
+        _has_last = false;
+    }
+
+    struct trace_tl_data
+    {
+        using pushed_funcs_t = std::unordered_map<string_t, std::unordered_set<string_t>>;
+
+        config           configuration = get_config();
+        bool             disable       = false;
+        file_line_map_t  file_lines    = {};
+        decor_line_map_t decor_lines   = {};
+        strset_t         file_lskip    = {};
+        pushed_funcs_t   pushed_funcs  = {};
+    };
+
+    static thread_local auto _tl_data      = trace_tl_data{};
+    auto&                    _config       = _tl_data.configuration;
+    auto&                    _disable      = _tl_data.disable;
+    auto&                    _file_lines   = _tl_data.file_lines;
+    auto&                    _decor_lines  = _tl_data.decor_lines;
+    auto&                    _file_lskip   = _tl_data.file_lskip;
+    auto&                    _pushed_funcs = _tl_data.pushed_funcs;
+    const auto&              _mpath        = _config.base_module_path;
+    const auto&              _only_funcs   = _config.include_functions;
+    const auto&              _only_files   = _config.include_filenames;
+    const auto&              _skip_funcs   = _config.exclude_functions;
+    const auto&              _skip_files   = _config.exclude_filenames;
 
     if(!tim::settings::enabled() || pframe.is_none() || pframe.ptr() == nullptr ||
        _disable)
@@ -150,29 +182,8 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
         return py::none{};
     }
 
+    //
     auto* frame = reinterpret_cast<frame_object_t*>(pframe.ptr());
-    //
-    using pushed_funcs_t = std::unordered_map<string_t, std::unordered_set<string_t>>;
-    //
-    static thread_local tracer_iterator_t _last         = {};
-    static thread_local bool              _has_last     = false;
-    static thread_local auto              _file_lines   = file_line_map_t{};
-    static thread_local auto              _decor_lines  = decor_line_map_t{};
-    static thread_local auto              _file_lskip   = strset_t{};
-    static thread_local auto              _pushed_funcs = pushed_funcs_t{};
-    auto&                                 _mpath        = _config.base_module_path;
-    auto&                                 _only_funcs   = _config.include_functions;
-    auto&                                 _only_files   = _config.include_filenames;
-    auto&                                 _skip_funcs   = _config.exclude_functions;
-    auto&                                 _skip_files   = _config.exclude_filenames;
-    //
-    if(_has_last)
-    {
-        // _last->second.stop().pop().push();
-        _last->second.stop();
-        _has_last = false;
-    }
-    //
     auto  _code = frame->f_code;
     auto  _line = frame->f_lineno;
     auto& _file = _code->co_filename;
@@ -201,13 +212,13 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     auto _get_filename = [&]() -> string_t { return py::cast<string_t>(_file); };
 
     // get the basename of the filename
-    auto _get_basename = [&](const string_t& _fullpath) {
+    static auto _get_basename = [](const string_t& _fullpath) {
         if(_fullpath.find('/') != string_t::npos)
             return _fullpath.substr(_fullpath.find_last_of('/') + 1);
         return _fullpath;
     };
 
-    auto _sanitize_source_line = [](string_t& itr) {
+    static auto _sanitize_source_line = [](string_t& itr) {
         for(auto c : { '\n', '\r', '\t' })
         {
             size_t pos = 0;
@@ -288,7 +299,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
         return _func;
     };
 
-    auto _find_matching = [](const strset_t& _expr, const std::string& _name) {
+    static auto _find_matching = [](const strset_t& _expr, const std::string& _name) {
         const auto _rconstants =
             std::regex_constants::egrep | std::regex_constants::optimize;
         for(const auto& itr : _expr)
@@ -607,7 +618,9 @@ generate(py::module& _pymod)
     _trace.def("is_throttled", &timemory_is_throttled, "Check if key is throttled",
                py::arg("key"));
     _trace.def("push", &timemory_push_trace, "Push Trace", py::arg("key"));
+    _trace.def("push", &timemory_push_trace_hash, "Push Trace", py::arg("key"));
     _trace.def("pop", &timemory_pop_trace, "Pop Trace", py::arg("key"));
+    _trace.def("pop", &timemory_pop_trace_hash, "Pop Trace", py::arg("key"));
 
     auto _init = []() {
         auto _verbose = get_config().verbose;
