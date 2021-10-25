@@ -81,20 +81,22 @@ struct tools_stubs_dlsym
 
     TIMEMORY_DEFAULT_OBJECT(tools_stubs_dlsym)
 
-    tools_stubs_dlsym(const std::string& id, std::string libname = "")
+    tools_stubs_dlsym(std::string id, std::string libname = "")
+    : m_id{ std::move(id) }
+    , m_libname{ std::move(libname) }
     {
-        load(id, libname);
+        DEBUG_PRINT_HERE("id: %s, libname: %s", m_id.c_str(), m_libname.c_str());
+        load();
     }
 
-    void load(const std::string& id, std::string libname = "")
+    void load()
     {
-#if defined(TIMEMORY_WINDOWS)
-        tim::consume_parameters(id, libname);
-#else
-        if(libname.empty())
-            libname = TIMEMORY_JOIN("", "libtimemory-", id, '.', OS_DYNAMIC_LIBRARY_EXT);
+#if !defined(TIMEMORY_WINDOWS)
+        if(m_libname.empty())
+            m_libname =
+                TIMEMORY_JOIN("", "libtimemory-", m_id, '.', OS_DYNAMIC_LIBRARY_EXT);
 
-        auto libhandle = dlopen(libname.c_str(), RTLD_LAZY);
+        auto libhandle = dlopen(m_libname.c_str(), RTLD_LAZY | RTLD_GLOBAL);
 
         if(!libhandle)
         {
@@ -104,11 +106,11 @@ struct tools_stubs_dlsym
 
         dlerror(); /* Clear any existing error */
 
-        auto ctor_name       = TIMEMORY_JOIN("", "timemory_", id, "_library_ctor");
-        auto register_name   = TIMEMORY_JOIN("", "timemory_register_", id);
-        auto deregister_name = TIMEMORY_JOIN("", "timemory_deregister_", id);
-        auto start_name      = TIMEMORY_JOIN("", "timemory_start_", id);
-        auto stop_name       = TIMEMORY_JOIN("", "timemory_stop_", id);
+        auto ctor_name       = TIMEMORY_JOIN("", "timemory_", m_id, "_library_ctor");
+        auto register_name   = TIMEMORY_JOIN("", "timemory_register_", m_id);
+        auto deregister_name = TIMEMORY_JOIN("", "timemory_deregister_", m_id);
+        auto start_name      = TIMEMORY_JOIN("", "timemory_start_", m_id);
+        auto stop_name       = TIMEMORY_JOIN("", "timemory_stop_", m_id);
 
         // Initialize all pointers
         DLSYM_FUNCTION(m_ctor, libhandle, ctor_name);
@@ -141,7 +143,7 @@ struct tools_stubs_dlsym
     {
         if(m_start)
             return (*m_start)();
-        return std::numeric_limits<uint64_t>::max();
+        return 0;
     }
 
     uint64_t invoke_stop(uint64_t val)
@@ -152,6 +154,8 @@ struct tools_stubs_dlsym
     }
 
 private:
+    std::string           m_id         = {};
+    std::string           m_libname    = {};
     ctor_function_t       m_ctor       = nullptr;
     register_function_t   m_register   = nullptr;
     deregister_function_t m_deregister = nullptr;
