@@ -61,8 +61,7 @@ struct set_prefix
     TIMEMORY_DEFAULT_OBJECT(set_prefix)
 
     TIMEMORY_INLINE set_prefix(type& obj, const string_t& _prefix);
-    TIMEMORY_INLINE set_prefix(type& obj, hash_value_t _nhash,
-                                   const string_t& _prefix);
+    TIMEMORY_INLINE set_prefix(type& obj, hash_value_t _nhash, const string_t& _prefix);
 
     TIMEMORY_INLINE auto operator()(type& obj, const string_t& _prefix) const
     {
@@ -77,8 +76,7 @@ struct set_prefix
 private:
     //  If the component has a set_prefix(const string_t&) member function
     template <typename U>
-    TIMEMORY_INLINE auto sfinae_str(U&              obj, int, int, int,
-                                        const string_t& _prefix) const
+    TIMEMORY_INLINE auto sfinae_str(U& obj, int, int, int, const string_t& _prefix) const
         -> decltype(obj.set_prefix(_prefix))
     {
         return obj.set_prefix(_prefix);

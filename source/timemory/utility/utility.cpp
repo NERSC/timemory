@@ -26,6 +26,7 @@
 #define TIMEMORY_UTILITY_UTILITY_CPP_ 1
 
 #include "timemory/macros/os.hpp"
+#include "timemory/utility/filepath.hpp"
 #include "timemory/utility/macros.hpp"
 
 #if !defined(TIMEMORY_UTILITY_HEADER_MODE)
@@ -65,50 +66,7 @@ dirname(std::string _fname)
 int
 makedir(std::string _dir, int umask)
 {
-#if defined(TIMEMORY_UNIX)
-    while(_dir.find("\\\\") != std::string::npos)
-        _dir.replace(_dir.find("\\\\"), 2, "/");
-    while(_dir.find('\\') != std::string::npos)
-        _dir.replace(_dir.find('\\'), 1, "/");
-
-    if(_dir.length() == 0)
-        return 0;
-
-    int ret = mkdir(_dir.c_str(), umask);
-    if(ret != 0)
-    {
-        int err = errno;
-        if(err != EEXIST)
-        {
-            std::cerr << "mkdir(" << _dir.c_str() << ", " << umask
-                      << ") returned: " << ret << std::endl;
-            std::stringstream _sdir;
-            _sdir << "/bin/mkdir -p " << _dir;
-            return (launch_process(_sdir.str().c_str())) ? 0 : 1;
-        }
-    }
-#elif defined(TIMEMORY_WINDOWS)
-    consume_parameters(umask);
-    while(_dir.find('/') != std::string::npos)
-        _dir.replace(_dir.find('/'), 1, "\\");
-
-    if(_dir.length() == 0)
-        return 0;
-
-    int ret = _mkdir(_dir.c_str());
-    if(ret != 0)
-    {
-        int err = errno;
-        if(err != EEXIST)
-        {
-            std::cerr << "_mkdir(" << _dir.c_str() << ") returned: " << ret << std::endl;
-            std::stringstream _sdir;
-            _sdir << "mkdir " << _dir;
-            return (launch_process(_sdir.str().c_str())) ? 0 : 1;
-        }
-    }
-#endif
-    return 0;
+    return filepath::makedir(_dir, umask);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -366,8 +324,8 @@ path::insert(size_type __pos, const path& __s)
     return *this;
 }
 
-TIMEMORY_UTILITY_INLINE std::string
-                        path::os()
+std::string
+path::os()
 {
 #if defined(TIMEMORY_WINDOWS)
     return "\\";
@@ -376,8 +334,8 @@ TIMEMORY_UTILITY_INLINE std::string
 #endif
 }
 
-TIMEMORY_UTILITY_INLINE std::string
-                        path::inverse()
+std::string
+path::inverse()
 {
 #if defined(TIMEMORY_WINDOWS)
     return "/";
@@ -386,20 +344,26 @@ TIMEMORY_UTILITY_INLINE std::string
 #endif
 }
 
+//
 // OS-dependent representation
-TIMEMORY_UTILITY_INLINE std::string
-                        path::osrepr(std::string _path)
+std::string
+path::osrepr(std::string _path)
 {
 #if defined(TIMEMORY_WINDOWS)
-    while(_path.find('/') != std::string::npos)
-        _path.replace(_path.find('/'), 1, "\\");
+    filepath::replace(_path, '/', "\\");
+    filepath::replace(_path, "\\\\", "\\");
 #elif defined(TIMEMORY_UNIX)
-    while(_path.find("\\\\") != std::string::npos)
-        _path.replace(_path.find("\\\\"), 2, "/");
-    while(_path.find('\\') != std::string::npos)
-        _path.replace(_path.find('\\'), 1, "/");
+    filepath::replace(_path, '\\', "/");
+    filepath::replace(_path, "//", "/");
 #endif
     return _path;
+}
+
+// common representation
+std::string
+path::canonical(std::string _path)
+{
+    return filepath::canonical(_path);
 }
 //
 }  // namespace utility

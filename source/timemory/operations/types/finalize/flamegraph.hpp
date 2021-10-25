@@ -35,6 +35,7 @@
 #include "timemory/operations/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/filepath.hpp"
 
 namespace tim
 {
@@ -105,8 +106,8 @@ flamegraph<Type>::flamegraph(storage_type* _data, std::string _label,  // NOLINT
 
     if(outfname.length() > 0)
     {
-        std::ofstream ofs(outfname.c_str());
-        if(ofs)
+        std::ofstream ofs{};
+        if(filepath::open(ofs, outfname))
         {
             manager::instance()->add_json_output(_label, outfname);
             printf("[%s]|%i> Outputting '%s'...\n", _label.c_str(), node_rank,

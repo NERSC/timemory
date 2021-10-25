@@ -41,7 +41,7 @@ manager*
 timemory_manager_master_instance() TIMEMORY_VISIBILITY("default");
 //
 void
-timemory_library_constructor() TIMEMORY_VISIBILITY("default");
+timemory_library_constructor() TIMEMORY_VISIBILITY("hidden");
 //
 }  // namespace tim
 

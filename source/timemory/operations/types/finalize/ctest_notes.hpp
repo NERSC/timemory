@@ -28,6 +28,7 @@
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/filepath.hpp"
 
 #include <memory>
 #include <set>
@@ -80,8 +81,8 @@ struct ctest_notes_deleter : public std::default_delete<std::set<std::string>>
 
         auto fname = settings::compose_output_filename("CTestNotes", "txt", false, -1,
                                                        false, settings::output_prefix());
-        std::ofstream ofs(fname, std::ios::out | std::ios::app);
-        if(ofs)
+        std::ofstream ofs{};
+        if(filepath::open(ofs, fname, std::ios::out | std::ios::app))
         {
             if(settings::debug() || settings::verbose() > 1)
             {
