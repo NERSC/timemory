@@ -238,8 +238,8 @@ TEST_F(archive_storage_tests, archive_hierarchy)
         // std::cout << ss.str() << std::endl;
         auto fname =
             tim::settings::compose_output_filename(details::get_test_name(), "json");
-        std::ofstream ofs(fname.c_str());
-        if(ofs)
+        std::ofstream ofs{};
+        if(tim::filepath::open(ofs, fname))
             ofs << ss.str() << std::endl;
     }
 }
@@ -262,8 +262,8 @@ TEST_F(archive_storage_tests, mpi_archive_hierarchy)
     if(tim::dmp::rank() > 0)
         return;
     auto fname = tim::settings::compose_output_filename(details::get_test_name(), "json");
-    std::ofstream ofs(fname.c_str());
-    if(ofs)
+    std::ofstream ofs{};
+    if(tim::filepath::open(ofs, fname))
     {
         ofs << ss.str() << std::endl;
     }
@@ -291,8 +291,8 @@ TEST_F(archive_storage_tests, upc_archive_hierarchy)
     if(tim::dmp::rank() > 0)
         return;
     auto fname = tim::settings::compose_output_filename(details::get_test_name(), "json");
-    std::ofstream ofs(fname.c_str());
-    if(ofs)
+    std::ofstream ofs{};
+    if(tim::filepath::open(ofs, fname))
     {
         ofs << ss.str() << std::endl;
     }
@@ -320,8 +320,8 @@ TEST_F(archive_storage_tests, dmp_archive_hierarchy)
     if(tim::dmp::rank() > 0)
         return;
     auto fname = tim::settings::compose_output_filename(details::get_test_name(), "json");
-    std::ofstream ofs(fname.c_str());
-    if(ofs)
+    std::ofstream ofs{};
+    if(tim::filepath::open(ofs, fname))
     {
         ofs << ss.str() << std::endl;
     }
