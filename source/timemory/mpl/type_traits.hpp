@@ -33,6 +33,7 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/environment/types.hpp"
 #include "timemory/mpl/available.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
@@ -666,6 +667,13 @@ struct archive_extension
 template <typename T>
 struct report
 {
+#define TIMEMORY_REPORT_GET_SET(FNAME, FIELD)                                            \
+    static bool FNAME() { return get(FIELD); }                                           \
+    static void FNAME(bool val) { set(FIELD, val); }
+
+#define TIMEMORY_REPORT_ENV_QUERY(FIELD)                                                 \
+    get_env<bool>("TIMEMORY_PRINT_" #FIELD, get_runtime_value().at(FIELD))
+
     enum field : short
     {
         COUNT = 0,
@@ -676,41 +684,38 @@ struct report
         MEAN,
         STATS,
         SELF,
+        MIN,
+        MAX,
+        VARIANCE,
+        STDDEV,
         FIELDS_END
     };
 
     using value_type = std::array<bool, FIELDS_END>;
 
-    static bool get(short idx) { return get_runtime_value().at(idx % FIELDS_END); }
+    static bool get(short idx)
+    {
+        return get_runtime_value().at(idx % FIELDS_END) &&
+               get_runtime_env().at(idx % FIELDS_END);
+    }
 
     static void set(short idx, bool val)
     {
         get_runtime_value().at(idx % FIELDS_END) = val;
     }
 
-    static bool count() { return std::get<COUNT>(get_runtime_value()); }
-    static void count(bool val) { std::get<COUNT>(get_runtime_value()) = val; }
-
-    static bool depth() { return std::get<DEPTH>(get_runtime_value()); }
-    static void depth(bool val) { std::get<DEPTH>(get_runtime_value()) = val; }
-
-    static bool metric() { return std::get<METRIC>(get_runtime_value()); }
-    static void metric(bool val) { std::get<METRIC>(get_runtime_value()) = val; }
-
-    static bool units() { return std::get<UNITS>(get_runtime_value()); }
-    static void units(bool val) { std::get<UNITS>(get_runtime_value()) = val; }
-
-    static bool sum() { return std::get<SUM>(get_runtime_value()); }
-    static void sum(bool val) { std::get<SUM>(get_runtime_value()) = val; }
-
-    static bool mean() { return std::get<MEAN>(get_runtime_value()); }
-    static void mean(bool val) { std::get<MEAN>(get_runtime_value()) = val; }
-
-    static bool stats() { return std::get<STATS>(get_runtime_value()); }
-    static void stats(bool val) { std::get<STATS>(get_runtime_value()) = val; }
-
-    static bool self() { return std::get<SELF>(get_runtime_value()); }
-    static void self(bool val) { std::get<SELF>(get_runtime_value()) = val; }
+    TIMEMORY_REPORT_GET_SET(count, COUNT)
+    TIMEMORY_REPORT_GET_SET(depth, DEPTH)
+    TIMEMORY_REPORT_GET_SET(metric, METRIC)
+    TIMEMORY_REPORT_GET_SET(units, UNITS)
+    TIMEMORY_REPORT_GET_SET(sum, SUM)
+    TIMEMORY_REPORT_GET_SET(mean, MEAN)
+    TIMEMORY_REPORT_GET_SET(stats, STATS)
+    TIMEMORY_REPORT_GET_SET(self, SELF)
+    TIMEMORY_REPORT_GET_SET(min, MIN)
+    TIMEMORY_REPORT_GET_SET(max, MAX)
+    TIMEMORY_REPORT_GET_SET(variance, VARIANCE)
+    TIMEMORY_REPORT_GET_SET(stddev, STDDEV)
 
 private:
     static value_type& get_runtime_value()
@@ -718,10 +723,28 @@ private:
         static value_type _instance{
             { report_count<T>::value, (report_depth<T>::value && !flat_storage<T>::value),
               report_metric_name<T>::value, report_units<T>::value, report_sum<T>::value,
-              report_mean<T>::value, report_statistics<T>::value, report_self<T>::value }
+              report_mean<T>::value && !timeline_storage<T>::value,
+              report_statistics<T>::value, report_self<T>::value,
+              report_statistics<T>::value, report_statistics<T>::value,
+              report_statistics<T>::value, report_statistics<T>::value }
         };
         return _instance;
     }
+
+    static value_type get_runtime_env()
+    {
+        return value_type{
+            TIMEMORY_REPORT_ENV_QUERY(COUNT),    TIMEMORY_REPORT_ENV_QUERY(DEPTH),
+            TIMEMORY_REPORT_ENV_QUERY(METRIC),   TIMEMORY_REPORT_ENV_QUERY(UNITS),
+            TIMEMORY_REPORT_ENV_QUERY(SUM),      TIMEMORY_REPORT_ENV_QUERY(MEAN),
+            TIMEMORY_REPORT_ENV_QUERY(STATS),    TIMEMORY_REPORT_ENV_QUERY(SELF),
+            TIMEMORY_REPORT_ENV_QUERY(MIN),      TIMEMORY_REPORT_ENV_QUERY(MAX),
+            TIMEMORY_REPORT_ENV_QUERY(VARIANCE), TIMEMORY_REPORT_ENV_QUERY(STDDEV)
+        };
+    }
+
+#undef TIMEMORY_REPORT_ENV_QUERY
+#undef TIMEMORY_REPORT_GET_SET
 };
 
 //--------------------------------------------------------------------------------------//

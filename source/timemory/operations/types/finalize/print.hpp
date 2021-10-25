@@ -93,8 +93,8 @@ base::print::print_text(const std::string& outfname, stream_type stream)  // NOL
 {
     if(outfname.length() > 0 && stream)
     {
-        std::ofstream fout(outfname.c_str());
-        if(fout)
+        std::ofstream fout{};
+        if(filepath::open(fout, outfname))
         {
             printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
                    outfname.c_str());
@@ -436,8 +436,8 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results)
     using policy_type = policy::output_archive_t<Tp>;
     if(outfname.length() > 0)
     {
-        std::ofstream ofs(outfname.c_str());
-        if(ofs)
+        std::ofstream ofs{};
+        if(filepath::open(ofs, outfname))
         {
             auto fext = outfname.substr(outfname.find_last_of('.') + 1);
             if(fext.empty())
@@ -453,6 +453,12 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results)
             oa->startNode();
             operation::serialization<Tp>{}(*oa, results);
             oa->finishNode();  // timemory
+        }
+        else
+        {
+            fprintf(stderr, "[storage<%s>::%s @ %i]|%i> Error opening '%s'...\n",
+                    label.c_str(), __FUNCTION__, __LINE__, node_rank, outfname.c_str());
+            return;
         }
         if(ofs)
             ofs << std::endl;
@@ -476,7 +482,8 @@ print<Tp, true>::print_tree(const std::string& outfname, result_tree& rt)
         manager::instance()->add_file_output(fext, label, outfname);
         printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
                outfname.c_str());
-        std::ofstream ofs(outfname.c_str());
+        std::ofstream ofs{};
+        if(filepath::open(ofs, outfname))
         {
             // ensure write final block during destruction before the file is closed
             auto oa = policy_type::get(ofs);
@@ -485,6 +492,12 @@ print<Tp, true>::print_tree(const std::string& outfname, result_tree& rt)
             oa->startNode();
             operation::serialization<Tp>{}(*oa, rt);
             oa->finishNode();
+        }
+        else
+        {
+            fprintf(stderr, "[storage<%s>::%s @ %i]|%i> Error opening '%s'...\n",
+                    label.c_str(), __FUNCTION__, __LINE__, node_rank, outfname.c_str());
+            return;
         }
         ofs << std::endl;
         ofs.close();
