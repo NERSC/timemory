@@ -129,7 +129,7 @@ def embedded_analyze(
             "--column",
             type=str,
             help="Metric(s) to extract",
-            default="sum.inc",
+            default="sum.*(.inc)$",
         )
         parser.add_argument(
             "-s",

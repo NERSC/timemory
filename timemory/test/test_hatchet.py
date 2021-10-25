@@ -79,7 +79,7 @@ class TimemoryHatchetTests(unittest.TestCase):
         tim.settings.tree_output = True
         tim.settings.text_output = True
         tim.settings.cout_output = False
-        tim.settings.json_output = False
+        tim.settings.json_output = True
         tim.settings.flamegraph_output = False
         tim.settings.mpi_thread = False
         tim.settings.dart_output = True
@@ -116,8 +116,8 @@ class TimemoryHatchetTests(unittest.TestCase):
 
         if rank == 0:
             print(gf.dataframe)
-            print(gf.tree("sum"))
-            print(gf.tree("sum.inc"))
+            print(gf.tree("sum.wall_clock"))
+            print(gf.tree("sum.wall_clock.inc"))
 
     # ---------------------------------------------------------------------------------- #
     # test handling multi-dimensional data from hatchet
