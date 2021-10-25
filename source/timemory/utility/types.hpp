@@ -168,6 +168,10 @@
 //
 namespace tim
 {
+// definition in popen.hpp
+bool
+launch_process(const char* cmd, const std::string& extra = "",
+               std::ostream* os = nullptr);
 //
 /// Alias template make_integer_sequence
 template <typename Tp, Tp Num>
@@ -396,6 +400,9 @@ using data_type                     = std::bitset<scope_count>;
 using input_type                    = std::array<bool, scope_count>;
 //
 //--------------------------------------------------------------------------------------//
+//
+input_type&
+get_fields() TIMEMORY_VISIBILITY("default");
 //
 inline input_type&
 get_fields()

@@ -27,7 +27,9 @@
 #endif
 
 #include "libpytimemory-components.hpp"
+#include "timemory/mpl/policy.hpp"
 #include "timemory/settings.hpp"
+#include "timemory/utility/filepath.hpp"
 
 using string_t = std::string;
 
@@ -208,8 +210,8 @@ generate(py::module& _pymod)
         else
             _obj->read(inp);
     };
-    static auto _args = [](py::object parser, py::object _instance,
-                           py::object subparser) {
+    static auto _args = [](py::object parser, py::object _instance, py::object subparser,
+                           std::vector<std::string> fields) {
         auto pyargparse = py::module::import("argparse");
 
         if(parser.is_none())
@@ -262,7 +264,18 @@ generate(py::module& _pymod)
             if(sitr != _obj->end() && sitr->second)
             {
                 DEBUG_PRINT_HERE("adding args for %s", sitr->first.data());
-                _argparse(sitr->second, _parser, _use_subparser);
+                bool _add = true;
+                if(!fields.empty())
+                {
+                    _add = false;
+                    for(auto& fitr : fields)
+                    {
+                        if(sitr->second->matches(fitr, false))
+                            _add = true;
+                    }
+                }
+                if(_add)
+                    _argparse(sitr->second, _parser, _use_subparser);
             }
         }
 
@@ -339,6 +352,31 @@ generate(py::module& _pymod)
                  py::globals(), locals);
     };
 
+    auto _dump = [](std::string _fname, tim::settings* _settings) {
+        if(_settings == nullptr)
+            _settings = tim::settings::instance();
+        if(_settings == nullptr)
+            throw std::runtime_error("Nullptr to settings");
+        std::stringstream _ss{};
+        {
+            auto _ar = tim::policy::output_archive<tim::cereal::PrettyJSONOutputArchive,
+                                                   TIMEMORY_API>::get(_ss);
+            tim::settings::serialize_settings(*_ar, *_settings);
+        }
+        if(!_fname.empty())
+        {
+            _fname = tim::settings::compose_output_filename(_fname, ".json");
+            std::ofstream _ofs{};
+            if(!tim::filepath::open(_ofs, _fname))
+                throw std::runtime_error("Error opening " + _fname + " for output");
+            if(tim::settings::verbose() > 0)
+                printf("[%s]|%i> Outputting '%s'...\n", "settings", tim::dmp::rank(),
+                       _fname.c_str());
+            _ofs << _ss.str() << "\n";
+        }
+        return py::module::import("json").attr("loads")(_ss.str());
+    };
+
     // create an instance
     settings.def(py::init(_init), "Create a copy of the global settings");
     // to parse changes in env vars
@@ -348,12 +386,32 @@ generate(py::module& _pymod)
     settings.def_static("read", _read, "Read the settings from JSON or text file");
     settings.def_static("add_argparse", _args, "Add command-line argument support",
                         py::arg("parser"), py::arg("instance") = py::none{},
-                        py::arg("subparser") = true);
+                        py::arg("subparser") = true,
+                        py::arg("selection") = std::vector<std::string>{});
     settings.def_static("add_arguments", _args, "Add command-line argument support",
                         py::arg("parser"), py::arg("instance") = py::none{},
-                        py::arg("subparser") = true);
+                        py::arg("subparser") = true,
+                        py::arg("selection") = std::vector<std::string>{});
+    settings.def_static(
+        "dump", _dump,
+        "Dump settings to a file (if filename provided). Returns dictionary of settings",
+        py::arg("filename") = std::string{}, py::arg("instance") = nullptr);
+    settings.def_static("compose_output_filename",
+                        &tim::settings::compose_output_filename,
+                        "Generate an output filename based on output path and output "
+                        "prefix settings. Use make_dir=True to ensure directory exists. "
+                        "Use explicit to specify an explicit output directory",
+                        py::arg("basename"), py::arg("extension"), py::arg("dmp") = false,
+                        py::arg("rank") = -1, py::arg("make_dir") = true,
+                        py::arg("explicit") = std::string{});
+    settings.def_static(
+        "compose_input_filename", &tim::settings::compose_input_filename,
+        "Generate an input filename based on input path and input "
+        "prefix settings. Use explicit to specify an explicit input directory",
+        py::arg("basename"), py::arg("extension"), py::arg("dmp") = false,
+        py::arg("rank") = -1, py::arg("explicit") = std::string{});
 
-    std::set<std::string> names;
+    std::set<std::string> names{};
     auto                  _settings = tim::settings::instance<TIMEMORY_API>();
     if(_settings)
     {
