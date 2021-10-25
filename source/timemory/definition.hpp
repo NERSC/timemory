@@ -26,7 +26,6 @@
 
 #include "timemory/components.hpp"
 #include "timemory/components/opaque/definition.hpp"
-#include "timemory/config/definition.hpp"
 #include "timemory/containers/definition.hpp"
 #include "timemory/ert/definition.hpp"
 #include "timemory/operations/definition.hpp"
@@ -37,6 +36,10 @@
 //
 #    if !defined(TIMEMORY_USE_MANAGER_EXTERN)
 #        include "timemory/manager.hpp"
+#    endif
+
+#    if !defined(TIMEMORY_USE_CONFIG_EXTERN)
+#        include "timemory/config.hpp"
 #    endif
 
 #    if !defined(TIMEMORY_USE_CORE_EXTERN)
