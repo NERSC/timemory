@@ -88,9 +88,11 @@ def run_all_tests():
 
 # run all tests
 if __name__ == "__main__":
+    tim.initialize([__file__])
     man = tim.manager()
     result = run_all_tests()
     man.write_ctest_notes("./python-testing")
+    tim.finalize()
     if result.errors is not None:
         nerr = len(result.errors)
         sys.exit(nerr)
