@@ -57,7 +57,7 @@ class TimemoryToolsTests(unittest.TestCase):
         tim.settings.tree_output = True
         tim.settings.text_output = True
         tim.settings.cout_output = False
-        tim.settings.json_output = False
+        tim.settings.json_output = True
         tim.settings.flamegraph_output = False
         tim.settings.mpi_thread = False
         tim.settings.dart_output = True

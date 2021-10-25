@@ -42,6 +42,7 @@ except ImportError:
     pass
 
 import os
+import sys
 import time
 import json
 import random
@@ -114,14 +115,18 @@ class TimemoryFlatTests(unittest.TestCase):
         tim.settings.dart_output = True
         tim.settings.dart_count = 1
         tim.settings.banner = False
-        tim.settings.parse()
 
     def setUp(self):
         tim.settings.flat_profile = True
         config.include_internal = True
+        self.assertTrue(sys.getprofile() is None)
+        self.assertTrue(sys.gettrace() is None)
 
     def tearDown(self):
+        tim.settings.flat_profile = False
         config.include_internal = False
+        self.assertTrue(sys.getprofile() is None)
+        self.assertTrue(sys.gettrace() is None)
 
     # Tear down class: finalize
     @classmethod
@@ -149,6 +154,7 @@ class TimemoryFlatTests(unittest.TestCase):
 
         # reset
         tim.settings.flat_profile = False
+        os.environ["TIMEMORY_FLAT_PROFILE"] = "OFF"
 
     # ---------------------------------------------------------------------------------- #
     # test profiler_depth
