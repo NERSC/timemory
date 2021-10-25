@@ -115,7 +115,15 @@ get_depth(PyFrameObject* frame)
 void
 profiler_function(py::object pframe, const char* swhat, py::object arg)
 {
-    static thread_local auto& _config = get_config();
+    static thread_local auto& _config  = get_config();
+    static thread_local auto  _disable = false;
+
+    if(_disable)
+        return;
+
+    _disable = true;
+    tim::scope::destructor _dtor{ []() { _disable= false; } };
+    (void) _dtor;
 
     if(!tim::settings::enabled() || pframe.is_none() || pframe.ptr() == nullptr)
         return;
@@ -198,9 +206,11 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
 
     // get the final label
     auto _get_label = [&](auto& _func, auto& _filename, auto& _fullpath) {
+        _func.insert(0, "[");
         // append the arguments
         if(_config.include_args)
             _func.append(_get_args());
+        _func.append("]");
         // append the filename
         if(_config.include_filename)
         {
@@ -263,7 +273,11 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
 
     if(!_config.include_internal &&
        strncmp(_full.c_str(), _timemory_path.c_str(), _timemory_path.length()) == 0)
+    {
+        if(_config.verbose > 2)
+            PRINT_HERE("Skipping internal function: %s", _func.c_str());
         return;
+    }
 
     if(!_only_files.empty() && !_find_matching(_only_files, _full))
     {
@@ -327,13 +341,18 @@ generate(py::module& _pymod)
 {
     py::module _prof = _pymod.def_submodule("profiler", "Profiling functions");
 
-    static auto _scope_set = [](bool _flat, bool _timeline) {
-        get_config().profiler_scope = tim::scope::config{ _flat, _timeline };
+    auto _scope_set = [](bool _flat, bool _timeline) {
+        auto _scope = tim::scope::get_default();
+        if(_flat)
+            _scope += tim::scope::flat{};
+        if(_timeline)
+            _scope += tim::scope::timeline{};
+        get_config().profiler_scope = std::move(_scope);
     };
 
     pycomponent_bundle::generate<user_profiler_bundle>(
         _prof, "profiler_bundle", "User-bundle for Python profiling interface",
-        _scope_set);
+        std::move(_scope_set));
 
     auto _init = []() {
         try

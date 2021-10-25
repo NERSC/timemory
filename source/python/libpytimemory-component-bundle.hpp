@@ -179,8 +179,13 @@ generate(
 
             _scope_set(flat_profile, timeline_profile);
 
-            tim::configure<UserBundleT>(
-                components, tim::scope::config{ flat_profile, timeline_profile });
+            auto _scope = tim::scope::get_default();
+            if(flat_profile)
+                _scope += tim::scope::flat{};
+            if(timeline_profile)
+                _scope += tim::scope::timeline{};
+
+            tim::configure<UserBundleT>(components, _scope);
 
             if(tim::settings::debug() || tim::settings::verbose() > 3)
             {

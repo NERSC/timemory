@@ -926,6 +926,10 @@ PYBIND11_MODULE(libpytimemory, tim)
             {
                 if(tim::settings::debug())
                     _print_entry(i);
+
+                if(_arg.at(i) == 0 || _arg.at(i) == std::numeric_limits<uint64_t>::max())
+                    continue;
+
                 switch(i)
                 {
                     case PyProfilingIndex_MPIP:
