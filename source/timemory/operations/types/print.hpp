@@ -126,9 +126,10 @@ struct print
         }
         else
         {
-            std::vector<std::string> _empty_data(_labels.size(), " ");
+            std::string              _filler = "-";
+            std::vector<std::string> _empty_data(_labels.size(), _filler);
             if(trait::report<type>::count())
-                utility::write_entry(_os, "COUNT", " ");
+                utility::write_entry(_os, "COUNT", _filler);
             if(trait::report<type>::depth())
                 utility::write_entry(_os, "DEPTH", _depth);
             if(trait::report<type>::metric())
@@ -141,18 +142,13 @@ struct print
                 utility::write_entry(_os, "MEAN", _empty_data);
             if(trait::report<type>::stats())
             {
-                bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
-                bool use_max    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
-                bool use_var    = get_env<bool>("TIMEMORY_PRINT_VARIANCE", false);
-                bool use_stddev = get_env<bool>("TIMEMORY_PRINT_STDDEV", true);
-
-                if(use_min)
+                if(trait::report<type>::min())
                     utility::write_entry(_os, "MIN", _empty_data);
-                if(use_max)
+                if(trait::report<type>::max())
                     utility::write_entry(_os, "MAX", _empty_data);
-                if(use_var)
+                if(trait::report<type>::variance())
                     utility::write_entry(_os, "VAR", _empty_data);
-                if(use_stddev)
+                if(trait::report<type>::stddev())
                     utility::write_entry(_os, "STDDEV", _empty_data);
             }
             if(trait::report<type>::self())
