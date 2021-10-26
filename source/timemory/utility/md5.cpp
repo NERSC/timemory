@@ -22,9 +22,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#ifndef TIMEMORY_UTILITY_MD5_CPP_
+#define TIMEMORY_UTILITY_MD5_CPP_ 1
+
+#include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
 
-#if !defined(TIMEMORY_UTILITY_HEADER_ONLY)
+#if !defined(TIMEMORY_UTILITY_HEADER_MODE)
 #    include "timemory/utility/md5.hpp"
 #endif
 
@@ -33,7 +37,7 @@
 
 namespace tim
 {
-namespace utility
+namespace md5
 {
 namespace
 {
@@ -146,8 +150,8 @@ II(uint32_t& a, uint32_t b, uint32_t c, uint32_t d, uint32_t x, uint32_t s, uint
 //--------------------------------------------------------------------------------------//
 
 // decodes input (unsigned char) into output (uint32_t). Assumes len is a multiple of 4.
-TIMEMORY_UTILITY_INLINE void
-decode(uint32_t output[], const uint8_t input[], size_type len)
+inline void
+decode(uint32_t* output, const uint8_t* input, size_type len)
 {
     for(unsigned int i = 0, j = 0; j < len; i++, j += 4)
         output[i] = ((uint32_t) input[j]) | (((uint32_t) input[j + 1]) << 8) |
@@ -158,8 +162,8 @@ decode(uint32_t output[], const uint8_t input[], size_type len)
 
 // encodes input (uint32_t) into output (unsigned char). Assumes len is
 // a multiple of 4.
-TIMEMORY_UTILITY_INLINE void
-encode(uint8_t output[], const uint32_t input[], size_type len)
+inline void
+encode(uint8_t* output, const uint32_t* input, size_type len)
 {
     for(size_type i = 0, j = 0; j < len; i++, j += 4)
     {
@@ -187,7 +191,8 @@ md5sum::md5sum(const std::string& text)
 //--------------------------------------------------------------------------------------//
 
 // apply md5sum algo on a block
-TIMEMORY_UTILITY_INLINE void
+TIMEMORY_UTILITY_INLINE
+void
 md5sum::transform(const uint8_t block[blocksize])
 {
     uint32_t a = state[0], b = state[1], c = state[2], d = state[3], x[16];
@@ -278,8 +283,9 @@ md5sum::transform(const uint8_t block[blocksize])
 
 // md5sum block update operation. Continues an md5sum message-digest
 // operation, processing another message block
-TIMEMORY_UTILITY_INLINE md5sum&
-                        md5sum::update(const unsigned char input[], size_type length)
+TIMEMORY_UTILITY_INLINE
+md5sum&
+md5sum::update(const unsigned char* input, size_type length)
 {
     // compute number of bytes mod 64
     size_type index = count[0] / 8 % blocksize;
@@ -316,8 +322,9 @@ TIMEMORY_UTILITY_INLINE md5sum&
 //--------------------------------------------------------------------------------------//
 
 // for convenience provide a verson with signed char
-TIMEMORY_UTILITY_INLINE md5sum&
-                        md5sum::update(const char input[], size_type length)
+TIMEMORY_UTILITY_INLINE
+md5sum&
+md5sum::update(const char* input, size_type length)
 {
     return update((const unsigned char*) input, length);
 }
@@ -326,8 +333,9 @@ TIMEMORY_UTILITY_INLINE md5sum&
 
 // md5sum finalization. Ends an md5sum message-digest operation, writing the
 // the message digest and zeroizing the context.
-TIMEMORY_UTILITY_INLINE md5sum&
-                        md5sum::finalize()
+TIMEMORY_UTILITY_INLINE
+md5sum&
+md5sum::finalize()
 {
     static unsigned char padding[64] = { 0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                          0,    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -365,8 +373,9 @@ TIMEMORY_UTILITY_INLINE md5sum&
 //--------------------------------------------------------------------------------------//
 
 // return hex representation of digest as string
-TIMEMORY_UTILITY_INLINE std::string
-                        md5sum::hexdigest() const
+TIMEMORY_UTILITY_INLINE
+std::string
+md5sum::hexdigest() const
 {
     if(!finalized)
         return "";
@@ -381,20 +390,24 @@ TIMEMORY_UTILITY_INLINE std::string
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_UTILITY_INLINE std::ostream&
-                        operator<<(std::ostream& out, md5sum md5)
+TIMEMORY_UTILITY_INLINE
+std::ostream&
+operator<<(std::ostream& out, md5sum md5)
 {
     return out << md5.hexdigest();
 }
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_UTILITY_INLINE std::string
-                        compute_md5(const std::string& inp)
+TIMEMORY_UTILITY_INLINE
+std::string
+compute_md5(const std::string& inp)
 {
     return md5sum{ inp }.hexdigest();
 }
 
 //--------------------------------------------------------------------------------------//
-}  // namespace utility
+}  // namespace md5
 }  // namespace tim
+
+#endif

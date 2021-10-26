@@ -98,7 +98,7 @@ public:
     template <typename U>
     struct rebind
     {
-        using other = ring_buffer_allocator<U>;
+        using other = ring_buffer_allocator<U, MMapV, BuffCntV>;
     };
 
     void construct(Tp* const _p, const Tp& _v) const { ::new((void*) _p) Tp{ _v }; }

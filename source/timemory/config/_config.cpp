@@ -22,14 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/config/definition.hpp
- * \brief The definitions for the types in config
- */
+#ifndef TIMEMORY_CONFIG_CONFIG_CPP_
+#define TIMEMORY_CONFIG_CONFIG_CPP_ 1
 
-#pragma once
-
-#include "timemory/config/declaration.hpp"
+#include "timemory/config/config.hpp"
 #include "timemory/config/macros.hpp"
 #include "timemory/config/types.hpp"
 #include "timemory/utility/argparse.hpp"
@@ -75,33 +71,7 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
             enable_signal_detection(enabled_signals);
         }
 
-        auto _ncfg = _settings->get_suppress_config();
-        if(!_ncfg)
-        {
-            // default configuration files
-            std::set<std::string> _dcfg = {
-                get_env<string_t>("HOME") + std::string("/.timemory.cfg"),
-                get_env<string_t>("HOME") + std::string("/.timemory.json"),
-                get_env<string_t>("HOME") + std::string("/.config/timemory.cfg"),
-                get_env<string_t>("HOME") + std::string("/.config/timemory.json")
-            };
-
-            auto _cfg   = _settings->get_config_file();
-            auto _files = tim::delimit(_cfg, ",;");
-            for(const auto& citr : _files)
-            {
-                std::ifstream ifs(citr);
-                if(ifs)
-                {
-                    _settings->read(ifs, citr);
-                }
-                else if(_dcfg.find(citr) == _dcfg.end())
-                {
-                    TIMEMORY_EXCEPTION(std::string("Error reading configuration file: ") +
-                                       citr);
-                }
-            }
-        }
+        _settings->init_config();
     }
 
     std::string exe_name = (argc > 0) ? argv[0] : "";
@@ -118,6 +88,9 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
         if(exe_name.find(ext) != std::string::npos)
             exe_name.erase(exe_name.find(ext), ext.length() + 1);
     }
+
+    if(_settings)
+        _settings->set_tag(exe_name);
 
     exe_name = _prefix + exe_name + _suffix;
     for(auto& itr : exe_name)
@@ -159,9 +132,14 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
     }
 
     static auto _manager = manager::instance();
+
+    if(_settings)
+        _settings->set_initialized(true);
+
     if(_manager)
     {
         _manager->update_metadata_prefix();
+        _manager->initialize();
     }
 }
 //
@@ -400,6 +378,9 @@ timemory_finalize()
     auto* _settings = settings::instance();
     auto  _manager  = manager::instance();
 
+    if(_settings)
+        _settings->set_initialized(false);
+
     if(_manager)
     {
         if(_settings && _settings->get_debug())
@@ -444,3 +425,5 @@ timemory_finalize()
 //--------------------------------------------------------------------------------------//
 //
 #endif  // defined(TIMEMORY_CONFIG_SOURCE) || !defined(TIMEMORY_USE_CONFIG_EXTERN)
+
+#endif

@@ -21,17 +21,36 @@ if(NOT TIMEMORY_FORMAT_TARGET)
 endif()
 
 # prefer clang-format 9.0, unset if 6 (old version)
-if("${CLANG_FORMATTER}" MATCHES "6")
-    unset(CLANG_FORMATTER CACHE)
+if("${TIMEMORY_CLANG_FORMATTER}" MATCHES "6")
+    unset(TIMEMORY_CLANG_FORMATTER CACHE)
 endif()
 
-find_program(CLANG_FORMATTER NAMES clang-format-9 clang-format-9.0 clang-format-mp-9.0
-                                   clang-format)
+# C / C++ formatting
+find_program(TIMEMORY_CLANG_FORMATTER NAMES clang-format-9 clang-format-9.0
+                                            clang-format-mp-9.0 clang-format)
 
 # python formatting
-find_program(BLACK_FORMATTER NAMES black)
+find_program(TIMEMORY_BLACK_FORMATTER NAMES black)
 
-if(CLANG_FORMATTER)
+# cmake formatting
+find_program(TIMEMORY_CMAKE_FORMATTER NAMES cmake-format)
+
+mark_as_advanced(TIMEMORY_CLANG_FORMATTER)
+mark_as_advanced(TIMEMORY_BLACK_FORMATTER)
+mark_as_advanced(TIMEMORY_CMAKE_FORMATTER)
+
+if(TIMEMORY_CLANG_FORMATTER OR TIMEMORY_BLACK_FORMATTER)
+    # name of the format target
+    set(FORMAT_NAME format)
+    if(TARGET format)
+        set(FORMAT_NAME format-timemory)
+    endif()
+
+    # generic format target
+    add_custom_target(${FORMAT_NAME})
+endif()
+
+if(TIMEMORY_CLANG_FORMATTER)
     file(
         GLOB_RECURSE
         _headers
@@ -95,38 +114,62 @@ if(CLANG_FORMATTER)
     unset(_ext_headers)
     unset(_headers)
 
-    # name of the format target
-    set(FORMAT_NAME format)
-    if(TARGET format)
-        set(FORMAT_NAME format-timemory)
-    endif()
-
     # always have files
-    set(_COMMAND COMMAND ${CLANG_FORMATTER} -i ${headers} COMMAND ${CLANG_FORMATTER} -i
-                 ${sources})
+    set(_COMMAND COMMAND ${TIMEMORY_CLANG_FORMATTER} -i ${headers} COMMAND
+                 ${TIMEMORY_CLANG_FORMATTER} -i ${sources})
 
     # might have many files
     if(tpl_headers)
-        set(_COMMAND ${_COMMAND} COMMAND ${CLANG_FORMATTER} -i ${tpl_headers})
+        set(_COMMAND ${_COMMAND} COMMAND ${TIMEMORY_CLANG_FORMATTER} -i ${tpl_headers})
     endif()
 
     # might be empty
     if(TIMEMORY_BUILD_EXAMPLES)
-        set(_COMMAND ${_COMMAND} COMMAND ${CLANG_FORMATTER} -i ${examples})
+        set(_COMMAND ${_COMMAND} COMMAND ${TIMEMORY_CLANG_FORMATTER} -i ${examples})
     endif()
 
-    set(_MSG "'${CLANG_FORMATTER}'")
-    if(BLACK_FORMATTER)
-        set(_COMMAND ${_COMMAND} COMMAND ${BLACK_FORMATTER} -q ${PROJECT_SOURCE_DIR})
-        set(_MSG "${_MSG} and '${BLACK_FORMATTER}'")
-    endif()
-
+    # source specific target
     add_custom_target(
-        ${FORMAT_NAME}
+        ${FORMAT_NAME}-source
         ${_COMMAND}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        COMMENT "[${PROJECT_NAME}] Running ${_MSG}..."
+        COMMENT
+            "[${PROJECT_NAME}] Running C/C++ formatter '${TIMEMORY_CLANG_FORMATTER}'..."
         SOURCES ${headers} ${sources} ${examples})
 
-    unset(_MSG)
+    add_dependencies(${FORMAT_NAME} ${FORMAT_NAME}-source)
+endif()
+
+if(TIMEMORY_BLACK_FORMATTER)
+    add_custom_target(
+        ${FORMAT_NAME}-python
+        COMMAND ${TIMEMORY_BLACK_FORMATTER} -q ${PROJECT_SOURCE_DIR}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMENT
+            "[${PROJECT_NAME}] Running Python formatter '${TIMEMORY_BLACK_FORMATTER}'...")
+
+    add_dependencies(${FORMAT_NAME} ${FORMAT_NAME}-python)
+endif()
+
+if(TIMEMORY_CMAKE_FORMATTER)
+    file(
+        GLOB_RECURSE
+        CMAKE_FORMAT_FILES
+        ${PROJECT_SOURCE_DIR}/cmake/*.cmake
+        ${PROJECT_SOURCE_DIR}/cmake/*.cmake.in
+        ${PROJECT_SOURCE_DIR}/source/*/CMakeLists.txt
+        ${PROJECT_SOURCE_DIR}/examples/*/CMakeLists.txt)
+
+    list(INSERT CMAKE_FORMAT_FILES 0 ${PROJECT_SOURCE_DIR}/CMakeLists.txt
+         ${PROJECT_SOURCE_DIR}/external/CMakeLists.txt)
+
+    add_custom_target(
+        ${FORMAT_NAME}-cmake
+        COMMAND ${TIMEMORY_CMAKE_FORMATTER} -i ${CMAKE_FORMAT_FILES}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        COMMENT
+            "[${PROJECT_NAME}] Running CMake formatter '${TIMEMORY_CMAKE_FORMATTER}'..."
+        SOURCES ${CMAKE_FORMAT_FILES})
+
+    # don't add dependency bc cmake-format is really slow
 endif()

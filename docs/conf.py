@@ -164,12 +164,25 @@ if False:
         print(f"cleaning macros from {file}...")
         for line in fileinput.input(file, inplace=True):
             for key in [
-                " TIMEMORY_VISIBLE",
                 "TIMEMORY_NEVER_INSTRUMENT"
+                "TIMEMORY_EXTERN_VISIBLE",
                 "TIMEMORY_ALWAYS_INLINE",
+                "TIMEMORY_NODISCARD",
                 "TIMEMORY_NOINLINE"
+                "TIMEMORY_FLATTEN",
+                "TIMEMORY_HIDDEN",
+                "TIMEMORY_NOCLONE",
                 "TIMEMORY_INLINE"
                 "TIMEMORY_HOT",
+                "TIMEMORY_LAMBDA",
+                "TIMEMORY_DEVICE_LAMBDA",
+                "TIMEMORY_DEVICE_FUCTION",
+                "TIMEMORY_GLOBAL_FUNCTION",
+                "TIMEMORY_HOST_DEVICE_FUNCTION",
+                "TIMEMORY_DEVICE_INLINE",
+                "TIMEMORY_GLOBAL_INLINE",
+                "TIMEMORY_HOST_DEVICE_INLINE",
+                " TIMEMORY_VISIBLE",
                 "TIMEMORY_DLL ",
                 "TIMEMORY_CDLL ",
             ]:

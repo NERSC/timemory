@@ -116,7 +116,9 @@ class Profiler:
         self.flat = flat
         self.timeline = timeline
         self.components = components
-        self._original_function = sys.getprofile()
+        self._original_function = (
+            sys.getprofile() if sys.getprofile() != _profiler_function else None
+        )
         self._unset = 0
         self._use = (
             not _profiler_config._is_running and Profiler.is_enabled() is True
@@ -129,6 +131,7 @@ class Profiler:
         """Make sure the profiler stops"""
 
         self.stop()
+        sys.setprofile(self._original_function)
 
     # ---------------------------------------------------------------------------------- #
     #
@@ -150,7 +153,11 @@ class Profiler:
 
         input_components = []
         if isinstance(self.components, list):
-            input_components = self.components
+            for itr in self.components:
+                if callable(itr):
+                    input_components.extend(itr())
+                else:
+                    input_components.append(itr)
         else:
             input_components = ["{}".format(self.components)]
 
@@ -184,7 +191,8 @@ class Profiler:
         # store original
         if settings.debug or self.debug:
             sys.stderr.write("setting profile function...\n")
-        self._original_function = sys.getprofile()
+        if sys.getprofile() != _profiler_function:
+            self._original_function = sys.getprofile()
 
         if settings.debug or self.debug:
             sys.stderr.write("Tracer configured...\n")

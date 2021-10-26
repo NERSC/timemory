@@ -40,11 +40,11 @@ target_compile_definitions(cpu-fp-double INTERFACE ROOFLINE_FP_BYTES=8)
 
 # create the fibonacci example
 add_executable(ex-cpu-roofline-fib-single ${EXE_NAME}.cpp)
-target_link_libraries(ex-cpu-roofline-fib-single timemory cpu-fp-single)
+target_link_libraries(ex-cpu-roofline-fib-single timemory::timemory cpu-fp-single)
 set_target_properties(ex-cpu-roofline-fib-single PROPERTIES OUTPUT_NAME ${EXE_NAME}.sp)
 
 add_executable(ex-cpu-roofline-fib-double ${EXE_NAME}.cpp)
-target_link_libraries(ex-cpu-roofline-fib-double timemory cpu-fp-double)
+target_link_libraries(ex-cpu-roofline-fib-double timemory::timemory cpu-fp-double)
 set_target_properties(ex-cpu-roofline-fib-double PROPERTIES OUTPUT_NAME ${EXE_NAME})
 
 # install the targets

@@ -61,14 +61,14 @@ struct set_prefix
     TIMEMORY_DEFAULT_OBJECT(set_prefix)
 
     TIMEMORY_INLINE set_prefix(type& obj, const string_t& _prefix);
-    TIMEMORY_INLINE set_prefix(type& obj, uint64_t _nhash, const string_t& _prefix);
+    TIMEMORY_INLINE set_prefix(type& obj, hash_value_t _nhash, const string_t& _prefix);
 
     TIMEMORY_INLINE auto operator()(type& obj, const string_t& _prefix) const
     {
         return sfinae_str(obj, 0, 0, 0, _prefix);
     }
 
-    TIMEMORY_HOT auto operator()(type& obj, uint64_t _nhash) const
+    TIMEMORY_HOT auto operator()(type& obj, hash_value_t _nhash) const
     {
         return sfinae_hash(obj, 0, _nhash);
     }
@@ -102,17 +102,17 @@ private:
     {}
 
 private:
-    //  If the component has a set_prefix(uint64_t) member function
+    //  If the component has a set_prefix(hash_value_t) member function
     template <typename U>
-    TIMEMORY_HOT auto sfinae_hash(U& obj, int, uint64_t _nhash) const
+    TIMEMORY_HOT auto sfinae_hash(U& obj, int, hash_value_t _nhash) const
         -> decltype(obj.set_prefix(_nhash))
     {
         return obj.set_prefix(_nhash);
     }
 
-    //  If the component does not have a set_prefix(uint64_t) member function
+    //  If the component does not have a set_prefix(hash_value_t) member function
     template <typename U>
-    TIMEMORY_INLINE void sfinae_hash(U&, long, uint64_t) const
+    TIMEMORY_INLINE void sfinae_hash(U&, long, hash_value_t) const
     {}
 };
 //
@@ -127,7 +127,7 @@ set_prefix<Tp>::set_prefix(type& obj, const string_t& _prefix)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-set_prefix<Tp>::set_prefix(type& obj, uint64_t _nhash, const string_t& _prefix)
+set_prefix<Tp>::set_prefix(type& obj, hash_value_t _nhash, const string_t& _prefix)
 {
     sfinae_hash(obj, 0, _nhash);
     sfinae_str(obj, 0, 0, 0, _prefix);

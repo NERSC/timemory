@@ -53,6 +53,7 @@ __all__ = [
 ]
 
 import os
+import re
 import sys
 
 
@@ -100,19 +101,48 @@ def _svg_to_png(out, svg_code=None, svg_file=None):
     return None
 
 
+def _get_metric(_x, _metric):
+    """Evaluated regular expression for metric name"""
+    _cols = ", ".join(_x.show_metric_columns())
+    print(f"searching for {_metric} in {_cols}")
+    for itr in _x.show_metric_columns():
+        cv = re.search(_metric, itr)
+        if cv:
+            _metric = "{}".format(cv.group())
+            break
+    return _metric
+
+
+def _get_metric_columns(_x):
+    """Extract the metric columns"""
+    if not isinstance(_x, list):
+        return _x.show_metric_columns()
+
+    cols = []
+    for itr in _x:
+        cols.extend(itr.show_metric_columns())
+    return cols
+
+
 def load(data, *_args, **_kwargs):
     """Loads a graphframe"""
     from timemory import hatchet
     import hatchet as ht
+    import six
 
-    # print("data: {}".format(data))
-    # print("data_type: {}".format(type(data).__name__))
-    return ht.GraphFrame.from_timemory(data, *_args, **_kwargs)
+    gf = ht.GraphFrame.from_timemory(data, *_args, **_kwargs)
+    if isinstance(data, six.string_types):
+        print(f"{data} columns:")
+    else:
+        print("graphframe columns:")
+    for itr in _get_metric_columns(gf):
+        print(f"    {itr}")
+
+    return gf
 
 
 def match(data, pattern, field="name"):
     """Find the graphframes which fully match a regular expression"""
-    import re
 
     prog = re.compile(pattern)
 
@@ -127,7 +157,6 @@ def match(data, pattern, field="name"):
 
 def search(data, pattern, field="name"):
     """Find the graphframes with substring that matches regular expression"""
-    import re
 
     prog = re.compile(pattern)
 
@@ -140,7 +169,7 @@ def search(data, pattern, field="name"):
     return ret
 
 
-def expression(data, math_expr, metric="sum.inc"):
+def expression(data, math_expr, metric="sum.*(.inc)$"):
     """Find the graphframes with whose value satisfy the given expression
 
     Arguments:
@@ -160,10 +189,19 @@ def expression(data, math_expr, metric="sum.inc"):
 
             filter(data, 'x > 1.0e3 && x < 1e6', "sum.inc")
     """
+    import re
 
     def eval_math_expr(x):
-        _expr = math_expr.replace("x", "{}".format(x[metric]))
-        # print(f"Executing expression: '{_expr}'")
+        """Evaluates whether math expression is satisfied. Returning false will cause value to be filtered"""
+        _metric = None
+        for itr in x.keys():
+            cv = re.search(metric, itr)
+            if cv:
+                _metric = "{}".format(cv.group())
+                break
+        if _metric is None:
+            return True
+        _expr = math_expr.replace("x", "{}".format(x[_metric]))
         _and = _expr.split("&&")
         for itr in _and:
             if "||" in itr:
@@ -172,13 +210,10 @@ def expression(data, math_expr, metric="sum.inc"):
                 for sitr in _or:
                     _n_or += 1 if eval(sitr) else 0
                 if _n_or == 0:
-                    # print(f'    Failure! {sitr}')
                     return False
             else:
                 if not eval(itr):
-                    # print(f'    Failure! {itr}')
                     return False
-        # print(f'    Success: {_expr}')
         return True
 
     if math_expr is not None:
@@ -211,7 +246,7 @@ def expression(data, math_expr, metric="sum.inc"):
     return ret
 
 
-def sort(data, metric="sum", ascending=False):
+def sort(data, metric="sum\\.[a-z_]", ascending=False):
     """Sort one or more graphframes by a metric"""
 
     def _generate(itr, _metric, _ascending):
@@ -223,12 +258,21 @@ def sort(data, metric="sum", ascending=False):
             from timemory.hatchet.graph import Graph  # noqa: F401
             from timemory.hatchet.graphframe import GraphFrame  # noqa: F401
 
+        for kitr in itr.show_metric_columns():
+            cv = re.search(_metric, kitr)
+            if cv:
+                _metric = "{}".format(cv.group())
+                break
+
         # generate a new graph from the sorted graphframe
-        _data_frame = itr.dataframe.sort_values(
-            by=[_metric], ascending=_ascending
+        ret = itr.deepcopy()
+        ret.dataframe.sort_values(
+            by=[_metric],
+            ascending=_ascending,
+            inplace=True,
         )
 
-        return _data_frame
+        return ret
 
         # _list_roots = []
         # for node in itr.graph.traverse():
@@ -255,6 +299,12 @@ def group(data, metric, field="name", ascending=False):
     def _generate(itr, _metric, _field, _ascending):
         # Drop all index levels in the DataFrame except ``node``.
         # itr.drop_index_levels()
+        for kitr in itr.show_metric_columns():
+            cv = re.search(_metric, kitr)
+            if cv:
+                _metric = "{}".format(cv.group())
+                break
+
         return (
             itr.dataframe.groupby(_field)
             .sum()
@@ -360,7 +410,9 @@ def dump_entity(data, functor, file=None, fext=None):
 
 def dump_tree(data, metric, file=None, echo_dart=False):
     """Dumps data as a tree to stdout or file"""
-    _files = dump_entity(data, lambda x: x.tree(metric), file, ".txt")
+    _files = dump_entity(
+        data, lambda x: x.tree(_get_metric(x, metric)), file, ".txt"
+    )
     for itr in _files:
         if itr is not None and echo_dart is True:
             from timemory.common import dart_measurement_file
@@ -375,7 +427,9 @@ def dump_dot(data, metric, file=None, echo_dart=False):
     """Dumps data as a dot to stdout or file"""
     from timemory.common import popen, dart_measurement_file, which
 
-    _files = dump_entity(data, lambda x: x.to_dot(metric), file, ".dot")
+    _files = dump_entity(
+        data, lambda x: x.to_dot(_get_metric(x, metric)), file, ".dot"
+    )
     for itr in _files:
         if itr is not None:
             lbl = _get_label(itr)
@@ -405,7 +459,10 @@ def dump_flamegraph(data, metric, file=None, echo_dart=False):
     )
 
     _files = dump_entity(
-        data, lambda x: x.to_flamegraph(metric), file, ".flamegraph.txt"
+        data,
+        lambda x: x.to_flamegraph(_get_metric(x, metric)),
+        file,
+        ".flamegraph.txt",
     )
     for itr in _files:
         flamegrapher = get_bin_script("flamegraph.pl")
@@ -501,6 +558,7 @@ def dump_tabulate(dtype, data, metric, file=None, echo_dart=False):
 
 def dump_unknown(data, metric, file=None, echo_dart=False):
     """Dumps a non-graphframe"""
+
     _files = dump_entity(data, lambda x: x, file, ".txt")
     for itr in _files:
         if itr is not None and echo_dart is True:
@@ -513,9 +571,9 @@ def dump_unknown(data, metric, file=None, echo_dart=False):
 
 
 def dump(data, metric, dtype, file=None, echo_dart=False):
-    # if isinstance(data, list):
-    #    for itr in data:
-    #        print(itr.dataframe)
+    """Generic dump method for tree, dot, flamegraph, table, markdown, html,
+    or markdown_grid
+    """
 
     _success = False
     try:

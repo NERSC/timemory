@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/backends/dmp.hpp"
 #include "timemory/data/types.hpp"  // data::ring_buffer_allocator
 #include "timemory/hash/declaration.hpp"
 #include "timemory/mpl/types.hpp"
@@ -106,18 +107,15 @@ public:
     static this_type* base_instance();
 
 public:
-    TIMEMORY_NODISCARD const hash_map_ptr_t& get_hash_ids() const { return m_hash_ids; }
-    TIMEMORY_NODISCARD const hash_alias_ptr_t& get_hash_aliases() const
-    {
-        return m_hash_aliases;
-    }
+    const hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
+    const hash_alias_ptr_t& get_hash_aliases() const { return m_hash_aliases; }
 
     hash_value_t add_hash_id(const std::string& _prefix);
     void         add_hash_id(uint64_t _lhs, uint64_t _rhs);
 
-    TIMEMORY_NODISCARD bool    is_initialized() const { return m_initialized; }
-    TIMEMORY_NODISCARD int64_t instance_id() const { return m_instance_id; }
-    void                       free_shared_manager();
+    bool    is_initialized() const { return m_initialized; }
+    int64_t instance_id() const { return m_instance_id; }
+    void    free_shared_manager();
 
 protected:
     void add_file_output(const string_t& _category, const string_t& _label,

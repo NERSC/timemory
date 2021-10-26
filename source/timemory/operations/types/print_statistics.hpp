@@ -66,21 +66,13 @@ public:
     TIMEMORY_COLD print_statistics(const type&, utility::stream& _os, const Self&,
                                    const Sp<Vp>& _stats, uint64_t)
     {
-        if(!trait::runtime_enabled<Tp>::get())
-            return;
-
-        bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
-        bool use_max    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
-        bool use_var    = get_env<bool>("TIMEMORY_PRINT_VARIANCE", false);
-        bool use_stddev = get_env<bool>("TIMEMORY_PRINT_STDDEV", true);
-
-        if(use_min)
+        if(trait::report<type>::min())
             utility::write_entry(_os, "MIN", _stats.get_min());
-        if(use_max)
+        if(trait::report<type>::max())
             utility::write_entry(_os, "MAX", _stats.get_max());
-        if(use_var)
+        if(trait::report<type>::variance())
             utility::write_entry(_os, "VAR", _stats.get_variance());
-        if(use_stddev)
+        if(trait::report<type>::stddev())
             utility::write_entry(_os, "STDDEV", _stats.get_stddev());
     }
 
@@ -100,25 +92,17 @@ public:
               enable_if_t<stats_enabled<Up, Vp>::value, int> = 0>
     static TIMEMORY_COLD void get_header(utility::stream& _os, const Sp<Vp>&)
     {
-        if(!trait::runtime_enabled<Tp>::get())
-            return;
-
-        bool use_min    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
-        bool use_max    = get_env<bool>("TIMEMORY_PRINT_MIN", true);
-        bool use_var    = get_env<bool>("TIMEMORY_PRINT_VARIANCE", false);
-        bool use_stddev = get_env<bool>("TIMEMORY_PRINT_STDDEV", true);
-
         auto _flags = Tp::get_format_flags();
         auto _width = Tp::get_width();
         auto _prec  = Tp::get_precision();
 
-        if(use_min)
+        if(trait::report<type>::min())
             utility::write_header(_os, "MIN", _flags, _width, _prec);
-        if(use_max)
+        if(trait::report<type>::max())
             utility::write_header(_os, "MAX", _flags, _width, _prec);
-        if(use_var)
+        if(trait::report<type>::variance())
             utility::write_header(_os, "VAR", _flags, _width, _prec);
-        if(use_stddev)
+        if(trait::report<type>::stddev())
             utility::write_header(_os, "STDDEV", _flags, _width, _prec);
     }
 

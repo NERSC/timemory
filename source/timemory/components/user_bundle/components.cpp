@@ -124,6 +124,10 @@ get_bundle_components(const std::vector<user_bundle_spec_t>& _priority)
                 break;
         }
     }
+
+    auto _debug = (settings::instance()) ? (settings::instance()->get_debug()) : false;
+    CONDITIONAL_PRINT_HERE(_debug, "getting user bundle components: %s", _custom.c_str());
+
     return tim::enumerate_components(tim::delimit(_custom));
 }
 //

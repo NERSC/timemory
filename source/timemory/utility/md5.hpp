@@ -32,7 +32,7 @@
 
 namespace tim
 {
-namespace utility
+namespace md5
 {
 // helper function
 std::string
@@ -79,11 +79,11 @@ private:
     std::array<uint32_t, 4> state = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476 };
     std::array<uint8_t, 16> digest{};  // result
 };
-}  // namespace utility
+}  // namespace md5
 }  // namespace tim
 
 #include "timemory/utility/macros.hpp"
 
-#if defined(TIMEMORY_UTILITY_HEADER_ONLY)
+#if defined(TIMEMORY_UTILITY_HEADER_MODE)
 #    include "timemory/utility/md5.cpp"
 #endif

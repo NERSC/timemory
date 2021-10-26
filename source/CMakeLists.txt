@@ -476,6 +476,9 @@ elseif(TARGET timemory-compiler-instrument-static)
     target_link_libraries(timemory-compiler-instrument
                           INTERFACE timemory-compiler-instrument-static)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-compiler-instrument-static)
+else()
+    inform_empty_interface(timemory-compiler-instrument
+                           "Compiler instrumentation library")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -534,29 +537,9 @@ export(
 # PYTHON Bindings
 #
 # ----------------------------------------------------------------------------------------#
-#
-# Python bindings
-#
+
 timemory_message(STATUS "Adding source/python...")
 add_subdirectory(python)
-
-#
-# install the plotting.py module as a Python executable named 'timemory-plotter' as C++
-# JSON outputs can use this to generate plots
-#
-if(TIMEMORY_USE_PYTHON AND NOT SKBUILD)
-    configure_file(${PROJECT_SOURCE_DIR}/timemory/plotting/__main__.py
-                   ${PROJECT_BINARY_DIR}/timemory-plotter @ONLY)
-
-    configure_file(${PROJECT_SOURCE_DIR}/timemory/roofline/__main__.py
-                   ${PROJECT_BINARY_DIR}/timemory-roofline @ONLY)
-
-    install(
-        PROGRAMS ${PROJECT_BINARY_DIR}/timemory-plotter
-                 ${PROJECT_BINARY_DIR}/timemory-roofline
-        DESTINATION ${CMAKE_INSTALL_BINDIR}
-        OPTIONAL)
-endif()
 
 # ----------------------------------------------------------------------------------------#
 #

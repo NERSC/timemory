@@ -279,8 +279,6 @@ singleton<Type, PointerT, TagT>::~singleton()
     auto& del = get_deleter();
     if(del)
         del(_master_instance());
-    if(std::this_thread::get_id() == f_master_thread())
-        f_master_instance() = nullptr;
 }
 
 //--------------------------------------------------------------------------------------//

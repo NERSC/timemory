@@ -3,9 +3,9 @@ cmake_minimum_required(VERSION 3.15 FATAL_ERROR)
 project(timemory-Compiler-Instrument-Example LANGUAGES CXX)
 
 set(timemory_FIND_COMPONENTS_INTERFACE compiler-instrument-example)
-find_package(timemory COMPONENTS compiler-instrument)
+find_package(timemory OPTIONAL_COMPONENTS compiler-instrument)
 
-if(NOT timemory_FOUND)
+if(NOT timemory_FOUND OR NOT TARGET timemory::timemory-compiler-instrument)
     return()
 endif()
 

@@ -174,7 +174,7 @@ class TimemoryRUsageTests(unittest.TestCase):
         tim.settings.precision = 9
         tim.settings.memory_units = memory_unit[1]
         tim.settings.mpi_thread = False
-        tim.settings.file_output = False
+        tim.settings.file_output = True
 
         # perform allocation once here
         allocate()

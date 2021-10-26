@@ -190,6 +190,10 @@
 //
 namespace tim
 {
+// definition in popen.hpp
+bool
+launch_process(const char* cmd, const std::string& extra = "",
+               std::ostream* os = nullptr);
 //
 /// Alias template make_integer_sequence
 template <typename Tp, Tp Num>
@@ -423,6 +427,9 @@ using input_type                    = std::array<bool, scope_count>;
 //
 //--------------------------------------------------------------------------------------//
 //
+input_type&
+get_fields() TIMEMORY_VISIBILITY("default");
+//
 inline input_type&
 get_fields()
 {
@@ -437,7 +444,7 @@ static TIMEMORY_INLINE auto
 generate(Arg&& arg, index_sequence<Idx...>)
 {
     static_assert(sizeof...(Idx) <= scope_count, "Error! Bad index sequence size");
-    data_type ret;
+    data_type ret{};
     TIMEMORY_FOLD_EXPRESSION(ret.set(Idx, arg[Idx]));
     return ret;
 }

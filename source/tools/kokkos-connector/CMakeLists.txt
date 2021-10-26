@@ -101,6 +101,8 @@ function(configure_library _NAME)
         OPTIONAL)
 endfunction()
 
+add_custom_target(timemory-kokkos-tools)
+
 #
 # Build object library
 #
@@ -137,6 +139,7 @@ install(
     TARGETS kp_timemory
     DESTINATION ${TIMEMORY_KOKKOS_TOOLS_INSTALL_DIR}
     OPTIONAL)
+add_dependencies(timemory-kokkos-tools kp_timemory)
 
 #
 # Build regex filtering library
@@ -146,12 +149,13 @@ add_library(
     ${TIMEMORY_EXCLUDE_FROM_ALL} ${PROJECT_SOURCE_DIR}/kp_timemory_filter.cpp
     ${timemory_COMMON_SOURCES})
 configure_library(kp_timemory_filter)
+add_dependencies(timemory-kokkos-tools kp_timemory_filter)
 
 #
 # Generate a test using kokkos
 #
 function(ADD_KOKKOS_SAMPLE_TEST _NAME _TARG)
-    if(NOT TIMEMORY_BUILD_KOKKOS_SAMPLE)
+    if(NOT TIMEMORY_BUILD_KOKKOS_SAMPLE OR NOT TARGET kokkos-connector-sample)
         return()
     endif()
 
@@ -161,9 +165,14 @@ function(ADD_KOKKOS_SAMPLE_TEST _NAME _TARG)
         COMMAND $<TARGET_FILE:kokkos-connector-sample>
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
     set(_TEST_ENV
-        "KOKKOS_PROFILE_LIBRARY=$<TARGET_FILE:${_TARG}>" "OMP_PROC_BIND=spread"
-        "OMP_PLACES=threads" "OMP_NUM_THREADS=2" "KOKKOS_NUM_THREADS=2"
-        "TIMEMORY_TIME_OUTPUT=OFF" "TIMEMORY_COUT_OUTPUT=ON")
+        "KOKKOS_PROFILE_LIBRARY=$<TARGET_FILE:${_TARG}>"
+        "OMP_PROC_BIND=spread"
+        "OMP_PLACES=threads"
+        "OMP_NUM_THREADS=2"
+        "KOKKOS_NUM_THREADS=2"
+        "TIMEMORY_TIME_OUTPUT=OFF"
+        "TIMEMORY_COUT_OUTPUT=ON"
+        "CALI_CONFIG_PROFILE=runtime-report")
     set_tests_properties(
         kokkos-connector-test-${_NAME}
         PROPERTIES
@@ -174,7 +183,7 @@ function(ADD_KOKKOS_SAMPLE_TEST _NAME _TARG)
             ENVIRONMENT
             "${_TEST_ENV}"
             PASS_REGULAR_EXPRESSION
-            "(kokkos/allocate/Host/[yx]).*( 0 \\|).*(kokkos/allocate/Host/A).*(kokkos/deep_copy/Host=[yzA]/Host=[yzA]).*(kokkos/deallocate/Host/[Axy])|(kokkos/dev[0-9]+/Kokkos::View::initialization .unsigned).*(kokkos/dev[0-9]+/Kokkos::View::initialization .long).*(kokkos/dev[0-9]+/Kokkos::View::initialization .A).*(kokkos/dev[0-9]+/yAx)[ \\|]+100 \\|"
+            ">>> kokkos/allocate/.*>>> kokkos/deep_copy/.*>>> kokkos/deallocate/.*(>>> kokkos/(Kokkos::|)parallel_reduce|)"
         )
 endfunction()
 
@@ -182,15 +191,19 @@ endfunction()
 # Build the sample (test executable)
 #
 if(TIMEMORY_BUILD_KOKKOS_SAMPLE)
-    # use launch_compiler feature to ensure kokkos uses it's original compiler
-    find_package(Kokkos REQUIRED)
+    find_package(Kokkos 3.1 REQUIRED)
     add_executable(kokkos-connector-sample ${TIMEMORY_EXCLUDE_FROM_ALL} sample/sample.cpp)
+    set_property(TARGET kokkos-connector-sample PROPERTY RULE_LAUNCH_COMPILE "")
+    set_property(TARGET kokkos-connector-sample PROPERTY RULE_LAUNCH_LINK "")
+    # use launch_compiler feature to ensure kokkos uses it's original compiler
+    kokkos_compilation(TARGET kokkos-connector-sample)
     target_compile_definitions(
         kokkos-connector-sample
         PRIVATE -DKOKKOS_PROFILE_LIBRARY="$<TARGET_FILE:kp_timemory>")
     target_link_libraries(kokkos-connector-sample PRIVATE Kokkos::kokkos)
     set_target_properties(kokkos-connector-sample PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                                              ${CMAKE_CURRENT_BINARY_DIR})
+    add_dependencies(timemory-kokkos-tools kokkos-connector-sample)
     # kokkos_compilation(TARGET kokkos-connector-sample)
     add_kokkos_sample_test(libtimemory timemory::timemory-cxx)
     add_kokkos_sample_test(kp-timemory kp_timemory)
@@ -310,6 +323,7 @@ function(ADD_CONNECTOR_CONFIG _NAME)
     target_compile_definitions(kp_timemory_${_NAME} PRIVATE ${CONNECTOR_DEFINITIONS})
 
     add_kokkos_sample_test(kp_timemory_${_NAME} kp_timemory_${_NAME})
+    add_dependencies(timemory-kokkos-tools kp_timemory_${_NAME})
 endfunction()
 
 # --------------------------------------------------------------------------------------##

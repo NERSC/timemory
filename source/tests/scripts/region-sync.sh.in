@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 #
 # NOTE: remove '--mpi' after @PROJECT_BINARY_DIR@/timemory-run if applications built without MPI
 #
@@ -20,12 +20,12 @@ rm -rf ${TIMEMORY_OUTPUT_PATH}
 # append directories to path
 export PATH=@CMAKE_CURRENT_BINARY_DIR@:@PROJECT_BINARY_DIR@:${PATH}
 # add path to libtimemory to LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:@PROJECT_BINARY_DIR@/external/dyninst/dyninstAPI_RT:${LD_LIBRARY_PATH}
 
 emit-separator "Performing binary re-write in trace mode"
 
 # add dynamic instrumentation in trace mode
-@PROJECT_BINARY_DIR@/timemory-run --mode=trace -o ./@TEST_NAME@.trace.inst -- @COMMAND@
+@PROJECT_BINARY_DIR@/timemory-run --mode=trace -o ./@TEST_NAME@.trace.inst --min-address-range=32 -- @COMMAND@
 
 emit-separator "Executing instrumented binary"
 
@@ -37,7 +37,7 @@ export TIMEMORY_OUTPUT_PREFIX="region-sync-trace"
 emit-separator "Performing binary re-write in region mode"
 
 # add dynamic instrumentation in region mode
-@PROJECT_BINARY_DIR@/timemory-run --mode=region -o ./@TEST_NAME@.region.inst -- @COMMAND@
+@PROJECT_BINARY_DIR@/timemory-run --mode=region -o ./@TEST_NAME@.region.inst --min-address-range=32 -- @COMMAND@
 
 emit-separator "Executing instrumented binary"
 
@@ -75,5 +75,5 @@ if [ "${NREGION}" -le "${NTRACE}" ]; then
     exit -1
 fi
 
-echo -e "Instrumentation... Done"
+echo "Instrumentation Test... Done"
 exit 0

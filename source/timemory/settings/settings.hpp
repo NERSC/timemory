@@ -44,6 +44,7 @@
 
 #include <ctime>
 #include <map>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -72,6 +73,9 @@ class manager;
 //
 struct settings
 {
+    friend void timemory_init(int, char**, const std::string&, const std::string&);
+    friend void timemory_finalize();
+
     // this is the list of the current and potentially used data types
     using data_type_list_t =
         tim::type_list<bool, string_t, int16_t, int32_t, int64_t, uint16_t, uint32_t,
@@ -106,6 +110,19 @@ struct settings
     settings& operator=(settings&&) noexcept = default;
 
     void initialize();
+
+    /// the "tag" for settings should generally be the basename of exe
+    void set_tag(std::string _v) { m_tag = std::move(_v); }
+
+    /// the "tag" for settings should generally be the basename of exe
+    std::string get_tag() const;
+
+    /// if the tag is not explicitly set, try to compute it. Otherwise use
+    /// the TIMEMORY_SETTINGS_PREFIX_
+    static std::string get_fallback_tag();
+
+    /// returns whether timemory_init has been invoked
+    bool get_initialized() const { return m_initialized; }
 
     //==================================================================================//
     //
@@ -241,16 +258,17 @@ public:
     static string_t    tolower(string_t str) TIMEMORY_VISIBILITY("default");
     static string_t    toupper(string_t str) TIMEMORY_VISIBILITY("default");
     static string_t    get_global_input_prefix() TIMEMORY_VISIBILITY("default");
-    static string_t    get_global_output_prefix(bool fake = false)
+    static string_t    get_global_output_prefix(bool _make_dir = false)
         TIMEMORY_VISIBILITY("default");
     static void store_command_line(int argc, char** argv) TIMEMORY_VISIBILITY("default");
     static string_t compose_output_filename(string_t _tag, string_t _ext,
-                                            bool    _mpi_init = false,
-                                            int32_t _mpi_rank = -1, bool fake = false,
+                                            bool        _dmp_init = false,
+                                            int32_t     _dmp_rank = -1,
+                                            bool        _make_dir = false,
                                             std::string _explicit = "")
         TIMEMORY_VISIBILITY("default");
-    static string_t compose_input_filename(const string_t& _tag, string_t _ext,
-                                           bool _mpi_init = false, int32_t _mpi_rank = -1,
+    static string_t compose_input_filename(string_t _tag, string_t _ext,
+                                           bool _dmp_init = false, int32_t _dmp_rank = -1,
                                            std::string _explicit = "")
         TIMEMORY_VISIBILITY("default");
 
@@ -258,6 +276,11 @@ public:
         TIMEMORY_VISIBILITY("default");
 
     static void parse(std::shared_ptr<settings>) TIMEMORY_VISIBILITY("default");
+
+    static std::string format(std::string _fpath, std::string _tag)
+        TIMEMORY_VISIBILITY("hidden");
+    static std::string format(std::string _prefix, std::string _tag, std::string _suffix,
+                              std::string _ext) TIMEMORY_VISIBILITY("hidden");
 
 public:
     template <typename Archive>
@@ -276,6 +299,8 @@ public:
     bool read(const string_t&);
     bool read(std::istream&, string_t = "");
 
+    void init_config(bool search_default = true);
+
 public:
     template <size_t Idx = 0>
     static int64_t indent_width(int64_t _w = settings::width())
@@ -286,13 +311,13 @@ public:
         TIMEMORY_VISIBILITY("default");
 
 public:
-    TIMEMORY_NODISCARD auto           ordering() const { return m_order; }
-    iterator                          begin() { return m_data.begin(); }
-    iterator                          end() { return m_data.end(); }
-    TIMEMORY_NODISCARD const_iterator begin() const { return m_data.cbegin(); }
-    TIMEMORY_NODISCARD const_iterator end() const { return m_data.cend(); }
-    TIMEMORY_NODISCARD const_iterator cbegin() const { return m_data.cbegin(); }
-    TIMEMORY_NODISCARD const_iterator cend() const { return m_data.cend(); }
+    auto           ordering() const { return m_order; }
+    iterator       begin() { return m_data.begin(); }
+    iterator       end() { return m_data.end(); }
+    const_iterator begin() const { return m_data.cbegin(); }
+    const_iterator end() const { return m_data.cend(); }
+    const_iterator cbegin() const { return m_data.cbegin(); }
+    const_iterator cend() const { return m_data.cend(); }
 
     template <typename Sp = string_t>
     auto find(Sp&& _key, bool _exact = true);
@@ -346,7 +371,7 @@ public:
 
 protected:
     template <typename Archive, typename Tp>
-    TIMEMORY_NODISCARD auto get_serialize_pair() const  // NOLINT
+    auto get_serialize_pair() const  // NOLINT
     {
         using serialize_func_t = std::function<void(Archive&, value_type)>;
         using serialize_pair_t = std::pair<std::type_index, serialize_func_t>;
@@ -361,7 +386,7 @@ protected:
     }
 
     template <typename Archive, typename... Tail>
-    TIMEMORY_NODISCARD auto get_serialize_map(tim::type_list<Tail...>) const  // NOLINT
+    auto get_serialize_map(tim::type_list<Tail...>) const  // NOLINT
     {
         using serialize_func_t = std::function<void(Archive&, value_type)>;
         using serialize_map_t  = std::map<std::type_index, serialize_func_t>;
@@ -390,10 +415,16 @@ private:
     }
 
 private:
-    data_type   m_data         = {};
-    strvector_t m_order        = {};
-    strvector_t m_command_line = {};
-    strvector_t m_environment  = get_global_environment();
+    bool                  m_initialized  = false;
+    data_type             m_data         = {};
+    std::string           m_tag          = {};
+    strvector_t           m_order        = {};
+    strvector_t           m_command_line = {};
+    strvector_t           m_environment  = get_global_environment();
+    std::set<std::string> m_read_configs = {};
+
+    /// This is set by timemory_init
+    void set_initialized(bool _v) { m_initialized = _v; }
 
 private:
     void initialize_core() TIMEMORY_VISIBILITY("hidden");
@@ -715,6 +746,7 @@ settings::insert(Sp&& _env, const std::string& _name, const std::string& _desc, 
                   "Error! Initializing value is not the same as the declared type");
 
     auto _sid = std::string{ std::forward<Sp>(_env) };
+    // if(get_initialized())  // don't set env before timemory_init
     set_env(_sid, _init, 0);
     m_order.push_back(_sid);
     return m_data.insert(
@@ -738,6 +770,7 @@ settings::insert(tsetting_pointer_t<Tp, Vp> _ptr, Sp&& _env)
             _sid = _ptr->get_env_name();
         if(!_sid.empty())
         {
+            // if(get_initialized())  // don't set env before timemory_init
             set_env(_sid, _ptr->as_string(), 0);
             m_order.push_back(_sid);
             return m_data.insert({ string_view_t{ m_order.back() }, _ptr });

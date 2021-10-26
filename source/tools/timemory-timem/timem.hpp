@@ -882,16 +882,16 @@ struct timem_config
     int      verbose          = tim::get_env("TIMEM_VERBOSE", 0);
     string_t shell =
         tim::get_env("TIMEM_SHELL", tim::get_env<string_t>("SHELL", getusershell()));
-    string_t      shell_flags  = tim::get_env<string_t>("TIMEM_SHELL_FLAGS", "");
-    string_t      output_file  = tim::get_env<string_t>("TIMEM_OUTPUT", "");
-    double        sample_freq  = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 5.0);
-    double        sample_delay = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 1.0e-6);
-    pid_t         master_pid   = getpid();
-    pid_t         worker_pid   = getpid();
-    size_t        buffer_size  = 0;
-    string_t      command      = {};
-    std::set<int> signal_types = { SIGALRM };
-    std::set<int> signal_flush = { SIGINT };
+    string_t      shell_flags    = tim::get_env<string_t>("TIMEM_SHELL_FLAGS", "");
+    string_t      output_file    = tim::get_env<string_t>("TIMEM_OUTPUT", "");
+    double        sample_freq    = tim::get_env<double>("TIMEM_SAMPLE_FREQ", 5.0);
+    double        sample_delay   = tim::get_env<double>("TIMEM_SAMPLE_DELAY", 1.0e-6);
+    pid_t         master_pid     = getpid();
+    pid_t         worker_pid     = getpid();
+    size_t        buffer_size    = 0;
+    string_t      command        = {};
+    std::set<int> signal_types   = { SIGALRM };
+    std::set<int> signal_forward = { SIGINT };
     std::vector<std::string>     argvector     = {};
     std::vector<hist_type>       history       = {};
     std::unique_ptr<std::thread> buffer_thread = {};
@@ -938,7 +938,7 @@ TIMEM_CONFIG_FUNCTION(buffer_size)
 TIMEM_CONFIG_FUNCTION(master_pid)
 TIMEM_CONFIG_FUNCTION(worker_pid)
 TIMEM_CONFIG_FUNCTION(signal_types)
-TIMEM_CONFIG_FUNCTION(signal_flush)
+TIMEM_CONFIG_FUNCTION(signal_forward)
 TIMEM_CONFIG_FUNCTION(argvector)
 TIMEM_CONFIG_FUNCTION(buffer_cv);
 TIMEM_CONFIG_FUNCTION(buffer_thread);

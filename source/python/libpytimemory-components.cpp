@@ -37,6 +37,7 @@
 #include "libpytimemory-components.hpp"
 
 #include "timemory/components/extern.hpp"
+#include "timemory/data/ring_buffer_allocator.hpp"
 #include "timemory/enum.h"
 #include "timemory/operations/types/python_class_name.hpp"
 #include "timemory/timemory.hpp"
@@ -44,12 +45,50 @@
 #include <set>
 #include <string>
 
+namespace pycomponents
+{
+/*template <typename Tp>
+auto&
+get_allocator()
+{
+    static tim::data::ring_buffer_allocator<Tp> _v{};
+    return _v;
+}
+//
+template <typename Tp, typename... Args>
+Tp*
+create(Args&&... args)
+{
+    auto& alloc = get_allocator<Tp>();
+    Tp*   ptr   = alloc.allocate(1);
+    alloc.construct(ptr, std::forward<Args>(args)...);
+    return ptr;
+}
+//
+template <typename Tp>
+void
+destroy(Tp* ptr)
+{
+    auto& alloc = get_allocator<Tp>();
+    alloc.destroy(ptr);
+    alloc.deallocate(ptr, 1);
+}*/
+//
+template <typename Tp, typename... Args>
+Tp*
+create(Args&&... args)
+{
+    return new Tp{ std::forward<Args>(args)... };
+}
+}  // namespace pycomponents
+
 namespace pyinternal
 {
 //
 struct cinfo
 {
     bool                  available  = false;
+    bool                  arithmetic = false;
     std::string           class_name = {};
     std::string           id         = {};
     std::set<std::string> ids        = {};
@@ -428,7 +467,7 @@ struct process_args<OpT, Arg, Args...>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _init = [](Arg arg, Args... args) {
-            auto obj = new U{};
+            U* obj = pycomponents::create<U>(arg, args...);
             obj->construct(arg, args...);
             return obj;
         };
@@ -631,14 +670,17 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     using property_t = tim::component::properties<T>;
     using metadata_t = tim::component::metadata<T>;
     using bundle_t   = pytuple_t<T>;
+    using value_type = tim::trait::component_value_type_t<T>;
 
     static_assert(property_t::specialized(), "Error! Missing specialization");
 
-    std::string id  = tim::operation::python_class_name<T>{}();
-    std::string cid = property_t::id();
+    std::string id           = tim::operation::python_class_name<T>{}();
+    std::string cid          = property_t::id();
+    bool        is_arith     = std::is_arithmetic<value_type>::value;
+    bool        is_func_wrap = tim::concepts::is_external_function_wrapper<T>::value;
 
-    auto _init  = []() { return new bundle_t{}; };
-    auto _sinit = [](std::string key) { return new bundle_t(key); };
+    auto _init  = []() { return pycomponents::create<bundle_t>(); };
+    auto _sinit = [](std::string key) { return pycomponents::create<bundle_t>(key); };
     auto _hash  = [](bundle_t* obj) { return obj->hash(); };
     auto _key   = [](bundle_t* obj) { return obj->key(); };
     auto _laps  = [](bundle_t* obj) { return obj->laps(); };
@@ -714,8 +756,8 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     std::set<std::string> _keys = property_t::ids();
     _keys.insert(id);
     _boolgen[Idx] = true;
-    _keygen[Idx]  = { cinfo{ true, id, cid, _keys },
-                     []() { return py::cast(new bundle_t{}); } };
+    _keygen[Idx]  = { cinfo{ true, is_arith && !is_func_wrap, id, cid, _keys },
+                     []() { return py::cast(pycomponents::create<bundle_t>()); } };
 
     auto idx = static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx);
     _pycomp.def_static(
@@ -797,7 +839,7 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     std::set<std::string> _keys = property_t::ids();
     _keys.insert(id);
     _boolgen[Idx] = false;
-    _keygen[Idx]  = { cinfo{ false, id, cid, _keys }, []() { return py::none{}; } };
+    _keygen[Idx] = { cinfo{ false, false, id, cid, _keys }, []() { return py::none{}; } };
 
     auto idx = static_cast<TIMEMORY_NATIVE_COMPONENT>(Idx);
     _pycomp.def_static(
@@ -835,6 +877,7 @@ components(py::module& _pymod, std::array<bool, N>& _boolgen,
 //
 namespace pycomponents
 {
+//
 py::module
 generate(py::module& _pymod)
 {
@@ -858,16 +901,20 @@ generate(py::module& _pymod)
     std::vector<std::pair<bool, std::string>> _available_and_names{};
     std::vector<std::string>                  _names{};
     std::vector<std::string>                  _available_names{};
+    std::vector<std::string>                  _available_arith_names{};
 
     _available_and_names.reserve(N);
     _names.reserve(N);
     _available_names.reserve(N);
+    _available_arith_names.reserve(N);
 
     for(const auto& itr : _keygen)
     {
         _available_and_names.emplace_back(itr.first.available, itr.first.id);
         if(itr.first.id.empty())
             continue;
+        if(itr.first.arithmetic)
+            _available_arith_names.emplace_back(itr.first.id);
         _names.emplace_back(itr.first.id);
         if(itr.first.available)
             _available_names.emplace_back(itr.first.id);
@@ -923,8 +970,14 @@ generate(py::module& _pymod)
         "Get the names of all the component types regardless of whether "
         "available or not");
     _pycomp.def(
-        "get_available_types", [_available_names]() { return _available_names; },
-        "Get the names of all the component types which are available");
+        "get_available_types",
+        [_available_names, _available_arith_names](bool arith_only) {
+            return (arith_only) ? _available_arith_names : _available_names;
+        },
+        "Get the names of all the component types which are available. If "
+        "arithmetic=True, will only return components whose value type is a basic "
+        "arithmetic type",
+        py::arg("arithmetic") = false);
 
     return _pycomp;
 }

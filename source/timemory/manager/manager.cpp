@@ -33,6 +33,7 @@
 #include "timemory/manager/types.hpp"
 #include "timemory/operations/types/decode.hpp"
 #include "timemory/settings/settings.hpp"
+#include "timemory/utility/filepath.hpp"
 #include "timemory/utility/signals.hpp"
 
 //--------------------------------------------------------------------------------------//
@@ -146,12 +147,18 @@ manager::manager()
                    "[pid=%i] -------------------------#\n",
                    process::get_id());
 #    endif
+        auto_lock_t _lk{ type_mutex<manager>() };
+        // set to zero to we can track if user added metadata
+        f_manager_persistent_data().metadata_count = 0;
         return true;
     }();
     consume_parameters(_once);
 
     if(settings::cpu_affinity())
         threading::affinity::set();
+
+    if(m_settings && m_settings->get_initialized())
+        initialize();
 }
 //
 //----------------------------------------------------------------------------------//
@@ -239,6 +246,24 @@ manager::cleanup()
         PRINT_HERE("%s [size: %i]", "cleaned",
                    (int) (_orig_sz - m_finalizer_cleanups.size()));
     }
+}
+//
+//----------------------------------------------------------------------------------//
+//
+TIMEMORY_MANAGER_LINKAGE(void)
+manager::initialize()
+{
+    if(m_is_initialized)
+        return;
+    m_is_initialized = true;
+    bool _owns       = m_lock->owns_lock();
+    if(!_owns)
+        m_lock->lock();
+    m_initializers.erase(std::remove_if(m_initializers.begin(), m_initializers.end(),
+                                        [](auto& itr) { return itr(); }),
+                         m_initializers.end());
+    if(!_owns)
+        m_lock->unlock();
 }
 //
 //----------------------------------------------------------------------------------//
@@ -454,22 +479,10 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
 
     auto _settings = f_settings();
     auto _banner   = (_settings) ? _settings->get_banner() : false;
-    if(f_verbose() > 0 || _banner || f_debug())
-        printf("\n[metadata::%s]> Outputting '%s' and '%s'...\n", context, fname.c_str(),
-               hname.c_str());
 
-    auto_lock_t _lk(type_mutex<manager>());
-
-    std::ofstream ofs(fname.c_str());
-    if(ofs)
-    {
-        write_metadata(ofs);
-    }
-    if(ofs)
-        ofs << std::endl;
-    else
-        printf("[manager]> Warning! Error opening '%s'...\n", fname.c_str());
-    ofs.close();
+    auto_lock_t _lk{ type_mutex<manager>(), std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
 
     std::map<std::string, std::set<size_t>> _hashes{};
     if(m_hash_ids && m_hash_aliases)
@@ -488,11 +501,35 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
         for(const auto& itr : (*m_hash_ids))
             _hashes[operation::decode<TIMEMORY_API>{}(itr.second)].insert(itr.first);
     }
+
+    // if there were no hashes generated, writing metadata is optional and the user
+    // did not add to metadata -> return
+    if(_hashes.empty() && m_write_metadata < 1 &&
+       f_manager_persistent_data().metadata_count == 0)
+        return;
+
+    if((f_verbose() >= 0 || _banner || f_debug()) && !_hashes.empty())
+        printf("\n[metadata::%s]> Outputting '%s' and '%s'...\n", context, fname.c_str(),
+               hname.c_str());
+    else if((f_verbose() >= 0 || _banner || f_debug()) && _hashes.empty())
+        printf("\n[metadata::%s]> Outputting '%s'...\n", context, fname.c_str());
+
+    std::ofstream ofs{};
+    if(filepath::open(ofs, fname))
+    {
+        write_metadata(ofs);
+    }
+    if(ofs)
+        ofs << std::endl;
+    else
+        printf("[manager]> Warning! Error opening '%s'...\n", fname.c_str());
+    ofs.close();
+
     if(_hashes.empty())
         return;
 
-    std::ofstream hfs(hname.c_str());
-    if(hfs)
+    std::ofstream hfs{};
+    if(filepath::open(hfs, hname))
     {
         // ensure json write final block during destruction before the file is closed
         using policy_type = policy::output_archive_t<manager>;
@@ -704,6 +741,7 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::add_metadata(const std::string& _key, const char* _value)
 {
     auto_lock_t _lk(type_mutex<manager>());
+    ++f_manager_persistent_data().metadata_count;
     f_manager_persistent_data().info_metadata.insert({ _key, std::string{ _value } });
 }
 //
@@ -713,6 +751,7 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::add_metadata(const std::string& _key, const std::string& _value)
 {
     auto_lock_t _lk(type_mutex<manager>());
+    ++f_manager_persistent_data().metadata_count;
     f_manager_persistent_data().info_metadata.insert({ _key, _value });
 }
 //
@@ -889,6 +928,7 @@ timemory_library_constructor()
     auto _inst = timemory_manager_master_instance();
     if(_settings)
     {
+        _settings->init_config();
         static auto _dir         = _settings->get_output_path();
         static auto _prefix      = _settings->get_output_prefix();
         static auto _time_output = _settings->get_time_output();
@@ -942,12 +982,10 @@ timemory_library_constructor()
 //
 //--------------------------------------------------------------------------------------//
 //
-#    if defined(TIMEMORY_MANAGER_INLINE)
 namespace
 {
-static auto timemory_library_is_constructed = (timemory_library_constructor(), true);
+auto timemory_library_is_constructed = (timemory_library_constructor(), true);
 }
-#    endif
 //
 //--------------------------------------------------------------------------------------//
 //

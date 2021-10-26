@@ -653,7 +653,7 @@ public:
         T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
         if(!_obj)
         {
-            if(settings::debug())
+            if(settings::debug() && settings::verbose() > 1)
             {
                 printf("[bundle::init]> initializing type '%s'...\n",
                        demangle<T>().c_str());
@@ -696,7 +696,7 @@ public:
         T*& _obj = std::get<index_of<T*, data_type>::value>(m_data);
         if(!_obj)
         {
-            if(settings::debug())
+            if(settings::debug() && settings::verbose() > 1)
             {
                 fprintf(stderr, "[bundle::init]> initializing type '%s'...\n",
                         demangle<T>().c_str());

@@ -22,12 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file backends/gperftools.hpp
- * \headerfile backends/gperftools.hpp "timemory/backends/gperftools.hpp"
- * Defines gperftools backend
- *
- */
-
 #pragma once
 
 #include <iostream>

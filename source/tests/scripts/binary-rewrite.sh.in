@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 #
 # NOTE: add '--mpi' after @PROJECT_BINARY_DIR@/timemory-run to applications built with MPI
 #
@@ -21,7 +21,7 @@ rm -rf ${TIMEMORY_OUTPUT_PATH}
 # append directories to path
 export PATH=@CMAKE_CURRENT_BINARY_DIR@:@PROJECT_BINARY_DIR@:${PATH}
 # add path to libtimemory to LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:@PROJECT_BINARY_DIR@/external/dyninst/dyninstAPI_RT:${LD_LIBRARY_PATH}
 
 emit-separator "Performing binary re-write with default components"
 
@@ -82,3 +82,6 @@ do
         fi
     fi
 done
+
+echo "Instrumentation Test... Done"
+exit 0

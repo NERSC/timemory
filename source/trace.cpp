@@ -662,7 +662,7 @@ extern "C"
         if(get_library_state()[0])
         {
             tim::settings::parse();
-            user_trace_bundle::global_init();
+            user_trace_bundle::global_init(true);
         }
     }
     //
@@ -743,7 +743,7 @@ extern "C"
             tim::settings::parse();
 
             // configure bundle
-            user_trace_bundle::global_init();
+            user_trace_bundle::global_init(true);
             // tim::operation::init<user_trace_bundle>(
             //    tim::operation::mode_constant<tim::operation::init_mode::global>{});
         };

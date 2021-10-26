@@ -109,7 +109,9 @@ class Tracer:
         """
 
         self.components = components
-        self._original_function = sys.gettrace()
+        self._original_function = (
+            sys.gettrace() if sys.gettrace() != _tracer_function else None
+        )
         self._unset = 0
         self._use = (
             not _tracer_config._is_running and Tracer.is_enabled() is True
@@ -122,6 +124,7 @@ class Tracer:
         """Make sure the tracer stops"""
 
         self.stop()
+        sys.settrace(self._original_function)
 
     # ---------------------------------------------------------------------------------- #
     #
@@ -143,7 +146,11 @@ class Tracer:
 
         input_components = []
         if isinstance(self.components, list):
-            input_components = self.components
+            for itr in self.components:
+                if callable(itr):
+                    input_components.extend(itr())
+                else:
+                    input_components.append(itr)
         else:
             input_components = ["{}".format(self.components)]
 
@@ -202,7 +209,6 @@ class Tracer:
                 sys.stderr.write("Tracer starting...\n")
             self.configure()
             sys.settrace(_tracer_function)
-            threading.settrace(_tracer_function)
             if settings.debug or self.debug:
                 sys.stderr.write("Tracer started...\n")
 

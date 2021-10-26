@@ -142,6 +142,72 @@ TEST_F(ring_buffer_tests, empty_mmap) { EXPECT_TRUE(buffer.is_empty()); }
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(ring_buffer_tests, copy)
+{
+    buffer_type buffer_copy = buffer;
+    for(size_t i = 0; i < count; ++i)
+    {
+        EXPECT_FALSE(buffer_copy.is_full()) << "[" << i << "]> " << buffer_copy;
+        comp_type tmp{};
+        tmp.store(static_cast<double>(i + 1));
+        auto* ptr = buffer_copy.emplace(tmp);
+        EXPECT_EQ(tmp.get(), ptr->get());
+        tmp.store(std::plus<double>{}, static_cast<double>(i + 1));
+        EXPECT_NE(tmp.get(), ptr->get());
+    }
+    EXPECT_FALSE(buffer.is_full()) << buffer;
+    EXPECT_TRUE(buffer_copy.is_full()) << buffer_copy;
+
+#define COPY_EXPECT_EQ(FUNC)                                                             \
+    EXPECT_EQ(lhs->FUNC(), rhs->FUNC())                                                  \
+        << std::boolalpha << #FUNC << " :: lhs: " << lhs->FUNC()                         \
+        << ", rhs: " << rhs->FUNC();
+
+    std::cout << "[   copy   ]> " << buffer_copy << std::endl;
+    auto buffer_temp = buffer_copy;
+    std::cout << "[   temp   ]> " << buffer_temp << std::endl;
+    buffer = buffer_temp;
+    std::cout << "[   buff   ]> " << buffer << std::endl;
+    EXPECT_TRUE(buffer.is_full()) << buffer;
+    auto n = buffer.count();
+    for(size_t i = 0; i < n; ++i)
+    {
+        if(i < n / 2)
+            buffer_temp.retrieve();
+        comp_type* lhs = buffer.retrieve();
+        comp_type* rhs = buffer_copy.retrieve();
+        ASSERT_TRUE(lhs != nullptr && rhs != nullptr)
+            << "lhs: " << lhs << ", rhs: " << rhs;
+        EXPECT_NE(lhs, rhs) << "lhs: " << lhs << ", rhs: " << rhs;
+        // verify all fields
+        COPY_EXPECT_EQ(get_depth_change)
+        COPY_EXPECT_EQ(get_is_flat)
+        COPY_EXPECT_EQ(get_is_invalid)
+        COPY_EXPECT_EQ(get_is_on_stack)
+        COPY_EXPECT_EQ(get_is_running)
+        COPY_EXPECT_EQ(get_is_transient)
+        COPY_EXPECT_EQ(get_accum)
+        COPY_EXPECT_EQ(get_value)
+        COPY_EXPECT_EQ(get_last)
+        COPY_EXPECT_EQ(get)
+        COPY_EXPECT_EQ(get_display)
+        COPY_EXPECT_EQ(load)
+        COPY_EXPECT_EQ(get_laps)
+        COPY_EXPECT_EQ(get_iterator)
+    }
+
+    std::cout << "[   copy   ]> " << buffer_copy << std::endl;
+    std::cout << "[   temp   ]> " << buffer_temp << std::endl;
+    // make sure swap and move do not corrupt data
+    std::swap(buffer_copy, buffer_temp);
+    std::cout << "[swap//copy]> " << buffer_copy << std::endl;
+    std::cout << "[swap//temp]> " << buffer_temp << std::endl;
+    std::cout << "[   buff   ]> " << buffer << std::endl;
+    buffer = std::move(buffer_copy);
+}
+
+//--------------------------------------------------------------------------------------//
+
 size_t n = 4;
 
 TEST_F(ring_buffer_tests, loop)

@@ -99,6 +99,11 @@ initialize_bundle(AltApi _api = AltApi{})
     auto  itr              = variables.find(Idx);
     if(itr != variables.end())
     {
+        CONDITIONAL_PRINT_HERE(
+            (settings::instance()) ? (settings::instance()->get_debug()) : false,
+            "getting user bundle components for type %s (%s)",
+            demangle<user_bundle_type>().c_str(), user_bundle_type::label().c_str());
+
         auto _enum = env::get_bundle_components(itr->second);
         tim::configure<user_bundle_type>(_enum);
     }
@@ -210,8 +215,8 @@ public:
     friend struct operation::set_stopped<this_type>;
 
     static size_t bundle_size() { return get_data().size(); }
-    static void   global_init() TIMEMORY_VISIBILITY("default");
-    static void   global_init(storage_type*) { global_init(); }
+    static void global_init(bool _preinit = false) TIMEMORY_VISIBILITY("default");
+    static void global_init(storage_type*) { global_init(false); }
 
     using internal::user_bundle::description;
     using internal::user_bundle::label;
@@ -230,11 +235,11 @@ public:
     //  affecting this instance
     //
     user_bundle()
-    : internal::user_bundle{ scope::get_default(), get_typeids(), get_data() }
+    : internal::user_bundle{ scope::get_default(), get_typeids(), (persistent_init(), get_data()) }
     {}
 
     explicit user_bundle(const char* _prefix, scope::config _scope = scope::get_default())
-    : internal::user_bundle{ _scope, get_typeids(), get_data(), _prefix }
+    : internal::user_bundle{ _scope, get_typeids(), (persistent_init(), get_data()), _prefix }
     {}
 
     user_bundle(const char* _prefix, opaque_array_t _bundle_vec, typeid_vec_t _typeids,
@@ -365,17 +370,37 @@ public:
     }
 
 private:
+    static bool persistent_init();
+    struct persistent_data;
+    static persistent_data& get_persistent_data() TIMEMORY_VISIBILITY("default");
+
     struct persistent_data
     {
-        mutex_t        m_lock;
-        opaque_array_t m_data    = {};
-        typeid_vec_t   m_typeids = {};
-    };
+        volatile bool             m_init    = false;
+        bool                      m_preinit = false;
+        mutex_t                   m_lock;
+        opaque_array_t            m_data     = {};
+        typeid_vec_t              m_typeids  = {};
+        std::shared_ptr<settings> m_settings = settings::shared_instance();
 
-    //----------------------------------------------------------------------------------//
-    //  Persistent data
-    //
-    static persistent_data& get_persistent_data() TIMEMORY_VISIBILITY("default");
+        bool init(bool _preinit = false)
+        {
+            if(!m_init)
+            {
+                if(_preinit)
+                    m_preinit = true;
+                if(m_settings && m_settings->get_initialized())
+                {
+                    if(m_preinit)
+                        reset();
+                    m_init = true;  // comma operator
+                }
+                if(m_init || _preinit)
+                    env::initialize_bundle<Idx, Tag>();
+            }
+            return m_init;
+        }
+    };
 
 public:
     /// template instantiation-specific static opaque array
@@ -392,11 +417,11 @@ public:
 //
 template <size_t Idx, typename Tag>
 void
-user_bundle<Idx, Tag>::global_init()
+user_bundle<Idx, Tag>::global_init(bool _preinit)
 {
     if(settings::verbose() > 2 || settings::debug())
         PRINT_HERE("Global initialization of %s", demangle<this_type>().c_str());
-    env::initialize_bundle<Idx, Tag>();
+    get_persistent_data().init(_preinit);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -407,6 +432,15 @@ user_bundle<Idx, Tag>::get_persistent_data()
 {
     static persistent_data _instance{};
     return _instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <size_t Idx, typename Tag>
+bool
+user_bundle<Idx, Tag>::persistent_init()
+{
+    return get_persistent_data().init();
 }
 //
 //--------------------------------------------------------------------------------------//

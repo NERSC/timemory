@@ -162,10 +162,37 @@ endforeach()
 #
 if(SKBUILD)
     return()
+elseif(TIMEMORY_USE_PYTHON AND CMAKE_INSTALL_PYTHONDIR)
+    foreach(_FILE setup.py setup.cfg VERSION requirements.txt .requirements/build.txt .requirements/runtime.txt .requirements/mpi_runtime.txt)
+        configure_file(${PROJECT_SOURCE_DIR}/${_FILE} ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
+    endforeach()
+    if(PYTHON_EXECUTABLE)
+        execute_process(
+            COMMAND ${PYTHON_EXECUTABLE} setup.py dist_info --dist-info
+            OUTPUT_VARIABLE _OUT
+            RESULT_VARIABLE _RET
+            ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        set(_DIST_DIR ${PROJECT_BINARY_DIR}/timemory-${TIMEMORY_VERSION}.dist-info)
+        if(NOT EXISTS ${_DIST_DIR})
+            set(_DIST_DIR ${PROJECT_BINARY_DIR}/timemory.dist-info)
+        endif()
+        if(EXISTS ${_DIST_DIR} AND IS_DIRECTORY ${_DIST_DIR})
+            configure_file(${PROJECT_SOURCE_DIR}/LICENSE ${PROJECT_BINARY_DIR}/${_DIST_DIR}/LICENSE.txt COPYONLY)
+            install(
+                DIRECTORY ${_DIST_DIR}
+                DESTINATION ${CMAKE_INSTALL_PYTHONDIR}
+                OPTIONAL)
+        endif()
+    endif()
 endif()
 
 function(TIMEMORY_PYTHON_CONSOLE_SCRIPT SCRIPT_NAME SCRIPT_SUBMODULE SCRIPT_FUNCTION)
     set(CONSOLE_EXTRA "${ARGN}")
+
+    if(NOT SKBUILD)
+        # set(TIMEMORY_REQUIRES_PREFIX "# ")
+    endif()
 
     configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/console-script.py.in
                    ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} @ONLY)

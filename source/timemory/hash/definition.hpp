@@ -139,6 +139,15 @@ add_hash_id(const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id,
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_HASH_LINKAGE(void)
+add_hash_id(const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id,
+            hash_value_t _alias_hash_id)
+{
+    _hash_alias->emplace(_alias_hash_id, _hash_id);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(void)
 add_hash_id(hash_value_t _hash_id, hash_value_t _alias_hash_id)
 {
     add_hash_id(get_hash_aliases(), _hash_id, _alias_hash_id);
@@ -146,134 +155,27 @@ add_hash_id(hash_value_t _hash_id, hash_value_t _alias_hash_id)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_HASH_LINKAGE(typename hash_map_t::const_iterator)
-find_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
-                     hash_value_t _hash_id)
+TIMEMORY_HASH_LINKAGE(void)
+hash_identifier_error(const hash_map_ptr_t&   _hash_map,
+                      const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id)
 {
-    auto _map_itr = _hash_map->find(_hash_id);
-    if(_map_itr != _hash_map->end())
-        return _map_itr;
+    if(!_hash_map)
+        return;
 
-    auto _alias_itr = _hash_alias->find(_hash_id);
-    if(_alias_itr != _hash_alias->end())
-    {
-        return find_hash_identifier(_hash_map, _hash_alias, _alias_itr->second);
-    }
+    if(!_hash_alias)
+        return;
 
-    return _hash_map->end();
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_HASH_LINKAGE(bool)
-get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
-                    hash_value_t _hash_id, std::string& _result)
-{
-    // NOTE: for brevity, all statements returning true use comma operator to assign to
-    // result before returning true
-    auto _map_itr = _hash_map->find(_hash_id);
-    if(_map_itr != _hash_map->end())
-        return (_result = _map_itr->second, true);
+    static thread_local std::set<hash_value_t> _reported{};
+    if(_reported.count(_hash_id))
+        return;
 
-    // static_string
-    if(static_string::is_registered(_hash_id))
-        return (_result = std::string{ reinterpret_cast<const char*>(_hash_id) }, true);
-
-    auto _alias_itr = _hash_alias->find(_hash_id);
-    if(_alias_itr != _hash_alias->end())
-    {
-        return get_hash_identifier(_hash_map, _hash_alias, _alias_itr->second, _result);
-    }
+    _reported.insert(_hash_id);
 
     for(const auto& aitr : *_hash_alias)
     {
         if(_hash_id == aitr.first)
         {
-            for(const auto& mitr : *_hash_map)
-            {
-                if(mitr.first == aitr.second)
-                    return (_result = mitr.second, true);
-            }
-        }
-    }
-
-    for(const auto& mitr : *_hash_map)
-    {
-        if(_hash_id == mitr.first)
-            return (_result = mitr.second, true);
-    }
-
-    return false;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_HASH_LINKAGE(bool)
-get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
-                    hash_value_t _hash_id, const char*& _result)
-{
-    // NOTE: for brevity, all statements returning true use comma operator to assign to
-    // result before returning true
-    auto _map_itr = _hash_map->find(_hash_id);
-    if(_map_itr != _hash_map->end())
-        return (_result = _map_itr->second.c_str(), true);
-
-    // static_string
-    if(static_string::is_registered(_hash_id))
-        return (_result = reinterpret_cast<const char*>(_hash_id), true);
-
-    auto _alias_itr = _hash_alias->find(_hash_id);
-    if(_alias_itr != _hash_alias->end())
-    {
-        return get_hash_identifier(_hash_map, _hash_alias, _alias_itr->second, _result);
-    }
-
-    for(const auto& aitr : *_hash_alias)
-    {
-        if(_hash_id == aitr.first)
-        {
-            for(const auto& mitr : *_hash_map)
-            {
-                if(mitr.first == aitr.second)
-                    return (_result = mitr.second.c_str(), true);
-            }
-        }
-    }
-
-    for(const auto& mitr : *_hash_map)
-    {
-        if(_hash_id == mitr.first)
-            return (_result = mitr.second.c_str(), true);
-    }
-
-    return false;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_HASH_LINKAGE(std::string)
-get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
-                    hash_value_t _hash_id)
-{
-    auto _map_itr = _hash_map->find(_hash_id);
-    if(_map_itr != _hash_map->end())
-        return _map_itr->second;
-
-    // static_string
-    if(static_string::is_registered(_hash_id))
-        return std::string{ reinterpret_cast<const char*>(_hash_id) };
-
-    auto _alias_itr = _hash_alias->find(_hash_id);
-    if(_alias_itr != _hash_alias->end())
-    {
-        return get_hash_identifier(_hash_map, _hash_alias, _alias_itr->second);
-    }
-
-    for(const auto& aitr : *_hash_alias)
-    {
-        if(_hash_id == aitr.first)
-        {
-            for(const auto& mitr : *_hash_map)
+            for(auto& mitr : *_hash_map)
             {
                 if(mitr.first == aitr.second)
                 {
@@ -284,13 +186,12 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
                             __FUNCTION__,
                             TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,
                             (unsigned long long) _hash_id);
-                    return mitr.second;
                 }
             }
         }
     }
 
-    for(const auto& mitr : *_hash_map)
+    for(auto& mitr : *_hash_map)
     {
         if(_hash_id == mitr.first)
         {
@@ -300,7 +201,6 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
                     "overflow problem\n",
                     __FUNCTION__, TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),
                     __LINE__, (unsigned long long) _hash_id);
-            return mitr.second;
         }
     }
 
@@ -338,7 +238,7 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
             for(const auto& itr : *_hash_map)
                 ss << "        " << std::setw(_w) << itr.first << " : " << (itr.second)
                    << "\n";
-            if(_hash_alias->size() > 0)
+            if(!_hash_alias->empty())
             {
                 ss << "    Alias hash map:\n";
                 for(const auto& itr : *_hash_alias)
@@ -349,7 +249,7 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
             if(!_registry.empty())
             {
                 ss << "    Static strings:\n";
-                for(auto itr : _registry)
+                for(const auto* itr : _registry)
                 {
                     ss << "        " << std::setw(_w)
                        << reinterpret_cast<std::size_t>(itr) << " : " << itr << "\n";
@@ -358,7 +258,126 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
             fprintf(stderr, "%s", ss.str().c_str());
         }
     }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(typename hash_map_t::const_iterator)
+find_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
+                     hash_value_t _hash_id)
+{
+    auto _map_itr = _hash_map->find(_hash_id);
+    if(_map_itr != _hash_map->end())
+        return _map_itr;
 
+    auto _alias_itr = _hash_alias->find(_hash_id);
+    if(_alias_itr != _hash_alias->end())
+    {
+        return find_hash_identifier(_hash_map, _hash_alias, _alias_itr->second);
+    }
+
+    return _hash_map->end();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(typename hash_map_t::const_iterator)
+find_hash_identifier(hash_value_t _hash_id)
+{
+    return find_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(bool)
+get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
+                    hash_value_t _hash_id, std::string*& _ret)
+{
+    // NOTE: for brevity, all statements returning true use comma operator to assign to
+    // result before returning true
+    if(!_hash_map)
+        return false;
+
+    auto _map_itr = _hash_map->find(_hash_id);
+    if(_map_itr != _hash_map->end())
+        return (_ret = &_map_itr->second, true);
+
+    // static_string
+    if(static_string::is_registered(_hash_id))
+    {
+        auto itr = _hash_map->emplace(_hash_id, reinterpret_cast<const char*>(_hash_id));
+        return (_ret = &itr.first->second, true);
+    }
+
+    if(_hash_alias)
+    {
+        auto _alias_itr = _hash_alias->find(_hash_id);
+        if(_alias_itr != _hash_alias->end())
+        {
+            return get_hash_identifier(_hash_map, _hash_alias, _alias_itr->second, _ret);
+        }
+    }
+
+    return false;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(bool)
+get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
+                    hash_value_t _hash_id, const char*& _ret)
+{
+    // NOTE: for brevity, all statements returning true use comma operator to assign to
+    // result before returning true
+    if(!_hash_map)
+        return false;
+
+    auto _map_itr = _hash_map->find(_hash_id);
+    if(_map_itr != _hash_map->end())
+        return (_ret = _map_itr->second.c_str(), true);
+
+    // static_string
+    if(static_string::is_registered(_hash_id))
+        return (_ret = reinterpret_cast<const char*>(_hash_id), true);
+
+    if(_hash_alias)
+    {
+        auto _alias_itr = _hash_alias->find(_hash_id);
+        if(_alias_itr != _hash_alias->end())
+        {
+            return get_hash_identifier(_hash_map, _hash_alias, _alias_itr->second, _ret);
+        }
+    }
+
+    return false;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(bool)
+get_hash_identifier(hash_value_t _hash_id, std::string*& _ret)
+{
+    return get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id, _ret);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(bool)
+get_hash_identifier(hash_value_t _hash_id, const char*& _ret)
+{
+    return get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id, _ret);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(std::string)
+get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _hash_alias,
+                    hash_value_t _hash_id)
+{
+    std::string* _ret = nullptr;
+    if(get_hash_identifier(_hash_map, _hash_alias, _hash_id, _ret))
+        return *_ret;
+    hash_identifier_error(_hash_map, _hash_alias, _hash_id);
     return std::string("unknown-hash=") + std::to_string(_hash_id);
 }
 //

@@ -48,6 +48,7 @@ setup_ompt()
 
 static handle_map_t          f_handle_map;
 static std::atomic<uint64_t> f_handle_count;
+static uint64_t              global_id      = 0;
 static const bool            initial_config = setup_ompt();
 static auto                  settings       = tim::settings::shared_instance();
 
@@ -72,6 +73,7 @@ extern "C"
 
     uint64_t timemory_start_ompt()
     {
+        timemory_ompt_library_ctor();
         // provide environment variable for enabling/disabling
         if(tim::get_env<bool>("TIMEMORY_ENABLE_OMPT", true))
         {
@@ -90,7 +92,7 @@ extern "C"
 
     uint64_t timemory_stop_ompt(uint64_t id)
     {
-        if(id == 0)
+        if(id == global_id)
         {
             for(auto& itr : f_handle_map)
                 itr.second.stop();
@@ -111,19 +113,13 @@ extern "C"
     void timemory_register_ompt()
     {
         DEBUG_PRINT_HERE("%s", "");
-        tim::auto_lock_t lk(tim::type_mutex<ompt_handle_t>());
-        if(f_handle_map.count(0) == 0)
-        {
-            f_handle_map.insert(
-                { 0, ompt_bundle_t("openmp", true, tim::scope::get_default()) });
-            f_handle_map[0].start();
-        }
+        global_id = timemory_start_ompt();
     }
 
     void timemory_deregister_ompt()
     {
         DEBUG_PRINT_HERE("%s", "");
-        timemory_stop_ompt(0);
+        global_id = timemory_stop_ompt(global_id);
     }
 
     // Below are for FORTRAN codes

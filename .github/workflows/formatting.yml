@@ -70,7 +70,7 @@ jobs:
         pip install cmake-format pyyaml
     - name: cmake format
       run: |
-	cmake-format -i $(find . -type f | egrep -v 'Modules/FindPython/|cmake-format' | egrep 'CMakeLists.txt|\.cmake')
+        cmake-format -i $(find . -type f | egrep -v 'Modules/FindPython/|cmake-format' | egrep 'CMakeLists.txt|\.cmake')
         if [ $(git diff | wc -l) -gt 0 ]; then
           echo -e "\nError! Source code not formatted. Run cmake-format...\n"
           echo -e "\nFiles:\n"

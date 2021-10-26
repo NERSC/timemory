@@ -59,6 +59,27 @@ TIMEMORY_RING_BUFFER_INLINE
 ring_buffer::~ring_buffer() { destroy(); }
 
 TIMEMORY_RING_BUFFER_INLINE
+ring_buffer::ring_buffer(const ring_buffer& rhs)
+: m_use_mmap{ rhs.m_use_mmap }
+, m_use_mmap_explicit{ rhs.m_use_mmap_explicit }
+{
+    init(rhs.m_size);
+}
+
+TIMEMORY_RING_BUFFER_INLINE
+ring_buffer&
+ring_buffer::operator=(const ring_buffer& rhs)
+{
+    if(this == &rhs)
+        return *this;
+    destroy();
+    m_use_mmap          = rhs.m_use_mmap;
+    m_use_mmap_explicit = rhs.m_use_mmap_explicit;
+    init(rhs.m_size);
+    return *this;
+}
+
+TIMEMORY_RING_BUFFER_INLINE
 void
 ring_buffer::init(size_t _size)
 {
@@ -265,37 +286,5 @@ ring_buffer::rewind(size_t n) const
     m_read_count -= n;
     return n;
 }
-/*
-TIMEMORY_RING_BUFFER_INLINE
-ring_buffer::ring_buffer(const ring_buffer& rhs)
-: m_init{ false }
-, m_use_mmap{ rhs.m_use_mmap }
-, m_use_mmap_explicit{ rhs.m_use_mmap_explicit }
-, m_size{ rhs.m_size }
-, m_read_count{ rhs.m_read_count }
-, m_write_count{ rhs.m_write_count }
-{
-    init(m_size);
-    memcpy(m_ptr, rhs.m_ptr, m_size * sizeof(char));
-}
-
-TIMEMORY_RING_BUFFER_INLINE
-ring_buffer& ring_buffer::operator=(const ring_buffer& rhs)
-{
-    if(this == &rhs)
-        return *this;
-
-    m_init              = false;
-    m_use_mmap          = rhs.m_use_mmap;
-    m_use_mmap_explicit = rhs.m_use_mmap_explicit;
-    m_size              = rhs.m_size;
-    m_read_count        = rhs.m_read_count;
-    m_write_count       = rhs.m_write_count;
-    init(m_size);
-    memcpy(m_ptr, rhs.m_ptr, m_size * sizeof(char));
-
-    return *this;
-}
-*/
 }  // namespace base
 }  // namespace tim

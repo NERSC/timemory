@@ -5,8 +5,7 @@ import sys
 import argparse
 import warnings
 import platform
-from skbuild import setup
-from skbuild.command.install import install as skinstall
+
 
 # some Cray systems default to static libraries and the build
 # will fail because BUILD_SHARED_LIBS will get set to off
@@ -32,6 +31,50 @@ if env_cmake_args is not None:
 gotcha_opt = False
 if platform.system() == "Linux":
     gotcha_opt = True
+
+
+def parse_requirements(fname="requirements.txt"):
+    _req = []
+    requirements = []
+    # read in the initial set of requirements
+    with open(fname, "r") as fp:
+        _req = list(filter(bool, (line.strip() for line in fp)))
+    # look for entries which read other files
+    for itr in _req:
+        if itr.startswith("-r "):
+            # read another file
+            for fitr in itr.split(" "):
+                if os.path.exists(fitr):
+                    requirements.extend(parse_requirements(fitr))
+        else:
+            # append package
+            requirements.append(itr)
+    # return the requirements
+    return requirements
+
+
+def get_project_version():
+    # open "VERSION"
+    with open(os.path.join(os.getcwd(), "VERSION"), "r") as f:
+        data = f.read().replace("\n", "")
+    # make sure is string
+    if isinstance(data, list) or isinstance(data, tuple):
+        return data[0]
+    else:
+        return data
+
+
+def get_long_description():
+    long_descript = ""
+    try:
+        long_descript = open("README.md").read()
+    except Exception:
+        long_descript = ""
+    return long_descript
+
+
+def __str2bool(v):
+    return v.lower() in ("yes", "y", "true", "t", "1", "on")
 
 
 def get_bool_option(_args, _name, default=False):
@@ -111,7 +154,10 @@ add_arg_bool_option(
 )
 add_arg_bool_option("c", "TIMEMORY_BUILD_C")
 add_arg_bool_option(
-    "python", "TIMEMORY_USE_PYTHON", default=True, doc="Build python bindings"
+    "python",
+    "TIMEMORY_USE_PYTHON",
+    default=True,
+    doc="Build python bindings",
 )
 add_arg_bool_option("fortran", "TIMEMORY_BUILD_FORTRAN")
 add_arg_bool_option(
@@ -124,7 +170,9 @@ add_arg_bool_option(
 )
 add_arg_bool_option("ert", "TIMEMORY_BUILD_ERT")
 add_arg_bool_option(
-    "skip-build", "TIMEMORY_SKIP_BUILD", doc="Disable building any libraries"
+    "skip-build",
+    "TIMEMORY_SKIP_BUILD",
+    doc="Disable building any libraries",
 )
 add_arg_bool_option(
     "unity-build",
@@ -188,7 +236,9 @@ add_arg_bool_option(
     disp_aliases=["TIMEMORY_BUILD_DYNINST_TOOLS", "TIMEMORY_BUILD_RUN"],
 )
 add_arg_bool_option(
-    "compiler-instrumentation", "TIMEMORY_BUILD_COMPILER_INSTRUMENTATION"
+    "compiler-instrumentation",
+    "TIMEMORY_BUILD_COMPILER_INSTRUMENTATION",
+    default=False,
 )
 add_arg_bool_option(
     "kokkos",
@@ -215,7 +265,7 @@ add_arg_bool_option("pybind-install", "PYBIND11_INSTALL", default=False)
 add_arg_bool_option("build-testing", "TIMEMORY_BUILD_TESTING")
 parser.add_argument(
     "--cxx-standard",
-    default=14,
+    default=17,
     type=int,
     choices=[14, 17, 20],
     help="Set C++ language standard",
@@ -255,6 +305,12 @@ parser.add_argument(
     action="store_true",
     default=None,
     help="Disable a development install (timemory headers, cmake config, etc.)",
+)
+parser.add_argument(
+    "--dist-info",
+    action="store_true",
+    default=None,
+    help="Generate dist-info (internal usage)",
 )
 
 args, left = parser.parse_known_args()
@@ -310,144 +366,150 @@ if env_cmake_args is not None:
     cmake_args += env_cmake_args.split(" ")
 
 
-# --------------------------------------------------------------------------- #
-#
-def get_project_version():
-    # open "VERSION"
-    with open(os.path.join(os.getcwd(), "VERSION"), "r") as f:
-        data = f.read().replace("\n", "")
-    # make sure is string
-    if isinstance(data, list) or isinstance(data, tuple):
-        return data[0]
-    else:
-        return data
+def _generate_dist_info():
+    from setuptools import setup
 
-
-# --------------------------------------------------------------------------- #
-#
-def get_long_description():
-    long_descript = ""
-    try:
-        long_descript = open("README.md").read()
-    except Exception:
-        long_descript = ""
-    return long_descript
-
-
-# --------------------------------------------------------------------------- #
-class custom_install(skinstall):
-    """
-    Custom installation
-    """
-
-    def __init__(self, *args, **kwargs):
-        skinstall.__init__(self, *args, **kwargs)
-
-    def run(self):
-        print("\n\n\t[timemory] Running install...")
-        print("\t\t {:10} : {}".format("base", self.install_base))
-        print("\t\t {:10} : {}".format("purelib", self.install_purelib))
-        print("\t\t {:10} : {}".format("platlib", self.install_platlib))
-        print("\t\t {:10} : {}".format("headers", self.install_headers))
-        print("\t\t {:10} : {}".format("lib", self.install_lib))
-        print("\t\t {:10} : {}".format("scripts", self.install_scripts))
-        print("\t\t {:10} : {}".format("data", self.install_data))
-        print("\t\t {:10} : {}".format("userbase", self.install_userbase))
-        print("\t\t {:10} : {}".format("usersite", self.install_usersite))
-        print("\n\n")
-        skinstall.run(self)
-        for itr in self.get_outputs():
-            print('[timemory] installed file : "{}"'.format(itr))
-
-
-# --------------------------------------------------------------------------- #
-#
-def parse_requirements(fname="requirements.txt"):
-    _req = []
-    requirements = []
-    # read in the initial set of requirements
-    with open(fname, "r") as fp:
-        _req = list(filter(bool, (line.strip() for line in fp)))
-    # look for entries which read other files
-    for itr in _req:
-        if itr.startswith("-r "):
-            # read another file
-            for fitr in itr.split(" "):
-                if os.path.exists(fitr):
-                    requirements.extend(parse_requirements(fitr))
-        else:
-            # append package
-            requirements.append(itr)
-    # return the requirements
-    return requirements
-
-
-# --------------------------------------------------------------------------- #
-#
-def exclude_install_hook(cmake_manifest):
-    def _filter_manifest(_manifest, *args):
-        for itr in args:
-            _manifest = list(
-                filter(
-                    lambda name: itr not in name,
-                    cmake_manifest,
-                )
-            )
-        return _manifest
-
-    cmake_manifest = _filter_manifest(
-        cmake_manifest,
-        "pytest.ini",
-        os.path.join("hatchet", "tests", "timemory_test.py"),
-    )
-    if not get_bool_option(args, "develop"):
-        cmake_manifest = list(
-            filter(lambda name: not (name.endswith(".a")), cmake_manifest)
+    # suppress:
+    #  "setuptools_scm/git.py:68: UserWarning: "/.../<PACKAGE>"
+    #       is shallow and may cause errors"
+    # since 'error' in output causes CDash to interpret warning as error
+    with warnings.catch_warnings():
+        setup(
+            name="timemory",
+            packages=["timemory"],
+            version=get_project_version(),
+            long_description=get_long_description(),
+            long_description_content_type="text/markdown",
+            install_requires=parse_requirements(runtime_req_file),
+            extras_require={
+                "all": parse_requirements("requirements.txt")
+                + parse_requirements(".requirements/mpi_runtime.txt"),
+                "mpi": parse_requirements(".requirements/mpi_runtime.txt"),
+                "build": parse_requirements(".requirements/build.txt"),
+            },
+            python_requires=">=3.6",
+            entry_points={
+                "console_scripts": [
+                    "timemory-plotter=timemory.plotting.__main__:try_plot",
+                    "timemory-roofline=timemory.roofline.__main__:try_plot",
+                    "timemory-analyze=timemory.analyze.__main__:try_analyze",
+                    "timemory-python-line-profiler=timemory.line_profiler.__main__:main",
+                    "timemory-python-profiler=timemory.profiler.__main__:main",
+                    "timemory-python-trace=timemory.trace.__main__:main",
+                ],
+            },
         )
-        if not get_bool_option(args, "install-config"):
-            cmake_manifest = _filter_manifest(
-                cmake_manifest,
-                os.path.join("share", "cmake"),
-                os.path.join("lib", "cmake"),
+
+
+_use_skbuild = True
+_dist_info_only = os.environ.get("TIMEMORY_DIST_INFO", None)
+if args.dist_info or (
+    _dist_info_only is not None and __str2bool(_dist_info_only)
+):
+    _use_skbuild = False
+
+if _use_skbuild:
+    try:
+        from skbuild import setup
+        from skbuild.command.install import install as skinstall
+    except (ImportError, ModuleNotFoundError) as e:
+        sys.stderr.write(
+            "Warning! timemory requires scikit-build for full installation. Generating dist-info only...\n"
+        )
+        sys.stderr.write(f"{e}\n")
+        sys.stderr.flush()
+        _use_skbuild = False
+
+if _use_skbuild:
+
+    class custom_install(skinstall):
+        """Custom installation"""
+
+        def __init__(self, *args, **kwargs):
+            skinstall.__init__(self, *args, **kwargs)
+
+        def run(self):
+            print("\n\n\t[timemory] Running install...")
+            print("\t\t {:10} : {}".format("base", self.install_base))
+            print("\t\t {:10} : {}".format("purelib", self.install_purelib))
+            print("\t\t {:10} : {}".format("platlib", self.install_platlib))
+            print("\t\t {:10} : {}".format("headers", self.install_headers))
+            print("\t\t {:10} : {}".format("lib", self.install_lib))
+            print("\t\t {:10} : {}".format("scripts", self.install_scripts))
+            print("\t\t {:10} : {}".format("data", self.install_data))
+            print("\t\t {:10} : {}".format("userbase", self.install_userbase))
+            print("\t\t {:10} : {}".format("usersite", self.install_usersite))
+            print("\n\n")
+            skinstall.run(self)
+            for itr in self.get_outputs():
+                print('[timemory] installed file : "{}"'.format(itr))
+
+    def exclude_install_hook(cmake_manifest):
+        def _filter_manifest(_manifest, *args):
+            for itr in args:
+                _manifest = list(
+                    filter(
+                        lambda name: itr not in name,
+                        cmake_manifest,
+                    )
+                )
+            return _manifest
+
+        cmake_manifest = _filter_manifest(
+            cmake_manifest,
+            "pytest.ini",
+            os.path.join("hatchet", "tests", "timemory_test.py"),
+        )
+        if not get_bool_option(args, "develop"):
+            cmake_manifest = list(
+                filter(lambda name: not (name.endswith(".a")), cmake_manifest)
             )
-        if not get_bool_option(args, "install-headers"):
-            cmake_manifest = _filter_manifest(cmake_manifest, "include")
+            if not get_bool_option(args, "install-config"):
+                cmake_manifest = _filter_manifest(
+                    cmake_manifest,
+                    os.path.join("share", "cmake"),
+                    os.path.join("lib", "cmake"),
+                )
+            if not get_bool_option(args, "install-headers"):
+                cmake_manifest = _filter_manifest(cmake_manifest, "include")
 
-    return cmake_manifest
+        return cmake_manifest
 
+    # suppress:
+    #  "setuptools_scm/git.py:68: UserWarning: "/.../<PACKAGE>"
+    #       is shallow and may cause errors"
+    # since 'error' in output causes CDash to interpret warning as error
+    with warnings.catch_warnings():
+        print("CMake arguments: {}".format(" ".join(cmake_args)))
+        setup(
+            name="timemory",
+            packages=["timemory"],
+            version=get_project_version(),
+            cmake_args=cmake_args,
+            cmake_languages=("C", "CXX"),
+            long_description=get_long_description(),
+            long_description_content_type="text/markdown",
+            install_requires=parse_requirements(runtime_req_file),
+            extras_require={
+                "all": parse_requirements("requirements.txt")
+                + parse_requirements(".requirements/mpi_runtime.txt"),
+                "mpi": parse_requirements(".requirements/mpi_runtime.txt"),
+                "build": parse_requirements(".requirements/build.txt"),
+            },
+            python_requires=">=3.6",
+            cmdclass=dict(install=custom_install),
+            cmake_process_manifest_hook=exclude_install_hook,
+            entry_points={
+                "console_scripts": [
+                    "timemory-plotter=timemory.plotting.__main__:try_plot",
+                    "timemory-roofline=timemory.roofline.__main__:try_plot",
+                    "timemory-analyze=timemory.analyze.__main__:try_analyze",
+                    "timemory-python-line-profiler=timemory.line_profiler.__main__:main",
+                    "timemory-python-profiler=timemory.profiler.__main__:main",
+                    "timemory-python-trace=timemory.trace.__main__:main",
+                ],
+            },
+        )
 
-# suppress:
-#  "setuptools_scm/git.py:68: UserWarning: "/.../<PACKAGE>"
-#       is shallow and may cause errors"
-# since 'error' in output causes CDash to interpret warning as error
-with warnings.catch_warnings():
-    print("CMake arguments: {}".format(" ".join(cmake_args)))
-    setup(
-        name="timemory",
-        packages=["timemory"],
-        version=get_project_version(),
-        cmake_args=cmake_args,
-        cmake_languages=("C", "CXX"),
-        long_description=get_long_description(),
-        long_description_content_type="text/markdown",
-        install_requires=parse_requirements(runtime_req_file),
-        extras_require={
-            "all": parse_requirements("requirements.txt")
-            + parse_requirements(".requirements/mpi_runtime.txt"),
-            "mpi": parse_requirements(".requirements/mpi_runtime.txt"),
-            "build": parse_requirements(".requirements/build.txt"),
-        },
-        python_requires=">=3.6",
-        cmdclass=dict(install=custom_install),
-        cmake_process_manifest_hook=exclude_install_hook,
-        entry_points={
-            "console_scripts": [
-                "timemory-plotter=timemory.plotting.__main__:try_plot",
-                "timemory-roofline=timemory.roofline.__main__:try_plot",
-                "timemory-analyze=timemory.analyze.__main__:try_analyze",
-                "timemory-python-line-profiler=timemory.line_profiler.__main__:main",
-                "timemory-python-profiler=timemory.profiler.__main__:main",
-                "timemory-python-trace=timemory.trace.__main__:main",
-            ],
-        },
-    )
+else:
+    _generate_dist_info()

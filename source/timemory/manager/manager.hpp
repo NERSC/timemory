@@ -78,6 +78,8 @@ public:
     using mutex_t            = std::recursive_mutex;
     using auto_lock_t        = std::unique_lock<mutex_t>;
     using auto_lock_ptr_t    = std::shared_ptr<std::unique_lock<mutex_t>>;
+    using initializer_func_t = std::function<bool()>;
+    using initializer_list_t = std::deque<initializer_func_t>;
     using finalizer_func_t   = std::function<void()>;
     using finalizer_pair_t   = std::pair<std::string, finalizer_func_t>;
     using finalizer_list_t   = std::deque<finalizer_pair_t>;
@@ -110,6 +112,9 @@ public:
     template <typename Func>
     void add_cleanup(const std::string&, Func&&);
     /// this is used by storage classes for finalization.
+    template <typename InitFuncT>
+    void add_initializer(InitFuncT&&);
+    /// this is used by storage classes for finalization.
     template <typename StackFuncT, typename FinalFuncT>
     void add_finalizer(const std::string&, StackFuncT&&, FinalFuncT&&, bool, int32_t = 0);
     /// remove a cleanup functor
@@ -121,7 +126,9 @@ public:
     /// execute a cleanup based on a key
     void cleanup(const std::string&);
     void cleanup();
+    void initialize();
     void finalize();
+    bool is_initialized() const { return m_is_initialized; }
     bool is_finalized() const { return m_is_finalized; }
 
     void add_file_output(const string_t& _category, const string_t& _label,
@@ -309,21 +316,24 @@ protected:
 
 private:
     /// notifies that it is finalizing
-    bool            m_is_finalizing   = false;
-    bool            m_is_finalized    = false;
-    short           m_write_metadata  = 0;
-    int32_t         m_instance_count  = 0;
-    int32_t         m_rank            = 0;
-    uint64_t        m_num_entries     = 0;
-    int64_t         m_thread_index    = threading::get_id();
-    std::thread::id m_thread_id       = threading::get_tid();
-    string_t        m_metadata_prefix = {};
+    bool            m_is_initialized   = false;
+    bool            m_is_finalizing    = false;
+    bool            m_is_finalized     = false;
+    short           m_write_metadata   = 0;
+    int32_t         m_instance_count   = 0;
+    int32_t         m_rank             = 0;
+    uint64_t        m_num_entries      = 0;
+    int64_t         m_metadata_entries = 0;
+    int64_t         m_thread_index     = threading::get_id();
+    std::thread::id m_thread_id        = threading::get_tid();
+    string_t        m_metadata_prefix  = {};
     mutex_t         m_mutex;
     auto_lock_ptr_t m_lock = auto_lock_ptr_t{ nullptr };
     /// increment the shared_ptr count here to ensure these instances live
     /// for the entire lifetime of the manager instance
     hash_map_ptr_t     m_hash_ids           = get_hash_ids();
     hash_alias_ptr_t   m_hash_aliases       = get_hash_aliases();
+    initializer_list_t m_initializers       = {};
     finalizer_list_t   m_finalizer_cleanups = {};
     finalizer_pmap_t   m_master_cleanup     = {};
     finalizer_pmap_t   m_worker_cleanup     = {};
@@ -354,11 +364,12 @@ private:
         std::atomic<int32_t>      thread_count{ 0 };
         bool                      use_exit_hook = true;
         pointer_t                 master_instance;
-        bool&                     debug         = settings::debug();
-        int&                      verbose       = settings::verbose();
-        metadata_func_t           func_metadata = {};
-        metadata_info_t           info_metadata = {};
-        std::shared_ptr<settings> config        = settings::shared_instance();
+        bool&                     debug          = settings::debug();
+        int&                      verbose        = settings::verbose();
+        int64_t                   metadata_count = 0;
+        metadata_func_t           func_metadata  = {};
+        metadata_info_t           info_metadata  = {};
+        std::shared_ptr<settings> config         = settings::shared_instance();
     };
 
     /// single instance of all the global static data
@@ -427,6 +438,20 @@ manager::add_cleanup(const std::string& _key, Func&& _func)
 //
 //----------------------------------------------------------------------------------//
 //
+template <typename InitFuncT>
+void
+manager::add_initializer(InitFuncT&& _init_func)
+{
+    bool _owns = m_lock->owns_lock();
+    if(!_owns)
+        m_lock->lock();
+    m_initializers.emplace_back(std::forward<InitFuncT>(_init_func));
+    if(!_owns)
+        m_lock->unlock();
+}
+//
+//----------------------------------------------------------------------------------//
+//
 template <typename StackFuncT, typename FinalFuncT>
 void
 manager::add_finalizer(const std::string& _key, StackFuncT&& _stack_func,
@@ -435,7 +460,7 @@ manager::add_finalizer(const std::string& _key, StackFuncT&& _stack_func,
     // ensure there are no duplicates
     remove_finalizer(_key);
 
-    m_metadata_prefix = settings::get_global_output_prefix(true);
+    m_metadata_prefix = settings::get_global_output_prefix();
 
     if(m_write_metadata == 0)
         m_write_metadata = 1;
@@ -454,6 +479,7 @@ void
 manager::add_metadata(const std::string& _key, const Tp& _value)
 {
     auto_lock_t _lk(type_mutex<manager>());
+    ++f_manager_persistent_data().metadata_count;
     f_manager_persistent_data().func_metadata.push_back([_key, _value](void* _varchive) {
         if(!_varchive)
             return;

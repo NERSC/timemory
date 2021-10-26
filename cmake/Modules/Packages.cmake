@@ -1473,22 +1473,38 @@ generate_composite_interface(timemory-roofline timemory-cpu-roofline
 #
 # ----------------------------------------------------------------------------------------#
 
-if(TIMEMORY_USE_DYNINST)
+if(TIMEMORY_USE_DYNINST AND NOT TIMEMORY_BUILD_DYNINST)
     find_package(Dyninst ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
-    set(_BOOST_COMPONENTS atomic system thread date_time)
-    set(TIMEMORY_BOOST_COMPONENTS
-        "${_BOOST_COMPONENTS}"
-        CACHE STRING "Boost components used by Dyninst in timemory")
-    if(Dyninst_FOUND)
-        set(Boost_NO_BOOST_CMAKE ON)
-        find_package(Boost QUIET ${TIMEMORY_FIND_REQUIREMENT}
-                     COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
+    if(NOT TARGET Dyninst::Dyninst)
+        set(_BOOST_COMPONENTS atomic system thread date_time)
+        set(TIMEMORY_BOOST_COMPONENTS
+            "${_BOOST_COMPONENTS}"
+            CACHE STRING "Boost components used by Dyninst in timemory")
+        if(Dyninst_FOUND)
+            set(Boost_NO_BOOST_CMAKE ON)
+            find_package(Boost QUIET ${TIMEMORY_FIND_REQUIREMENT}
+                         COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
+        endif()
     endif()
 endif()
 
-if(TIMEMORY_USE_DYNINST
-   AND Dyninst_FOUND
-   AND Boost_FOUND)
+if(Dyninst_FOUND AND TARGET Dyninst::Dyninst) # updated Dyninst CMake system was found
+    # useful for defining the location of the runtime API
+    find_library(
+        DYNINST_API_RT dyninstAPI_RT
+        HINTS ${Dyninst_ROOT_DIR} ${Dyninst_DIR}
+        PATHS ${Dyninst_ROOT_DIR} ${Dyninst_DIR}
+        PATH_SUFFIXES lib)
+
+    if(DYNINST_API_RT)
+        target_compile_definitions(timemory-dyninst
+                                   INTERFACE DYNINST_API_RT="${DYNINST_API_RT}")
+    endif()
+
+    add_rpath(${Dyninst_LIBRARIES})
+    target_link_libraries(timemory-dyninst INTERFACE Dyninst::Dyninst)
+
+elseif(Dyninst_FOUND AND Boost_FOUND)
 
     set(_Dyninst)
     # some installs of dyninst don't set this properly
@@ -1545,8 +1561,74 @@ if(TIMEMORY_USE_DYNINST
         timemory-dyninst SYSTEM INTERFACE ${TBB_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}
                                           ${DYNINST_HEADER_DIR})
     timemory_target_compile_definitions(timemory-dyninst INTERFACE TIMEMORY_USE_DYNINST)
+
+elseif(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_DYNINST)
+
+    checkout_git_submodule(
+        RELATIVE_PATH external/dyninst
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://github.com/jrmadsen/dyninst.git
+        REPO_BRANCH cmake-format-and-overhaul-hosttrace)
+
+    set(DYNINST_OPTION_PREFIX ON)
+    set(DYNINST_BUILD_DOCS OFF)
+    set(DYNINST_QUIET_CONFIG
+        ON
+        CACHE BOOL "Suppress dyninst cmake messages")
+    set(DYNINST_BUILD_PARSE_THAT
+        OFF
+        CACHE BOOL "Build dyninst parseThat executable")
+    set(DYNINST_BUILD_SHARED_LIBS
+        ON
+        CACHE BOOL "Build shared dyninst libraries")
+    set(DYNINST_BUILD_STATIC_LIBS
+        OFF
+        CACHE BOOL "Build static dyninst libraries")
+    set(DYNINST_ENABLE_LTO
+        OFF
+        CACHE BOOL "Enable LTO for dyninst libraries")
+    if(TIMEMORY_BUILD_DYNINST_TPLS)
+        set(DYNINST_BUILD_TBB
+            ON
+            CACHE BOOL "Build TBB internall" FORCE)
+        set(DYNINST_BUILD_BOOST
+            ON
+            CACHE BOOL "Build boost dependency" FORCE)
+        set(DYNINST_BUILD_ELFUTILS
+            ON
+            CACHE BOOL "Build elfutils dependency" FORCE)
+        set(DYNINST_BUILD_LIBIBERTY
+            ON
+            CACHE BOOL "Build libiberty dependency" FORCE)
+    endif()
+
+    timemory_save_variables(PIC VARIABLES CMAKE_POSITION_INDEPENDENT_CODE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    add_subdirectory(external/dyninst)
+    timemory_restore_variables(PIC VARIABLES CMAKE_POSITION_INDEPENDENT_CODE)
+
+    add_library(Dyninst::Dyninst INTERFACE IMPORTED)
+    foreach(_LIB common dyninstAPI parseAPI instructionAPI symtabAPI stackwalk Boost TBB)
+        target_link_libraries(Dyninst::Dyninst INTERFACE Dyninst::${_LIB})
+    endforeach()
+
+    target_link_libraries(timemory-dyninst INTERFACE Dyninst::Dyninst)
+    timemory_target_compile_definitions(timemory-dyninst INTERFACE TIMEMORY_USE_DYNINST)
+
+    set(DYNINST_API_RT
+        ${PROJECT_BINARY_DIR}/external/dyninst/dyninstAPI_RT/libdyninstAPI_RT${CMAKE_SHARED_LIBRARY_SUFFIX}
+        )
+
+    if(DYNINST_API_RT)
+        target_compile_definitions(
+            timemory-dyninst
+            INTERFACE
+                DYNINST_API_RT="${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}:$<TARGET_FILE_DIR:Dyninst::dyninstAPI_RT>:${CMAKE_INSTALL_PREFIX}/lib/$<TARGET_FILE_NAME:Dyninst::dyninstAPI_RT>:$<TARGET_FILE:Dyninst::dyninstAPI_RT>"
+            )
+    endif()
 else()
     set(TIMEMORY_USE_DYNINST OFF)
+    set(TIMEMORY_BUILD_DYNINST OFF)
     inform_empty_interface(timemory-dyninst "dyninst")
 endif()
 

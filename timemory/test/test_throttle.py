@@ -107,7 +107,7 @@ class TimemoryThrottleTests(unittest.TestCase):
         settings.debug = False
         settings.json_output = True
         settings.mpi_thread = False
-        settings.file_output = False
+        settings.file_output = True
         settings.dart_output = True
         settings.dart_count = 1
         settings.banner = False
@@ -166,6 +166,7 @@ class TimemoryThrottleTests(unittest.TestCase):
                 tim.region.pop(name)
 
             tim.region.pop("rsthread")
+            # self.assertTrue(tim.trace.is_throttled(name))
 
         for i in range(self.nthreads):
             _run(self.shortDescription())
@@ -187,6 +188,8 @@ class TimemoryThrottleTests(unittest.TestCase):
                 tim.region.pop(name)
 
             tim.region.pop("rthread")
+            # check assertion
+            self.assertTrue(tim.trace.is_throttled(name))
 
         threads = []
 
@@ -204,25 +207,31 @@ class TimemoryThrottleTests(unittest.TestCase):
         """multithreaded"""
         settings.debug = False
 
-        # np.array of False
-        is_throttled = np.full(self.nthreads, False)
-
         # _run function
         def _run(name, idx):
-            name = "{}_{}".format(name, idx)
+            import sys
+
+            self.assertTrue(sys.getprofile() is None)
+            self.assertTrue(sys.gettrace() is None)
+
+            _name = "{}_{}".format(name, idx)
+            _hash = tim.add_hash_id(_name)
             n = 2 * settings.throttle_count
             v = 2 * settings.throttle_value
             if idx % 2 == 1:
                 for i in range(n):
-                    tim.trace.push(name)
+                    tim.trace.push(_hash)
                     consume(v)
-                    tim.trace.pop(name)
+                    tim.trace.pop(_hash)
             else:
                 for i in range(n):
-                    tim.trace.push(name)
-                    tim.trace.pop(name)
+                    tim.trace.push(_hash)
+                    tim.trace.pop(_hash)
 
-            is_throttled[idx] = tim.trace.is_throttled(name)
+            is_throttled = tim.trace.is_throttled(_name)
+            _answer = False if (idx % 2 == 1) else True
+            print("thread " + str(idx) + " throttling: " + str(is_throttled))
+            self.assertTrue(is_throttled == _answer)
 
         # thread handles
         threads = []
@@ -243,12 +252,6 @@ class TimemoryThrottleTests(unittest.TestCase):
             itr.join()
 
         tim.trace.pop(self.shortDescription())
-
-        # check assertion
-        for i in range(self.nthreads):
-            _answer = False if (i % 2 == 1) else True
-            print("thread " + str(i) + " throttling: " + str(is_throttled[i]))
-            self.assertTrue(is_throttled[i] == _answer)
 
 
 # ----------------------------- main test runner -------------------------------------- #

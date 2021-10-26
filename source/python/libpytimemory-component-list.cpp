@@ -49,9 +49,10 @@ namespace pycomponent_list
 component_enum_vec
 components_list_to_vec(py::list pystr_list)
 {
-    std::vector<std::string> str_list;
+    std::vector<std::string> str_list{};
+    str_list.reserve(pystr_list.size());
     for(auto itr : pystr_list)
-        str_list.push_back(itr.cast<std::string>());
+        str_list.emplace_back(itr.cast<std::string>());
     return tim::enumerate_components(str_list);
 }
 //
@@ -60,22 +61,24 @@ components_list_to_vec(py::list pystr_list)
 component_enum_vec
 components_enum_to_vec(py::list enum_list)
 {
-    component_enum_vec vec;
+    component_enum_vec vec{};
+    vec.reserve(enum_list.size());
     for(auto itr : enum_list)
-        vec.push_back(itr.cast<TIMEMORY_COMPONENT>());
+        vec.emplace_back(itr.cast<TIMEMORY_COMPONENT>());
     return vec;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 component_list_t*
-create_component_list(std::string obj_tag, const component_enum_vec& components)
+create_component_list(const std::string& obj_tag, const component_enum_vec& components)
 {
     using quirk_config_t =
         tim::quirk::config<tim::quirk::explicit_push, tim::quirk::explicit_pop>;
-    auto obj = new component_list_t{ obj_tag, quirk_config_t{} };
-    tim::initialize(*obj, components);
-    return obj;
+    return new component_list_t{ obj_tag, quirk_config_t{},
+                                 [&components](component_list_t& _cl) {
+                                     tim::initialize(_cl, components);
+                                 } };
 }
 //
 //--------------------------------------------------------------------------------------//

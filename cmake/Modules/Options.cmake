@@ -372,6 +372,12 @@ add_option(
     TIMEMORY_BUILD_CALIPER "Enable building Caliper submodule (set to OFF for external)"
     ${_BUILD_CALIPER})
 add_option(TIMEMORY_BUILD_OMPT "Enable building OpenMP-Tools from submodule" OFF)
+add_option(TIMEMORY_BUILD_DYNINST
+           "Enable building Dyninst submodule (set to OFF for external)" ON)
+add_option(
+    TIMEMORY_BUILD_DYNINST_TPLS
+    "Enable building Dyninst third-party library dependencies (TBB, Boost, elfutils, libiberty). See also: DYNINST_BUILD_<TPL> options"
+    OFF)
 add_option(TIMEMORY_BUILD_DEVELOPER "Enable building with developer flags" OFF)
 add_option(TIMEMORY_FORCE_GPERFTOOLS_PYTHON
            "Enable gperftools + Python (may cause termination errors)" ON)

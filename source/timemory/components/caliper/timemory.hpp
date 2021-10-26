@@ -28,6 +28,7 @@
 #include "caliper/cali.h"
 #include "timemory/api.hpp"
 #include "timemory/components/base.hpp"
+#include "timemory/hash/types.hpp"
 #include "timemory/settings/declaration.hpp"
 
 #if defined(TIMEMORY_PYBIND11_SOURCE)
@@ -310,12 +311,16 @@ struct caliper_marker
 
     void start()
     {
-        DEBUG_PRINT_HERE("%s", m_prefix);
+        if(m_prefix == nullptr)
+            return;
+        DEBUG_PRINT_HERE("'%s'", m_prefix);
         cali_begin_string(m_id, m_prefix);
     }
     void stop()
     {
-        DEBUG_PRINT_HERE("%s", m_prefix);
+        if(m_prefix == nullptr)
+            return;
+        DEBUG_PRINT_HERE("'%s'", m_prefix);
         cali_safe_end_string(m_id, m_prefix);
     }
 
