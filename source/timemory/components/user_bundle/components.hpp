@@ -158,8 +158,8 @@ public:
     }
     static value_type record() {}
 
-    static void global_init() TIMEMORY_VISIBILITY("default");
-    static void global_init(storage_type*) { global_init(); }
+    static void global_init(bool _preinit = false) TIMEMORY_VISIBILITY("default");
+    static void global_init(storage_type*) { global_init(false); }
 
     using opaque_array_t = std::vector<opaque>;
     using typeid_vec_t   = std::vector<size_t>;
@@ -471,7 +471,8 @@ private:
 
     struct persistent_data
     {
-        volatile bool             m_init = false;
+        volatile bool             m_init    = false;
+        bool                      m_preinit = false;
         mutex_t                   m_lock;
         opaque_array_t            m_data     = {};
         typeid_vec_t              m_typeids  = {};
@@ -481,8 +482,14 @@ private:
         {
             if(!m_init)
             {
+                if(_preinit)
+                    m_preinit = true;
                 if(m_settings && m_settings->get_initialized())
-                    m_init = (reset(), true);  // comma operator
+                {
+                    if(m_preinit)
+                        reset();
+                    m_init = true;  // comma operator
+                }
                 if(m_init || _preinit)
                     env::initialize_bundle<Idx, Tag>();
             }
@@ -511,11 +518,11 @@ public:
 //
 template <size_t Idx, typename Tag>
 void
-user_bundle<Idx, Tag>::global_init()
+user_bundle<Idx, Tag>::global_init(bool _preinit)
 {
     if(settings::verbose() > 2 || settings::debug())
         PRINT_HERE("Global initialization of %s", demangle<this_type>().c_str());
-    get_persistent_data().init(true);
+    get_persistent_data().init(_preinit);
 }
 //
 //--------------------------------------------------------------------------------------//
