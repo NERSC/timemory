@@ -139,15 +139,6 @@ add_hash_id(const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id,
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_HASH_LINKAGE(void)
-add_hash_id(const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id,
-            hash_value_t _alias_hash_id)
-{
-    _hash_alias->emplace(_alias_hash_id, _hash_id);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_HASH_LINKAGE(void)
 add_hash_id(hash_value_t _hash_id, hash_value_t _alias_hash_id)
 {
     add_hash_id(get_hash_aliases(), _hash_id, _alias_hash_id);
@@ -159,17 +150,31 @@ TIMEMORY_HASH_LINKAGE(void)
 hash_identifier_error(const hash_map_ptr_t&   _hash_map,
                       const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id)
 {
-    if(!_hash_map)
-        return;
-
-    if(!_hash_alias)
-        return;
-
     static thread_local std::set<hash_value_t> _reported{};
     if(_reported.count(_hash_id))
         return;
 
     _reported.insert(_hash_id);
+
+    if(!_hash_map)
+    {
+        fprintf(stderr,
+                "[%s@%s:%i]> hash identifier %llu could not be found bc the pointer to "
+                "the hash map is null\n",
+                __FUNCTION__, TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,
+                (unsigned long long) _hash_id);
+        return;
+    }
+
+    if(!_hash_alias)
+    {
+        fprintf(stderr,
+                "[%s@%s:%i]> hash identifier %llu could not be found bc the pointer to "
+                "the hash alias map is null\n",
+                __FUNCTION__, TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,
+                (unsigned long long) _hash_id);
+        return;
+    }
 
     for(const auto& aitr : *_hash_alias)
     {
@@ -354,6 +359,19 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_HASH_LINKAGE(std::string)
+get_hash_identifier(hash_value_t _hash_id)
+{
+    std::string  _ret = {};
+    std::string* _ptr = &_ret;
+    if(get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id, _ptr))
+        return _ret;
+    hash_identifier_error(get_hash_ids(), get_hash_aliases(), _hash_id);
+    return std::string("unknown-hash=") + std::to_string(_hash_id);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 TIMEMORY_HASH_LINKAGE(bool)
 get_hash_identifier(hash_value_t _hash_id, std::string*& _ret)
 {
@@ -379,38 +397,6 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
         return *_ret;
     hash_identifier_error(_hash_map, _hash_alias, _hash_id);
     return std::string("unknown-hash=") + std::to_string(_hash_id);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_HASH_LINKAGE(typename hash_map_t::const_iterator)
-find_hash_identifier(hash_value_t _hash_id)
-{
-    return find_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_HASH_LINKAGE(bool)
-get_hash_identifier(hash_value_t _hash_id, std::string& _result)
-{
-    return get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id, _result);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_HASH_LINKAGE(bool)
-get_hash_identifier(hash_value_t _hash_id, const char*& _result)
-{
-    return get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id, _result);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_HASH_LINKAGE(std::string)
-get_hash_identifier(hash_value_t _hash_id)
-{
-    return get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id);
 }
 //
 //--------------------------------------------------------------------------------------//

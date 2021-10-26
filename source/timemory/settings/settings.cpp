@@ -1465,7 +1465,7 @@ settings::read(std::istream& ifs, std::string inp)
             if(get_debug() || get_verbose() > 4)
                 fprintf(stderr, "[timemory::settings]['%s']> %s\n", inp.c_str(),
                         line.c_str());
-            if(is_comment(line))
+            if(_is_comment(line))
                 continue;
             ++expected;
             // tokenize the string

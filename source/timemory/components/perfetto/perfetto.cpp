@@ -38,6 +38,8 @@
 #include "timemory/operations/types/storage_initializer.hpp"
 #include "timemory/settings.hpp"
 
+#include <string>
+
 namespace tim
 {
 namespace component

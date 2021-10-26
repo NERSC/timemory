@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include "timemory/api.hpp"
+#include "timemory/enum.h"
 #include "timemory/components/base.hpp"
 #include "timemory/components/user_bundle/backends.hpp"
 #include "timemory/components/user_bundle/types.hpp"
@@ -215,8 +217,8 @@ public:
     friend struct operation::set_stopped<this_type>;
 
     static size_t bundle_size() { return get_data().size(); }
-    static void global_init(bool _preinit = false) TIMEMORY_VISIBILITY("default");
-    static void global_init(storage_type*) { global_init(false); }
+    static void   global_init(bool _preinit = false) TIMEMORY_VISIBILITY("default");
+    static void   global_init(storage_type*) { global_init(false); }
 
     using internal::user_bundle::description;
     using internal::user_bundle::label;
@@ -235,11 +237,13 @@ public:
     //  affecting this instance
     //
     user_bundle()
-    : internal::user_bundle{ scope::get_default(), get_typeids(), (persistent_init(), get_data()) }
+    : internal::user_bundle{ scope::get_default(), get_typeids(),
+                             (persistent_init(), get_data()) }
     {}
 
     explicit user_bundle(const char* _prefix, scope::config _scope = scope::get_default())
-    : internal::user_bundle{ _scope, get_typeids(), (persistent_init(), get_data()), _prefix }
+    : internal::user_bundle{ _scope, get_typeids(), (persistent_init(), get_data()),
+                             _prefix }
     {}
 
     user_bundle(const char* _prefix, opaque_array_t _bundle_vec, typeid_vec_t _typeids,
