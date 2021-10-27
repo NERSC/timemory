@@ -163,7 +163,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
                     for(auto sitr = other.begin(); sitr != other.end(); ++sitr)
                     {
                         pre_order_iterator pchild = sitr;
-                        if(!pchild || pchild->obj().get_laps() == 0)
+                        if(!pchild || pchild->data().get_is_invalid())
                             continue;
                         lhs.graph().append_child(pos, pchild);
                     }

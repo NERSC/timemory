@@ -362,10 +362,9 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
 TIMEMORY_HASH_LINKAGE(std::string)
 get_hash_identifier(hash_value_t _hash_id)
 {
-    std::string  _ret = {};
-    std::string* _ptr = &_ret;
-    if(get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id, _ptr))
-        return _ret;
+    std::string* _ret = nullptr;
+    if(get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id, _ret))
+        return *_ret;
     hash_identifier_error(get_hash_ids(), get_hash_aliases(), _hash_id);
     return std::string("unknown-hash=") + std::to_string(_hash_id);
 }

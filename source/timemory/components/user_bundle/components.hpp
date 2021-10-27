@@ -30,10 +30,10 @@
 #pragma once
 
 #include "timemory/api.hpp"
-#include "timemory/enum.h"
 #include "timemory/components/base.hpp"
 #include "timemory/components/user_bundle/backends.hpp"
 #include "timemory/components/user_bundle/types.hpp"
+#include "timemory/enum.h"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/runtime/configure.hpp"

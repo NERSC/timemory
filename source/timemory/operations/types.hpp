@@ -1047,7 +1047,12 @@ struct dummy
 
     TIMEMORY_DEFAULT_OBJECT(dummy)
 
-    TIMEMORY_ALWAYS_INLINE T operator()() const { return T{}; }
+    TIMEMORY_INLINE T operator()() const
+    {
+        T _v{};
+        operation::set_is_invalid<T>{}(_v, true);
+        return _v;
+    }
 };
 //
 //--------------------------------------------------------------------------------------//

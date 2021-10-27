@@ -311,6 +311,9 @@ get<Type, true>::operator()(result_type& ret)
                                demangle<Type>().c_str());
                     continue;
                 }
+                // skip if invalid
+                if(operation::get_is_invalid<Type, false>{}(itr->data()))
+                    continue;
                 if(itr->depth() > _min)
                 {
                     auto _depth     = itr->depth() - (_min + 1);

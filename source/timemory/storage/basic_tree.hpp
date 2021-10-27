@@ -95,6 +95,7 @@ basic_tree<Tp>&
 basic_tree<Tp>::operator()(const GraphT& g, ItrT root)
 {
     using iterator_t = typename GraphT::sibling_iterator;
+    using entry_type = std::decay_t<decltype(std::declval<ItrT>()->data())>;
 
     m_value              = *root;
     iterator_t _begin    = g.begin(root);
@@ -105,7 +106,8 @@ basic_tree<Tp>::operator()(const GraphT& g, ItrT root)
         m_children.reserve(nchildren);
         for(auto itr = _begin; itr != _end; ++itr)
         {
-            if(!itr->is_dummy())
+            if(!itr->is_dummy() &&
+               !operation::get_is_invalid<entry_type, false>{}(itr->data()))
             {
                 m_value.exclusive().data() -= itr->data();
                 m_value.exclusive().stats() -= itr->stats();
@@ -118,7 +120,8 @@ basic_tree<Tp>::operator()(const GraphT& g, ItrT root)
                 iterator_t _dend   = g.end(itr);
                 for(auto ditr = _dbegin; ditr != _dend; ++ditr)
                 {
-                    if(!ditr->is_dummy())
+                    if(!ditr->is_dummy() &&
+                       !operation::get_is_invalid<entry_type, false>{}(itr->data()))
                     {
                         m_children.emplace_back(std::make_shared<child_type>());
                         m_children.back()->operator()(g, ditr);
