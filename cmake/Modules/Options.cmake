@@ -373,7 +373,7 @@ add_option(
     ${_BUILD_CALIPER})
 add_option(TIMEMORY_BUILD_OMPT "Enable building OpenMP-Tools from submodule" OFF)
 add_option(TIMEMORY_BUILD_DYNINST
-           "Enable building Dyninst submodule (set to OFF for external)" ON)
+           "Enable building Dyninst submodule (set to OFF for external)" OFF)
 add_option(
     TIMEMORY_BUILD_DYNINST_TPLS
     "Enable building Dyninst third-party library dependencies (TBB, Boost, elfutils, libiberty). See also: DYNINST_BUILD_<TPL> options"

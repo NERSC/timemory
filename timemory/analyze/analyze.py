@@ -57,6 +57,11 @@ import re
 import sys
 
 
+filter_num_procs = 1
+tree_precision = 6
+tree_expand_name = True
+
+
 def _get_label(_fname):
     """Generates a label for log messages"""
     _lbl = os.path.basename(_fname)
@@ -147,11 +152,17 @@ def match(data, pattern, field="name"):
     prog = re.compile(pattern)
 
     if not isinstance(data, list):
-        return data.filter(lambda x: (prog.fullmatch(x[field]) is not None))
+        return data.filter(
+            lambda x: (prog.fullmatch(x[field]) is not None),
+            num_procs=filter_num_procs,
+        )
 
     ret = []
     for itr in data:
-        ret.append(itr.filter(lambda x: (prog.fullmatch(x[field]) is not None)))
+        ret.append(
+            itr.filter(lambda x: (prog.fullmatch(x[field]) is not None)),
+            num_procs=filter_num_procs,
+        )
     return ret
 
 
@@ -161,11 +172,17 @@ def search(data, pattern, field="name"):
     prog = re.compile(pattern)
 
     if not isinstance(data, list):
-        return data.filter(lambda x: (prog.search(x[field]) is not None))
+        return data.filter(
+            lambda x: (prog.search(x[field]) is not None),
+            num_procs=filter_num_procs,
+        )
 
     ret = []
     for itr in data:
-        ret.append(itr.filter(lambda x: (prog.search(x[field]) is not None)))
+        ret.append(
+            itr.filter(lambda x: (prog.search(x[field]) is not None)),
+            num_procs=filter_num_procs,
+        )
     return ret
 
 
@@ -238,11 +255,11 @@ def expression(data, math_expr, metric="sum.*(.inc)$"):
         raise ValueError("Error: Invalid math expression!")
 
     if not isinstance(data, list):
-        return data.filter(eval_math_expr, num_procs=1)
+        return data.filter(eval_math_expr, num_procs=filter_num_procs)
 
     ret = []
     for itr in data:
-        ret.append(itr.filter(eval_math_expr, num_procs=1))
+        ret.append(itr.filter(eval_math_expr, num_procs=filter_num_procs))
     return ret
 
 
@@ -411,7 +428,14 @@ def dump_entity(data, functor, file=None, fext=None):
 def dump_tree(data, metric, file=None, echo_dart=False):
     """Dumps data as a tree to stdout or file"""
     _files = dump_entity(
-        data, lambda x: x.tree(_get_metric(x, metric)), file, ".txt"
+        data,
+        lambda x: x.tree(
+            _get_metric(x, metric),
+            precision=tree_precision,
+            expand_name=tree_expand_name,
+        ),
+        file,
+        ".txt",
     )
     for itr in _files:
         if itr is not None and echo_dart is True:
@@ -435,10 +459,11 @@ def dump_dot(data, metric, file=None, echo_dart=False):
             lbl = _get_label(itr)
             oitr = _get_filename(itr, ".dot")
             pitr = _get_filename(itr, ".dot.png")
-            print(f"[{lbl}]|0> Outputting '{pitr}'...")
+            print(f"[{lbl}]|0> Outputting '{oitr}'...")
             try:
                 dot_exe = which("dot")
                 if dot_exe is not None:
+                    print(f"[{lbl}]|0> Outputting '{pitr}'...")
                     popen(
                         [dot_exe, "-Tpng", f"-o{pitr}", f"{oitr}"], shell=True
                     )
@@ -540,7 +565,7 @@ def dump_tabulate(dtype, data, metric, file=None, echo_dart=False):
 
     _extensions = {
         "html": ".html",
-        "table": ".txt",
+        "table": ".table.txt",
         "markdown": ".md",
         "markdown_grid": ".md",
     }

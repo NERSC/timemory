@@ -120,8 +120,7 @@ basic_tree<Tp>::operator()(const GraphT& g, ItrT root)
                 iterator_t _dend   = g.end(itr);
                 for(auto ditr = _dbegin; ditr != _dend; ++ditr)
                 {
-                    if(!ditr->is_dummy() &&
-                       !operation::get_is_invalid<entry_type, false>{}(itr->data()))
+                    if(!ditr->is_dummy())
                     {
                         m_children.emplace_back(std::make_shared<child_type>());
                         m_children.back()->operator()(g, ditr);
