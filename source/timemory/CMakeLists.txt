@@ -27,33 +27,19 @@ configure_file(${CMAKE_CURRENT_BINARY_DIR}/defines.h.in
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/version.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/version.h @ONLY)
 
-if(timemory_MAIN_PROJECT)
-    if(TIMEMORY_INSTALL_HEADERS)
-        install(
-            FILES ${CMAKE_CURRENT_BINARY_DIR}/defines.h
-                  ${CMAKE_CURRENT_BINARY_DIR}/version.h
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory
-            OPTIONAL)
-    endif()
-else()
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                ${CMAKE_CURRENT_BINARY_DIR}/defines.h ${CMAKE_CURRENT_LIST_DIR}/defines.h
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        ERROR_VARIABLE ERR_MSG
-        RESULT_VARIABLE RET)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                ${CMAKE_CURRENT_BINARY_DIR}/version.h ${CMAKE_CURRENT_LIST_DIR}/version.h
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        ERROR_VARIABLE ERR_MSG
-        RESULT_VARIABLE RET)
-    if(TIMEMORY_INSTALL_HEADERS)
-        install(
-            FILES ${CMAKE_CURRENT_LIST_DIR}/defines.h ${CMAKE_CURRENT_LIST_DIR}/version.h
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory
-            OPTIONAL)
-    endif()
+if(TIMEMORY_INSTALL_HEADERS)
+    install(
+        FILES ${CMAKE_CURRENT_BINARY_DIR}/defines.h
+                ${CMAKE_CURRENT_BINARY_DIR}/version.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory
+        OPTIONAL)
+endif()
+
+if(NOT timemory_MAIN_PROJECT AND TIMEMORY_SOURCE_TREE_HEADERS)
+    configure_file(${CMAKE_CURRENT_BINARY_DIR}/defines.h
+                   ${CMAKE_CURRENT_LIST_DIR}/defines.h COPYONLY)
+    configure_file(${CMAKE_CURRENT_BINARY_DIR}/version.h
+                   ${CMAKE_CURRENT_LIST_DIR}/version.h COPYONLY)
 endif()
 
 file(
