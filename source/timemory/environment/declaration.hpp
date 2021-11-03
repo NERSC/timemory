@@ -32,6 +32,7 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
+#include <cassert>
 #include <cstdlib>
 #include <functional>
 #include <iosfwd>
