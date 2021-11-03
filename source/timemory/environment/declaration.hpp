@@ -202,10 +202,10 @@ get_env(const std::string& env_id, Tp _default, bool _store)
 //
 template <typename Tp>
 Tp
-get_env_choice(const std::string& env_id, Tp _default, std::set<Tp> _choices)
+get_env_choice(const std::string& env_id, Tp _default, std::set<Tp> _choices, bool _store)
 {
     assert(!_choices.empty());
-    auto _choice = get_env<Tp>(env_id, _default);
+    auto _choice = get_env<Tp>(env_id, _default, _store);
 
     // check that the choice is valid
     if(_choices.find(_choice) == _choices.end())

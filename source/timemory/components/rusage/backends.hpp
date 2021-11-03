@@ -42,6 +42,19 @@
 #    if defined(TIMEMORY_MACOS)
 #        include <libproc.h>
 #        include <mach/mach.h>
+#        if !defined(TIMEMORY_RUSAGE_THREAD)
+#            define TIMEMORY_RUSAGE_THREAD 0
+#        endif
+#    else
+#        if defined(RUSAGE_THREAD)
+#            if !defined(TIMEMORY_RUSAGE_THREAD)
+#                define TIMEMORY_RUSAGE_THREAD 1
+#            endif
+#        else
+#            if !defined(TIMEMORY_RUSAGE_THREAD)
+#                define TIMEMORY_RUSAGE_THREAD 0
+#            endif
+#        endif
 #    endif
 #elif defined(TIMEMORY_WINDOWS)
 #    if !defined(NOMINMAX)
@@ -49,6 +62,9 @@
 #    endif
 #    if !defined(WIN32_LEAN_AND_MEAN)
 #        define WIN32_LEAN_AND_MEAN
+#    endif
+#    if !defined(TIMEMORY_RUSAGE_THREAD)
+#        define TIMEMORY_RUSAGE_THREAD 0
 #    endif
 #    include <stdio.h>
 #    include <windows.h>
@@ -64,7 +80,7 @@ namespace tim
 {
 #if defined(TIMEMORY_UNIX)
 
-#    if !defined(_GNU_SOURCE) || !defined(RUSAGE_THREAD)
+#    if !defined(TIMEMORY_RUSAGE_THREAD) || TIMEMORY_RUSAGE_THREAD < 1
 #        define RUSAGE_THREAD RUSAGE_SELF
 #    endif
 
@@ -93,7 +109,8 @@ check_rusage_call(int ret, const char* _func)
         printf("[WARN]> rusage call in '%s' returned a non-zero error code: %i\n", _func,
                ret);
 #else
-    tim::consume_parameters(ret, _func);
+    (void) ret;
+    (void) _func;
 #endif
 }
 //

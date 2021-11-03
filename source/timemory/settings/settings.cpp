@@ -184,7 +184,7 @@ TIMEMORY_SETTINGS_INLINE
 std::string
 settings::get_global_output_prefix(bool _make_dir)
 {
-    static auto _settings = instance();
+    static auto* _settings = instance();
 
     auto _dir = (_settings)
                     ? _settings->get_output_path()
@@ -243,7 +243,7 @@ TIMEMORY_SETTINGS_INLINE std::string
     std::string _argv_string = {};    // entire argv cmd
     std::string _argt_string = _tag;  // prefix + cmdline args
     std::string _args_string = {};    // cmdline args
-    if(_cmdline.size() > 0)
+    if(!_cmdline.empty())
     {
         _arg0_string.append(_cmdline.at(0));
         for(size_t i = 0; i < _cmdline.size(); ++i)
@@ -448,7 +448,7 @@ settings::settings(const settings& rhs)
 , m_command_line(rhs.m_command_line)
 , m_environment(rhs.m_environment)
 {
-    for(auto& itr : rhs.m_data)
+    for(const auto& itr : rhs.m_data)
         m_data.emplace(itr.first, itr.second->clone());
     for(auto& itr : m_order)
     {
@@ -477,7 +477,7 @@ settings::operator=(const settings& rhs)
     if(this == &rhs)
         return *this;
 
-    for(auto& itr : rhs.m_data)
+    for(const auto& itr : rhs.m_data)
         m_data[itr.first] = itr.second->clone();
     m_order        = rhs.m_order;
     m_command_line = rhs.m_command_line;
@@ -1036,10 +1036,10 @@ settings::initialize_tpls()
                         "The PC sampling stall reasons to count", std::string{},
                         strvector_t{ "--timemory-cupti-pcsampling-stall-reasons" });
 
-    TIMEMORY_SETTINGS_MEMBER_IMPL(string_t, craypat_categories,
-                                  TIMEMORY_SETTINGS_KEY("CRAYPAT"),
-                                  "Configure the CrayPAT categories to collect",
-                                  get_env<std::string>("PAT_RT_PERFCTR", ""))
+    TIMEMORY_SETTINGS_MEMBER_IMPL(
+        string_t, craypat_categories, TIMEMORY_SETTINGS_KEY("CRAYPAT"),
+        "Configure the CrayPAT categories to collect (same as PAT_RT_PERFCTR)",
+        get_env<std::string>("PAT_RT_PERFCTR", "", false))
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, python_exe, TIMEMORY_SETTINGS_KEY("PYTHON_EXE"),
@@ -1446,7 +1446,7 @@ settings::read(std::istream& ifs, std::string inp)
                 return _resolve_variable(vitr->second);
             if(_v.at(0) == '$')
                 _v = _v.substr(1);
-            for(auto itr : *this)
+            for(const auto& itr : *this)
             {
                 if(itr.second->matches(_v))
                     return _resolve_variable(itr.second->as_string());
@@ -1470,7 +1470,7 @@ settings::read(std::istream& ifs, std::string inp)
             ++expected;
             // tokenize the string
             auto delim = tim::delimit(line, "\n\t=,; ");
-            if(delim.size() > 0)
+            if(!delim.empty())
             {
                 string_t key = delim.front();
                 string_t val = {};
@@ -1501,7 +1501,7 @@ settings::read(std::istream& ifs, std::string inp)
                 }
 
                 auto incr = valid;
-                for(auto itr : *this)
+                for(const auto& itr : *this)
                 {
                     if(itr.second->matches(key))
                     {

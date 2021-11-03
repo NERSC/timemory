@@ -47,10 +47,6 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-namespace regex_const = std::regex_constants;
-//
-//--------------------------------------------------------------------------------------//
-//
 #if !defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
 //
 //--------------------------------------------------------------------------------------//
@@ -120,17 +116,31 @@ env_settings::print(std::ostream& os, filter_func_t&& _filter) const
 
     auto _data = get();
 
-    size_t _w = 35;
+    size_t _wl    = 35;
+    size_t _wr    = 0;
+    size_t _count = 0;
     for(const auto& itr : _data)
     {
         if(_filter(itr.first))
-            _w = std::max<size_t>(itr.first.length(), _w);
+        {
+            _wl = std::max<size_t>(itr.first.length(), _wl);
+            _wr = std::max<size_t>(itr.second.length(), _wr);
+            ++_count;
+        }
     }
 
-    std::stringstream filler;
+    if(_count == 0)
+        return;
+
+    std::stringstream filler{};
     filler.fill('-');
     filler << '#';
-    filler << std::setw(88) << "";
+    {
+        std::stringstream _tmp{};
+        _tmp << " " << std::setw(_wl) << std::right << " "
+             << "  =  " << std::setw(_wr) << std::left << " " << "\n";
+        filler << std::setw(_tmp.str().length() + 1) << " ";
+    }
     filler << '#';
 
     std::stringstream ss;
@@ -140,8 +150,8 @@ env_settings::print(std::ostream& os, filter_func_t&& _filter) const
     {
         if(_filter(itr.first))
         {
-            ss << "# " << std::setw(_w) << std::right << itr.first << "\t = \t"
-               << std::left << itr.second << '\n';
+            ss << "# " << std::setw(_wl) << std::right << itr.first << "  =  "
+               << std::setw(_wr) << std::left << itr.second << '\n';
         }
     }
     ss << filler.str();
@@ -300,6 +310,8 @@ template <>
 TIMEMORY_ENVIRONMENT_LINKAGE(bool)
 load_env(const std::string& env_id, bool _default)
 {
+    namespace regex_const = std::regex_constants;
+
     if(env_id.empty())
         return _default;
 

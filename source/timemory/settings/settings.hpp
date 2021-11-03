@@ -746,8 +746,8 @@ settings::insert(Sp&& _env, const std::string& _name, const std::string& _desc, 
                   "Error! Initializing value is not the same as the declared type");
 
     auto _sid = std::string{ std::forward<Sp>(_env) };
-    // if(get_initialized())  // don't set env before timemory_init
-    set_env(_sid, _init, 0);
+    if(get_initialized())  // don't set env before timemory_init
+        set_env(_sid, _init, 0);
     m_order.push_back(_sid);
     return m_data.insert(
         { string_view_t{ m_order.back() },
@@ -770,8 +770,8 @@ settings::insert(tsetting_pointer_t<Tp, Vp> _ptr, Sp&& _env)
             _sid = _ptr->get_env_name();
         if(!_sid.empty())
         {
-            // if(get_initialized())  // don't set env before timemory_init
-            set_env(_sid, _ptr->as_string(), 0);
+            if(get_initialized())  // don't set env before timemory_init
+                set_env(_sid, _ptr->as_string(), 0);
             m_order.push_back(_sid);
             return m_data.insert({ string_view_t{ m_order.back() }, _ptr });
         }

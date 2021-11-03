@@ -901,8 +901,8 @@ timemory_library_constructor()
         if(!library_ctor)
             return true;
 
-        auto       ld_preload   = tim::get_env<std::string>("LD_PRELOAD", "");
-        auto       dyld_preload = tim::get_env<std::string>("DYLD_INSERT_LIBRARIES", "");
+        auto ld_preload   = tim::get_env<std::string>("LD_PRELOAD", "", false);
+        auto dyld_preload = tim::get_env<std::string>("DYLD_INSERT_LIBRARIES", "", false);
         std::regex lib_regex("libtimemory");
         if(std::regex_search(ld_preload, lib_regex) ||
            std::regex_search(dyld_preload, lib_regex))

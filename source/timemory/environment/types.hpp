@@ -65,7 +65,8 @@ get_env(const std::string& env_id, bool _default, bool _store);
 //
 template <typename Tp>
 Tp
-get_env_choice(const std::string& env_id, Tp _default, std::set<Tp> _choices);
+get_env_choice(const std::string& env_id, Tp _default, std::set<Tp> _choices,
+               bool _store = true);
 //
 //--------------------------------------------------------------------------------------//
 //

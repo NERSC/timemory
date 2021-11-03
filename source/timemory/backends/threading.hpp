@@ -84,6 +84,7 @@ struct recycle_ids
     operator bool() const { return value; }
     // ignore assignments
     recycle_ids& operator=(bool) { return *this; }
+
 private:
     bool value = false;
 };
@@ -97,6 +98,7 @@ struct recycle_ids
         value = _v;
         return *this;
     }
+
 private:
     bool value = true;
 };
@@ -119,7 +121,7 @@ get_id()
     static std::atomic<int64_t> _global_counter{ 0 };
     static thread_local auto    _this_id = []() {
         if(!recycle_ids())
-            return std::make_pair(_global_counter++, scope::destructor{ []() {}});
+            return std::make_pair(_global_counter++, scope::destructor{ []() {} });
 
         int64_t _id = -1;
         struct threading_ids
