@@ -138,8 +138,9 @@ env_settings::print(std::ostream& os, filter_func_t&& _filter) const
     {
         std::stringstream _tmp{};
         _tmp << " " << std::setw(_wl) << std::right << " "
-             << "  =  " << std::setw(_wr) << std::left << " " << "\n";
-        filler << std::setw(_tmp.str().length() + 1) << " ";
+             << "  =  " << std::setw(_wr) << std::left << " "
+             << "\n";
+        filler << std::setw(_tmp.str().length() + 1) << "";
     }
     filler << '#';
 
