@@ -1,6 +1,6 @@
 if(TIMEMORY_USE_HIP)
     set(NAME hip)
-    set(DEPS timemory-hip)
+    set(DEPS timemory::timemory-hip)
 
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
     file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

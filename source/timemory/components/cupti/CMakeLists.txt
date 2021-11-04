@@ -4,7 +4,7 @@ file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
 
 if(TIMEMORY_USE_CUPTI)
     set(NAME cupti)
-    set(DEPS timemory-cupti timemory-cuda timemory-cuda-device)
+    set(DEPS timemory::timemory-cupti timemory::timemory-cuda timemory::timemory-cuda-device)
 
     if(CMAKE_CUDA_COMPILER)
         set_source_files_properties(${source_files} PROPERTIES LINKER_LANGUAGE CUDA)

@@ -1,6 +1,6 @@
 if(TIMEMORY_USE_GPERFTOOLS)
     set(NAME gperftools)
-    set(DEPS timemory-gperftools)
+    set(DEPS timemory::timemory-gperftools)
 
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
     file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

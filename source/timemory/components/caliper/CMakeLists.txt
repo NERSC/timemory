@@ -1,6 +1,6 @@
 if(TIMEMORY_USE_CALIPER)
     set(NAME caliper)
-    set(DEPS timemory-caliper)
+    set(DEPS timemory::timemory-caliper)
 
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
     file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

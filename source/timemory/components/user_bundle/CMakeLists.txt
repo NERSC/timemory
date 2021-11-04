@@ -16,8 +16,7 @@ build_intermediate_library(
     FOLDER components
     HEADERS ${header_files}
     SOURCES ${source_files}
-    DEPENDS ${DEPS}
-    PROPERTY_DEPENDS GLOBAL COMPONENT)
+    PROPERTY_DEPENDS COMPONENT)
 
 list(REMOVE_ITEM source_files ${CMAKE_CURRENT_SOURCE_DIR}/extern.cpp)
 timemory_install_header_files(${source_files})

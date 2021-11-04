@@ -1,6 +1,6 @@
 if(TIMEMORY_USE_ALLINEA_MAP)
     set(NAME allinea_map)
-    set(DEPS timemory-allinea-map)
+    set(DEPS timemory::timemory-allinea-map)
 
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
     file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

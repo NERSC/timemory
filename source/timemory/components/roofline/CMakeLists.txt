@@ -1,6 +1,6 @@
 if(TIMEMORY_USE_PAPI OR TIMEMORY_USE_CUPTI)
     set(NAME roofline)
-    set(DEPS timemory-papi-component timemory-cupti-component)
+    set(DEPS timemory::timemory-papi-component timemory::timemory-cupti-component)
 
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
     if(CMAKE_CUDA_COMPILER AND TIMEMORY_USE_CUPTI)

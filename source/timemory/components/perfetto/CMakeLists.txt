@@ -1,6 +1,6 @@
 if(TIMEMORY_USE_PERFETTO)
     set(NAME perfetto)
-    set(DEPS timemory-perfetto)
+    set(DEPS timemory::timemory-perfetto)
 
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
     file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
