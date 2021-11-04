@@ -38,7 +38,7 @@
 #include "timemory/manager/types.hpp"
 #include "timemory/mpl/available.hpp"
 #include "timemory/mpl/policy.hpp"
-#include "timemory/settings/declaration.hpp"
+#include "timemory/settings/settings.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 
 #include <atomic>
