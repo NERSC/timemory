@@ -23,27 +23,27 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_SETTINGS_SETTINGS_CPP_
-#    define TIMEMORY_SETTINGS_SETTINGS_CPP_
+#define TIMEMORY_SETTINGS_SETTINGS_CPP_ 1
 
-#    include "timemory/settings/settings.hpp"
+#include "timemory/settings/settings.hpp"
 
-#    include "timemory/backends/dmp.hpp"
-#    include "timemory/defines.h"
-#    include "timemory/mpl/policy.hpp"
-#    include "timemory/settings/macros.hpp"
-#    include "timemory/settings/types.hpp"
-#    include "timemory/tpls/cereal/archives.hpp"
-#    include "timemory/utility/argparse.hpp"
-#    include "timemory/utility/bits/signals.hpp"
-#    include "timemory/utility/declaration.hpp"
-#    include "timemory/utility/filepath.hpp"
-#    include "timemory/utility/md5.hpp"
-#    include "timemory/utility/utility.hpp"
-#    include "timemory/variadic/macros.hpp"
+#include "timemory/backends/dmp.hpp"
+#include "timemory/defines.h"
+#include "timemory/mpl/policy.hpp"
+#include "timemory/settings/macros.hpp"
+#include "timemory/settings/types.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/utility/argparse.hpp"
+#include "timemory/utility/bits/signals.hpp"
+#include "timemory/utility/declaration.hpp"
+#include "timemory/utility/filepath.hpp"
+#include "timemory/utility/md5.hpp"
+#include "timemory/utility/utility.hpp"
+#include "timemory/variadic/macros.hpp"
 
-#    include <cctype>
-#    include <fstream>
-#    include <locale>
+#include <cctype>
+#include <fstream>
+#include <locale>
 
 namespace tim
 {
@@ -115,7 +115,7 @@ TIMEMORY_SETTINGS_INLINE
 settings::strvector_t
 settings::get_global_environment()
 {
-#    if defined(TIMEMORY_UNIX)
+#if defined(TIMEMORY_UNIX)
     strvector_t _environ;
     if(environ != nullptr)
     {
@@ -124,9 +124,9 @@ settings::get_global_environment()
             _environ.push_back(environ[idx++]);
     }
     return _environ;
-#    else
+#else
     return std::vector<std::string>();
-#    endif
+#endif
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -229,7 +229,7 @@ settings::store_command_line(int argc, char** argv)
     auto& _cmdline = command_line();
     _cmdline.clear();
     for(int i = 0; i < argc; ++i)
-        _cmdline.push_back(std::string(argv[i]));
+        _cmdline.emplace_back(std::string(argv[i]));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -246,8 +246,8 @@ TIMEMORY_SETTINGS_INLINE std::string
     if(!_cmdline.empty())
     {
         _arg0_string.append(_cmdline.at(0));
-        for(size_t i = 0; i < _cmdline.size(); ++i)
-            _argv_string.append(_cmdline.at(i));
+        for(const auto& itr : _cmdline)
+            _argv_string.append(itr);
         for(size_t i = 1; i < _cmdline.size(); ++i)
         {
             _argt_string.append(_cmdline.at(i));
@@ -308,7 +308,7 @@ settings::format(std::string _prefix, std::string _tag, std::string _suffix,
     if(!_prefix.empty() && _prefix[plast] != '/' && isalnum(_prefix[plast]))
         _prefix += "-";
 
-    return format(_prefix + _tag + _suffix + _ext,
+    return format(_prefix + _tag + std::move(_suffix) + _ext,
                   (instance()) ? instance()->get_tag() : get_fallback_tag());
 }
 //
@@ -342,11 +342,11 @@ settings::compose_output_filename(std::string _tag, std::string _ext, bool _dmp_
 
     // add the mpi rank if not root
     auto _suffix = (_dmp_init && _dmp_rank >= 0)
-                       ? (std::string("_") + std::to_string(_dmp_rank))
+                       ? (std::string("-") + std::to_string(_dmp_rank))
                        : std::string("");
 
     // create the path
-    std::string _fpath = format(_prefix, _tag, _suffix, _ext);
+    std::string _fpath = format(_prefix, std::move(_tag), _suffix, std::move(_ext));
 
     return filepath::osrepr(_fpath);
 }
@@ -375,11 +375,11 @@ settings::compose_input_filename(std::string _tag, std::string _ext, bool _dmp_i
         _prefix = filepath::osrepr(std::string("./"));
 
     auto _suffix = (_dmp_init && _dmp_rank >= 0)
-                       ? (std::string("_") + std::to_string(_dmp_rank))
+                       ? (std::string("-") + std::to_string(_dmp_rank))
                        : std::string("");
 
     // create the path
-    std::string _fpath = format(_prefix, _tag, _suffix, _ext);
+    std::string _fpath = format(_prefix, std::move(_tag), _suffix, std::move(_ext));
 
     return filepath::osrepr(_fpath);
 }
@@ -1303,16 +1303,16 @@ TIMEMORY_SETTINGS_INLINE
 bool
 settings::read(const string_t& inp)
 {
-#    if defined(TIMEMORY_UNIX)
+#if defined(TIMEMORY_UNIX)
     auto file_exists = [](const std::string& _fname) {
         struct stat _buffer;
         if(stat(_fname.c_str(), &_buffer) == 0)
             return (S_ISREG(_buffer.st_mode) != 0 || S_ISLNK(_buffer.st_mode) != 0);
         return false;
     };
-#    else
+#else
     auto file_exists = [](const std::string&) { return true; };
-#    endif
+#endif
 
     if(file_exists(inp))
     {
@@ -1367,14 +1367,14 @@ settings::read(std::istream& ifs, std::string inp)
         } catch(tim::cereal::Exception& e)
         {
             PRINT_HERE("Exception reading %s :: %s", inp.c_str(), e.what());
-#    if defined(TIMEMORY_INTERNAL_TESTING)
+#if defined(TIMEMORY_INTERNAL_TESTING)
             TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(true, 8);
-#    endif
+#endif
             return false;
         }
         return true;
     }
-#    if defined(TIMEMORY_USE_XML)
+#if defined(TIMEMORY_USE_XML)
     else if(inp.find(".xml") != std::string::npos || inp == "xml")
     {
         using policy_type = policy::input_archive<cereal::XMLInputArchive, TIMEMORY_API>;
@@ -1398,7 +1398,7 @@ settings::read(std::istream& ifs, std::string inp)
         ia->finishNode();
         return true;
     }
-#    endif
+#endif
     else
     {
         if(inp.empty())
@@ -1784,10 +1784,8 @@ TIMEMORY_SETTINGS_REFERENCE_DEF(process::id_t, target_pid,
 //
 }  // namespace tim
 
-#    include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
 
 TIMEMORY_SETTINGS_EXTERN_TEMPLATE(TIMEMORY_API)
 
 #endif  // TIMEMORY_SETTINGS_SETTINGS_CPP_
-
-// #include "timemory/settings/extern.hpp"

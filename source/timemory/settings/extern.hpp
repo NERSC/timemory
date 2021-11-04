@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/settings/macros.hpp"
 #include "timemory/settings/settings.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
 

@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/settings/declaration.hpp
- * \brief The declaration for the types for settings without definitions
- */
-
 #pragma once
 
 #include "timemory/api.hpp"
