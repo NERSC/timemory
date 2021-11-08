@@ -166,28 +166,6 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_STATIC_ACCESSOR)
-#    define TIMEMORY_STATIC_ACCESSOR(RETURN_TYPE, FUNC_NAME, ...)                        \
-        static RETURN_TYPE& FUNC_NAME()                                                  \
-        {                                                                                \
-            static auto _v = __VA_ARGS__;                                                \
-            return _v;                                                                   \
-        }
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_STATIC_THREAD_LOCAL_ACCESSOR)
-#    define TIMEMORY_STATIC_THREAD_LOCAL_ACCESSOR(RETURN_TYPE, FUNC_NAME, ...)           \
-        static RETURN_TYPE& FUNC_NAME()                                                  \
-        {                                                                                \
-            static thread_local auto _v = __VA_ARGS__;                                   \
-            return _v;                                                                   \
-        }
-#endif
-
-//======================================================================================//
-//
 namespace tim
 {
 // definition in popen.hpp

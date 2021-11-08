@@ -33,6 +33,7 @@
 #include "timemory/operations/types/finalize/get.hpp"
 #include "timemory/plotting/declaration.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/filepath.hpp"
 
 #include <cstdint>
 #include <fstream>
@@ -205,7 +206,7 @@ print<Tp, true>::setup()
     auto fext       = trait::archive_extension<trait::output_archive_t<Tp>>{}();
     auto extensions = tim::delimit(m_settings->get_input_extensions(), ",; ");
 
-    tree_outfname = settings::compose_output_filename(label + ".tree", fext);
+    tree_outfname = settings::compose_output_filename(label, ".tree" + fext);
     json_outfname = settings::compose_output_filename(label, fext);
     text_outfname = settings::compose_output_filename(label, ".txt");
 

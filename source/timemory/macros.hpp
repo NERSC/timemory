@@ -60,6 +60,29 @@
 
 //======================================================================================//
 //
+/// Simple way to define a static variable which avoids the static initialization fiasco
+#if !defined(TIMEMORY_STATIC_ACCESSOR)
+#    define TIMEMORY_STATIC_ACCESSOR(RETURN_TYPE, FUNC_NAME, ...)                        \
+        static RETURN_TYPE& FUNC_NAME()                                                  \
+        {                                                                                \
+            static RETURN_TYPE _v = __VA_ARGS__;                                         \
+            return _v;                                                                   \
+        }
+#endif
+
+/// Simple way to define a static thread-local variable which avoids the static
+/// initialization fiasco
+#if !defined(TIMEMORY_STATIC_THREAD_LOCAL_ACCESSOR)
+#    define TIMEMORY_STATIC_THREAD_LOCAL_ACCESSOR(RETURN_TYPE, FUNC_NAME, ...)           \
+        static RETURN_TYPE& FUNC_NAME()                                                  \
+        {                                                                                \
+            static thread_local RETURN_TYPE _v = __VA_ARGS__;                            \
+            return _v;                                                                   \
+        }
+#endif
+
+//======================================================================================//
+//
 //                              COMPONENTS
 //
 //======================================================================================//

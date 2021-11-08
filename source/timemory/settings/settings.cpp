@@ -135,11 +135,11 @@ TIMEMORY_SETTINGS_INLINE
 std::string
 get_local_datetime(const char* dt_format, std::time_t* dt_curr)
 {
-    char mbstr[100];
+    char mbstr[512];
     if(!dt_curr)
         dt_curr = settings::get_launch_time(TIMEMORY_API{});
 
-    if(std::strftime(mbstr, sizeof(mbstr), dt_format, std::localtime(dt_curr)))
+    if(std::strftime(mbstr, sizeof(mbstr), dt_format, std::localtime(dt_curr)) != 0)
         return std::string{ mbstr };
     return std::string{};
 }
@@ -235,7 +235,7 @@ settings::store_command_line(int argc, char** argv)
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE std::string
-                         settings::format(std::string _fpath, std::string _tag)
+                         settings::format(std::string _fpath, const std::string& _tag)
 {
     auto        _cmdline     = command_line();
     std::string _arg0_string = {};    // only the first cmdline arg
@@ -305,7 +305,7 @@ settings::format(std::string _prefix, std::string _tag, std::string _suffix,
 
     auto plast = static_cast<intmax_t>(_prefix.length()) - 1;
     // add dash if not empty, not ends in '/', and last char is alphanumeric
-    if(!_prefix.empty() && _prefix[plast] != '/' && isalnum(_prefix[plast]))
+    if(!_prefix.empty() && _prefix[plast] != '/' && isalnum(_prefix[plast]) != 0)
         _prefix += "-";
 
     return format(_prefix + _tag + std::move(_suffix) + _ext,
@@ -316,24 +316,26 @@ settings::format(std::string _prefix, std::string _tag, std::string _suffix,
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
-settings::compose_output_filename(std::string _tag, std::string _ext, bool _dmp_init,
-                                  const int32_t _dmp_rank, bool _make_dir,
+settings::compose_output_filename(std::string _tag, std::string _ext, bool _use_suffix,
+                                  int32_t _output_suffix, bool _make_dir,
                                   std::string _explicit)
 {
+    bool _is_explicit = (!_explicit.empty());
     // if there isn't an explicit prefix, get the <OUTPUT_PATH>/<OUTPUT_PREFIX>
-    auto _prefix = (!_explicit.empty()) ? _explicit : get_global_output_prefix(_make_dir);
+    auto _prefix =
+        (!_explicit.empty()) ? std::move(_explicit) : get_global_output_prefix(_make_dir);
 
     // return on empty
     if(_prefix.empty())
         return "";
 
-    auto only_ascii = [](char c) { return !isascii(c); };
+    auto only_ascii = [](char c) { return isascii(c) == 0; };
 
     _prefix.erase(std::remove_if(_prefix.begin(), _prefix.end(), only_ascii),
                   _prefix.end());
 
     // if explicit prefix is provided, then make the directory
-    if(!_explicit.empty() && _make_dir)
+    if(_is_explicit && _make_dir)
     {
         auto ret = makedir(_prefix);
         if(ret != 0)
@@ -341,8 +343,8 @@ settings::compose_output_filename(std::string _tag, std::string _ext, bool _dmp_
     }
 
     // add the mpi rank if not root
-    auto _suffix = (_dmp_init && _dmp_rank >= 0)
-                       ? (std::string("-") + std::to_string(_dmp_rank))
+    auto _suffix = (_use_suffix && _output_suffix >= 0)
+                       ? (std::string("-") + std::to_string(_output_suffix))
                        : std::string("");
 
     // create the path
@@ -355,8 +357,8 @@ settings::compose_output_filename(std::string _tag, std::string _ext, bool _dmp_
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
-settings::compose_input_filename(std::string _tag, std::string _ext, bool _dmp_init,
-                                 const int32_t _dmp_rank, std::string _explicit)
+settings::compose_input_filename(std::string _tag, std::string _ext, bool _use_suffix,
+                                 int32_t _output_suffix, std::string _explicit)
 {
     if(settings::input_path().empty())
         settings::input_path() = settings::output_path();
@@ -364,18 +366,16 @@ settings::compose_input_filename(std::string _tag, std::string _ext, bool _dmp_i
     if(settings::input_prefix().empty())
         settings::input_prefix() = settings::output_prefix();
 
-    auto _prefix = (_explicit.length() > 0) ? _explicit : get_global_input_prefix();
+    auto _prefix =
+        (_explicit.length() > 0) ? std::move(_explicit) : get_global_input_prefix();
 
-    auto only_ascii = [](char c) { return !isascii(c); };
+    auto only_ascii = [](char c) { return isascii(c) == 0; };
 
     _prefix.erase(std::remove_if(_prefix.begin(), _prefix.end(), only_ascii),
                   _prefix.end());
 
-    if(_explicit.length() > 0)
-        _prefix = filepath::osrepr(std::string("./"));
-
-    auto _suffix = (_dmp_init && _dmp_rank >= 0)
-                       ? (std::string("-") + std::to_string(_dmp_rank))
+    auto _suffix = (_use_suffix && _output_suffix >= 0)
+                       ? (std::string("-") + std::to_string(_output_suffix))
                        : std::string("");
 
     // create the path
@@ -388,7 +388,7 @@ settings::compose_input_filename(std::string _tag, std::string _ext, bool _dmp_i
 //
 TIMEMORY_SETTINGS_INLINE
 void
-settings::parse(std::shared_ptr<settings> _settings)
+settings::parse(const std::shared_ptr<settings>& _settings)
 {
     if(_settings)
         parse(_settings.get());
@@ -1416,9 +1416,8 @@ settings::read(std::istream& ifs, std::string inp)
                     return true;
             }
             std::locale _lc{};
-            for(size_t i = 0; i < _s.length(); ++i)
+            for(const auto& itr : _s)
             {
-                auto itr = _s.at(i);
                 // if graphical character is # then it a comment
                 if(std::isgraph(itr, _lc))
                     return (itr == '#');
