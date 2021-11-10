@@ -324,16 +324,13 @@ get<Type, true>::operator()(result_type& ret)
                     auto _hierarchy = hierarchy_type{};
                     auto _tid       = itr->tid();
                     auto _pid       = itr->pid();
-                    if(_parent && _parent->depth() > _min)
+                    while(_parent && _parent->depth() > _min)
                     {
-                        while(_parent)
-                        {
-                            _hierarchy.push_back(_parent->id());
-                            _rolling += _parent->id();
-                            _parent = graph_type::parent(_parent);
-                            if(!_parent || !(_parent->depth() > _min))
-                                break;
-                        }
+                        if(operation::get_is_invalid<Type, false>{}(_parent->data()))
+                            break;
+                        _hierarchy.push_back(_parent->id());
+                        _rolling += _parent->id();
+                        _parent = graph_type::parent(_parent);
                     }
                     if(_hierarchy.size() > 1)
                         std::reverse(_hierarchy.begin(), _hierarchy.end());

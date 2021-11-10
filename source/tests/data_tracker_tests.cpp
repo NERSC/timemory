@@ -363,9 +363,8 @@ TEST_F(data_tracker_tests, convergence_test)
                 log_bundle_t{ _name + "/ignore" }
                     .push(tim::mpl::piecewise_select<myproject_logger>{},
                           tim::scope::flat{})
-                    .push(tim::mpl::piecewise_select<myproject_logger>{})
-                    .start()
-                    .stop()
+                    .start(tim::mpl::piecewise_select<myproject_logger>{})
+                    .stop(tim::mpl::piecewise_select<myproject_logger>{})
                     .pop(tim::mpl::piecewise_select<myproject_logger>{});
 
                 auto initial_err = err;
@@ -422,7 +421,11 @@ TEST_F(data_tracker_tests, convergence_test)
     for(auto& itr : itr_storage)
         std::cout << itr.prefix() << " :: " << itr.data() << std::endl;
     for(auto& itr : wc_storage)
+    {
         std::cout << itr.prefix() << " :: " << itr.data() << std::endl;
+        ASSERT_EQ(itr.prefix().find("ignore"), std::string::npos)
+            << itr.prefix() << " :: " << itr.data() << "\n";
+    }
 
     ASSERT_EQ(itr_storage.size(), nthreads);
     ASSERT_EQ(err_storage.size(), nthreads);
