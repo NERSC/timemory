@@ -314,6 +314,9 @@ get_hash_identifier(hash_value_t _hash_id, std::string&);
 bool
 get_hash_identifier(hash_value_t _hash_id, const char*&);
 //
+std::string
+get_hash_identifier(hash_value_t _hash_id);
+//
 //--------------------------------------------------------------------------------------//
 //
 template <typename FuncT>

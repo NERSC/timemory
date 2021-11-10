@@ -196,7 +196,7 @@ auto get_storage(tim::index_sequence<Idx...>)
 bool&
 is_finalized()
 {
-    static auto _instance = new bool{ false };
+    static auto* _instance = new bool{ false };
     return *_instance;
 }
 
@@ -205,7 +205,7 @@ is_finalized()
 bool&
 get_enabled()
 {
-    static auto _instance = new bool{ tim::settings::enabled() };
+    static auto* _instance = new bool{ tim::settings::enabled() };
     return *_instance;
 }
 
@@ -214,7 +214,7 @@ get_enabled()
 bool&
 get_thread_enabled()
 {
-    static thread_local auto _instance = new bool{ get_enabled() };
+    static thread_local auto* _instance = new bool{ get_enabled() };
     return *_instance;
 }
 
@@ -223,7 +223,7 @@ get_thread_enabled()
 bool
 get_debug()
 {
-    static auto _instance =
+    static auto* _instance =
         new bool{ tim::get_env(TIMEMORY_SETTINGS_KEY("DEBUG"), false) };
     return *_instance;
 }
@@ -242,7 +242,7 @@ get_first()
 static auto&
 get_overhead()
 {
-    static thread_local auto _instance = new overhead_map_t{};
+    static thread_local auto* _instance = new overhead_map_t{};
     return _instance;
 }
 
@@ -251,7 +251,7 @@ get_overhead()
 static auto&
 get_throttle()
 {
-    static thread_local auto _instance = new throttle_map_t{};
+    static thread_local auto* _instance = new throttle_map_t{};
     return _instance;
 }
 
@@ -260,7 +260,7 @@ get_throttle()
 static auto&
 get_trace_vec()
 {
-    static thread_local auto _instance = new trace_vec_t{};
+    static thread_local auto* _instance = new trace_vec_t{};
     return _instance;
 }
 
@@ -278,7 +278,7 @@ get_trace_size()
 static auto&
 get_label_map()
 {
-    static thread_local auto _instance = new label_map_t{};
+    static thread_local auto* _instance = new label_map_t{};
     return _instance;
 }
 
@@ -720,7 +720,7 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
             if(_wrapper->debug())
                 PRINT_HERE("%s", "Executing original function");
             // execute the original function
-            auto _ret = (*_wrapper)();
+            auto* _ret = (*_wrapper)();
             // only child threads
             if(tim::threading::get_id() != primary_tidx)
             {
@@ -743,7 +743,7 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
 
     // pthread_create
     int operator()(pthread_t* thread, const pthread_attr_t* attr,
-                   void* (*start_routine)(void*), void*     arg)
+                   void* (*start_routine)(void*), void*     arg) const
     {
         if(m_debug)
             PRINT_HERE("%s", "wrapping pthread_create");

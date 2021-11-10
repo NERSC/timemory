@@ -47,19 +47,13 @@ using enumerator_vt =
 class manager_wrapper
 {
 public:
-    manager_wrapper();
-    ~manager_wrapper();
-    std::shared_ptr<manager_t> get();
+    manager_wrapper()  = default;
+    ~manager_wrapper() = default;
+    static std::shared_ptr<manager_t> get();
 
 protected:
-    std::shared_ptr<manager_t> m_manager = { nullptr };
+    std::shared_ptr<manager_t> m_manager = { manager_t::instance() };
 };
-//
-manager_wrapper::manager_wrapper()
-: m_manager(manager_t::instance())
-{}
-//
-manager_wrapper::~manager_wrapper() {}
 //
 std::shared_ptr<manager_t>
 manager_wrapper::get()
@@ -208,7 +202,7 @@ get_stream(const pytim::pyenum_set_t& _types, std::index_sequence<Idx...>)
 //  Python wrappers
 //======================================================================================//
 
-PYBIND11_MODULE(libpytimemory, tim)
+PYBIND11_MODULE(libpytimemory, timemory)
 {
     //----------------------------------------------------------------------------------//
     //
@@ -255,7 +249,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     using pytim::string_t;
     try
     {
-        // py::add_ostream_redirect(tim, "ostream_redirect");
+        // py::add_ostream_redirect(timemory, "ostream_redirect");
     } catch(std::exception&)
     {}
 
@@ -266,22 +260,22 @@ PYBIND11_MODULE(libpytimemory, tim)
     //==================================================================================//
 
     py::module _api =
-        tim.def_submodule("api", "Direct python interfaces to various APIs");
+        timemory.def_submodule("api", "Direct python interfaces to various APIs");
     pyapi::generate(_api);
-    pysignals::generate(tim);
-    pyauto_timer::generate(tim);
-    pycomponent_list::generate(tim);
-    pycomponent_bundle::generate(tim);
-    pyhardware_counters::generate(tim);
-    pystatistics::generate(tim);
-    pysettings::generate(tim);
-    auto pyunit = pyunits::generate(tim);
-    auto pycomp = pycomponents::generate(tim);
-    pystorage::generate(tim);
-    pyrss_usage::generate(tim, pyunit);
+    pysignals::generate(timemory);
+    pyauto_timer::generate(timemory);
+    pycomponent_list::generate(timemory);
+    pycomponent_bundle::generate(timemory);
+    pyhardware_counters::generate(timemory);
+    pystatistics::generate(timemory);
+    pysettings::generate(timemory);
+    auto pyunit = pyunits::generate(timemory);
+    auto pycomp = pycomponents::generate(timemory);
+    pystorage::generate(timemory);
+    pyrss_usage::generate(timemory, pyunit);
     pyenumeration::generate(pycomp);
-    pyprofile::generate(tim);
-    pytrace::generate(tim);
+    pyprofile::generate(timemory);
+    pytrace::generate(timemory);
 
     //==================================================================================//
     //
@@ -289,8 +283,9 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
 
-    py::module pyscope = tim.def_submodule("scope", "Scoping controls how the values are "
-                                                    "updated in the call-graph");
+    py::module pyscope =
+        timemory.def_submodule("scope", "Scoping controls how the values are "
+                                        "updated in the call-graph");
     {
         namespace scope   = tim::scope;
         auto _config_init = [](py::object _flat, py::object _time) {
@@ -342,9 +337,9 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
 
-    py::module _region =
-        tim.def_submodule("region", "C/C++/Fortran-compatible library functions (not "
-                                    "subject to throttling)");
+    py::module _region = timemory.def_submodule(
+        "region", "C/C++/Fortran-compatible library functions (not "
+                  "subject to throttling)");
 
     //----------------------------------------------------------------------------------//
     auto _set_default = [](py::list types) {
@@ -399,7 +394,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //      Options submodule
     //
     //==================================================================================//
-    py::module opts = tim.def_submodule("options", "I/O options submodule");
+    py::module opts = timemory.def_submodule("options", "I/O options submodule");
     //----------------------------------------------------------------------------------//
     opts.attr("echo_dart")          = tim::settings::dart_output();
     opts.attr("ctest_notes")        = tim::settings::ctest_notes();
@@ -411,10 +406,11 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
     py::class_<manager_wrapper> man(
-        tim, "manager", "object which controls static data lifetime and finalization");
+        timemory, "manager",
+        "object which controls static data lifetime and finalization");
 
     py::class_<tim::scope::destructor> destructor(
-        tim, "scope_destructor",
+        timemory, "scope_destructor",
         "An object that executes an operation when it is destroyed");
 
     destructor.def(py::init([]() { return new tim::scope::destructor([]() {}); }),
@@ -619,10 +615,10 @@ PYBIND11_MODULE(libpytimemory, tim)
         }
     };
     //----------------------------------------------------------------------------------//
-    auto _argparse = [tim](py::object parser, py::object subparser) {
+    auto _argparse = [timemory](py::object parser, py::object subparser) {
         try
         {
-            py::object _pysettings = tim.attr("settings");
+            py::object _pysettings = timemory.attr("settings");
             _pysettings.attr("add_arguments")(parser, py::none{}, subparser);
         } catch(std::exception& e)
         {
@@ -694,117 +690,121 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
     //
-    tim.def("report", report, "Print the data", py::arg("filename") = "");
+    timemory.def("report", report, "Print the data", py::arg("filename") = "");
     //----------------------------------------------------------------------------------//
-    tim.def(
+    timemory.def(
         "toggle", [](bool on) { tim::settings::enabled() = on; },
         "Enable/disable timemory", py::arg("on") = true);
     //----------------------------------------------------------------------------------//
-    tim.def(
+    timemory.def(
         "enable", []() { tim::settings::enabled() = true; }, "Enable timemory");
     //----------------------------------------------------------------------------------//
-    tim.def(
+    timemory.def(
         "disable", []() { tim::settings::enabled() = false; }, "Disable timemory");
     //----------------------------------------------------------------------------------//
-    tim.def(
+    timemory.def(
         "is_enabled", []() { return tim::settings::enabled(); },
         "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
-    tim.def(
+    timemory.def(
         "enabled", []() { return tim::settings::enabled(); },
         "Return if timemory is enabled or disabled");
     //----------------------------------------------------------------------------------//
-    tim.def(
+    timemory.def(
         "has_mpi_support", []() { return tim::mpi::is_supported(); },
         "Return if the timemory library has MPI support");
     //----------------------------------------------------------------------------------//
-    tim.def("set_rusage_children", set_rusage_child,
-            "Set the rusage to record child processes");
+    timemory.def("set_rusage_children", set_rusage_child,
+                 "Set the rusage to record child processes");
     //----------------------------------------------------------------------------------//
-    tim.def("set_rusage_self", set_rusage_self,
-            "Set the rusage to record child processes");
+    timemory.def("set_rusage_self", set_rusage_self,
+                 "Set the rusage to record child processes");
     //----------------------------------------------------------------------------------//
-    tim.def("timemory_init", _init, "Initialize timemory", py::arg("argv") = py::list{},
-            py::arg("prefix") = "timemory-", py::arg("suffix") = "-output");
+    timemory.def("timemory_init", _init, "Initialize timemory",
+                 py::arg("argv") = py::list{}, py::arg("prefix") = "timemory-",
+                 py::arg("suffix") = "-output");
     //----------------------------------------------------------------------------------//
-    tim.def("timemory_finalize", _finalize,
-            "Finalize timemory (generate output) -- important to call if using MPI");
+    timemory.def("timemory_finalize", _finalize,
+                 "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
-    tim.def("initialize", _init, "Initialize timemory", py::arg("argv") = py::list{},
-            py::arg("prefix") = "timemory-", py::arg("suffix") = "-output");
+    timemory.def("initialize", _init, "Initialize timemory", py::arg("argv") = py::list{},
+                 py::arg("prefix") = "timemory-", py::arg("suffix") = "-output");
     //----------------------------------------------------------------------------------//
-    tim.def("finalize", _finalize,
-            "Finalize timemory (generate output) -- important to call if using MPI");
+    timemory.def("finalize", _finalize,
+                 "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
-    tim.def("timemory_argparse", _argparse, "Add argparse support for settings",
-            py::arg("parser"), py::arg("subparser") = true);
+    timemory.def("timemory_argparse", _argparse, "Add argparse support for settings",
+                 py::arg("parser"), py::arg("subparser") = true);
     //----------------------------------------------------------------------------------//
-    tim.def("add_arguments", _argparse, "Add argparse support for settings",
-            py::arg("parser"), py::arg("subparser") = true);
+    timemory.def("add_arguments", _argparse, "Add argparse support for settings",
+                 py::arg("parser"), py::arg("subparser") = true);
     //----------------------------------------------------------------------------------//
-    tim.def("get", _as_json, "Get the storage data in JSON format",
-            py::arg("hierarchy") = false, py::arg("components") = py::list{});
+    timemory.def("get", _as_json, "Get the storage data in JSON format",
+                 py::arg("hierarchy") = false, py::arg("components") = py::list{});
     //----------------------------------------------------------------------------------//
-    tim.def("get_text", _as_text, "Get the storage data in text format",
-            py::arg("components") = py::list{});
+    timemory.def("get_text", _as_text, "Get the storage data in text format",
+                 py::arg("components") = py::list{});
     //----------------------------------------------------------------------------------//
-    tim.def("clear", _do_clear, "Clear the storage data",
-            py::arg("components") = py::list{});
+    timemory.def("clear", _do_clear, "Clear the storage data",
+                 py::arg("components") = py::list{});
     //----------------------------------------------------------------------------------//
-    tim.def("size", _get_size,
-            "Get the current storage size of component types. An empty list as the first "
-            "argument will return the size for all available types",
-            py::arg("components") = py::list{});
+    timemory.def(
+        "size", _get_size,
+        "Get the current storage size of component types. An empty list as the first "
+        "argument will return the size for all available types",
+        py::arg("components") = py::list{});
     //----------------------------------------------------------------------------------//
-    tim.def(
+    timemory.def(
         "get_hash", [](const std::string& _id) { return tim::add_hash_id(_id); },
         "Get timemory's hash for a key (string)", py::arg("key"));
     //----------------------------------------------------------------------------------//
-    tim.def("get_hash_identifier",
-            py::overload_cast<tim::hash_value_t>(&tim::get_hash_identifier),
-            "Get the string associated with a hash identifer", py::arg("hash_id"));
+    timemory.def("get_hash_identifier",
+                 py::overload_cast<tim::hash_value_t>(&tim::get_hash_identifier),
+                 "Get the string associated with a hash identifer", py::arg("hash_id"));
     //----------------------------------------------------------------------------------//
-    tim.def(
+    timemory.def(
         "add_hash_id", [](const std::string& _id) { return tim::add_hash_id(_id); },
         "Add a key (string) to the database and return the hash for it", py::arg("key"));
     //----------------------------------------------------------------------------------//
-    tim.def("mpi_init", _init_mpi, "Initialize MPI");
+    timemory.def("mpi_init", _init_mpi, "Initialize MPI");
     //----------------------------------------------------------------------------------//
-    tim.def("mpi_finalize", _finalize_mpi, "Finalize MPI");
+    timemory.def("mpi_finalize", _finalize_mpi, "Finalize MPI");
     //----------------------------------------------------------------------------------//
-    tim.def("upcxx_init", _init_upcxx, "Initialize UPC++");
+    timemory.def("upcxx_init", _init_upcxx, "Initialize UPC++");
     //----------------------------------------------------------------------------------//
-    tim.def("upcxx_finalize", _finalize_upcxx, "Finalize UPC++");
+    timemory.def("upcxx_finalize", _finalize_upcxx, "Finalize UPC++");
     //----------------------------------------------------------------------------------//
-    tim.def("dmp_init", _init_dmp, "Initialize MPI and/or UPC++");
+    timemory.def("dmp_init", _init_dmp, "Initialize MPI and/or UPC++");
     //----------------------------------------------------------------------------------//
-    tim.def("dmp_finalize", _finalize_dmp, "Finalize MPI and/or UPC++");
+    timemory.def("dmp_finalize", _finalize_dmp, "Finalize MPI and/or UPC++");
     //----------------------------------------------------------------------------------//
-    tim.def("init_mpip", &timemory_start_mpip,
-            "Activate MPIP profiling (deprecated -- use start_mpip instead)");
+    timemory.def("init_mpip", &timemory_start_mpip,
+                 "Activate MPIP profiling (deprecated -- use start_mpip instead)");
     //----------------------------------------------------------------------------------//
-    tim.def("init_ompt", &timemory_start_ompt,
-            "Activate OMPT profiling (deprecated -- use start_ompt instead)");
+    timemory.def("init_ompt", &timemory_start_ompt,
+                 "Activate OMPT profiling (deprecated -- use start_ompt instead)");
     //----------------------------------------------------------------------------------//
-    tim.def("start_mpip", &timemory_start_mpip, "Activate MPIP profiling");
+    timemory.def("start_mpip", &timemory_start_mpip, "Activate MPIP profiling");
     //----------------------------------------------------------------------------------//
-    tim.def("stop_mpip", &timemory_stop_mpip, "Deactivate MPIP profiling", py::arg("id"));
+    timemory.def("stop_mpip", &timemory_stop_mpip, "Deactivate MPIP profiling",
+                 py::arg("id"));
     //----------------------------------------------------------------------------------//
-    tim.def("start_ompt", &timemory_start_ompt, "Activate OMPT (OpenMP tools) profiling");
+    timemory.def("start_ompt", &timemory_start_ompt,
+                 "Activate OMPT (OpenMP tools) profiling");
     //----------------------------------------------------------------------------------//
-    tim.def("stop_ompt", &timemory_stop_ompt, "Deactivate OMPT (OpenMP tools)  profiling",
-            py::arg("id"));
+    timemory.def("stop_ompt", &timemory_stop_ompt,
+                 "Deactivate OMPT (OpenMP tools)  profiling", py::arg("id"));
     //----------------------------------------------------------------------------------//
-    tim.def("start_ncclp", &timemory_start_ncclp, "Activate NCCL profiling");
+    timemory.def("start_ncclp", &timemory_start_ncclp, "Activate NCCL profiling");
     //----------------------------------------------------------------------------------//
-    tim.def("stop_ncclp", &timemory_stop_ncclp, "Deactivate NCCL profiling",
-            py::arg("id"));
+    timemory.def("stop_ncclp", &timemory_stop_ncclp, "Deactivate NCCL profiling",
+                 py::arg("id"));
     //----------------------------------------------------------------------------------//
-    tim.def("start_mallocp", &timemory_start_mallocp,
-            "Activate Memory Allocation profiling");
+    timemory.def("start_mallocp", &timemory_start_mallocp,
+                 "Activate Memory Allocation profiling");
     //----------------------------------------------------------------------------------//
-    tim.def("stop_mallocp", &timemory_stop_mallocp,
-            "Deactivate Memory Allocation profiling", py::arg("id"));
+    timemory.def("stop_mallocp", &timemory_stop_mallocp,
+                 "Deactivate Memory Allocation profiling", py::arg("id"));
     //----------------------------------------------------------------------------------//
     enum PyProfilingIndex
     {
@@ -825,7 +825,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         { PyProfilingIndex_MALLOCP, strset_t{ "mallocp", "malloc", "memory" } }
     };
     //----------------------------------------------------------------------------------//
-    tim.def(
+    timemory.def(
         "start_function_wrappers",
         [PyProfilingIndex_names](py::args _args, py::kwargs _kwargs) {
             PyProfilingIndex_array_t _ret{};
@@ -906,7 +906,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         "Start profiling MPI (mpip), OpenMP (ompt), NCCL (ncclp), and/or memory "
         "allocations (mallocp). Example: start_function_wrappers(mpi=True, ...)");
     //----------------------------------------------------------------------------------//
-    tim.def(
+    timemory.def(
         "stop_function_wrappers",
         [PyProfilingIndex_names](PyProfilingIndex_array_t _arg) {
             auto _print_arg = [=, &_arg](const std::string& _label) {
@@ -1063,7 +1063,7 @@ PYBIND11_MODULE(libpytimemory, tim)
              py::arg("parser") = py::none{}, py::arg("subparser") = true);
 
 #if !defined(TIMEMORY_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
-    py::module _socket = tim.def_submodule("socket", "Socket communication API");
+    py::module _socket = timemory.def_submodule("socket", "Socket communication API");
 
     using socket_manager_t = std::unique_ptr<tim::socket::manager>;
     auto _socket_manager   = []() -> socket_manager_t& {

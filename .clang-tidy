@@ -7,6 +7,7 @@ misc-*,\
 -misc-static-assert,\
 -misc-no-recursion,\
 -misc-non-private-member-variables-in-classes,\
+-misc-definitions-in-headers,\
 modernize-*,\
 -modernize-deprecated-headers,\
 -modernize-raw-string-literal,\
@@ -18,6 +19,7 @@ modernize-*,\
 -modernize-use-using,\
 -modernize-use-auto,\
 -modernize-concat-nested-namespaces,\
+-modernize-use-nodiscard,\
 performance-*,\
 readability-*,\
 -readability-function-size,\

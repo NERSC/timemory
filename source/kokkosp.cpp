@@ -50,7 +50,7 @@ invoke_preinit<kokkosp::memory_tracker>(long)
 
 namespace
 {
-static std::string kokkos_banner =
+std::string kokkos_banner =
     "#---------------------------------------------------------------------------#";
 
 //--------------------------------------------------------------------------------------//
@@ -62,8 +62,8 @@ configure_environment()
     return true;
 }
 
-static auto env_configured       = (configure_environment(), true);
-static bool enable_kernel_logger = false;
+auto env_configured       = (configure_environment(), true);
+bool enable_kernel_logger = false;
 
 inline void
 add_kernel_logger()

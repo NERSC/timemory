@@ -151,7 +151,7 @@ hash_identifier_error(const hash_map_ptr_t&   _hash_map,
                       const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id)
 {
     static thread_local std::set<hash_value_t> _reported{};
-    if(_reported.count(_hash_id))
+    if(_reported.count(_hash_id) > 0)
         return;
 
     _reported.insert(_hash_id);
@@ -180,7 +180,7 @@ hash_identifier_error(const hash_map_ptr_t&   _hash_map,
     {
         if(_hash_id == aitr.first)
         {
-            for(auto& mitr : *_hash_map)
+            for(const auto& mitr : *_hash_map)
             {
                 if(mitr.first == aitr.second)
                 {

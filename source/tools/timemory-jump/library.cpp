@@ -73,7 +73,7 @@ public:
 
     explicit jump(std::string&& libpath)
     {
-        auto libhandle = dlopen(libpath.c_str(), RTLD_LAZY);
+        auto* libhandle = dlopen(libpath.c_str(), RTLD_LAZY);
 
         if(!libhandle)
             fprintf(stderr, "%s\n", dlerror());

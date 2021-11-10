@@ -1486,6 +1486,9 @@ if(TIMEMORY_USE_DYNINST AND NOT TIMEMORY_BUILD_DYNINST)
                          COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
         endif()
     endif()
+    if(TARGET Dyninst::Dyninst)
+        target_link_libraries(timemory-dyninst INTERFACE Dyninst::Dyninst)
+    endif()
 endif()
 
 if(Dyninst_FOUND AND TARGET Dyninst::Dyninst) # updated Dyninst CMake system was found

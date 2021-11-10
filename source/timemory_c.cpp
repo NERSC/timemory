@@ -117,7 +117,7 @@ extern "C"
             if(n == 0)
                 free_cstr().erase(itr);
         }
-        auto obj = new complete_list_t(key_tag);
+        auto* obj = new complete_list_t{ key_tag };
 #    if defined(DEBUG)
         std::vector<int> _components;
         for(int i = 0; i < num_components; ++i)

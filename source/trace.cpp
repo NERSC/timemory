@@ -811,8 +811,8 @@ extern "C"
         if(library_trace_count.load() == 0)
             return;
 
-        auto _manager  = tim::manager::master_instance();
-        auto _settings = tim::settings::instance();
+        auto  _manager  = tim::manager::master_instance();
+        auto* _settings = tim::settings::instance();
         if(!_manager || !_settings)
             return;
 

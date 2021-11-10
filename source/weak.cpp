@@ -96,7 +96,7 @@ struct tools_stubs_dlsym
             m_libname =
                 TIMEMORY_JOIN("", "libtimemory-", m_id, '.', OS_DYNAMIC_LIBRARY_EXT);
 
-        auto libhandle = dlopen(m_libname.c_str(), RTLD_LAZY | RTLD_GLOBAL);
+        auto* libhandle = dlopen(m_libname.c_str(), RTLD_LAZY | RTLD_GLOBAL);
 
         if(!libhandle)
         {
