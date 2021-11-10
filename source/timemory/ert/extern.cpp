@@ -22,6 +22,30 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/ert/macros.hpp"
 #define TIMEMORY_ERT_SOURCE_CXX
 
 #include "timemory/ert/extern.hpp"
+
+namespace tim
+{
+namespace ert
+{
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE(class exec_data<component::ert_timer>)
+//
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CPU(
+    class counter<device::cpu, float, component::ert_timer>)
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CPU(
+    class counter<device::cpu, double, component::ert_timer>)
+//
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CPU(
+    struct configuration<device::cpu, float, component::ert_timer>)
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CPU(
+    struct configuration<device::cpu, double, component::ert_timer>)
+//
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CPU(
+    struct executor<device::cpu, float, component::ert_timer>)
+TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CPU(
+    struct executor<device::cpu, double, component::ert_timer>)
+}  // namespace ert
+}  // namespace tim

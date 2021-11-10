@@ -26,5 +26,5 @@
 #include "timemory-ert.hpp"
 
 template void
-run_ert<gpu::fp16_t, device::gpu>(ert_data_ptr_t, int64_t, int64_t, int64_t, int64_t,
+run_ert<gpu::fp16_t, device::gpu>(ert_data_ptr_t&, int64_t, int64_t, int64_t, int64_t,
                                   int64_t, int64_t, int);

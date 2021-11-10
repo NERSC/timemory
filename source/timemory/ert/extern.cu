@@ -22,7 +22,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define TIMEMORY_ERT_SOURCE_GPU
+#if !defined(TIMEMORY_ERT_SOURCE)
+#    define TIMEMORY_ERT_SOURCE 1
+#endif
+
+#if !defined(TIMEMORY_ERT_SOURCE_GPU)
+#    define TIMEMORY_ERT_SOURCE_GPU 1
+#endif
+
 #if defined(TIMEMORY_USE_CUDA)
 #    define TIMEMORY_ERT_SOURCE_CUDA
 #elif defined(TIMEMORY_USE_HIP)
@@ -30,6 +37,7 @@
 #endif
 
 #include "timemory/ert/extern.hpp"
+#include "timemory/ert/macros.hpp"
 
 namespace tim
 {

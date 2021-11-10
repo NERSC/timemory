@@ -12,7 +12,7 @@ if(TIMEMORY_USE_PERFETTO)
         CATEGORY COMPONENT
         FOLDER components
         HEADERS ${header_files}
-        SOURCES ${source_files} $<TARGET_OBJECTS:perfetto-object>
+        SOURCES ${source_files}
         DEPENDS ${DEPS}
         PROPERTY_DEPENDS GLOBAL)
 

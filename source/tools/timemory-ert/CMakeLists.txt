@@ -29,7 +29,13 @@ target_link_libraries(
             timemory::timemory-cuda
             timemory::timemory-cuda-compiler
             timemory::timemory-hip
-            timemory::timemory-core)
+            timemory::timemory-core
+            timemory::timemory-common
+            timemory::timemory-extensions)
+
+if(TARGET timemory::timemory-ert)
+    target_link_libraries(timemory-ert-exe PRIVATE timemory::timemory-ert)
+endif()
 
 if(UNIX AND NOT APPLE)
     set(_RPATH INSTALL_RPATH "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")

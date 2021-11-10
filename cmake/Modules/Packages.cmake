@@ -1404,7 +1404,7 @@ if(TIMEMORY_USE_PERFETTO)
         SOURCES $<TARGET_OBJECTS:perfetto-object>
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS ${_USE_EXTERN})
-    target_link_libraries(timemory-perfetto-static INTERFACE timemory-perfetto)
+    target_link_libraries(timemory-perfetto INTERFACE timemory-perfetto-static)
     timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
 endif()
 

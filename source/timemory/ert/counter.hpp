@@ -185,14 +185,14 @@ public:
     // execute the callback that may customize the thread before returning the object
     // that provides the measurement
     //
-    TIMEMORY_NODISCARD counter_type get_counter() const { return counter_type(); }
+    counter_type get_counter() const { return counter_type(); }
 
     //----------------------------------------------------------------------------------//
     // record the data from a thread/process. Extra exec_params (_itrp) should contain
     // the computed grid size for serialization
     //
-    inline void record(counter_type& _counter, int n, int trials, uint64_t nops,
-                       const exec_params& _itrp)
+    void record(counter_type& _counter, int n, int trials, uint64_t nops,
+                const exec_params& _itrp)
     {
         uint64_t working_set_size = n * params.nthreads * params.nproc;
         uint64_t working_set      = working_set_size * bytes_per_element;
@@ -269,8 +269,8 @@ public:
     //----------------------------------------------------------------------------------//
     //  Get the data pointer
     //
-    data_ptr_t&              get_data() { return data; }
-    TIMEMORY_NODISCARD const data_ptr_t& get_data() const { return data; }
+    data_ptr_t&       get_data() { return data; }
+    const data_ptr_t& get_data() const { return data; }
 
     //----------------------------------------------------------------------------------//
     //  Skip the flop counts

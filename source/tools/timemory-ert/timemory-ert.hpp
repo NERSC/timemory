@@ -29,8 +29,6 @@
 #include "timemory/components/timing/ert_timer.hpp"
 #include "timemory/ert.hpp"
 #include "timemory/mpl.hpp"
-#include "timemory/settings.hpp"
-#include "timemory/units.hpp"
 
 #include <cstdint>
 #include <set>
@@ -47,7 +45,6 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tim::device::gpu, false_type)
 // make the namespace usage a little clearer
 //
 namespace ert    = tim::ert;
-namespace units  = tim::units;
 namespace device = tim::device;
 namespace gpu    = tim::gpu;
 namespace trait  = tim::trait;
@@ -74,32 +71,33 @@ using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 template <typename Tp, typename DeviceT>
 void
 run_ert(
-    ert_data_ptr_t, int64_t num_threads, int64_t min_size, int64_t max_data,
+    ert_data_ptr_t&, int64_t num_threads, int64_t min_size, int64_t max_data,
     int64_t num_streams = 0, int64_t block_size = 0, int64_t num_gpus = 0,
     std::enable_if_t<
         trait::is_available<Tp>::value && trait::is_available<DeviceT>::value, int> = 0);
 
 template <typename Tp, typename DeviceT>
-void run_ert(
-    ert_data_ptr_t, int64_t, int64_t, int64_t, int64_t = 0, int64_t = 0, int64_t = 0,
+void
+run_ert(
+    ert_data_ptr_t&, int64_t, int64_t, int64_t, int64_t = 0, int64_t = 0, int64_t = 0,
     std::enable_if_t<
         !trait::is_available<Tp>::value || !trait::is_available<DeviceT>::value, int> = 0)
 {}
 
 extern template void
-run_ert<float, device::cpu>(ert_data_ptr_t, int64_t, int64_t, int64_t, int64_t, int64_t,
+run_ert<float, device::cpu>(ert_data_ptr_t&, int64_t, int64_t, int64_t, int64_t, int64_t,
                             int64_t, int);
 extern template void
-run_ert<double, device::cpu>(ert_data_ptr_t, int64_t, int64_t, int64_t, int64_t, int64_t,
+run_ert<double, device::cpu>(ert_data_ptr_t&, int64_t, int64_t, int64_t, int64_t, int64_t,
                              int64_t, int);
 extern template void
-run_ert<gpu::fp16_t, device::gpu>(ert_data_ptr_t, int64_t, int64_t, int64_t, int64_t,
+run_ert<gpu::fp16_t, device::gpu>(ert_data_ptr_t&, int64_t, int64_t, int64_t, int64_t,
                                   int64_t, int64_t, int);
 extern template void
-run_ert<float, device::gpu>(ert_data_ptr_t, int64_t, int64_t, int64_t, int64_t, int64_t,
+run_ert<float, device::gpu>(ert_data_ptr_t&, int64_t, int64_t, int64_t, int64_t, int64_t,
                             int64_t, int);
 extern template void
-run_ert<double, device::gpu>(ert_data_ptr_t, int64_t, int64_t, int64_t, int64_t, int64_t,
+run_ert<double, device::gpu>(ert_data_ptr_t&, int64_t, int64_t, int64_t, int64_t, int64_t,
                              int64_t, int);
 
 //--------------------------------------------------------------------------------------//
@@ -108,12 +106,14 @@ void*
 start_generic(const std::string&);
 void
 stop_generic(void*);
+bool
+get_verbose();
 
 //--------------------------------------------------------------------------------------//
 
 template <typename Tp, typename DeviceT>
 void
-run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size, int64_t max_data,
+run_ert(ert_data_ptr_t& data, int64_t num_threads, int64_t min_size, int64_t max_data,
         int64_t num_streams, int64_t block_size, int64_t num_gpus,
         std::enable_if_t<
             trait::is_available<Tp>::value && trait::is_available<DeviceT>::value, int>)
@@ -171,7 +171,7 @@ run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size, int64_t max_
     stop_generic(_generic);
     if(dmp::rank() == 0)
     {
-        if(data && (settings::verbose() > 0 || settings::debug()))
+        if(data && get_verbose())
             std::cout << "\n" << *(data) << std::endl;
         printf("\n");
     }

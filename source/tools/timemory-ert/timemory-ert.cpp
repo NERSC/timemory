@@ -25,21 +25,50 @@
 
 #include "timemory-ert.hpp"
 
+#include "timemory/components/rusage/components.hpp"
+#include "timemory/components/timing/components.hpp"
+#include "timemory/components/timing/ert_timer.hpp"
+#include "timemory/components/timing/types.hpp"
 #include "timemory/config.hpp"
-#include "timemory/timemory.hpp"
+#include "timemory/ert/types.hpp"
+#include "timemory/mpl/concepts.hpp"
+#include "timemory/operations/types/print.hpp"
+#include "timemory/settings.hpp"
+#include "timemory/units.hpp"
+#include "timemory/utility/argparse.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/variadic/lightweight_tuple.cpp"
+#include "timemory/variadic/lightweight_tuple.hpp"
+
+namespace units = tim::units;
+namespace comp  = tim::component;
+
+using bundle_t = tim::lightweight_tuple<comp::wall_clock, comp::cpu_clock, comp::cpu_util,
+                                        comp::peak_rss>;
 
 //--------------------------------------------------------------------------------------//
+
+bool
+get_verbose()
+{
+    return (settings::verbose() > 0 || settings::debug());
+}
 
 void*
 start_generic(const std::string& _label)
 {
-    return static_cast<void*>(new tim::auto_timer{ _label });
+    return static_cast<void*>(new bundle_t{ _label });
 }
 
 void
 stop_generic(void* _ptr)
 {
-    delete static_cast<tim::auto_timer*>(_ptr);
+    if(!_ptr)
+        return;
+    bundle_t* _bundle = static_cast<bundle_t*>(_ptr);
+    if(get_verbose())
+        std::cerr << *_bundle << std::endl;
+    delete _bundle;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -224,7 +253,7 @@ main(int argc, char** argv)
             enable_cpu = true;
     }
 
-    TIMEMORY_BLANK_AUTO_TIMER("run_ert");
+    void* _timer = start_generic("run_ert");
 
     for(size_t i = 0; i < num_iter; ++i)
     {
@@ -297,6 +326,7 @@ main(int argc, char** argv)
         printf("\n");
     ert::serialize(fname, *data);
 
+    stop_generic(_timer);
     tim::timemory_finalize();
     dmp::finalize();
     return 0;
