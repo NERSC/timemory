@@ -1918,7 +1918,7 @@ main(int argc, char** argv)
         const auto& outf = outfile;
         if(outf.find('/') != string_t::npos)
         {
-            auto outdir = outf.substr(0, outf.find_last_of('/') - 1);
+            auto outdir = outf.substr(0, outf.find_last_of('/'));
             tim::makedir(outdir);
         }
 
