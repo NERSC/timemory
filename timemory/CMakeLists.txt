@@ -178,7 +178,7 @@ elseif(TIMEMORY_USE_PYTHON AND CMAKE_INSTALL_PYTHONDIR)
             set(_DIST_DIR ${PROJECT_BINARY_DIR}/timemory.dist-info)
         endif()
         if(EXISTS ${_DIST_DIR} AND IS_DIRECTORY ${_DIST_DIR})
-            configure_file(${PROJECT_SOURCE_DIR}/LICENSE ${PROJECT_BINARY_DIR}/${_DIST_DIR}/LICENSE.txt COPYONLY)
+            configure_file(${PROJECT_SOURCE_DIR}/LICENSE ${_DIST_DIR}/LICENSE.txt COPYONLY)
             install(
                 DIRECTORY ${_DIST_DIR}
                 DESTINATION ${CMAKE_INSTALL_PYTHONDIR}
