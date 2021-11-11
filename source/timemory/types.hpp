@@ -88,6 +88,7 @@
     component::gpu_roofline_flops,              \
     component::gpu_roofline_hp_flops,           \
     component::gpu_roofline_sp_flops,           \
+    component::hip_event,                       \
     component::kernel_mode_time,                \
     component::likwid_marker,                   \
     component::likwid_nvmarker,                 \
@@ -106,15 +107,19 @@
     component::papi_array_t,                    \
     component::papi_vector,                     \
     component::peak_rss,                        \
+    component::perfetto_trace,                  \
+    component::printer,                         \
     component::priority_context_switch,         \
     component::process_cpu_clock,               \
     component::process_cpu_util,                \
     component::read_bytes,                      \
     component::read_char,                       \
+    component::roctx_marker,                    \
     component::system_clock,                    \
     component::tau_marker,                      \
     component::thread_cpu_clock,                \
     component::thread_cpu_util,                 \
+    component::timestamp,                       \
     component::trip_count,                      \
     component::user_clock,                      \
     component::user_global_bundle,              \
