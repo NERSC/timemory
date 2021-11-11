@@ -566,6 +566,25 @@ settings::indent_width(int64_t _w)
 //
 template <typename Archive>
 void
+settings::serialize_settings(Archive& ar)
+{
+    if(settings::instance())
+        ar(cereal::make_nvp("settings", *settings::instance()));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Archive>
+void
+settings::serialize_settings(Archive& ar, settings& _obj)
+{
+    ar(cereal::make_nvp("settings", _obj));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Archive>
+void
 settings::load(Archive& ar, unsigned int)
 {
 #if !defined(TIMEMORY_DISABLE_SETTINGS_SERIALIZATION)

@@ -25,6 +25,7 @@
 #ifndef TIMEMORY_UTILITY_LAUNCH_PROCESS_CPP_
 #define TIMEMORY_UTILITY_LAUNCH_PROCESS_CPP_ 1
 
+#include "timemory/utility/delimit.hpp"
 #include "timemory/utility/popen.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -37,7 +38,7 @@ TIMEMORY_UTILITY_LINKAGE(bool)
 launch_process(const char* cmd, const std::string& extra, std::ostream* os)
 {
 #if !defined(TIMEMORY_WINDOWS)
-    auto                       delim = tim::delimit(cmd, " \t");
+    auto                       delim = delimit(cmd, " \t");
     tim::popen::TIMEMORY_PIPE* fp    = nullptr;
     if(delim.size() < 2)
     {

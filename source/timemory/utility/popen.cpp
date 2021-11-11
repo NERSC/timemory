@@ -27,6 +27,7 @@
 
 #if !defined(TIMEMORY_WINDOWS)
 
+#    include "timemory/utility/delimit.hpp"
 #    include "timemory/utility/popen.hpp"
 
 #    include <limits>
@@ -105,7 +106,7 @@ drop_privileges(int permanent)
         if(permanent != 0 && setgid(newgid) == -1)
             abort();
 #    else
-        if(setregid((permanent ? newgid : oldgid), newgid) == -1)
+        if(setregid(((permanent != 0) ? newgid : oldgid), newgid) == -1)
             abort();
 #    endif
     }
@@ -216,8 +217,8 @@ fork()
         return childpid;
 
     // This is the child process
-    tim::popen::sanitize_files();    // Close all open files.
-    tim::popen::drop_privileges(1);  // Permanently drop privileges.
+    popen::sanitize_files();    // Close all open files.
+    popen::drop_privileges(1);  // Permanently drop privileges.
 
     return 0;
 }
@@ -232,8 +233,8 @@ popen(const char* path, char** argv, char** envp)
     TIMEMORY_PIPE* p              = nullptr;
 
     static char** _argv = []() {
-        static auto _tmp = new char*[1];
-        _tmp[0]          = nullptr;
+        static auto* _tmp = new char*[1];
+        _tmp[0]           = nullptr;
         return _tmp;
     }();
 
@@ -285,7 +286,7 @@ popen(const char* path, char** argv, char** envp)
         return nullptr;
     }
 
-    if((p->child_pid = tim::popen::fork()) == -1)
+    if((p->child_pid = popen::fork()) == -1)
     {
         fclose(p->write_fd);
         fclose(p->read_fd);

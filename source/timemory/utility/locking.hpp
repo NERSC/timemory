@@ -24,24 +24,40 @@
 
 #pragma once
 
-#include "timemory/utility/argparse.hpp"
-#include "timemory/utility/backtrace.hpp"
-#include "timemory/utility/conditional.hpp"
-#include "timemory/utility/declaration.hpp"
-#include "timemory/utility/delimit.hpp"
-#include "timemory/utility/demangle.hpp"
-#include "timemory/utility/filepath.hpp"
-#include "timemory/utility/launch_process.hpp"
-#include "timemory/utility/locking.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/mangler.hpp"
-#include "timemory/utility/popen.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/utility/singleton.hpp"
-#if !defined(TIMEMORY_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
-#    include "timemory/utility/socket.hpp"
-#endif
-#include "timemory/utility/type_id.hpp"
-#include "timemory/utility/types.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/api.hpp"
+
+#include <array>
+#include <mutex>
+
+namespace tim
+{
+/// \typedef std::recursive_mutex mutex_t
+/// \brief Recursive mutex is used for convenience since the
+/// performance penalty vs. a regular mutex is not really an issue since there are not
+/// many locks in general.
+using mutex_t = std::recursive_mutex;
+
+/// \typedef std::unique_lock<std::recursive_mutex> auto_lock_t
+/// \brief Unique lock type around \ref mutex_t
+using auto_lock_t = std::unique_lock<mutex_t>;
+
+/// \fn mutex_t& type_mutex(uint64_t)
+/// \tparam Tp data type for lock
+/// \tparam ApiT API for lock
+/// \tparam N max size
+/// \tparam MutexT mutex data type
+///
+/// \brief A simple way to get a mutex for a class or common behavior, e.g.
+/// `type_mutex<decltype(std::cout)>()` provides a mutex for synchronizing output streams.
+/// Recommend using in conjunction with auto-lock:
+/// `tim::auto_lock_t _lk{ type_mutex<Foo>() }`.
+template <typename Tp, typename ApiT = TIMEMORY_API, size_t N = 4,
+          typename MutexT = mutex_t>
+MutexT&
+type_mutex(uint64_t _n = 0)
+{
+    static std::array<MutexT, N> _mutexes{};
+    return _mutexes.at(_n % N);
+}
+
+}  // namespace tim

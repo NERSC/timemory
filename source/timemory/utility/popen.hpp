@@ -27,7 +27,6 @@
 
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
 
 #if !defined(TIMEMORY_WINDOWS)
 
@@ -38,6 +37,8 @@
 #    include <ctime>
 #    include <fcntl.h>
 #    include <grp.h>
+#    include <limits>
+#    include <ostream>
 #    include <paths.h>
 #    include <sstream>
 #    include <string>
