@@ -250,7 +250,7 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 10, MPI_Alltoall);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 11, MPI_Alltoallv);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 12, MPI_Alltoallw);
-            // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 13, MPI_Barrier);
+            TIMEMORY_C_GOTCHA(mpip_gotcha_t, 13, MPI_Barrier);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 14, MPI_Bcast);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 15, MPI_Bsend);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 16, MPI_Bsend_init);
