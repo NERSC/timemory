@@ -38,13 +38,14 @@ generate(py::module& _pymod)
 {
     py::module units = _pymod.def_submodule("units", "units for timing and memory");
 
-    units.attr("psec")     = tim::units::psec;
     units.attr("nsec")     = tim::units::nsec;
     units.attr("usec")     = tim::units::usec;
     units.attr("msec")     = tim::units::msec;
     units.attr("csec")     = tim::units::csec;
     units.attr("dsec")     = tim::units::dsec;
     units.attr("sec")      = tim::units::sec;
+    units.attr("min")      = tim::units::minute;
+    units.attr("hr")       = tim::units::hour;
     units.attr("byte")     = tim::units::byte;
     units.attr("kilobyte") = tim::units::kilobyte;
     units.attr("megabyte") = tim::units::megabyte;
