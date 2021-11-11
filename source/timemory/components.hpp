@@ -35,7 +35,9 @@
 #include "timemory/components/data_tracker/components.hpp"
 #include "timemory/components/io/components.hpp"
 #include "timemory/components/network/components.hpp"
+#include "timemory/components/printer/printer.hpp"
 #include "timemory/components/rusage/components.hpp"
+#include "timemory/components/timestamp/timestamp.hpp"
 #include "timemory/components/timing/components.hpp"
 #include "timemory/components/trip_count/components.hpp"
 #include "timemory/components/types.hpp"
@@ -94,6 +96,13 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+// hip
+#if defined(TIMEMORY_USE_HIP)
+#    include "timemory/components/hip/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 // likwid
 #if defined(TIMEMORY_USE_LIKWID)
 #    include "timemory/components/likwid/components.hpp"
@@ -132,6 +141,13 @@
 // VTune components
 #if defined(TIMEMORY_USE_VTUNE)
 #    include "timemory/components/vtune/components.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+// perfetto components
+#if defined(TIMEMORY_USE_PERFETTO)
+#    include "timemory/components/perfetto/perfetto.hpp"
 #endif
 //
 //--------------------------------------------------------------------------------------//
