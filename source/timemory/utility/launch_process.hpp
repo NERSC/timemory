@@ -27,8 +27,8 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 
-#include <string>
 #include <ostream>
+#include <string>
 
 namespace tim
 {
