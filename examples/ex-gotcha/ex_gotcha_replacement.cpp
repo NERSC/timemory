@@ -90,7 +90,7 @@ struct exp_replace : public base<exp_replace, void>
 using wc_t         = tim::component_bundle<TIMEMORY_API, wall_clock>;
 using exp_time_t   = gotcha<2, wc_t>;
 using exp_repl_t   = gotcha<2, std::tuple<>, exp_replace>;
-using exp_bundle_t = tim::component_bundle<TIMEMORY_API, exp_repl_t*, exp_time_t*>;
+using exp_bundle_t = tim::component_bundle<TIMEMORY_API, exp_time_t*, exp_repl_t*>;
 
 using exp2expf_ot = typename exp_repl_t::operator_type;
 static_assert(std::is_same<exp2expf_ot, exp_replace>::value,
@@ -127,8 +127,13 @@ init_gotcha(bool use_intercept, bool use_timers)
     //
     exp_repl_t::get_initializer() = []() {
         puts("Generating exp intercept...");
+#if defined(TIMEMORY_HIPCC)
+        exp_repl_t::template instrument<0, double, double>::generate("exp");
+        exp_repl_t::template instrument<1, double, double>::generate("__exp_finite");
+#else
         TIMEMORY_C_GOTCHA(exp_repl_t, 0, exp);
         TIMEMORY_DERIVED_GOTCHA(exp_repl_t, 1, exp, "__exp_finite");
+#endif
         // exp might actually resolve to above symbol
     };
 
@@ -138,12 +143,16 @@ init_gotcha(bool use_intercept, bool use_timers)
     //
     exp_time_t::get_initializer() = []() {
         puts("Generating exp timers...");
+#if defined(TIMEMORY_HIPCC)
+        exp_time_t::template instrument<0, double, double>::generate("exp");
+#else
         TIMEMORY_C_GOTCHA(exp_time_t, 0, exp);
+#endif
     };
 
     exp_bundle_t::get_initializer() = [=](exp_bundle_t& obj) {
-        if(use_intercept) obj.initialize<exp_repl_t>();
         if(use_timers) obj.initialize<exp_time_t>();
+        if(use_intercept) obj.initialize<exp_repl_t>();
     };
 
     return true;
@@ -176,7 +185,7 @@ main(int argc, char** argv)
 {
     puts("starting...");
     auto use_intercept = tim::get_env("EXP_REPLACE", true);
-    auto use_timers    = !use_intercept;
+    auto use_timers    = tim::get_env("EXP_WRAPPER", !use_intercept);
     if(!init_gotcha(use_intercept, use_timers))
         throw std::runtime_error("Error! initialization failed!");
 
