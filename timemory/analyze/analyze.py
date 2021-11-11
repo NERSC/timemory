@@ -57,6 +57,18 @@ import re
 import sys
 
 
+filter_num_procs = 1
+tree_precision = 6
+tree_expand_name = True
+
+
+def _create_directory(_fname):
+    if _fname is not None:
+        _dir = os.path.dirname(_fname)
+        if _dir and not os.path.exists(_dir):
+            os.makedirs(_dir)
+
+
 def _get_label(_fname):
     """Generates a label for log messages"""
     _lbl = os.path.basename(_fname)
@@ -89,6 +101,7 @@ def _svg_to_png(out, svg_code=None, svg_file=None):
             return out
         elif svg_file is not None:
             print(f"[{lbl}]|0> Outputting '{out}'...")
+            _create_directory(svg_file)
             with open(svg_file, "r") as fin:
                 svg2png(fin, write_to=out)
         else:
@@ -147,11 +160,17 @@ def match(data, pattern, field="name"):
     prog = re.compile(pattern)
 
     if not isinstance(data, list):
-        return data.filter(lambda x: (prog.fullmatch(x[field]) is not None))
+        return data.filter(
+            lambda x: (prog.fullmatch(x[field]) is not None),
+            num_procs=filter_num_procs,
+        )
 
     ret = []
     for itr in data:
-        ret.append(itr.filter(lambda x: (prog.fullmatch(x[field]) is not None)))
+        ret.append(
+            itr.filter(lambda x: (prog.fullmatch(x[field]) is not None)),
+            num_procs=filter_num_procs,
+        )
     return ret
 
 
@@ -161,11 +180,19 @@ def search(data, pattern, field="name"):
     prog = re.compile(pattern)
 
     if not isinstance(data, list):
-        return data.filter(lambda x: (prog.search(x[field]) is not None))
+        return data.filter(
+            lambda x: (prog.search(x[field]) is not None),
+            num_procs=filter_num_procs,
+        )
 
     ret = []
     for itr in data:
-        ret.append(itr.filter(lambda x: (prog.search(x[field]) is not None)))
+        ret.append(
+            itr.filter(
+                lambda x: (prog.search(x[field]) is not None),
+                num_procs=filter_num_procs,
+            )
+        )
     return ret
 
 
@@ -192,7 +219,8 @@ def expression(data, math_expr, metric="sum.*(.inc)$"):
     import re
 
     def eval_math_expr(x):
-        """Evaluates whether math expression is satisfied. Returning false will cause value to be filtered"""
+        """Evaluates whether math expression is satisfied.
+        Returning false will cause value to be filtered"""
         _metric = None
         for itr in x.keys():
             cv = re.search(metric, itr)
@@ -238,11 +266,11 @@ def expression(data, math_expr, metric="sum.*(.inc)$"):
         raise ValueError("Error: Invalid math expression!")
 
     if not isinstance(data, list):
-        return data.filter(eval_math_expr, num_procs=1)
+        return data.filter(eval_math_expr, num_procs=filter_num_procs)
 
     ret = []
     for itr in data:
-        ret.append(itr.filter(eval_math_expr, num_procs=1))
+        ret.append(itr.filter(eval_math_expr, num_procs=filter_num_procs))
     return ret
 
 
@@ -376,6 +404,7 @@ def dump_entity(data, functor, file=None, fext=None):
                     pass
             _lbl = _get_label(_file)
             print(f"[{_lbl}]|0> Outputting '{_file}'...")
+            _create_directory(_file)
             with open(_file, "w") as ofs:
                 ofs.write(f"{_data}\n")
             return _file
@@ -395,6 +424,7 @@ def dump_entity(data, functor, file=None, fext=None):
             files.append(_ret)
     else:
         _file = _get_filename(file, fext)
+        _create_directory(_file)
         ofs = open(_file, "w") if _file is not None else None
         if ofs is not None:
             lbl = _get_label(_file)
@@ -411,7 +441,14 @@ def dump_entity(data, functor, file=None, fext=None):
 def dump_tree(data, metric, file=None, echo_dart=False):
     """Dumps data as a tree to stdout or file"""
     _files = dump_entity(
-        data, lambda x: x.tree(_get_metric(x, metric)), file, ".txt"
+        data,
+        lambda x: x.tree(
+            _get_metric(x, metric),
+            precision=tree_precision,
+            expand_name=tree_expand_name,
+        ),
+        file,
+        ".txt",
     )
     for itr in _files:
         if itr is not None and echo_dart is True:
@@ -435,7 +472,20 @@ def dump_dot(data, metric, file=None, echo_dart=False):
             lbl = _get_label(itr)
             oitr = _get_filename(itr, ".dot")
             pitr = _get_filename(itr, ".dot.png")
-            print(f"[{lbl}]|0> Outputting '{pitr}'...")
+            print(f"[{lbl}]|0> Outputting '{oitr}'...")
+            try:
+                import pydot
+
+                graphs = pydot.graph_from_dot_file(itr)
+                graph = graphs[0]
+                print(f"[{lbl}]|0> Outputting '{pitr}'...")
+                graph.write_png(pitr)
+                if echo_dart:
+                    dart_measurement_file(os.path.basename(pitr), pitr, "png")
+                continue
+            except ImportError as e:
+                sys.stderr.write(f"{e}\n")
+
             try:
                 dot_exe = which("dot")
                 if dot_exe is not None:
@@ -493,6 +543,7 @@ def dump_flamegraph(data, metric, file=None, echo_dart=False):
 
                     # write the SVG file
                     print(f"[{lbl}]|0> Outputting '{sitr}'...")
+                    _create_directory(sitr)
                     with open(sitr, "w") as fout:
                         fout.write(f"{outs}\n")
 
@@ -540,7 +591,7 @@ def dump_tabulate(dtype, data, metric, file=None, echo_dart=False):
 
     _extensions = {
         "html": ".html",
-        "table": ".txt",
+        "table": ".table.txt",
         "markdown": ".md",
         "markdown_grid": ".md",
     }
