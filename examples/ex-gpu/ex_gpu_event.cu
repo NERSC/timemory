@@ -40,17 +40,21 @@
 #include <unordered_map>
 #include <vector>
 
-#if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti/cupti_counters.hpp"
-#endif
-
 using namespace tim::component;
+
+#if defined(TIMEMORY_USE_CUDA)
+using gpu_marker = tim::component::nvtx_marker;
+using gpu_event  = tim::component::cuda_event;
+#else
+using gpu_marker = tim::component::roctx_marker;
+using gpu_event  = tim::component::hip_event;
+#endif
 
 // using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI_BR_PRC>;
 using auto_tuple_t = tim::auto_tuple_t<wall_clock, system_clock, cpu_clock, cpu_util,
-                                       nvtx_marker, papi_array_t>;
+                                       gpu_marker, papi_array_t>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
-using cuda_tuple_t = tim::auto_tuple_t<cuda_event, nvtx_marker>;
+using cuda_tuple_t = tim::auto_tuple_t<gpu_event, gpu_marker>;
 using counter_t    = ert_timer;
 using ert_data_t   = tim::ert::exec_data<counter_t>;
 
@@ -58,7 +62,7 @@ using ert_data_t   = tim::ert::exec_data<counter_t>;
 
 #define CUDA_CHECK_LAST_ERROR()                                                          \
     {                                                                                    \
-        tim::cuda::stream_sync(0);                                                       \
+        tim::gpu::stream_sync(0);                                                        \
         cudaError err = cudaGetLastError();                                              \
         if(cudaSuccess != err)                                                           \
         {                                                                                \
@@ -173,11 +177,11 @@ main(int argc, char** argv)
     tim::settings::json_output() = true;
     tim::enable_signal_detection();
 
-    int ndevices = tim::cuda::device_count();
+    int ndevices = tim::gpu::device_count();
     warmup();
 
     auto* timing = new tim::component_tuple<wall_clock, system_clock, cpu_clock, cpu_util,
-                                            nvtx_marker>("Tests runtime", true);
+                                            gpu_marker>("Tests runtime", true);
 
     timing->start();
 
@@ -259,16 +263,16 @@ test_1_saxpy()
     comp_tuple_t _clock("Runtime");
     _clock.start();
 
-    float*      x;
-    float*      y;
-    float*      d_x;
-    float*      d_y;
-    int         block    = 512;
-    int         ngrid    = (N + block - 1) / block;
-    float       nseconds = 0.0f;
-    float       maxError = 0.0f;
-    float       sumError = 0.0f;
-    cuda_event* evt      = nullptr;
+    float*     x;
+    float*     y;
+    float*     d_x;
+    float*     d_y;
+    int        block    = 512;
+    int        ngrid    = (N + block - 1) / block;
+    float      nseconds = 0.0f;
+    float      maxError = 0.0f;
+    float      sumError = 0.0f;
+    gpu_event* evt      = nullptr;
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[cpu_malloc]");
@@ -278,8 +282,8 @@ test_1_saxpy()
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[gpu_malloc]");
-        d_x = tim::cuda::malloc<float>(N);
-        d_y = tim::cuda::malloc<float>(N);
+        d_x = tim::gpu::malloc<float>(N);
+        d_y = tim::gpu::malloc<float>(N);
         CUDA_CHECK_LAST_ERROR();
     }
 
@@ -294,14 +298,14 @@ test_1_saxpy()
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[create_event]");
-        evt = new cuda_event();
+        evt = new gpu_event();
     }
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[H2D]");
         evt->mark_begin();
-        tim::cuda::memcpy(d_x, x, N, tim::cuda::host_to_device_v);
-        tim::cuda::memcpy(d_y, y, N, tim::cuda::host_to_device_v);
+        tim::gpu::memcpy(d_x, x, N, tim::gpu::host_to_device_v);
+        tim::gpu::memcpy(d_y, y, N, tim::gpu::host_to_device_v);
         evt->mark_end();
         CUDA_CHECK_LAST_ERROR();
     }
@@ -322,7 +326,7 @@ test_1_saxpy()
         evt->mark_end();
     }
 
-    tim::cuda::device_sync();
+    tim::gpu::device_sync();
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[check]");
@@ -354,8 +358,8 @@ test_1_saxpy()
     tim::device::cpu::free(x);
     tim::device::cpu::free(y);
 
-    tim::cuda::device_sync();
-    // tim::cuda::device_reset();
+    tim::gpu::device_sync();
+    // tim::gpu::device_reset();
 }
 
 //======================================================================================//
@@ -379,12 +383,12 @@ test_2_saxpy_async()
     float         nseconds = 0.0f;
     float         maxError = 0.0f;
     float         sumError = 0.0f;
-    cuda_event**  evt      = new cuda_event*[nitr];
+    gpu_event**   evt      = new gpu_event*[nitr];
     cudaStream_t* stream   = new cudaStream_t[nitr];
 
     auto _sync = [&]() {
         for(int i = 0; i < nitr; i++)
-            tim::cuda::stream_sync(stream[i]);
+            tim::gpu::stream_sync(stream[i]);
     };
 
     {
@@ -395,8 +399,8 @@ test_2_saxpy_async()
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[gpu_malloc]");
-        d_x = tim::cuda::malloc<float>(N);
-        d_y = tim::cuda::malloc<float>(N);
+        d_x = tim::gpu::malloc<float>(N);
+        d_y = tim::gpu::malloc<float>(N);
     }
 
     {
@@ -412,8 +416,8 @@ test_2_saxpy_async()
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[create]");
         for(int i = 0; i < nitr; ++i)
         {
-            tim::cuda::stream_create(stream[i]);
-            evt[i] = new cuda_event(stream[i]);
+            tim::gpu::stream_create(stream[i]);
+            evt[i] = new gpu_event(stream[i]);
             evt[i]->start();
         }
     }
@@ -428,8 +432,8 @@ test_2_saxpy_async()
             float* _dx    = d_x + offset;
             float* _dy    = d_y + offset;
             evt[i]->mark_begin();
-            tim::cuda::memcpy(_dx, _x, Nsub, tim::cuda::host_to_device_v, stream[i]);
-            tim::cuda::memcpy(_dy, _y, Nsub, tim::cuda::host_to_device_v, stream[i]);
+            tim::gpu::memcpy(_dx, _x, Nsub, tim::gpu::host_to_device_v, stream[i]);
+            tim::gpu::memcpy(_dy, _y, Nsub, tim::gpu::host_to_device_v, stream[i]);
             evt[i]->mark_end();
         }
     }
@@ -456,7 +460,7 @@ test_2_saxpy_async()
             float* _y     = y + offset;
             float* _dy    = d_y + offset;
             evt[i]->mark_begin();
-            tim::cuda::memcpy(_y, _dy, Nsub, tim::cuda::device_to_host_v, stream[i]);
+            tim::gpu::memcpy(_y, _dy, Nsub, tim::gpu::device_to_host_v, stream[i]);
             evt[i]->mark_end();
         }
     }
@@ -475,7 +479,7 @@ test_2_saxpy_async()
     _clock.stop();
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[output]");
-        cuda_event _evt = **evt;
+        gpu_event _evt = **evt;
         for(int i = 1; i < nitr; ++i)
         {
             evt[i]->stop();
@@ -500,7 +504,7 @@ test_2_saxpy_async()
     tim::device::cpu::free(x);
     tim::device::cpu::free(y);
 
-    tim::cuda::device_sync();
+    tim::gpu::device_sync();
 }
 
 //======================================================================================//
@@ -515,27 +519,27 @@ test_3_saxpy_pinned()
     comp_tuple_t _clock("Runtime");
     _clock.start();
 
-    float*      x;
-    float*      y;
-    float*      d_x;
-    float*      d_y;
-    int         block    = 512;
-    int         ngrid    = (N + block - 1) / block;
-    float       nseconds = 0.0f;
-    float       maxError = 0.0f;
-    float       sumError = 0.0f;
-    cuda_event* evt      = nullptr;
+    float*     x;
+    float*     y;
+    float*     d_x;
+    float*     d_y;
+    int        block    = 512;
+    int        ngrid    = (N + block - 1) / block;
+    float      nseconds = 0.0f;
+    float      maxError = 0.0f;
+    float      sumError = 0.0f;
+    gpu_event* evt      = nullptr;
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[cpu_malloc]");
-        x = tim::cuda::malloc_host<float>(N);
-        y = tim::cuda::malloc_host<float>(N);
+        x = tim::gpu::malloc_host<float>(N);
+        y = tim::gpu::malloc_host<float>(N);
     }
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[gpu_malloc]");
-        d_x = tim::cuda::malloc<float>(N);
-        d_y = tim::cuda::malloc<float>(N);
+        d_x = tim::gpu::malloc<float>(N);
+        d_y = tim::gpu::malloc<float>(N);
     }
 
     {
@@ -549,15 +553,15 @@ test_3_saxpy_pinned()
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[create_event]");
-        evt = new cuda_event();
+        evt = new gpu_event();
         evt->start();
     }
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[H2D]");
         evt->mark_begin();
-        tim::cuda::memcpy(d_x, x, N, tim::cuda::host_to_device_v);
-        tim::cuda::memcpy(d_y, y, N, tim::cuda::host_to_device_v);
+        tim::gpu::memcpy(d_x, x, N, tim::gpu::host_to_device_v);
+        tim::gpu::memcpy(d_y, y, N, tim::gpu::host_to_device_v);
         evt->mark_end();
     }
 
@@ -573,11 +577,11 @@ test_3_saxpy_pinned()
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[D2H]");
         evt->mark_begin();
-        tim::cuda::memcpy(y, d_y, N, tim::cuda::device_to_host_v);
+        tim::gpu::memcpy(y, d_y, N, tim::gpu::device_to_host_v);
         evt->mark_end();
     }
 
-    tim::cuda::device_sync();
+    tim::gpu::device_sync();
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[check]");
@@ -604,13 +608,13 @@ test_3_saxpy_pinned()
 
     delete evt;
 
-    tim::cuda::free_host(x);
-    tim::cuda::free_host(y);
-    tim::cuda::free(d_x);
-    tim::cuda::free(d_y);
+    tim::gpu::free_host(x);
+    tim::gpu::free_host(y);
+    tim::gpu::free(d_x);
+    tim::gpu::free(d_y);
 
-    tim::cuda::device_sync();
-    // tim::cuda::device_reset();
+    tim::gpu::device_sync();
+    // tim::gpu::device_reset();
 }
 
 //======================================================================================//
@@ -634,24 +638,24 @@ test_4_saxpy_async_pinned()
     float         nseconds = 0.0f;
     float         maxError = 0.0f;
     float         sumError = 0.0f;
-    cuda_event**  evt      = new cuda_event*[nitr];
+    gpu_event**   evt      = new gpu_event*[nitr];
     cudaStream_t* stream   = new cudaStream_t[nitr];
 
     auto _sync = [&]() {
         for(int i = 0; i < nitr; i++)
-            tim::cuda::stream_sync(stream[i]);
+            tim::gpu::stream_sync(stream[i]);
     };
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[cpu_malloc]");
-        x = tim::cuda::malloc_host<float>(N);
-        y = tim::cuda::malloc_host<float>(N);
+        x = tim::gpu::malloc_host<float>(N);
+        y = tim::gpu::malloc_host<float>(N);
     }
 
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[gpu_malloc]");
-        d_x = tim::cuda::malloc<float>(N);
-        d_y = tim::cuda::malloc<float>(N);
+        d_x = tim::gpu::malloc<float>(N);
+        d_y = tim::gpu::malloc<float>(N);
     }
 
     {
@@ -667,8 +671,8 @@ test_4_saxpy_async_pinned()
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[create]");
         for(int i = 0; i < nitr; ++i)
         {
-            tim::cuda::stream_create(stream[i]);
-            evt[i] = new cuda_event(stream[i]);
+            tim::gpu::stream_create(stream[i]);
+            evt[i] = new gpu_event(stream[i]);
             evt[i]->start();
         }
     }
@@ -683,8 +687,8 @@ test_4_saxpy_async_pinned()
             float* _dx    = d_x + offset;
             float* _dy    = d_y + offset;
             evt[i]->mark_begin();
-            tim::cuda::memcpy(_dx, _x, Nsub, tim::cuda::host_to_device_v, stream[i]);
-            tim::cuda::memcpy(_dy, _y, Nsub, tim::cuda::host_to_device_v, stream[i]);
+            tim::gpu::memcpy(_dx, _x, Nsub, tim::gpu::host_to_device_v, stream[i]);
+            tim::gpu::memcpy(_dy, _y, Nsub, tim::gpu::host_to_device_v, stream[i]);
             evt[i]->mark_end();
         }
     }
@@ -711,7 +715,7 @@ test_4_saxpy_async_pinned()
             float* _y     = y + offset;
             float* _dy    = d_y + offset;
             evt[i]->mark_begin();
-            tim::cuda::memcpy(_y, _dy, Nsub, tim::cuda::device_to_host_v, stream[i]);
+            tim::gpu::memcpy(_y, _dy, Nsub, tim::gpu::device_to_host_v, stream[i]);
             evt[i]->mark_end();
         }
     }
@@ -730,7 +734,7 @@ test_4_saxpy_async_pinned()
     _clock.stop();
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[output]");
-        cuda_event _evt = **evt;
+        gpu_event _evt = **evt;
         for(int i = 1; i < nitr; ++i)
         {
             evt[i]->stop();
@@ -749,17 +753,17 @@ test_4_saxpy_async_pinned()
     for(int i = 0; i < nitr; ++i)
     {
         delete evt[i];
-        tim::cuda::stream_destroy(stream[i]);
+        tim::gpu::stream_destroy(stream[i]);
     }
     delete[] evt;
 
-    tim::cuda::free(d_x);
-    tim::cuda::free(d_y);
-    tim::cuda::free_host(x);
-    tim::cuda::free_host(y);
+    tim::gpu::free(d_x);
+    tim::gpu::free(d_y);
+    tim::gpu::free_host(x);
+    tim::gpu::free_host(y);
 
-    tim::cuda::device_sync();
-    // tim::cuda::device_reset();
+    tim::gpu::device_sync();
+    // tim::gpu::device_reset();
 }
 
 //======================================================================================//
@@ -775,24 +779,24 @@ test_5_mt_saxpy_async()
     comp_tuple_t _clock("Runtime");
     _clock.start();
 
-    using data_t        = std::tuple<cuda_event, float, float, float>;
+    using data_t        = std::tuple<gpu_event, float, float, float>;
     using data_vector_t = std::vector<data_t>;
 
     data_vector_t data_vector(nitr);
 
     auto run_thread = [&](int i) {
-        float*              x;
-        float*              y;
-        float*              d_x;
-        float*              d_y;
-        int                 block    = 512;
-        int                 ngrid    = (Nsub + block - 1) / block;
-        float               nseconds = 0.0f;
-        float               maxError = 0.0f;
-        float               sumError = 0.0f;
-        tim::cuda::stream_t stream;
-        tim::cuda::stream_create(stream);
-        cuda_event evt(stream);
+        float*             x;
+        float*             y;
+        float*             d_x;
+        float*             d_y;
+        int                block    = 512;
+        int                ngrid    = (Nsub + block - 1) / block;
+        float              nseconds = 0.0f;
+        float              maxError = 0.0f;
+        float              sumError = 0.0f;
+        tim::gpu::stream_t stream;
+        tim::gpu::stream_create(stream);
+        gpu_event evt(stream);
         evt.start();
 
         TIMEMORY_BASIC_MARKER(auto_tuple_t, lambda_op, "[run_thread]");
@@ -805,8 +809,8 @@ test_5_mt_saxpy_async()
 
         {
             TIMEMORY_BASIC_MARKER(auto_tuple_t, lambda_op, "[gpu_malloc]");
-            d_x = tim::cuda::malloc<float>(Nsub);
-            d_y = tim::cuda::malloc<float>(Nsub);
+            d_x = tim::gpu::malloc<float>(Nsub);
+            d_y = tim::gpu::malloc<float>(Nsub);
         }
 
         {
@@ -821,8 +825,8 @@ test_5_mt_saxpy_async()
         {
             TIMEMORY_BASIC_MARKER(auto_tuple_t, lambda_op, "[H2D]");
             evt.mark_begin();
-            tim::cuda::memcpy(d_x, x, Nsub, tim::cuda::host_to_device_v, stream);
-            tim::cuda::memcpy(d_y, y, Nsub, tim::cuda::host_to_device_v, stream);
+            tim::gpu::memcpy(d_x, x, Nsub, tim::gpu::host_to_device_v, stream);
+            tim::gpu::memcpy(d_y, y, Nsub, tim::gpu::host_to_device_v, stream);
             evt.mark_end();
         }
 
@@ -837,12 +841,12 @@ test_5_mt_saxpy_async()
         {
             TIMEMORY_BASIC_MARKER(auto_tuple_t, lambda_op, "[D2H]");
             evt.mark_begin();
-            tim::cuda::memcpy(y, d_y, Nsub, tim::cuda::device_to_host_v);
+            tim::gpu::memcpy(y, d_y, Nsub, tim::gpu::device_to_host_v);
             evt.mark_end();
         }
 
-        tim::cuda::stream_sync(stream);
-        tim::cuda::stream_destroy(stream);
+        tim::gpu::stream_sync(stream);
+        tim::gpu::stream_destroy(stream);
 
         {
             TIMEMORY_BASIC_MARKER(auto_tuple_t, lambda_op, "[check]");
@@ -870,10 +874,10 @@ test_5_mt_saxpy_async()
     for(int i = 0; i < nitr; i++)
         threads[i].join();
 
-    cuda_event evt      = std::get<0>(data_vector[0]);
-    float      nseconds = std::get<1>(data_vector[0]);
-    float      maxError = std::get<2>(data_vector[0]);
-    float      sumError = std::get<3>(data_vector[0]);
+    gpu_event evt      = std::get<0>(data_vector[0]);
+    float     nseconds = std::get<1>(data_vector[0]);
+    float     maxError = std::get<2>(data_vector[0]);
+    float     sumError = std::get<3>(data_vector[0]);
 
     for(int i = 1; i < nitr; i++)
     {
@@ -895,8 +899,8 @@ test_5_mt_saxpy_async()
         printf("Kernel Runtime (sec): %16.12e\n", nseconds);
     }
 
-    tim::cuda::device_sync();
-    // tim::cuda::device_reset();
+    tim::gpu::device_sync();
+    // tim::gpu::device_reset();
 }
 
 //======================================================================================//
@@ -912,38 +916,38 @@ test_6_mt_saxpy_async_pinned()
     comp_tuple_t _clock("Runtime");
     _clock.start();
 
-    using data_t        = std::tuple<cuda_event, float, float, float>;
+    using data_t        = std::tuple<gpu_event, float, float, float>;
     using data_vector_t = std::vector<data_t>;
 
     data_vector_t data_vector(nitr);
 
     auto run_thread = [&](int i) {
-        float*              x;
-        float*              y;
-        float*              d_x;
-        float*              d_y;
-        int                 block    = 512;
-        int                 ngrid    = (Nsub + block - 1) / block;
-        float               nseconds = 0.0f;
-        float               maxError = 0.0f;
-        float               sumError = 0.0f;
-        tim::cuda::stream_t stream;
-        tim::cuda::stream_create(stream);
-        cuda_event* evt = new cuda_event(stream);
+        float*             x;
+        float*             y;
+        float*             d_x;
+        float*             d_y;
+        int                block    = 512;
+        int                ngrid    = (Nsub + block - 1) / block;
+        float              nseconds = 0.0f;
+        float              maxError = 0.0f;
+        float              sumError = 0.0f;
+        tim::gpu::stream_t stream;
+        tim::gpu::stream_create(stream);
+        gpu_event* evt = new gpu_event(stream);
         evt->start();
 
         TIMEMORY_BASIC_MARKER(auto_tuple_t, lambda_op, "[run_thread]");
 
         {
             TIMEMORY_BASIC_MARKER(auto_tuple_t, lambda_op, "[cpu_malloc]");
-            x = tim::cuda::malloc_host<float>(Nsub);
-            y = tim::cuda::malloc_host<float>(Nsub);
+            x = tim::gpu::malloc_host<float>(Nsub);
+            y = tim::gpu::malloc_host<float>(Nsub);
         }
 
         {
             TIMEMORY_BASIC_MARKER(auto_tuple_t, lambda_op, "[gpu_malloc]");
-            d_x = tim::cuda::malloc_host<float>(Nsub);
-            d_y = tim::cuda::malloc_host<float>(Nsub);
+            d_x = tim::gpu::malloc_host<float>(Nsub);
+            d_y = tim::gpu::malloc_host<float>(Nsub);
         }
 
         {
@@ -958,8 +962,8 @@ test_6_mt_saxpy_async_pinned()
         {
             TIMEMORY_BASIC_MARKER(auto_tuple_t, lambda_op, "[H2D]");
             evt->mark_begin();
-            tim::cuda::memcpy(d_x, x, Nsub, tim::cuda::host_to_device_v, stream);
-            tim::cuda::memcpy(d_y, y, Nsub, tim::cuda::host_to_device_v, stream);
+            tim::gpu::memcpy(d_x, x, Nsub, tim::gpu::host_to_device_v, stream);
+            tim::gpu::memcpy(d_y, y, Nsub, tim::gpu::host_to_device_v, stream);
             evt->mark_end();
         }
 
@@ -975,12 +979,12 @@ test_6_mt_saxpy_async_pinned()
         {
             TIMEMORY_BASIC_MARKER(auto_tuple_t, lambda_op, "[D2H]");
             evt->mark_begin();
-            tim::cuda::memcpy(y, d_y, Nsub, tim::cuda::device_to_host_v, stream);
+            tim::gpu::memcpy(y, d_y, Nsub, tim::gpu::device_to_host_v, stream);
             evt->mark_end();
         }
 
-        tim::cuda::stream_sync(stream);
-        tim::cuda::stream_destroy(stream);
+        tim::gpu::stream_sync(stream);
+        tim::gpu::stream_destroy(stream);
 
         {
             TIMEMORY_BASIC_MARKER(auto_tuple_t, lambda_op, "[check]");
@@ -996,10 +1000,10 @@ test_6_mt_saxpy_async_pinned()
 
         data_vector[i] = std::make_tuple(*evt, nseconds, maxError, sumError);
 
-        tim::cuda::free_host(x);
-        tim::cuda::free_host(y);
-        tim::cuda::free(d_x);
-        tim::cuda::free(d_y);
+        tim::gpu::free_host(x);
+        tim::gpu::free_host(y);
+        tim::gpu::free(d_x);
+        tim::gpu::free(d_y);
         delete evt;
     };
 
@@ -1010,10 +1014,10 @@ test_6_mt_saxpy_async_pinned()
     for(int i = 0; i < nitr; i++)
         threads[i].join();
 
-    cuda_event evt      = std::get<0>(data_vector[0]);
-    float      nseconds = std::get<1>(data_vector[0]);
-    float      maxError = std::get<2>(data_vector[0]);
-    float      sumError = std::get<3>(data_vector[0]);
+    gpu_event evt      = std::get<0>(data_vector[0]);
+    float     nseconds = std::get<1>(data_vector[0]);
+    float     maxError = std::get<2>(data_vector[0]);
+    float     sumError = std::get<3>(data_vector[0]);
 
     for(int i = 1; i < nitr; i++)
     {
@@ -1035,8 +1039,8 @@ test_6_mt_saxpy_async_pinned()
         printf("Kernel Runtime (sec): %16.12e\n", nseconds);
     }
 
-    tim::cuda::device_sync();
-    // tim::cuda::device_reset();
+    tim::gpu::device_sync();
+    // tim::gpu::device_reset();
 }
 
 //======================================================================================//
@@ -1072,7 +1076,7 @@ KERNEL_B(T* begin, int n)
 
 template <typename T>
 void
-KERNEL_A(T* arg, int size, tim::cuda::stream_t stream = 0)
+KERNEL_A(T* arg, int size, tim::gpu::stream_t stream = 0)
 {
     impl::KERNEL_A<<<2, 64, 0, stream>>>(arg, size);
 }
@@ -1080,277 +1084,12 @@ KERNEL_A(T* arg, int size, tim::cuda::stream_t stream = 0)
 //--------------------------------------------------------------------------------------//
 template <typename T>
 void
-KERNEL_B(T* arg, int size, tim::cuda::stream_t stream = 0)
+KERNEL_B(T* arg, int size, tim::gpu::stream_t stream = 0)
 {
     impl::KERNEL_B<<<64, 2, 0, stream>>>(arg, size / 2);
 }
 
 //======================================================================================//
-#if defined(TIMEMORY_USE_CUPTI)
-
-static auto max_size = tim::get_env("MAX_SIZE", 64);
-static auto num_data = tim::get_env("NUM_SIZE", 100);
-static auto num_iter = tim::get_env("NUM_ITER", 10);
-
-void
-test_7_cupti_available()
-{
-    print_info(__FUNCTION__);
-
-    CUdevice device;
-    TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
-    TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&device, 0));
-
-    auto reduce_size = [](std::vector<std::string>& arr) {
-        std::sort(arr.begin(), arr.end());
-        if(arr.size() > (size_t) max_size)
-            arr.resize(max_size);
-    };
-
-    auto event_names  = tim::cupti::available_events(device);
-    auto metric_names = tim::cupti::available_metrics(device);
-    reduce_size(event_names);
-    reduce_size(metric_names);
-
-    using size_type = decltype(event_names.size());
-    size_type wevt  = 30;
-    size_type wmet  = 30;
-    for(const auto& itr : event_names)
-        wevt = std::max(itr.size(), wevt);
-    for(const auto& itr : metric_names)
-        wmet = std::max(itr.size(), wmet);
-
-    std::cout << "Event names: \n\t"
-              << array_to_string(event_names, ", ", wevt, 180 / wevt) << std::endl;
-    std::cout << "Metric names: \n\t"
-              << array_to_string(metric_names, ", ", wmet, 180 / wmet) << std::endl;
-
-    std::vector<float> cpu_data(num_data, 0);
-    float*             data;
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaMalloc(&data, num_data * sizeof(float)));
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaMemcpy(
-        data, cpu_data.data(), num_data * sizeof(float), cudaMemcpyHostToDevice));
-
-    tim::cupti::profiler profiler(event_names, metric_names);
-    const int            passes = profiler.passes();
-    printf("Passes: %d\n", passes);
-
-    profiler.start();
-    for(int i = 0; i < num_iter; ++i)
-    {
-        printf("\n[%s]> iteration %i...\n", __FUNCTION__, i);
-        KERNEL_A(data, num_data);
-        KERNEL_B(data, num_data);
-    }
-    tim::cuda::device_sync();
-    profiler.stop();
-
-    printf("Event Trace\n");
-    profiler.print_event_values(std::cout);
-    printf("Metric Trace\n");
-    profiler.print_metric_values(std::cout);
-
-    auto names = profiler.get_kernel_names();
-    std::cout << "Kernel names: \n\t" << array_to_string(names, "\n\t", 16, names.size())
-              << std::endl;
-
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaMemcpy(
-        cpu_data.data(), data, num_data * sizeof(float), cudaMemcpyDeviceToHost));
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaFree(data));
-
-    printf("\n");
-    std::cout << "Data values: \n\t" << array_to_string(cpu_data, ", ", 8, 10)
-              << std::endl;
-    printf("\n");
-}
-
-//======================================================================================//
-
-void
-test_8_cupti_subset()
-{
-    print_info(__FUNCTION__);
-    // tim::cuda::device_reset();
-
-    TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
-    std::vector<std::string> event_names{ "active_warps",   "active_cycles",
-                                          "global_load",    "global_store",
-                                          "gld_inst_32bit", "gst_inst_32bit" };
-    std::vector<std::string> metric_names{
-        "inst_per_warp",     "branch_efficiency",  "warp_execution_efficiency",
-        "flop_count_sp",     "flop_count_sp_add",  "flop_count_sp_fma",
-        "flop_count_sp_mul", "flop_sp_efficiency", "gld_efficiency",
-        "gst_efficiency"
-    };
-
-    std::vector<float> cpu_data(num_data, 0);
-    float*             data;
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaMalloc(&data, num_data * sizeof(float)));
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaMemcpy(
-        data, cpu_data.data(), num_data * sizeof(float), cudaMemcpyHostToDevice));
-
-    tim::cupti::profiler profiler(event_names, metric_names);
-    // Get #passes required to compute all metrics and events
-    const int passes = profiler.passes();
-    printf("Passes: %d\n", passes);
-
-    profiler.start();
-    for(int i = 0; i < num_iter; ++i)
-    {
-        printf("\n[%s]> iteration %i...\n", __FUNCTION__, i);
-        KERNEL_A(data, num_data);
-        KERNEL_B(data, num_data);
-    }
-    tim::cuda::device_sync();
-    profiler.stop();
-
-    printf("Event Trace\n");
-    profiler.print_event_values(std::cout);
-    printf("Metric Trace\n");
-    profiler.print_metric_values(std::cout);
-
-    auto names = profiler.get_kernel_names();
-    std::cout << "Kernel names: \n\t" << array_to_string(names, "\n\t", 16, names.size())
-              << std::endl;
-
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaMemcpy(
-        cpu_data.data(), data, num_data * sizeof(float), cudaMemcpyDeviceToHost));
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaFree(data));
-
-    printf("\n");
-    std::cout << "Data values: \n\t" << array_to_string(cpu_data, ", ", 8, 10)
-              << std::endl;
-    printf("\n");
-    // tim::cuda::device_reset();
-}
-
-//======================================================================================//
-
-void
-test_9_cupti_counters()
-{
-    print_info(__FUNCTION__);
-    // tim::cuda::device_reset();
-
-    CUdevice device;
-    TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
-    TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&device, 0));
-
-    auto event_names  = tim::cupti::available_events(device);
-    auto metric_names = tim::cupti::available_metrics(device);
-    std::sort(event_names.begin(), event_names.end());
-    std::sort(metric_names.begin(), metric_names.end());
-
-    using size_type = decltype(event_names.size());
-    size_type wevt  = 10;
-    size_type wmet  = 10;
-    for(const auto& itr : event_names)
-        wevt = std::max(itr.size(), wevt);
-    for(const auto& itr : metric_names)
-        wmet = std::max(itr.size(), wmet);
-
-    std::cout << "Event names: \n\t"
-              << array_to_string(event_names, ", ", wevt, 200 / wevt) << std::endl;
-    std::cout << "Metric names: \n\t"
-              << array_to_string(metric_names, ", ", wmet, 200 / wmet) << std::endl;
-
-    cupti_counters::get_device_initializer() = []() { return 0; };
-    cupti_counters::get_event_initializer()  = []() {
-        return std::vector<std::string>({ "active_warps", "active_cycles", "global_load",
-                                          "global_store", "gld_inst_32bit",
-                                          "gst_inst_32bit" });
-    };
-    cupti_counters::get_metric_initializer() = []() {
-        return std::vector<std::string>({ "inst_per_warp", "branch_efficiency",
-                                          "warp_execution_efficiency", "flop_count_sp",
-                                          "flop_count_sp_add", "flop_count_sp_fma",
-                                          "flop_count_sp_mul", "flop_sp_efficiency",
-                                          "gld_efficiency", "gst_efficiency" });
-    };
-
-    using Tp        = double;
-    using counter_t = tim::ert::counter<tim::device::gpu, Tp>;
-
-    auto store_func = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b) { a = b; };
-    auto add_func   = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b, const Tp& c) { a = b + c; };
-    auto fma_func   = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
-        a = a * b + c;
-    };
-
-    tim::ert::exec_params       params(16, 64 * 64);
-    std::shared_ptr<ert_data_t> exec_data(new ert_data_t);
-    auto                        _counter = new counter_t(params, exec_data, 64);
-
-    std::vector<float> cpu_data(num_data, 0);
-    float*             data;
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaMalloc(&data, num_data * sizeof(float)));
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaMemcpy(
-        data, cpu_data.data(), num_data * sizeof(float), cudaMemcpyHostToDevice));
-
-    cupti_counters profiler;
-    profiler.start();
-    for(int i = 0; i < num_iter; ++i)
-    {
-        printf("\n[%s]> iteration %i...\n", __FUNCTION__, i);
-        tim::ert::ops_main<1>(*_counter, add_func, store_func);
-        tim::ert::ops_main<2, 4, 8>(*_counter, fma_func, store_func);
-        std::cout << *_counter << std::endl;
-        KERNEL_A(data, num_data);
-        KERNEL_B(data, num_data);
-    }
-    tim::cuda::device_sync();
-    profiler.stop();
-    std::cout << __FUNCTION__ << " : " << profiler << std::endl;
-
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaMemcpy(
-        cpu_data.data(), data, num_data * sizeof(float), cudaMemcpyDeviceToHost));
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaFree(data));
-
-    printf("\n");
-    // tim::cuda::device_reset();
-}
-
-//======================================================================================//
-
-void
-test_10_cupti_metric()
-{
-    print_info(__FUNCTION__);
-
-    constexpr int      num_data = 100;
-    std::vector<float> cpu_data(num_data, 0);
-    float*             data;
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaMalloc(&data, num_data * sizeof(float)));
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaMemcpy(
-        data, cpu_data.data(), num_data * sizeof(float), cudaMemcpyHostToDevice));
-
-    tim::cupti::profiler prof({ "gst_inst_32bit" }, { "flop_count_sp" });
-
-    prof.start();
-    for(int i = 0; i < 10; ++i)
-    {
-        KERNEL_A(data, num_data);
-        KERNEL_B(data, num_data);
-    }
-    _LOG("calling sync...\n");
-    tim::cuda::device_sync();
-    prof.stop();
-
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaMemcpy(
-        cpu_data.data(), data, num_data * sizeof(float), cudaMemcpyDeviceToHost));
-    TIMEMORY_CUDA_RUNTIME_API_CALL(cudaFree(data));
-
-    printf("\n");
-    std::cout << "Data values: \n\t" << array_to_string(cpu_data, ", ", 8, 10)
-              << std::endl;
-    printf("\n");
-}
-
-//======================================================================================//
-
-#else  // defined(TIMEMORY_USE_CUPTI)
-
-//======================================================================================//
 
 void
 test_7_cupti_available()
@@ -1387,5 +1126,3 @@ test_10_cupti_metric()
 }
 
 //======================================================================================//
-
-#endif  // defined(TIMEMORY_USE_CUPTI)
