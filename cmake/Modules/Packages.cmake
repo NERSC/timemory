@@ -525,6 +525,7 @@ if(NOT WIN32)
 endif()
 
 find_library(pthread_LIBRARY NAMES pthread pthreads)
+mark_as_advanced(pthread_LIBRARY)
 find_package_handle_standard_args(pthread-library REQUIRED_VARS pthread_LIBRARY)
 find_package(Threads ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 
@@ -1003,6 +1004,7 @@ endif()
 set(gperftools_PREFER_SHARED
     ON
     CACHE BOOL "Prefer goerftools shared libraries")
+mark_as_advanced(gperftools_PERFER_SHARED)
 set(_GPERF_COMPONENTS ${TIMEMORY_gperftools_COMPONENTS})
 if(_GPERF_COMPONENTS)
     list(REMOVE_DUPLICATES _GPERF_COMPONENTS)

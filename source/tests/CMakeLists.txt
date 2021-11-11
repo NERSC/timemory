@@ -723,6 +723,7 @@ endif()
 
 # Tests recording the symbols of each compiled library
 find_program(NM_EXE NAMES nm)
+mark_as_advanced(NM_EXE)
 if(NM_EXE AND NOT WIN32)
     set(_COMPILED_LIBS ${TIMEMORY_TOOL_LIBRARIES} ${TIMEMORY_COMPILED_LIBRARIES}
                        ${TIMEMORY_INTERMEDIATE_LIBRARIES})

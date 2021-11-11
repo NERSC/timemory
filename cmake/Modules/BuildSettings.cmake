@@ -21,11 +21,13 @@ if(CMAKE_DL_LIBS AND NOT "${CMAKE_DL_LIBS}" STREQUAL "dl")
     set(dl_LIBRARY
         ${CMAKE_DL_LIBS}
         CACHE FILEPATH "dynamic linking system library")
+    mark_as_advanced(dl_LIBRARY)
 endif()
 
 foreach(_TYPE dl rt dw)
     if(NOT ${_TYPE}_LIBRARY)
         find_library(${_TYPE}_LIBRARY NAMES ${_TYPE})
+        mark_as_advanced(${_TYPE}_LIBRARY)
     endif()
 endforeach()
 

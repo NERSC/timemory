@@ -92,6 +92,7 @@ endforeach()
 
 # option for verbosity
 option(UPCXX_VERBOSE "Verbose UPC++ detection" OFF)
+mark_as_advanced(UPCXX_VERBOSE)
 function(UPCXX_VERB MESSAGE)
     if(UPCXX_VERBOSE OR DEFINED ENV{UPCXX_VERBOSE})
         message(STATUS "${MESSAGE}")
@@ -110,7 +111,7 @@ set(UPCXX_NETWORK
     CACHE STRING "UPC++ networking mode")
 
 # these appear to have defaults but thread-mode does not
-mark_as_advanced(UPCXX_CODEMODE UPCXX_NETWORK)
+mark_as_advanced(UPCXX_THREADMODE UPCXX_CODEMODE UPCXX_NETWORK)
 
 # for IN_LIST checks
 set(UPCXX_THREADMODE_STRINGS "seq" "par")
