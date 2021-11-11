@@ -1,6 +1,6 @@
 if(TIMEMORY_USE_CUDA)
     set(NAME cuda)
-    set(DEPS timemory-cuda timemory-cudart)
+    set(DEPS timemory::timemory-cuda timemory::timemory-cudart)
 
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
     file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp

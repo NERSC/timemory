@@ -262,7 +262,8 @@ if(UNIX)
     add_timemory_google_test(
         backtrace_tests
         SOURCES backtrace_tests.cpp
-        LINK_LIBRARIES common-test-libs test-debug-flags timemory::timemory-core)
+        LINK_LIBRARIES common-test-libs test-debug-flags
+                       $<IF:$<BOOL:${TIMEMORY_USE_COVERAGE}>,timemory::timemory-core,>)
 endif()
 
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
@@ -328,7 +329,7 @@ if(WIN32) # for now just enable for Windows
         LINK_LIBRARIES common-test-libs ${_LIBRARY})
 endif()
 
-if(NOT WIN32)
+if(NOT WIN32 AND NOT TIMEMORY_USE_PERFETTO)
     # cache structures are designed for use on Windows
     add_timemory_google_test(
         cache_tests
@@ -372,11 +373,13 @@ add_timemory_google_test(
     LINK_LIBRARIES common-test-libs timemory::timemory-plotting timemory::timemory-core
                    ${_LIBRARY})
 
-add_timemory_google_test(
-    mangle_tests DISCOVER_TESTS
-    SOURCES mangle_tests.cpp
-    LINK_LIBRARIES common-test-libs timemory::timemory-plotting timemory::timemory-core
-                   ${_LIBRARY})
+if(NOT WIN32)
+    add_timemory_google_test(
+        mangle_tests DISCOVER_TESTS
+        SOURCES mangle_tests.cpp
+        LINK_LIBRARIES common-test-libs timemory::timemory-plotting
+                       timemory::timemory-core ${_LIBRARY})
+endif()
 
 add_timemory_google_test(
     tuple_tests DISCOVER_TESTS
@@ -720,6 +723,7 @@ endif()
 
 # Tests recording the symbols of each compiled library
 find_program(NM_EXE NAMES nm)
+mark_as_advanced(NM_EXE)
 if(NM_EXE AND NOT WIN32)
     set(_COMPILED_LIBS ${TIMEMORY_TOOL_LIBRARIES} ${TIMEMORY_COMPILED_LIBRARIES}
                        ${TIMEMORY_INTERMEDIATE_LIBRARIES})

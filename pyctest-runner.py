@@ -29,6 +29,7 @@ available_tools = {
     "ncclp": "TIMEMORY_BUILD_NCCLP_LIBRARY",
     "mallocp": "TIMEMORY_BUILD_MALLOCP_LIBRARY",
     "compiler": "TIMEMORY_BUILD_COMPILER_INSTRUMENTATION",
+    "ert": "TIMEMORY_BUILD_ERT",
 }
 argparse_defaults = {}
 build_name = ""

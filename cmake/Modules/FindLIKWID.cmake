@@ -115,8 +115,25 @@ find_library(
 
 # ----------------------------------------------------------------------------------------#
 
-find_static_library(
+find_library(
     LIKWID_lua_LIBRARY
+    NAMES likwid-lua
+    HINTS ${LIKWID_ROOT_DIR}
+          ENV
+          LIKWID_ROOT_DIR
+          ENV
+          LD_LIBRARY_PATH
+          ENV
+          LIBRARY_PATH
+          ENV
+          DYLD_LIBRARY_PATH
+    PATH_SUFFIXES lib lib64
+    DOC "Path to the LIKWID lua library")
+
+# ----------------------------------------------------------------------------------------#
+
+find_static_library(
+    LIKWID_lua_STATIC_LIBRARY
     NAMES likwid-lua
     HINTS ${LIKWID_ROOT_DIR}
           ENV

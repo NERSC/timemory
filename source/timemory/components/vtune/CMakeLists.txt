@@ -1,6 +1,6 @@
 if(TIMEMORY_USE_VTUNE)
     set(NAME vtune)
-    set(DEPS timemory-vtune)
+    set(DEPS timemory::timemory-vtune)
 
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
     file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

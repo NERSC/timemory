@@ -20,7 +20,9 @@ file(GLOB_RECURSE cxx_headers_components
      ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
 file(GLOB cxx_headers_macros ${CMAKE_CURRENT_LIST_DIR}/timemory/macros/*.hpp)
 file(GLOB cxx_headers_api ${CMAKE_CURRENT_LIST_DIR}/timemory/api/*.hpp)
+file(GLOB cxx_headers_ert ${CMAKE_CURRENT_LIST_DIR}/timemory/ert/*.hpp)
 file(GLOB cxx_headers_mpl ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
+file(GLOB cxx_headers_math ${CMAKE_CURRENT_LIST_DIR}/timemory/math/*.hpp)
 file(GLOB cxx_headers_general ${CMAKE_CURRENT_LIST_DIR}/timemory/general/*.hpp)
 file(GLOB cxx_headers_data ${CMAKE_CURRENT_LIST_DIR}/timemory/data/*.hpp)
 file(GLOB cxx_headers_utility ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*.hpp)
@@ -55,9 +57,11 @@ set(timemory_glob_headers
     ${cxx_headers}
     ${cxx_headers_variadic}
     ${cxx_headers_api}
+    ${cxx_headers_ert}
     ${cxx_headers_backends}
     ${cxx_headers_components}
     ${cxx_headers_mpl}
+    ${cxx_headers_math}
     ${cxx_headers_utility}
     ${cxx_headers_bits}
     ${cxx_headers_data}

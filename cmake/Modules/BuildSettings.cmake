@@ -21,11 +21,13 @@ if(CMAKE_DL_LIBS AND NOT "${CMAKE_DL_LIBS}" STREQUAL "dl")
     set(dl_LIBRARY
         ${CMAKE_DL_LIBS}
         CACHE FILEPATH "dynamic linking system library")
+    mark_as_advanced(dl_LIBRARY)
 endif()
 
 foreach(_TYPE dl rt dw)
     if(NOT ${_TYPE}_LIBRARY)
         find_library(${_TYPE}_LIBRARY NAMES ${_TYPE})
+        mark_as_advanced(${_TYPE}_LIBRARY)
     endif()
 endforeach()
 
@@ -159,9 +161,29 @@ if(NOT TIMEMORY_USE_SANITIZER)
     add_cxx_flag_if_avail("-ftls-model=${TIMEMORY_TLS_MODEL}")
 endif()
 
+if(TIMEMORY_BUILD_LTO)
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT IPO_SUPPORTED OUTPUT IPO_CHECK_OUTPUT)
+    if(NOT IPO_SUPPORTED)
+        timemory_message(
+            STATUS
+            "TIMEMORY_BUILD_LTO must be disabled due to check_ipo_supported() failure")
+        timemory_message(AUTHOR_WARNING "${IPO_CHECK_OUTPUT}")
+        message(FATAL_ERROR "TIMEMORY_BUILD_LTO not supported")
+    endif()
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ${IPO_SUPPORTED})
+    set(TIMEMORY_BUILD_LTO ${IPO_SUPPORTED})
+endif()
+
+timemory_save_variables(FLTO VARIABLES CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
+set(CMAKE_C_FLAGS "-flto=thin ${CMAKE_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "-flto=thin ${CMAKE_CXX_FLAGS}")
+
 add_interface_library(timemory-lto "Adds link-time-optimization flags")
 add_target_flag_if_avail(timemory-lto "-flto=thin")
 if(NOT cxx_timemory_lto_flto_thin)
+    set(CMAKE_C_FLAGS "-flto ${CMAKE_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "-flto ${CMAKE_CXX_FLAGS}")
     add_target_flag_if_avail(timemory-lto "-flto")
     if(NOT cxx_timemory_lto_flto)
         add_disabled_interface(timemory-lto)
@@ -174,9 +196,10 @@ else()
 endif()
 
 if(TIMEMORY_BUILD_LTO)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON)
     target_link_libraries(timemory-compile-options INTERFACE timemory::timemory-lto)
 endif()
+
+timemory_restore_variables(FLTO VARIABLES CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
 
 # ----------------------------------------------------------------------------------------#
 # print compilation timing reports (Clang compiler)

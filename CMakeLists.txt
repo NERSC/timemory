@@ -35,6 +35,7 @@ cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0053 NEW)
 cmake_policy(SET CMP0063 NEW)
+cmake_policy(SET CMP0069 NEW)
 if(NOT CMAKE_VERSION VERSION_LESS 3.13)
     cmake_policy(SET CMP0077 NEW)
     cmake_policy(SET CMP0079 NEW)
@@ -81,7 +82,7 @@ set(CMAKE_INSTALL_CONFIGDIR ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME})
 
 if(UNIX AND NOT APPLE)
     set(CMAKE_INSTALL_RPATH
-        "\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\$ORIGIN/timemory:\$ORIGIN")
+        "\$ORIGIN:\$ORIGIN/../${CMAKE_INSTALL_LIBDIR}:\$ORIGIN/timemory:\$ORIGIN")
     if(NOT SKBUILD AND NOT SPACK_BUILD)
         set(CMAKE_INSTALL_RPATH
             "${CMAKE_INSTALL_RPATH}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/timemory"
@@ -126,6 +127,7 @@ foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
         set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${_BIN_DIR})
     endif()
 endforeach()
+
 if(WIN32)
     # use folders for cmake predefined projects
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -160,17 +162,16 @@ if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_USE_CTP)
             "dylib"
             "dll"
             -i
-            ".*(_tests)$"
-            "^(ex_).*"
+            "^-"
             -e
-            "^(@rpath).*"
-            "^(/usr)"
-            "^(/opt)")
+            "^(@rpath).*")
         set(TIMEMORY_USE_CTP ON)
     else()
         set(TIMEMORY_USE_CTP OFF)
     endif()
 endif()
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ----------------------------------------------------------------------------------------#
 # handle some additional configuration before other includes
@@ -372,3 +373,7 @@ endif()
 foreach(_EXAMPLE_OPTION MPI TAU CUDA PAPI CUPTI KOKKOS CALIPER)
     set(_IGNORE ${USE_${_EXAMPLE_OPTION}})
 endforeach()
+
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    include(ConfigCPack)
+endif()

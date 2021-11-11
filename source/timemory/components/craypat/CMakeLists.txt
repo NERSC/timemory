@@ -1,6 +1,6 @@
 if(TIMEMORY_USE_CRAYPAT)
     set(NAME craypat)
-    set(DEPS timemory-craypat)
+    set(DEPS timemory::timemory-craypat)
 
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
     file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
