@@ -28,3 +28,6 @@
 [submodule "external/dyninst"]
 	path = external/dyninst
 	url = https://github.com/jrmadsen/dyninst.git
+[submodule "external/perfetto"]
+	path = external/perfetto
+	url = https://android.googlesource.com/platform/external/perfetto

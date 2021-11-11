@@ -67,6 +67,8 @@ were not available when timemory was installed.
 | `timemory::timemory-gpu-roofline` | Enables flags and libraries for proper GPU roofline generation |
 | `timemory::timemory-headers` | Provides minimal set of include flags to compile with timemory |
 | `timemory::timemory-hidden-visibility` | Adds -fvisibility=hidden compiler flag |
+| `timemory::timemory-hip-device` | Enables HIP support (device code) |
+| `timemory::timemory-hip` | Enables HIP support |
 | `timemory::timemory-instrument-functions` | Adds compiler flags to enable compile-time instrumentation |
 | `timemory::timemory-leak-sanitizer` | Adds compiler flags to enable leak sanitizer (-fsanitize=leak) |
 | `timemory::timemory-libunwind` | Enables libunwind support |
@@ -85,6 +87,7 @@ were not available when timemory was installed.
 | `timemory::timemory-ompt` | Enables OpenMP-tools support |
 | `timemory::timemory-papi-static` | Enables PAPI support + links to static library |
 | `timemory::timemory-papi` | Enables PAPI support |
+| `timemory::timemory-perfetto` | Enables perfetto support |
 | `timemory::timemory-plotting` | Enables python plotting support (system call) |
 | `timemory::timemory-precompiled-headers` | Provides timemory-headers + precompiles headers if CMAKE_VERSION >= 3.16 |
 | `timemory::timemory-python` | Enables python support (embedded interpreter) |

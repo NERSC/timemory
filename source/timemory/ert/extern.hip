@@ -30,10 +30,10 @@
 #    define TIMEMORY_ERT_SOURCE_GPU 1
 #endif
 
-#if !defined(TIMEMORY_USE_CUDA)
-#    error "File should not be compiled without TIMEMORY_USE_CUDA defined"
+#if !defined(TIMEMORY_USE_HIP)
+#    error "File should not be compiled without TIMEMORY_USE_HIP defined"
 #else
-#    define TIMEMORY_ERT_SOURCE_CUDA 1
+#    define TIMEMORY_ERT_SOURCE_HIP 1
 #endif
 
 #include "timemory/ert/extern.hpp"

@@ -1,6 +1,6 @@
 if(TIMEMORY_USE_OMPT)
     set(NAME ompt)
-    set(DEPS timemory-ompt)
+    set(DEPS timemory::timemory-ompt)
 
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
     file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)

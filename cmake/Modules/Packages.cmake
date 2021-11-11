@@ -52,6 +52,8 @@ add_interface_library(timemory-cudart "Link to CUDA runtime (shared library)")
 add_interface_library(timemory-cudart-device "Link to CUDA device runtime")
 add_interface_library(timemory-cudart-static "Link to CUDA runtime (static library)")
 add_interface_library(timemory-nccl "Enables CUDA NCCL support")
+add_interface_library(timemory-hip "Enables HIP support")
+add_interface_library(timemory-hip-device "Enables HIP support (device code)")
 add_interface_library(timemory-nvml "Enables NVML support (NVIDIA)")
 add_interface_library(timemory-caliper "Enables Caliper support")
 add_interface_library(timemory-gotcha "Enables Gotcha support")
@@ -64,6 +66,7 @@ add_interface_library(timemory-plotting "Enables python plotting support (system
 add_interface_library(timemory-allinea-map "Enables Allinea-MAP support")
 add_interface_library(timemory-craypat "Enables CrayPAT support")
 add_interface_library(timemory-libunwind "Enables libunwind support")
+add_interface_library(timemory-perfetto "Enables perfetto support")
 
 add_interface_library(timemory-coverage "Enables code-coverage flags")
 add_interface_library(timemory-gperftools
@@ -127,6 +130,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-cudart
     timemory-cudart-device
     #
+    timemory-hip
+    #
     timemory-papi
     timemory-gperftools
     #
@@ -141,7 +146,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-ompt
     timemory-craypat
     timemory-allinea-map
-    timemory-libunwind)
+    timemory-libunwind
+    timemory-perfetto)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -153,6 +159,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-nvml
     timemory-cupti
     timemory-cudart-device
+    timemory-hip
     timemory-caliper
     timemory-gotcha
     timemory-likwid
@@ -163,6 +170,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-allinea-map
     timemory-plotting
     timemory-libunwind
+    timemory-perfetto
     ${_DMP_LIBRARIES})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -175,6 +183,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-nvml
     timemory-cupti
     timemory-cudart-device
+    timemory-hip
     timemory-caliper
     timemory-likwid
     timemory-vtune
@@ -184,6 +193,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-allinea-map
     timemory-plotting
     timemory-libunwind
+    timemory-perfetto
     ${_DMP_LIBRARIES})
 
 set(_GPERF_IN_LIBRARY OFF)
@@ -515,6 +525,7 @@ if(NOT WIN32)
 endif()
 
 find_library(pthread_LIBRARY NAMES pthread pthreads)
+mark_as_advanced(pthread_LIBRARY)
 find_package_handle_standard_args(pthread-library REQUIRED_VARS pthread_LIBRARY)
 find_package(Threads ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 
@@ -565,7 +576,7 @@ endif()
 # interface to kill MPI init in headers
 timemory_target_compile_definitions(timemory-no-mpi-init INTERFACE TIMEMORY_MPI_INIT=0)
 
-if(MPI_FOUND)
+if(TIMEMORY_USE_MPI AND MPI_FOUND)
     target_compile_definitions(timemory-mpi INTERFACE TIMEMORY_USE_MPI)
 
     foreach(_LANG CXX)
@@ -641,7 +652,7 @@ else()
     find_package(UPCXX QUIET)
 endif()
 
-if(UPCXX_FOUND)
+if(TIMEMORY_USE_UPCXX AND UPCXX_FOUND)
 
     add_rpath(${UPCXX_LIBRARIES})
     target_link_libraries(timemory-upcxx INTERFACE ${UPCXX_LIBRARIES})
@@ -720,7 +731,10 @@ if(TIMEMORY_BUILD_GOOGLE_TEST)
             CACHE BOOL "Enable MACOS_RPATH on targets to suppress warnings")
         mark_as_advanced(CMAKE_MACOSX_RPATH)
     endif()
+    timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/google-test)
+    timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
     target_link_libraries(timemory-google-test INTERFACE gtest gmock)
     target_include_directories(
         timemory-google-test SYSTEM
@@ -738,7 +752,7 @@ if(TIMEMORY_USE_PAPI)
     find_package(PAPI ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
-if(PAPI_FOUND)
+if(TIMEMORY_USE_PAPI AND PAPI_FOUND)
     add_rpath(${PAPI_LIBRARIES})
     target_link_libraries(timemory-papi INTERFACE ${PAPI_LIBRARIES})
     target_link_libraries(timemory-papi-static INTERFACE ${PAPI_STATIC_LIBRARIES})
@@ -792,6 +806,8 @@ if(TIMEMORY_USE_CUDA)
 
     include(ConfigCUDA)
 
+    target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_GPU)
+
     if(TIMEMORY_USE_NVTX)
         find_package(NVTX ${TIMEMORY_FIND_QUIETLY})
         if(NVTX_FOUND)
@@ -837,7 +853,7 @@ if(TIMEMORY_USE_CUPTI)
     find_package(CUPTI ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
-if(CUPTI_FOUND)
+if(TIMEMORY_USE_CUPTI AND CUPTI_FOUND)
 
     timemory_target_compile_definitions(timemory-cupti INTERFACE TIMEMORY_USE_CUPTI)
 
@@ -889,7 +905,7 @@ if(TIMEMORY_USE_NCCL)
     find_package(NCCL ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
-if(NCCL_FOUND)
+if(TIMEMORY_USE_NCCL AND NCCL_FOUND)
     add_rpath(${NCCL_LIBRARIES})
     target_link_libraries(timemory-nccl INTERFACE ${NCCL_LIBRARIES})
     target_include_directories(timemory-nccl SYSTEM INTERFACE ${NCCL_INCLUDE_DIRS})
@@ -909,7 +925,7 @@ if(TIMEMORY_USE_NVML)
     find_package(NVML ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
-if(NVML_FOUND)
+if(TIMEMORY_USE_NVML AND NVML_FOUND)
     add_rpath(${NVML_LIBRARIES})
     target_link_libraries(timemory-nvml INTERFACE ${NVML_LIBRARIES})
     target_include_directories(timemory-nvml SYSTEM INTERFACE ${NVML_INCLUDE_DIRS})
@@ -917,6 +933,45 @@ if(NVML_FOUND)
 else()
     set(TIMEMORY_USE_NVML OFF)
     inform_empty_interface(timemory-nvml "NVML")
+endif()
+
+# ----------------------------------------------------------------------------------------#
+#
+# HIP
+#
+# ----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_HIP)
+    find_package(hip ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+endif()
+
+if(TIMEMORY_USE_HIP AND hip_FOUND)
+    target_link_libraries(timemory-headers INTERFACE timemory-hip)
+
+    target_compile_definitions(timemory-hip INTERFACE TIMEMORY_USE_HIP TIMEMORY_USE_GPU)
+    target_compile_definitions(timemory-hip-device INTERFACE TIMEMORY_USE_HIP
+                                                             TIMEMORY_USE_GPU)
+
+    find_library(
+        ROCM_roctx64_LIBRARY
+        NAMES roctx64
+        PATH_SUFFIXES lib64 lib
+        HINTS ${hip_DIR}/../../..
+        PATHS ${hip_DIR}/../../..)
+
+    if(ROCM_roctx64_LIBRARY)
+        target_link_libraries(timemory-hip INTERFACE ${ROCM_roctx64_LIBRARY})
+        target_link_libraries(timemory-hip-device INTERFACE ${ROCM_roctx64_LIBRARY})
+    endif()
+
+    target_link_libraries(timemory-hip INTERFACE hip::host)
+    target_link_libraries(timemory-hip-device INTERFACE hip::device)
+
+    add_user_flags(timemory-hip "HIP")
+else()
+    set(TIMEMORY_USE_HIP OFF)
+    inform_empty_interface(timemory-hip "HIP")
+    inform_empty_interface(timemory-hip-device "HIP (device)")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -929,7 +984,7 @@ if(TIMEMORY_USE_LIBUNWIND)
     find_package(libunwind ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
-if(libunwind_FOUND)
+if(TIMEMORY_USE_LIBUNWIND AND libunwind_FOUND)
     target_link_libraries(timemory-libunwind INTERFACE ${libunwind_LIBRARIES})
     target_include_directories(timemory-libunwind SYSTEM
                                INTERFACE ${libunwind_INCLUDE_DIRS})
@@ -949,6 +1004,7 @@ endif()
 set(gperftools_PREFER_SHARED
     ON
     CACHE BOOL "Prefer goerftools shared libraries")
+mark_as_advanced(gperftools_PERFER_SHARED)
 set(_GPERF_COMPONENTS ${TIMEMORY_gperftools_COMPONENTS})
 if(_GPERF_COMPONENTS)
     list(REMOVE_DUPLICATES _GPERF_COMPONENTS)
@@ -998,10 +1054,10 @@ if(TIMEMORY_USE_GPERFTOOLS)
 
     set(_DEFINITIONS)
     foreach(_COMP ${_GPERF_COMPONENTS})
-        if("tcmalloc" MATCHES "${_COMP}")
+        if("${_COMP}" MATCHES "tcmalloc")
             list(APPEND _DEFINITIONS TIMEMORY_USE_GPERFTOOLS_TCMALLOC)
         endif()
-        if("profiler")
+        if("${_COMP}" MATCHES "profiler")
             list(APPEND _DEFINITIONS TIMEMORY_USE_GPERFTOOLS_PROFILER)
         endif()
     endforeach()
@@ -1061,7 +1117,10 @@ if(TIMEMORY_BUILD_CALIPER)
     set(BUILD_TESTING
         OFF
         CACHE BOOL "")
+    timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/caliper)
+    timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
     set(BUILD_TESTING ${_ORIG_TESTING})
     set(CMAKE_C_EXTENSIONS ${_ORIG_CEXT})
     set(caliper_DIR ${CMAKE_INSTALL_PREFIX}/share/cmake/caliper)
@@ -1083,7 +1142,7 @@ else()
     endif()
 endif()
 
-if(caliper_FOUND)
+if(TIMEMORY_USE_CALIPER AND caliper_FOUND)
     timemory_target_compile_definitions(timemory-caliper INTERFACE TIMEMORY_USE_CALIPER)
     if(TIMEMORY_BUILD_CALIPER)
         target_include_directories(
@@ -1140,7 +1199,10 @@ if(UNIX AND NOT APPLE)
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             REPO_URL https://github.com/jrmadsen/GOTCHA.git
             REPO_BRANCH timemory)
+        timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/gotcha)
+        timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
         foreach(_TARGET gotcha gotcha-include Gotcha)
             if(TARGET ${_TARGET})
                 list(APPEND TIMEMORY_PACKAGE_LIBRARIES ${_TARGET})
@@ -1165,7 +1227,7 @@ else()
     set(gotcha_FOUND OFF)
 endif()
 
-if(gotcha_FOUND)
+if(TIMEMORY_USE_GOTCHA AND gotcha_FOUND)
     timemory_target_compile_definitions(timemory-gotcha INTERFACE TIMEMORY_USE_GOTCHA)
     foreach(_LIB gotcha gotcha-include Gotcha Gotcha::gotcha Gotcha::Gotcha)
         if(TARGET ${_LIB})
@@ -1202,7 +1264,7 @@ if(TIMEMORY_USE_LIKWID)
     find_package(LIKWID ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
-if(LIKWID_FOUND)
+if(TIMEMORY_USE_LIKWID AND LIKWID_FOUND)
     target_link_libraries(timemory-likwid INTERFACE ${LIKWID_LIBRARIES})
     target_include_directories(timemory-likwid SYSTEM INTERFACE ${LIKWID_INCLUDE_DIRS})
     timemory_target_compile_definitions(timemory-likwid INTERFACE TIMEMORY_USE_LIKWID)
@@ -1258,7 +1320,10 @@ if(TIMEMORY_USE_OMPT)
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
             REPO_URL https://github.com/NERSC/LLVM-openmp.git
             REPO_BRANCH timemory)
+        timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/llvm-ompt)
+        timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
         target_include_directories(
             timemory-ompt SYSTEM
             INTERFACE
@@ -1297,6 +1362,83 @@ endif()
 
 # ----------------------------------------------------------------------------------------#
 #
+# Perfetto
+#
+# ----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_PERFETTO)
+    checkout_git_submodule(
+        RELATIVE_PATH external/perfetto
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://android.googlesource.com/platform/external/perfetto
+        REPO_BRANCH v17.0
+        TEST_FILE meson.build)
+
+    function(timemory_get_perfetto_sdk_header _RET _IN)
+        # read in the build tree file
+        file(READ ${_IN} PERFETTO_SDK_HEADER)
+        # replace __noinline__ with noinline (former is problematic for hipcc)
+        string(REPLACE "((__noinline__))" "((noinline))" PERFETTO_SDK_HEADER_MODIFIED
+                       "${PERFETTO_SDK_HEADER}")
+        set(${_RET}
+            "${PERFETTO_SDK_HEADER_MODIFIED}"
+            PARENT_SCOPE)
+    endfunction()
+
+    # copy over the sdk files to the build tree
+    configure_file(${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.cc
+                   ${PROJECT_BINARY_DIR}/external/perfetto/sdk/perfetto.cc COPYONLY)
+
+    # read in sdk header in source dir and modify
+    timemory_get_perfetto_sdk_header(
+        PERFETTO_SDK_HEADER_SRC ${PROJECT_SOURCE_DIR}/external/perfetto/sdk/perfetto.h)
+    # read in sdk header in binary dir
+    if(EXISTS ${PROJECT_BINARY_DIR}/external/perfetto/sdk/perfetto.h)
+        timemory_get_perfetto_sdk_header(
+            PERFETTO_SDK_HEADER_BIN
+            ${PROJECT_BINARY_DIR}/external/perfetto/sdk/perfetto.h)
+    else()
+        set(PERFETTO_SDK_HEADER_BIN)
+    endif()
+    # if they don't match, write the modified file from source tree
+    if(NOT "${PERFETTO_SDK_HEADER_SRC}" STREQUAL "${PERFETTO_SDK_HEADER_BIN}")
+        file(WRITE ${PROJECT_BINARY_DIR}/external/perfetto/sdk/perfetto.h
+             "${PERFETTO_SDK_HEADER_SRC}")
+    endif()
+
+    # build the static library
+    timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+    build_library(
+        PIC
+        TYPE STATIC
+        TARGET_NAME timemory-perfetto-static
+        OUTPUT_NAME timemory-perfetto
+        LANGUAGE CXX
+        LINKER_LANGUAGE CXX
+        OUTPUT_DIR ${PROJECT_BINARY_DIR}
+        SOURCES ${PROJECT_BINARY_DIR}/external/perfetto/sdk/perfetto.cc
+                ${PROJECT_BINARY_DIR}/external/perfetto/sdk/perfetto.h
+        CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
+    target_link_libraries(timemory-perfetto-static PRIVATE timemory::timemory-threading)
+    target_include_directories(
+        timemory-perfetto-static
+        PUBLIC $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/perfetto/sdk>)
+    timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+
+    # generate the interface target
+    target_compile_definitions(timemory-perfetto INTERFACE TIMEMORY_USE_PERFETTO)
+    target_link_libraries(timemory-perfetto INTERFACE timemory-perfetto-static)
+    if(TIMEMORY_INSTALL_HEADER_FILES)
+        install(
+            FILES ${PROJECT_BINARY_DIR}/external/perfetto/sdk/perfetto.h
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+            OPTIONAL)
+    endif()
+endif()
+
+# ----------------------------------------------------------------------------------------#
+#
 # VTune
 #
 # ----------------------------------------------------------------------------------------#
@@ -1305,7 +1447,7 @@ if(TIMEMORY_USE_VTUNE)
     find_package(ittnotify ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
-if(ittnotify_FOUND)
+if(TIMEMORY_USE_VTUNE AND ittnotify_FOUND)
     target_link_libraries(timemory-vtune INTERFACE ${ITTNOTIFY_LIBRARIES})
     target_include_directories(timemory-vtune SYSTEM INTERFACE ${ITTNOTIFY_INCLUDE_DIRS})
     timemory_target_compile_definitions(timemory-vtune INTERFACE TIMEMORY_USE_VTUNE)
@@ -1325,7 +1467,7 @@ if(TIMEMORY_USE_TAU)
     find_package(TAU ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
-if(TAU_FOUND)
+if(TIMEMORY_USE_TAU AND TAU_FOUND)
     target_link_libraries(timemory-tau INTERFACE ${TAU_LIBRARIES})
     target_include_directories(timemory-tau SYSTEM INTERFACE ${TAU_INCLUDE_DIRS})
     timemory_target_compile_definitions(timemory-tau INTERFACE TIMEMORY_USE_TAU)
@@ -1372,6 +1514,9 @@ if(TIMEMORY_USE_DYNINST AND NOT TIMEMORY_BUILD_DYNINST)
             find_package(Boost QUIET ${TIMEMORY_FIND_REQUIREMENT}
                          COMPONENTS ${TIMEMORY_BOOST_COMPONENTS})
         endif()
+    endif()
+    if(TARGET Dyninst::Dyninst)
+        target_link_libraries(timemory-dyninst INTERFACE Dyninst::Dyninst)
     endif()
 endif()
 
@@ -1539,7 +1684,7 @@ if(TIMEMORY_USE_ALLINEA_MAP)
     find_package(AllineaMAP ${TIMEMORY_FIND_REQUIREMENT})
 endif()
 
-if(AllineaMAP_FOUND)
+if(TIMEMORY_USE_ALLINEA_MAP AND AllineaMAP_FOUND)
     add_rpath(${AllineaMAP_LIBRARIES})
     target_link_libraries(timemory-allinea-map INTERFACE ${AllineaMAP_LIBRARIES})
     target_include_directories(timemory-allinea-map SYSTEM
@@ -1561,7 +1706,7 @@ if(TIMEMORY_USE_CRAYPAT)
     find_package(CrayPAT ${TIMEMORY_FIND_REQUIREMENT} COMPONENTS ${CrayPAT_COMPONENTS})
 endif()
 
-if(CrayPAT_FOUND)
+if(TIMEMORY_USE_CRAYPAT AND CrayPAT_FOUND)
     add_rpath(${CrayPAT_LIBRARIES})
     target_link_libraries(timemory-craypat INTERFACE ${CrayPAT_LIBRARIES})
     target_link_directories(timemory-craypat INTERFACE ${CrayPAT_LIBRARY_DIRS})
@@ -1598,7 +1743,10 @@ if(TIMEMORY_USE_PTL OR TIMEMORY_BUILD_TESTING)
     if(PTL_BUILD_EXAMPLES)
         set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${PROJECT_BINARY_DIR}/external/ptl)
     endif()
+    timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/ptl)
+    timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
 endif()
 
 # ----------------------------------------------------------------------------------------#

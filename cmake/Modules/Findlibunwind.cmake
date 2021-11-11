@@ -20,12 +20,16 @@ find_root_path(
     libunwind_ROOT_DIR
     CACHE)
 
+mark_as_advanced(libunwind_ROOT)
+
 find_path(
     libunwind_ROOT_DIR
     NAMES include/libunwind.h
     HINTS ${libunwind_ROOT}
     PATHS ${libunwind_ROOT}
     DOC "libunwind root installation directory")
+
+mark_as_advanced(libunwind_ROOT_DIR)
 
 if(libunwind_ROOT_DIR)
     set(libunwind_FIND_VARS libunwind_ROOT_DIR)
@@ -41,6 +45,8 @@ find_path(
     PATH_SUFFIXES include
     DOC "Path to the libunwind headers")
 
+mark_as_advanced(libunwind_INCLUDE_DIR)
+
 if(NOT APPLE)
     find_library(
         libunwind_LIBRARY
@@ -50,6 +56,8 @@ if(NOT APPLE)
         PATH_SUFFIXES lib lib64
         DOC "Path to the libunwind library")
 
+    mark_as_advanced(libunwind_LIBRARY)
+
     find_static_library(
         libunwind_STATIC_LIBRARY
         NAMES unwind libunwind
@@ -57,10 +65,14 @@ if(NOT APPLE)
         PATHS ${libunwind_ROOT}
         PATH_SUFFIXES lib lib64
         DOC "Path to the libunwind static library")
+
+    mark_as_advanced(libunwind_STATIC_LIBRARY)
 else()
     set(libunwind_LIBRARY
         unwind
         CACHE STRING "libunwind library")
+
+    mark_as_advanced(libunwind_LIBRARY)
 endif()
 
 foreach(_COMPONENT ${libunwind_FIND_COMPONENTS})
@@ -71,6 +83,8 @@ foreach(_COMPONENT ${libunwind_FIND_COMPONENTS})
         PATHS ${libunwind_ROOT}
         PATH_SUFFIXES lib lib64
         DOC "Path to the libunwind ${_COMPONENT} library")
+
+    mark_as_advanced(libunwind_${_COMPONENT}_LIBRARY)
 
     if(libunwind_INCLUDE_DIR
        AND libunwind_${_COMPONENT}_LIBRARY

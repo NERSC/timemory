@@ -115,12 +115,17 @@ set(PYTHON_EXECUTABLE
     "${Python3_EXECUTABLE}"
     CACHE FILEPATH "Set via Python3_EXECUTABLE (timemory)" FORCE)
 # includes
-set(PYTHON_INCLUDE_DIR
-    "${Python3_INCLUDE_DIRS}"
-    CACHE PATH "Set via Python3_INCLUDE_DIR (timemory)" FORCE)
-set(PYTHON_INCLUDE_DIRS
-    "${Python3_INCLUDE_DIRS}"
-    CACHE PATH "Set via Python3_INCLUDE_DIRS (timemory)" FORCE)
+if(Python3_INCLUDE_DIR AND NOT Python3_INCLUDE_DIRS)
+    set(Python3_INCLUDE_DIRS ${Python3_INCLUDE_DIR})
+endif()
+if(Python3_INCLUDE_DIRS)
+    set(PYTHON_INCLUDE_DIR
+        "${Python3_INCLUDE_DIRS}"
+        CACHE PATH "Set via Python3_INCLUDE_DIR (timemory)" FORCE)
+    set(PYTHON_INCLUDE_DIRS
+        "${Python3_INCLUDE_DIRS}"
+        CACHE PATH "Set via Python3_INCLUDE_DIRS (timemory)" FORCE)
+endif()
 # libraries
 set(PYTHON_LIBRARY_DEBUG
     "${Python3_LIBRARY_DEBUG}"
@@ -224,7 +229,10 @@ if(TIMEMORY_BUILD_PYTHON AND NOT TARGET pybind11)
         REPO_BRANCH master)
 
     # add PyBind11 to project
+    timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/pybind11)
+    timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
 endif()
 
 if(NOT PYBIND11_PYTHON_VERSION)
@@ -314,7 +322,9 @@ if(TIMEMORY_BUILD_PYTHON OR pybind11_FOUND)
     foreach(_TARG pybind11 pybind11::pybind11 pybind11::module)
         if(TARGET ${_TARG})
             get_target_property(_INCLUDE_DIR ${_TARG} INTERFACE_INCLUDE_DIRECTORIES)
-            list(APPEND _PYBIND11_INCLUDE_DIRS ${_INCLUDE_DIR})
+            if(_INCLUDE_DIR)
+                list(APPEND _PYBIND11_INCLUDE_DIRS ${_INCLUDE_DIR})
+            endif()
         endif()
     endforeach()
     if(_PYBIND11_INCLUDE_DIRS)
@@ -324,11 +334,22 @@ if(TIMEMORY_BUILD_PYTHON OR pybind11_FOUND)
     if(NOT APPLE)
         target_link_libraries(timemory-python INTERFACE ${PYTHON_LIBRARIES})
     endif()
-    target_include_directories(
-        timemory-python SYSTEM
-        INTERFACE ${PYTHON_INCLUDE_DIRS} ${PYBIND11_INCLUDE_DIRS}
-                  $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>
-                  $<BUILD_INTERFACE:${_PYBIND11_INCLUDE_DIRS}>)
+    if(PYTHON_INCLUDE_DIRS)
+        target_include_directories(timemory-python SYSTEM
+                                   INTERFACE ${PYTHON_INCLUDE_DIRS})
+    endif()
+    if(PYBIND11_INCLUDE_DIRS)
+        target_include_directories(timemory-python SYSTEM
+                                   INTERFACE ${PYBIND11_INCLUDE_DIRS})
+    endif()
+    if(PYBIND11_INCLUDE_DIR)
+        target_include_directories(timemory-python SYSTEM
+                                   INTERFACE $<BUILD_INTERFACE:${PYBIND11_INCLUDE_DIR}>)
+    endif()
+    if(_PYBIND11_INCLUDE_DIRS)
+        target_include_directories(timemory-python SYSTEM
+                                   INTERFACE $<BUILD_INTERFACE:${_PYBIND11_INCLUDE_DIRS}>)
+    endif()
 endif()
 
 if(APPLE)

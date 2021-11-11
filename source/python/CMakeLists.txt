@@ -63,15 +63,19 @@ function(TIMEMORY_CONFIGURE_PYTARGET _TARGET)
         set(_PYLIB ${CMAKE_INSTALL_PREFIX}/${_PYLIB})
     endif()
 
-    file(RELATIVE_PATH LIB_RELPATH "${_PYLIB}"
-         "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+    if(SKBUILD)
+        set(LIB_RELPATH ../../../..)
+    else()
+        file(RELATIVE_PATH LIB_RELPATH "${_PYLIB}"
+            "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+    endif()
 
     if(UNIX AND NOT APPLE)
         set_target_properties(
             ${_TARGET}
             PROPERTIES
                 INSTALL_RPATH
-                "\$ORIGIN/${LIB_RELPATH}:\$ORIGIN/${LIB_RELPATH}/timemory${_SUBDIR}:\$ORIGIN/../../..:\$ORIGIN/../../../timemory${_SUBDIR}:\$ORIGIN:${CMAKE_INSTALL_RPATH}"
+                "\$ORIGIN:\$ORIGIN/${LIB_RELPATH}:\$ORIGIN/../../../..:${CMAKE_INSTALL_RPATH}"
             )
     endif()
 
