@@ -182,7 +182,7 @@ class graph_data;
 template <typename T>
 class tgraph_node;
 //
-template <typename T, typename AllocatorT = std::allocator<tgraph_node<T>>>
+template <typename T, typename AllocatorT = data::ring_buffer_allocator<tgraph_node<T>>>
 class graph;
 //
 //--------------------------------------------------------------------------------------//
