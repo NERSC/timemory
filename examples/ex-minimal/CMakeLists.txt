@@ -32,9 +32,6 @@ endfunction()
 get_library(TIMEMORY_C_LIBRARY C)
 get_library(TIMEMORY_CXX_LIBRARY CXX)
 
-# this tend to cause the CI to exceed the time-limit
-set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
-
 # headers are always available
 add_executable(ex_cxx_minimal ex_minimal.cpp)
 target_link_libraries(ex_cxx_minimal PRIVATE timemory-minimal-example)
