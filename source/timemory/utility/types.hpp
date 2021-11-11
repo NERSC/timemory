@@ -169,11 +169,6 @@
 //
 namespace tim
 {
-// definition in popen.hpp
-bool
-launch_process(const char* cmd, const std::string& extra = "",
-               std::ostream* os = nullptr);
-//
 /// Alias template make_integer_sequence
 template <typename Tp, Tp Num>
 using make_integer_sequence = std::make_integer_sequence<Tp, Num>;

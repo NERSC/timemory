@@ -59,8 +59,10 @@
 
 #    include <algorithm>
 #    include <atomic>
+#    include <cctype>
 #    include <fstream>
 #    include <iosfwd>
+#    include <locale>
 #    include <memory>
 #    include <string>
 #    include <utility>
@@ -77,15 +79,10 @@ namespace tim
 //
 TIMEMORY_MANAGER_LINKAGE_API
 manager::manager()
-: m_is_finalizing(false)
-, m_is_finalized(false)
-, m_write_metadata(0)
-, m_instance_count(f_manager_instance_count()++)
+: m_instance_count(f_manager_instance_count()++)
 , m_rank(dmp::rank())
-, m_num_entries(0)
 , m_thread_index(threading::get_id())
 , m_thread_id(std::this_thread::get_id())
-, m_metadata_prefix("")
 , m_lock(std::make_shared<auto_lock_t>(m_mutex, std::defer_lock))
 , m_hash_ids(get_hash_ids())
 , m_hash_aliases(get_hash_aliases())
@@ -598,7 +595,7 @@ manager::internal_write_metadata(const char* context)
     {
         if(f_debug() && written)
             PRINT_HERE("[%s]> metadata already written", context);
-        if(f_debug() && m_write_metadata)
+        if(f_debug() && m_write_metadata < 1)
             PRINT_HERE("[%s]> metadata disabled: %i", context, (int) m_write_metadata);
         return;
     }
@@ -626,7 +623,7 @@ manager::internal_write_metadata(const char* context)
         PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
 
     // remove any non-ascii characters
-    auto only_ascii = [](char c) { return !isascii(c); };
+    auto only_ascii = [](char c) { return isascii(c) == 0; };
     m_metadata_prefix.erase(
         std::remove_if(m_metadata_prefix.begin(), m_metadata_prefix.end(), only_ascii),
         m_metadata_prefix.end());
@@ -642,7 +639,8 @@ manager::internal_write_metadata(const char* context)
         PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
 
     // if first char is a control character, the statics probably got deleted
-    if(iscntrl(m_metadata_prefix[0]))
+    std::locale _lc{};
+    if(std::iscntrl(m_metadata_prefix[0], _lc))
         m_metadata_prefix = "timemory-output/";
 
     if(f_debug())
@@ -898,8 +896,8 @@ timemory_library_constructor()
         if(!library_ctor)
             return true;
 
-        auto       ld_preload   = tim::get_env<std::string>("LD_PRELOAD", "");
-        auto       dyld_preload = tim::get_env<std::string>("DYLD_INSERT_LIBRARIES", "");
+        auto ld_preload   = tim::get_env<std::string>("LD_PRELOAD", "", false);
+        auto dyld_preload = tim::get_env<std::string>("DYLD_INSERT_LIBRARIES", "", false);
         std::regex lib_regex("libtimemory");
         if(std::regex_search(ld_preload, lib_regex) ||
            std::regex_search(dyld_preload, lib_regex))
@@ -922,7 +920,7 @@ timemory_library_constructor()
         return;
     _once = true;
 
-    auto _inst = timemory_manager_master_instance();
+    auto* _inst = timemory_manager_master_instance();
     if(_settings)
     {
         _settings->init_config();
@@ -958,7 +956,7 @@ timemory_library_constructor()
         if(!signal_settings::is_active())
         {
             auto default_signals = signal_settings::get_default();
-            for(auto& itr : default_signals)
+            for(const auto& itr : default_signals)
                 signal_settings::enable(itr);
             // should return default and any modifications from environment
             auto enabled_signals = signal_settings::get_enabled();

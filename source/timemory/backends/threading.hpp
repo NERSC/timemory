@@ -31,15 +31,19 @@
 #pragma once
 
 #include "timemory/macros/os.hpp"
+#include "timemory/utility/delimit.hpp"
+#include "timemory/utility/locking.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <atomic>
 #include <cstdint>
 #include <functional>
 #include <map>
 #include <set>
+#include <string>
 #include <thread>
+#include <utility>
 
 #if defined(TIMEMORY_LINUX)
 #    include <fstream>
@@ -68,17 +72,79 @@ using native_handle_t = std::thread::native_handle_type;
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline int64_t
+namespace internal
+{
+inline std::set<int64_t>&
+get_available_ids()
+{
+    static std::set<int64_t> _v{};
+    return _v;
+}
+//
+struct recycle_ids
+{
+    operator bool() const { return value; }
+
+#if defined(TIMEMORY_FORCE_UNIQUE_THREAD_IDS)
+    // ignore assignments
+    recycle_ids& operator=(bool) { return *this; }
+#else
+    // allow assignments
+    recycle_ids& operator=(bool _v)
+    {
+        value = _v;
+        return *this;
+    }
+#endif
+
+private:
+    bool value = false;
+};
+//
+}  // namespace internal
+//
+//--------------------------------------------------------------------------------------//
+//
+inline internal::recycle_ids&
+recycle_ids()
+{
+    static auto _v = internal::recycle_ids{};
+    return _v;
+}
+//
+inline int64_t
 get_id()
 {
-    static std::atomic<int64_t> _global_counter(0);
-    static thread_local int64_t _this_id = _global_counter++;
-    return _this_id;
+    static std::atomic<int64_t> _global_counter{ 0 };
+    static thread_local auto    _this_id = []() {
+        if(!recycle_ids())
+            return std::make_pair(_global_counter++, scope::destructor{ []() {} });
+
+        int64_t _id = -1;
+        struct threading_ids
+        {};
+        {
+            auto_lock_t _lk{ type_mutex<threading_ids>() };
+            if(!internal::get_available_ids().empty())
+            {
+                _id = *internal::get_available_ids().rbegin();
+                internal::get_available_ids().erase(_id);
+            }
+        }
+        if(_id == -1)
+            _id = _global_counter++;
+        auto _dtor = [_id]() {
+            auto_lock_t _lk{ type_mutex<threading_ids>() };
+            internal::get_available_ids().emplace(_id);
+        };
+        return std::make_pair(_id, scope::destructor{ std::move(_dtor) });
+    }();
+    return _this_id.first;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline id_t
+inline id_t
 get_tid()
 {
     return std::this_thread::get_id();
@@ -86,8 +152,8 @@ get_tid()
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline id_t
-get_master_tid()
+inline id_t
+get_main_tid()
 {
     static id_t _instance = get_tid();
     return _instance;
@@ -95,10 +161,10 @@ get_master_tid()
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline bool
+inline bool
 is_master_thread()
 {
-    return (get_tid() == get_master_tid());
+    return (get_tid() == get_main_tid());
 }
 //
 //--------------------------------------------------------------------------------------//

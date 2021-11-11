@@ -24,24 +24,19 @@
 
 #pragma once
 
-#include "timemory/utility/argparse.hpp"
-#include "timemory/utility/backtrace.hpp"
-#include "timemory/utility/conditional.hpp"
-#include "timemory/utility/declaration.hpp"
-#include "timemory/utility/delimit.hpp"
-#include "timemory/utility/demangle.hpp"
-#include "timemory/utility/filepath.hpp"
-#include "timemory/utility/launch_process.hpp"
-#include "timemory/utility/locking.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/mangler.hpp"
-#include "timemory/utility/popen.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/utility/singleton.hpp"
-#if !defined(TIMEMORY_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
-#    include "timemory/utility/socket.hpp"
-#endif
-#include "timemory/utility/type_id.hpp"
 #include "timemory/utility/types.hpp"
-#include "timemory/utility/utility.hpp"
+
+#include <ostream>
+#include <string>
+
+namespace tim
+{
+bool
+launch_process(const char* cmd, const std::string& extra = "",
+               std::ostream* os = nullptr);
+}  // namespace tim
+
+#if defined(TIMEMORY_UTILITY_HEADER_ONLY) && TIMEMORY_UTILITY_HEADER_ONLY > 0
+#    include "timemory/utility/launch_process.cpp"
+#endif

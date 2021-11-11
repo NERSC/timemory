@@ -137,9 +137,9 @@ get_tid()
 //--------------------------------------------------------------------------------------//
 
 inline auto
-get_master_tid()
+get_main_tid()
 {
-    return threading::get_master_tid();
+    return threading::get_main_tid();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -387,12 +387,20 @@ init_multiplexing()
 
 //--------------------------------------------------------------------------------------//
 
+namespace
+{
+#if defined(TIMEMORY_USE_PAPI)
+auto papi_main_tid_assigned = (get_main_tid(), true);
+#endif
+}  // namespace
+
+//--------------------------------------------------------------------------------------//
+
 inline void
 init_library()
 {
 #if defined(TIMEMORY_USE_PAPI)
-    get_master_tid();
-    if(!PAPI_is_initialized())
+    if(!PAPI_is_initialized() && papi_main_tid_assigned)
     {
         int retval = PAPI_library_init(PAPI_VER_CURRENT);
         if(retval != PAPI_VER_CURRENT && retval > 0)
@@ -432,7 +440,7 @@ shutdown()
     if(PAPI_is_initialized())
     {
         unregister_thread();
-        if(get_tid() == get_master_tid())
+        if(get_tid() == get_main_tid())
         {
             PAPI_shutdown();
             working() = false;
