@@ -22,14 +22,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/settings/declaration.hpp
- * \brief The declaration for the types for settings without definitions
- */
-
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/backends/dmp.hpp"
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/compat/macros.h"
@@ -254,6 +250,14 @@ struct settings
     strvector_t&        get_environment() { return m_environment; }
 
 public:
+    TIMEMORY_STATIC_ACCESSOR(bool, use_output_suffix,
+                             get_env<bool>("TIMEMORY_USE_OUTPUT_SUFFIX", false))
+#if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_UPCXX)
+    TIMEMORY_STATIC_ACCESSOR(int32_t, default_process_suffix, dmp::rank())
+#else
+    TIMEMORY_STATIC_ACCESSOR(int32_t, default_process_suffix, process::get_id())
+#endif
+
     static strvector_t get_global_environment() TIMEMORY_VISIBILITY("default");
     static string_t    tolower(string_t str) TIMEMORY_VISIBILITY("default");
     static string_t    toupper(string_t str) TIMEMORY_VISIBILITY("default");
@@ -262,22 +266,23 @@ public:
         TIMEMORY_VISIBILITY("default");
     static void store_command_line(int argc, char** argv) TIMEMORY_VISIBILITY("default");
     static string_t compose_output_filename(string_t _tag, string_t _ext,
-                                            bool        _dmp_init = false,
-                                            int32_t     _dmp_rank = -1,
-                                            bool        _make_dir = false,
-                                            std::string _explicit = "")
+                                            bool    _use_suffix = use_output_suffix(),
+                                            int32_t _suffix   = default_process_suffix(),
+                                            bool    _make_dir = false,
+                                            std::string _explicit = {})
         TIMEMORY_VISIBILITY("default");
     static string_t compose_input_filename(string_t _tag, string_t _ext,
-                                           bool _dmp_init = false, int32_t _dmp_rank = -1,
-                                           std::string _explicit = "")
+                                           bool        _use_suffix = use_output_suffix(),
+                                           int32_t     _suffix = default_process_suffix(),
+                                           std::string _explicit = {})
         TIMEMORY_VISIBILITY("default");
 
     static void parse(settings* = instance<TIMEMORY_API>())
         TIMEMORY_VISIBILITY("default");
 
-    static void parse(std::shared_ptr<settings>) TIMEMORY_VISIBILITY("default");
+    static void parse(const std::shared_ptr<settings>&) TIMEMORY_VISIBILITY("default");
 
-    static std::string format(std::string _fpath, std::string _tag)
+    static std::string format(std::string _fpath, const std::string& _tag)
         TIMEMORY_VISIBILITY("hidden");
     static std::string format(std::string _prefix, std::string _tag, std::string _suffix,
                               std::string _ext) TIMEMORY_VISIBILITY("hidden");
@@ -561,6 +566,25 @@ settings::indent_width(int64_t _w)
 //
 template <typename Archive>
 void
+settings::serialize_settings(Archive& ar)
+{
+    if(settings::instance())
+        ar(cereal::make_nvp("settings", *settings::instance()));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Archive>
+void
+settings::serialize_settings(Archive& ar, settings& _obj)
+{
+    ar(cereal::make_nvp("settings", _obj));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Archive>
+void
 settings::load(Archive& ar, unsigned int)
 {
 #if !defined(TIMEMORY_DISABLE_SETTINGS_SERIALIZATION)
@@ -746,8 +770,8 @@ settings::insert(Sp&& _env, const std::string& _name, const std::string& _desc, 
                   "Error! Initializing value is not the same as the declared type");
 
     auto _sid = std::string{ std::forward<Sp>(_env) };
-    // if(get_initialized())  // don't set env before timemory_init
-    set_env(_sid, _init, 0);
+    if(get_initialized())  // don't set env before timemory_init
+        set_env(_sid, _init, 0);
     m_order.push_back(_sid);
     return m_data.insert(
         { string_view_t{ m_order.back() },
@@ -770,8 +794,8 @@ settings::insert(tsetting_pointer_t<Tp, Vp> _ptr, Sp&& _env)
             _sid = _ptr->get_env_name();
         if(!_sid.empty())
         {
-            // if(get_initialized())  // don't set env before timemory_init
-            set_env(_sid, _ptr->as_string(), 0);
+            if(get_initialized())  // don't set env before timemory_init
+                set_env(_sid, _ptr->as_string(), 0);
             m_order.push_back(_sid);
             return m_data.insert({ string_view_t{ m_order.back() }, _ptr });
         }

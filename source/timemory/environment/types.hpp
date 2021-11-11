@@ -29,6 +29,7 @@
 
 #include <iosfwd>
 #include <iostream>
+#include <set>
 #include <string>
 
 namespace tim
@@ -46,19 +47,26 @@ class env_settings;
 //
 template <typename Tp>
 Tp
-get_env(const std::string& env_id, Tp _default = Tp{});
+get_env(const std::string& env_id, Tp _default = Tp{}, bool _store = true);
 //
 //--------------------------------------------------------------------------------------//
 //
 template <>
 std::string
-get_env(const std::string& env_id, std::string _default);
+get_env(const std::string& env_id, std::string _default, bool _store);
 //
 //--------------------------------------------------------------------------------------//
 //
 template <>
 bool
-get_env(const std::string& env_id, bool _default);
+get_env(const std::string& env_id, bool _default, bool _store);
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+Tp
+get_env_choice(const std::string& env_id, Tp _default, std::set<Tp> _choices,
+               bool _store = true);
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -82,6 +90,17 @@ load_env(const std::string& env_id, bool _default);
 //
 void
 print_env(std::ostream& os = std::cout);
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \fn void tim::print_env(std::ostream&, FuncT&& _filter)
+/// \tparam FuncT Filter function accepting string as argument and returning bool
+///
+/// \brief Print all environment queries and their values which satisfy the filter
+/// conditions.
+template <typename FuncT>
+void
+print_env(std::ostream& os, FuncT&& _filter);
 //
 //--------------------------------------------------------------------------------------//
 //
