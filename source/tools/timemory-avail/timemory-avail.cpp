@@ -1160,7 +1160,7 @@ write_entry(std::ostream& os, const Tp& _entry, int64_t _w, bool center, bool ma
             }
             else
             {
-                _sentry = std::string{ " " } + _sentry;
+                _sentry.insert(0, " ");
             }
         }
         if(_w > 0 && _sentry.length() > static_cast<size_t>(_w - 1))

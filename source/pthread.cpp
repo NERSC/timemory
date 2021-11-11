@@ -113,7 +113,7 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
             if(_wrapper->debug())
                 PRINT_HERE("[T%li] Executing original function", (long int) _tid);
             // execute the original function
-            auto _ret = (*_wrapper)();
+            auto* _ret = (*_wrapper)();
             if(_wrapper->debug())
                 PRINT_HERE("[T%li] Executing finalizing callbacks", (long int) _tid);
             // finalize
@@ -136,9 +136,9 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
                    void* (*start_routine)(void*), void*     arg)
     {
         // get the thread id
-        auto _tid      = tim::threading::get_id();
-        auto _settings = tim::settings::instance<TIMEMORY_API>();
-        auto _debug    = (_settings) ? _settings->get_debug() : true;
+        auto  _tid      = tim::threading::get_id();
+        auto* _settings = tim::settings::instance<TIMEMORY_API>();
+        auto  _debug    = (_settings) ? _settings->get_debug() : true;
         if(_debug)
             PRINT_HERE("[T%li] Creating new thread", (long int) _tid);
         auto* _obj = new wrapper(start_routine, arg, _debug);
@@ -186,12 +186,12 @@ setup_pthread_gotcha()
 
 namespace
 {
-static auto pthread_gotcha_handle = setup_pthread_gotcha();
+auto pthread_gotcha_handle = setup_pthread_gotcha();
 }
 
 #else
 namespace
 {
-static auto pthread_gotcha_handle = false;
+auto pthread_gotcha_handle = false;
 }
 #endif
