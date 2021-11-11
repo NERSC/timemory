@@ -242,14 +242,18 @@ struct configuration
             else if(std::is_same<DeviceT, device::gpu>::value)
                 _dev_name = "[device::gpu]";
 
-            printf(
-                "\n[ert::executor]%s> "
-                "working-set = %lli, max-size = %lli, num-thread = %lli, num-stream = "
-                "%lli, grid-size = %lli, block-size = %lli, align-size = %lli, data-type "
-                "= %s\n",
-                _dev_name.c_str(), (lli) _mws_size, (lli) _max_size, (lli) _num_thread,
-                (lli) _num_stream, (lli) _grid_size, (lli) _block_size, (lli) _align_size,
-                dtype.c_str());
+            if(settings::debug() || settings::verbose() > 0)
+            {
+                printf("[ert::executor]%s> "
+                       "working-set = %lli, max-size = %lli, num-thread = %lli, "
+                       "num-stream = "
+                       "%lli, grid-size = %lli, block-size = %lli, align-size = %lli, "
+                       "data-type "
+                       "= %s\n",
+                       _dev_name.c_str(), (lli) _mws_size, (lli) _max_size,
+                       (lli) _num_thread, (lli) _num_stream, (lli) _grid_size,
+                       (lli) _block_size, (lli) _align_size, dtype.c_str());
+            }
 
             return _counter;
         };
@@ -257,6 +261,7 @@ struct configuration
     }
 
 public:
+    bool            verbose          = false;
     get_uint64_t    num_threads      = this_type::get_num_threads();       // NOLINT
     get_uint64_t    num_streams      = this_type::get_num_streams();       // NOLINT
     get_uint64_t    min_working_size = this_type::get_min_working_size();  // NOLINT
@@ -264,19 +269,10 @@ public:
     get_uint64_t    alignment        = this_type::get_alignment();         // NOLINT
     get_uint64_t    grid_size        = this_type::get_grid_size();         // NOLINT
     get_uint64_t    block_size       = this_type::get_block_size();        // NOLINT
-    executor_func_t executor;                                              // NOLINT
+    executor_func_t executor         = this_type::get_executor();          // NOLINT
 
 public:
-    configuration()
-    : num_threads(this_type::get_num_threads())
-    , num_streams(this_type::get_num_streams())
-    , min_working_size(this_type::get_min_working_size())
-    , max_data_size(this_type::get_max_data_size())
-    , alignment(this_type::get_alignment())
-    , grid_size(this_type::get_grid_size())
-    , block_size(this_type::get_block_size())
-    , executor(this_type::get_executor())
-    {}
+    TIMEMORY_DEFAULT_OBJECT(configuration)
 };
 
 //======================================================================================//

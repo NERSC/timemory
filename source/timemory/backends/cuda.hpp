@@ -41,6 +41,7 @@ using event_t  = cudaEvent_t;
 using error_t  = cudaError_t;
 using memcpy_t = cudaMemcpyKind;
 // define some values for when CUDA is enabled
+static constexpr stream_t                default_stream_v   = 0;
 static const decltype(cudaSuccess)       success_v          = cudaSuccess;
 static const decltype(cudaErrorNotReady) err_not_ready_v    = cudaErrorNotReady;
 static const cudaMemcpyKind              host_to_host_v     = cudaMemcpyHostToHost;
@@ -57,12 +58,13 @@ using event_t  = int;
 using error_t  = int;
 using memcpy_t = int;
 // define some values for when CUDA is disabled
-static const int success_v          = 0;
-static const int err_not_ready_v    = 0;
-static const int host_to_host_v     = 0;
-static const int host_to_device_v   = 1;
-static const int device_to_host_v   = 2;
-static const int device_to_device_v = 3;
+static constexpr stream_t default_stream_v   = 0;
+static const int          success_v          = 0;
+static const int          err_not_ready_v    = 0;
+static const int          host_to_host_v     = 0;
+static const int          host_to_device_v   = 1;
+static const int          device_to_host_v   = 2;
+static const int          device_to_device_v = 3;
 #endif
 //
 }  // namespace cuda
