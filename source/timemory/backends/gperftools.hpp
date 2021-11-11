@@ -50,7 +50,7 @@
 
 namespace tim
 {
-namespace gperf
+namespace gperftools
 {
 //--------------------------------------------------------------------------------------//
 
@@ -257,6 +257,6 @@ profiler_stop()
 }
 
 //--------------------------------------------------------------------------------------//
-}  // namespace gperf
+}  // namespace gperftools
 
 }  // namespace tim
