@@ -44,7 +44,7 @@ get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* 
                         basic_loop_t* loopToInstrument)
 {
     if(!cfGraph || !loopToInstrument || !f)
-        return function_signature("", "", "");
+        return function_signature{ "", "", "" };
 
     char        fname[MUTNAMELEN];
     char        mname[MUTNAMELEN];
@@ -58,7 +58,7 @@ get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* 
         cfGraph->findLoopInstPoints(BPatch_locLoopEndIter, loopToInstrument);
 
     if(!loopStartInst || !loopExitInst)
-        return function_signature("", "", "");
+        return function_signature{ "", "", "" };
 
     unsigned long baseAddr = (unsigned long) (*loopStartInst)[0]->getAddress();
     unsigned long lastAddr =
@@ -125,7 +125,7 @@ get_loop_file_line_info(module_t* mutatee_module, procedure_t* f, flow_graph_t* 
             if(col2 < 0)
                 col2 = 0;
             if(row2 < row1)
-                row1 = row2; /* Fix for wrong line numbers*/
+                row1 = row2;  // Fix for wrong line numbers
 
             return function_signature(typeName, fname, filename, _params, { row1, row2 },
                                       { col1, col2 }, true, info1, info2);
@@ -272,7 +272,7 @@ find_function(image_t* app_image, const std::string& _name, strset_t _extra)
     }
 
     if(!_func)
-        verbprintf(0, "timemory-run: Unable to find function %s\n", _name.c_str());
+        verbprintf(2, "timemory-run: Unable to find function %s\n", _name.c_str());
 
     return _func;
 }
@@ -321,77 +321,6 @@ error_func_fake(error_level_t level, int num, const char* const* params)
 {
     consume_parameters(level, num, params);
     // It does nothing.
-}
-
-//======================================================================================//
-//
-bool
-find_func_or_calls(std::vector<const char*> names, bpvector_t<point_t*>& points,
-                   image_t* app_image, procedure_loc_t loc)
-{
-    using function_t     = procedure_t;
-    using function_vec_t = bpvector_t<function_t*>;
-    using point_vec_t    = bpvector_t<point_t*>;
-
-    function_t* func = nullptr;
-    for(auto nitr = names.begin(); nitr != names.end(); ++nitr)
-    {
-        function_t* f = find_function(app_image, *nitr);
-        if(f && f->getModule()->isSharedLib())
-        {
-            func = f;
-            break;
-        }
-    }
-
-    if(func)
-    {
-        point_vec_t* fpoints = func->findPoint(loc);
-        if(fpoints && fpoints->size())
-        {
-            for(auto pitr = fpoints->begin(); pitr != fpoints->end(); ++pitr)
-                points.push_back(*pitr);
-            return true;
-        }
-    }
-
-    // Moderately expensive loop here.  Perhaps we should make a name->point map first
-    // and just do lookups through that.
-    function_vec_t* all_funcs           = app_image->getProcedures();
-    auto            initial_points_size = points.size();
-    for(auto nitr = names.begin(); nitr != names.end(); ++nitr)
-    {
-        for(auto fitr = all_funcs->begin(); fitr != all_funcs->end(); ++fitr)
-        {
-            function_t* f = *fitr;
-            if(f->getModule()->isSharedLib())
-                continue;
-            point_vec_t* fpoints = f->findPoint(BPatch_locSubroutine);
-            if(!fpoints || fpoints->empty())
-                continue;
-            for(auto pitr = fpoints->begin(); pitr != fpoints->end(); pitr++)
-            {
-                std::string callee = (*pitr)->getCalledFunctionName();
-                if(callee == std::string(*nitr))
-                    points.push_back(*pitr);
-            }
-        }
-        if(points.size() != initial_points_size)
-            return true;
-    }
-
-    return false;
-}
-
-//======================================================================================//
-//
-bool
-find_func_or_calls(const char* name, bpvector_t<point_t*>& points, image_t* image,
-                   procedure_loc_t loc)
-{
-    std::vector<const char*> v;
-    v.push_back(name);
-    return find_func_or_calls(v, points, image, loc);
 }
 
 //======================================================================================//
@@ -516,11 +445,11 @@ c_stdlib_function_constraint(const std::string& _func)
         "compat|vfork_|elision_init|cr_|cri_|aio_|mq_|sem_init|waitpid$|sigcancel_"
         "handler|sighandler_setxid|start_thread$|clock$|semctl$|shm_open$|shm_unlink$|"
         "printf|dprintf|walker$|clear_once_control$|libcr_|sem_wait$|sem_trywait$|vfork|"
-        "pause$|wait$|msgrcv$|sigwait$|sigsuspend$|recvmsg$|sendmsg$|ftrylockfile$|"
-        "funlockfile$|tee$|setbuf$|setbuffer$|enlarge_userbuf$|convert_and_print$|"
-        "feraise|lio_|atomic_|err$|errx$|print_errno_message$|error_tail$|clntunix_|"
-        "sem_destroy|setxid_mark_thread|feupdate|send$|connect$|longjmp|pwrite|accept$|"
-        "stpncpy$|writeunix$|xflowf$|mbrlen$)",
+        "pause$|wait$|waitid$|msgrcv$|sigwait$|sigsuspend$|recvmsg$|sendmsg$|"
+        "ftrylockfile$|funlockfile$|tee$|setbuf$|setbuffer$|enlarge_userbuf$|convert_and_"
+        "print$|feraise|lio_|atomic_|err$|errx$|print_errno_message$|error_tail$|"
+        "clntunix_|sem_destroy|setxid_mark_thread|feupdate|send$|connect$|longjmp|pwrite|"
+        "accept$|stpncpy$|writeunix$|xflowf$|mbrlen$)",
         regex_opts);
 
     return std::regex_search(_func, _pattern);

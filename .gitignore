@@ -7,6 +7,7 @@
 settings.json
 *.swp
 .spack-env
+/.cache
 
 # Edit files
 *~

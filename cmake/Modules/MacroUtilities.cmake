@@ -328,22 +328,17 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     endif()
 
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug" OR TIMEMORY_USE_COVERAGE)
-        if(TEST_ENVIRONMENT)
-            set(TEST_ENVIRONMENT
-                "TIMEMORY_DEBUG=ON;TIMEMORY_VERBOSE=6;${TEST_ENVIRONMENT}")
-        else()
-            set(TEST_ENVIRONMENT "TIMEMORY_DEBUG=ON;TIMEMORY_VERBOSE=6")
-        endif()
+        list(INSERT TEST_ENVIRONMENT 0 "TIMEMORY_DEBUG=ON" "TIMEMORY_VERBOSE=6")
     endif()
 
     if(TEST_DISCOVER_TESTS)
+        string(REPLACE ";" "\\\\\\\\\\\\\\\\\\;" TEST_ENVIRONMENT "${TEST_ENVIRONMENT}")
         gtest_discover_tests(
             ${TEST_TARGET}
             TEST_LIST ${TEST_NAME}_TESTS ${TEST_OPTIONS} DISCOVERY_TIMEOUT 15
-            WORKING_DIRECTORY ${WORKING_DIR})
-        set_tests_properties(
-            ${${TEST_NAME}_TESTS} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}" TIMEOUT
-                                             ${TEST_TIMEOUT})
+            WORKING_DIRECTORY ${WORKING_DIR}
+            PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}"
+            TIMEOUT ${TEST_TIMEOUT})
     elseif(TEST_ADD_TESTS)
         gtest_add_tests(
             TARGET ${TEST_TARGET}

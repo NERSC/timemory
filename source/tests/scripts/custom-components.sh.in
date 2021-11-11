@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 #
 # NOTE: remove '--mpi' after @PROJECT_BINARY_DIR@/timemory-run if applications built without MPI
 #
@@ -20,7 +20,7 @@ export TIMEMORY_FLAMEGRAPH_OUTPUT=OFF
 rm -rf ${TIMEMORY_OUTPUT_PATH}
 
 # add path to custom lib in LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:@PROJECT_BINARY_DIR@/external/dyninst/dyninstAPI_RT:${LD_LIBRARY_PATH}
 
 if [ ! -f "@PROJECT_BINARY_DIR@/libcustom_dynamic_instr.so" ]; then
     emit-separator "Warning! \"@PROJECT_BINARY_DIR@/libcustom_dynamic_instr.so\" does not appear to exist"

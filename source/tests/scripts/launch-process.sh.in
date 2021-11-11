@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 #
 # NOTE: Applications built with MPI may abort when launched via @PROJECT_BINARY_DIR@/timemory-run
 #
@@ -21,12 +21,12 @@ rm -rf ${TIMEMORY_OUTPUT_PATH}
 # append directories to path
 export PATH=@CMAKE_CURRENT_BINARY_DIR@:@PROJECT_BINARY_DIR@:${PATH}
 # add path to libtimemory to LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:${LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH=@PROJECT_BINARY_DIR@:@PROJECT_BINARY_DIR@/external/dyninst/dyninstAPI_RT:${LD_LIBRARY_PATH}
 
 emit-separator "Performing runtime instrumentation"
 
 # launch
-timemory-run --label args return -v 1 -ME '(^libm|^libc|^libz|^libicu|^liblzma|^libxml|\.c$)' -- @COMMAND@
+timemory-run --label args return -v 1 -ME '(^libm|^libc|^libz|^libicu|^liblzma|^libxml|\.c$)' --min-address-range=64 -- @COMMAND@
 
 emit-separator "Analyzing results in ${TIMEMORY_OUTPUT_PATH}"
 
@@ -48,7 +48,6 @@ else
         exit 1
     fi
     NCONSUME=$(cat ${WALL_FILE} | grep 'details::consume(' | wc -l)
-    CCONSUME=$(cat ${WALL_FILE} | grep 'details::consume(')
     if [ "${NCONSUME}" -lt 1 ]; then
         echo -e "\nMissing 'details::consume' function w/ arguments in \"${WALL_FILE}\":\n"
         echo -e "$(cat ${WALL_FILE})"
@@ -56,5 +55,7 @@ else
         echo -e "| >>>   |_long int details::consume(long int)"
         exit 1
     fi
-
 fi
+
+echo "Instrumentation Test... Done"
+exit 0
