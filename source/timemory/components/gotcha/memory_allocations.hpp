@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/backends/gpu.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/gotcha/components.hpp"
 #include "timemory/components/gotcha/types.hpp"
@@ -53,7 +54,7 @@ struct malloc_gotcha
 : base<malloc_gotcha, double>
 , public concepts::external_function_wrapper
 {
-#if defined(TIMEMORY_USE_CUDA)
+#if defined(TIMEMORY_USE_GPU)
     static constexpr size_t data_size = 9;
 #else
     static constexpr size_t data_size = 3;
@@ -73,6 +74,10 @@ struct malloc_gotcha
         return "GOTCHA wrapper for memory allocation functions: malloc, calloc, free, "
                "cudaMalloc, cudaMallocHost, cudaMallocManaged, cudaHostAlloc, cudaFree, "
                "cudaFreeHost";
+#elif defined(TIMEMORY_USE_HIP)
+        return "GOTCHA wrapper for memory allocation functions: malloc, calloc, free, "
+               "hipMalloc, hipMallocHost, hipMallocManaged, hipHostAlloc, hipFree, "
+               "hipFreeHost";
 #else
         return "GOTCHA wrapper for memory allocation functions: malloc, calloc, free";
 #endif
@@ -177,10 +182,11 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-#if defined(TIMEMORY_USE_CUDA)
+#if defined(TIMEMORY_USE_GPU)
 
     //----------------------------------------------------------------------------------//
     // cudaMalloc, cudaMallocHost
+    // hipMalloc, hipMallocHost
     void audit(audit::incoming, void** devPtr, size_t size)
     {
         DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
@@ -192,6 +198,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     // cudaHostAlloc / cudaMallocManaged
+    // hipHostAlloc / hipMallocManaged
     void audit(audit::incoming, void** hostPtr, size_t size, unsigned int flags)
     {
         DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
@@ -203,15 +210,16 @@ public:
 
     //----------------------------------------------------------------------------------//
     // cudaMalloc and cudaHostAlloc
-    void audit(audit::outgoing, cuda::error_t err)
+    // hipMalloc and hipHostAlloc
+    void audit(audit::outgoing, gpu::error_t err)
     {
         if(m_last_addr)
         {
             void* ptr                 = (void*) ((char**) (m_last_addr)[0]);
             get_allocation_map()[ptr] = value;
-            if(err != cuda::success_v && (settings::debug() || settings::verbose() > 1))
+            if(err != gpu::success_v && (settings::debug() || settings::verbose() > 1))
             {
-                PRINT_HERE("%s did not return cudaSuccess, values may be corrupted",
+                PRINT_HERE("%s did not return success, values may be corrupted",
                            m_prefix);
             }
         }
@@ -259,7 +267,7 @@ private:
 
 private:
     const char* m_prefix = nullptr;
-#if defined(TIMEMORY_USE_CUDA)
+#if defined(TIMEMORY_USE_GPU)
     void** m_last_addr = nullptr;
 #endif
 };
@@ -297,6 +305,16 @@ malloc_gotcha::configure()
                                               unsigned int>("cudaHostAlloc");
         local_gotcha_type::template configure<7, cudaError_t, void*>("cudaFree");
         local_gotcha_type::template configure<8, cudaError_t, void*>("cudaFreeHost");
+#    elif defined(TIMEMORY_USE_HIP)
+        local_gotcha_type::template configure<3, hipError_t, void**, size_t>("hipMalloc");
+        local_gotcha_type::template configure<4, hipError_t, void**, size_t>(
+            "hipMallocHost");
+        local_gotcha_type::template configure<5, hipError_t, void**, size_t,
+                                              unsigned int>("hipMallocManaged");
+        local_gotcha_type::template configure<6, hipError_t, void**, size_t,
+                                              unsigned int>("hipHostAlloc");
+        local_gotcha_type::template configure<7, hipError_t, void*>("hipFree");
+        local_gotcha_type::template configure<8, hipError_t, void*>("hipFreeHost");
 #    endif
     };
 
@@ -321,7 +339,7 @@ malloc_gotcha::tear_down()
 #endif
 //
 /// \struct tim::component::memory_allocations
-/// \brief This component wraps malloc, calloc, free, cudaMalloc, cudaFree via
+/// \brief This component wraps malloc, calloc, free, CUDA/HIP malloc/free via
 /// GOTCHA and tracks the number of bytes requested/freed in each call.
 /// This component is useful for detecting the locations where memory re-use
 /// would provide a performance benefit.

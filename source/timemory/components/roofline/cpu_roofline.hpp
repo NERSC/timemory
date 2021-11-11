@@ -70,8 +70,8 @@ template <typename... Types>
 struct cpu_roofline
 : public base<cpu_roofline<Types...>, std::pair<std::vector<long long>, double>>
 {
-    static_assert(!is_one_of<cuda::fp16_t, std::tuple<Types...>>::value,
-                  "Error! No CPU roofline support for cuda::fp16_t");
+    static_assert(!is_one_of<gpu::fp16_t, std::tuple<Types...>>::value,
+                  "Error! No CPU roofline support for gpu::fp16_t");
 
     using size_type    = std::size_t;
     using event_type   = std::vector<int>;

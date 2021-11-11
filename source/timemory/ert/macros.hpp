@@ -40,7 +40,7 @@
 #if defined(TIMEMORY_ERT_SOURCE)
 #    define TIMEMORY_ERT_LINKAGE(...) __VA_ARGS__
 #elif defined(TIMEMORY_USE_ERT_EXTERN)
-#    define TIMEMORY_ERT_LINKAGE(...) extern __VA_ARGS__
+#    define TIMEMORY_ERT_LINKAGE(...) __VA_ARGS__
 #else
 #    define TIMEMORY_ERT_LINKAGE(...) inline __VA_ARGS__
 #endif
@@ -73,42 +73,44 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-// instantiate or declare template if:
-//      1. ERT extern
-//      2. ERT source code and not CUDA compiler
-#if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE_CXX)
-#    if defined(TIMEMORY_USE_ERT_EXTERN) ||                                              \
-        (defined(TIMEMORY_ERT_SOURCE) && !defined(_TIMEMORY_CUDACC))
-#        define TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(...)                                    \
-            TIMEMORY_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
-#        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CXX(...)                            \
+#if !defined(TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CPU)
+#    if defined(TIMEMORY_USE_ERT_EXTERN) || defined(TIMEMORY_ERT_SOURCE)
+#        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CPU(...)                            \
             TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
-#        define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CXX(...)                        \
+#    else
+#        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CPU(...)
+#    endif
+#endif
+
+#if !defined(TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CPU)
+#    if defined(TIMEMORY_USE_ERT_EXTERN) || defined(TIMEMORY_ERT_SOURCE)
+#        define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CPU(...)                        \
             TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
 #    else
-#        define TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(...)
-#        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CXX(...)
-#        define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CXX(...)
+#        define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CPU(...)
 #    endif
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
-// instantiate or declare template if:
-//      1. ERT extern + use CUDA
-//      2. ERT source code and CUDA compiler
-#if !defined(TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA)
-#    if(defined(TIMEMORY_USE_ERT_EXTERN) && defined(TIMEMORY_USE_CUDA)) ||               \
-        (defined(TIMEMORY_ERT_SOURCE) && defined(_TIMEMORY_CUDACC))
-#        define TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(...)                                   \
-            TIMEMORY_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
-#        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(...)                           \
+#if !defined(TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU)
+#    if(defined(TIMEMORY_USE_ERT_EXTERN) &&                                              \
+        (defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_HIP))) ||                    \
+        (defined(TIMEMORY_ERT_SOURCE) && defined(TIMEMORY_GPUCC))
+#        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(...)                            \
             TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
-#        define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(...)                       \
+#    else
+#        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(...)
+#    endif
+#endif
+
+#if !defined(TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_GPU)
+#    if(defined(TIMEMORY_USE_ERT_EXTERN) &&                                              \
+        (defined(TIMEMORY_USE_CUDA) || defined(TIMEMORY_USE_HIP))) ||                    \
+        (defined(TIMEMORY_ERT_SOURCE) && defined(TIMEMORY_GPUCC))
+#        define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_GPU(...)                        \
             TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE(__VA_ARGS__)
 #    else
-#        define TIMEMORY_ERT_EXTERN_TEMPLATE_CUDA(...)
-#        define TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(...)
-#        define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_CUDA(...)
+#        define TIMEMORY_INSTANTIATE_ERT_EXTERN_TEMPLATE_GPU(...)
 #    endif
 #endif

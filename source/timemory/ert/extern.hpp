@@ -55,19 +55,21 @@ namespace ert
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(class exec_data<component::ert_timer>)
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE(class exec_data<component::ert_timer>)
 //
-TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(class counter<device::cpu, float, component::ert_timer>)
-TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(class counter<device::cpu, double, component::ert_timer>)
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CPU(
+    class counter<device::cpu, float, component::ert_timer>)
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CPU(
+    class counter<device::cpu, double, component::ert_timer>)
 //
-TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CPU(
     struct configuration<device::cpu, float, component::ert_timer>)
-TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CPU(
     struct configuration<device::cpu, double, component::ert_timer>)
 //
-TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CPU(
     struct executor<device::cpu, float, component::ert_timer>)
-TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CPU(
     struct executor<device::cpu, double, component::ert_timer>)
 //
 //--------------------------------------------------------------------------------------//
@@ -76,31 +78,31 @@ TIMEMORY_ERT_EXTERN_TEMPLATE_CXX(
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
     class counter<device::gpu, float, component::ert_timer>)
-TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
     class counter<device::gpu, double, component::ert_timer>)
 //
 #if defined(TIMEMORY_USE_CUDA_HALF)
-TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
     class counter<device::gpu, cuda::fp16_t, component::ert_timer>)
 #endif
 //
-TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
     struct configuration<device::gpu, float, component::ert_timer>)
-TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
     struct configuration<device::gpu, double, component::ert_timer>)
 //
-TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
     struct executor<device::gpu, float, component::ert_timer>)
-TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
     struct executor<device::gpu, double, component::ert_timer>)
 //
 #if defined(TIMEMORY_USE_CUDA_HALF)
-TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
     struct configuration<device::gpu, cuda::fp16_t, component::ert_timer>)
 //
-TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_CUDA(
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
     struct executor<device::gpu, cuda::fp16_t, component::ert_timer>)
 #endif
 //
