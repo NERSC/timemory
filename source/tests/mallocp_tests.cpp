@@ -33,10 +33,10 @@ using namespace tim::component;
 
 //--------------------------------------------------------------------------------------//
 
-using value_type                 = int64_t;
+using data_type                  = int64_t;
 static const int64_t nelements   = 0.95 * (tim::units::get_page_size() * 100);
 static const auto    memory_unit = std::pair<int64_t, string_t>(tim::units::KiB, "KiB");
-static const auto    tot_size    = nelements * sizeof(value_type) / memory_unit.first;
+static const auto    tot_size    = nelements * sizeof(data_type) / memory_unit.first;
 static const double  tolerance   = 25;
 
 namespace details
@@ -63,8 +63,8 @@ random_entry(const std::vector<Tp>& v)
 auto
 foo()
 {
-    uint64_t                n = 0;
-    std::vector<value_type> _data(nelements, 0);
+    uint64_t               n = 0;
+    std::vector<data_type> _data(nelements, 0);
     std::generate(_data.begin(), _data.end(), [&n]() { return ++n; });
     return random_entry(_data);
 }
@@ -76,7 +76,7 @@ bar(size_t n)
     if(n % 2 == 1)
         mallocp_idx = timemory_start_mallocp();
 
-    value_type tot = 0;
+    data_type tot = 0;
     for(size_t i = 0; i < n; ++i)
         tot += foo();
 
@@ -107,8 +107,8 @@ TEST_F(mallocp_tests, registration)
     ASSERT_EQ(tim::storage<malloc_gotcha>::instance()->size(), 0);
 
     tim::settings::memory_units() = "KiB";
-    size_t                    idx = 0;
-    std::array<value_type, 4> ret{};
+    size_t                   idx  = 0;
+    std::array<data_type, 4> ret{};
 
     timemory_register_mallocp();
     ret.at(idx++) = details::foo();
@@ -158,8 +158,8 @@ TEST_F(mallocp_tests, start_stop)
     ASSERT_EQ(tim::storage<malloc_gotcha>::instance()->size(), 0);
 
     tim::settings::memory_units() = "KiB";
-    size_t                    idx = 0;
-    std::array<value_type, 4> ret{};
+    size_t                   idx  = 0;
+    std::array<data_type, 4> ret{};
 
     ret.at(idx++) = details::foo();
     ret.at(idx++) = details::bar(3);

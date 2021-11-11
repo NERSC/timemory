@@ -81,6 +81,14 @@ static std::function<void()> end_cb   = [] {};
         return;                                                                          \
     }
 
+#define CHECK_PRESET(preset)                                                             \
+    if(!details::preset_is_available(preset, #preset))                                   \
+    {                                                                                    \
+        std::cerr << "Warning! " << details::get_test_name() << " skipped because "      \
+                  << #preset << " is not available" << std::endl;                        \
+        return;                                                                          \
+    }
+
 template <typename Tp>
 using ptr_t = std::shared_ptr<Tp>;
 template <typename Tp>
@@ -88,6 +96,18 @@ using return_type = std::tuple<ptr_t<Tp>, int64_t, int64_t>;
 
 namespace details
 {
+//--------------------------------------------------------------------------------------//
+bool
+preset_is_available(int _preset, const std::string& _preset_name)
+{
+    for(const auto& itr : tim::papi::available_events_info())
+    {
+        if(_preset == itr.id())
+            return itr.available();
+    }
+    throw std::runtime_error("Error! No matching preset " + _preset_name);
+    return false;
+}
 //--------------------------------------------------------------------------------------//
 template <typename Tp, int64_t Nunroll, typename ComponentT, typename... ArgsT>
 return_type<ComponentT>
@@ -188,6 +208,7 @@ TEST_F(papi_tests, tuple_single_precision_ops)
 {
     using test_type = papi_tuple<PAPI_SP_OPS>;
     CHECK_AVAILABLE(test_type);
+    CHECK_PRESET(PAPI_SP_OPS)
 
     auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(
         TRIALS, SIZE, details::get_test_name());
@@ -211,6 +232,7 @@ TEST_F(papi_tests, array_single_precision_ops)
 {
     using test_type = papi_array_t;
     CHECK_AVAILABLE(test_type);
+    CHECK_PRESET(PAPI_SP_OPS)
 
     test_type::get_initializer() = []() { return std::vector<int>({ PAPI_SP_OPS }); };
     auto ret                     = details::run_cpu_ops_kernel<float, FLOPS, test_type>(
@@ -231,6 +253,7 @@ TEST_F(papi_tests, vector_single_precision_ops)
 {
     using test_type = papi_vector;
     CHECK_AVAILABLE(test_type);
+    CHECK_PRESET(PAPI_SP_OPS)
 
     test_type::get_initializer() = []() { return std::vector<int>({ PAPI_SP_OPS }); };
     auto ret                     = details::run_cpu_ops_kernel<float, FLOPS, test_type>(
@@ -251,6 +274,7 @@ TEST_F(papi_tests, tuple_double_precision_ops)
 {
     using test_type = papi_tuple<PAPI_DP_OPS>;
     CHECK_AVAILABLE(test_type);
+    CHECK_PRESET(PAPI_DP_OPS)
 
     auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(
         TRIALS, SIZE, details::get_test_name());
@@ -270,6 +294,7 @@ TEST_F(papi_tests, array_double_precision_ops)
 {
     using test_type = papi_array_t;
     CHECK_AVAILABLE(test_type);
+    CHECK_PRESET(PAPI_DP_OPS)
 
     test_type::get_initializer() = []() { return std::vector<int>({ PAPI_DP_OPS }); };
     auto ret                     = details::run_cpu_ops_kernel<double, FLOPS, test_type>(
@@ -290,6 +315,7 @@ TEST_F(papi_tests, vector_double_precision_ops)
 {
     using test_type = papi_vector;
     CHECK_AVAILABLE(test_type);
+    CHECK_PRESET(PAPI_DP_OPS)
 
     test_type::get_initializer() = []() { return std::vector<int>({ PAPI_DP_OPS }); };
     auto ret                     = details::run_cpu_ops_kernel<double, FLOPS, test_type>(
@@ -310,6 +336,9 @@ TEST_F(papi_tests, tuple_load_store_ins)
 {
     using test_type = papi_tuple<PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
     CHECK_AVAILABLE(test_type);
+    CHECK_PRESET(PAPI_LD_INS)
+    CHECK_PRESET(PAPI_SR_INS)
+    CHECK_PRESET(PAPI_LST_INS)
 
     auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(
         TRIALS, SIZE, details::get_test_name());
@@ -335,6 +364,9 @@ TEST_F(papi_tests, array_load_store_ins)
 {
     using test_type = papi_array_t;
     CHECK_AVAILABLE(test_type);
+    CHECK_PRESET(PAPI_LD_INS)
+    CHECK_PRESET(PAPI_SR_INS)
+    CHECK_PRESET(PAPI_LST_INS)
 
     test_type::get_initializer() = []() {
         return std::vector<int>({ PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS });
@@ -363,6 +395,9 @@ TEST_F(papi_tests, vector_load_store_ins)
 {
     using test_type = papi_vector;
     CHECK_AVAILABLE(test_type);
+    CHECK_PRESET(PAPI_LD_INS)
+    CHECK_PRESET(PAPI_SR_INS)
+    CHECK_PRESET(PAPI_LST_INS)
 
     test_type::get_initializer() = []() {
         return std::vector<int>({ PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS });
@@ -387,12 +422,62 @@ TEST_F(papi_tests, vector_load_store_ins)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(papi_tests, tuple_flops_rate)
+{
+    using check_type = papi_tuple<PAPI_SP_OPS>;
+    using test_type  = papi_rate_tuple<wall_clock, PAPI_SP_OPS>;
+    CHECK_AVAILABLE(test_type);
+    CHECK_PRESET(PAPI_SP_OPS)
+
+    tim::lightweight_tuple<check_type, wall_clock> check{};
+
+    // call-backs around algorithm
+    begin_cb = [&check]() { check.start(); };
+    end_cb   = [&check]() { check.stop(); };
+
+    auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(
+        TRIALS, SIZE, details::get_test_name());
+
+    auto obj = std::get<0>(ret);
+
+    auto sp_ops_rate = obj->get().at(0);
+
+    auto* pt = check.get<check_type>();
+    auto* wc = check.get<wall_clock>();
+
+    auto _wc_val = wc->get();
+    auto _pt_val = pt->get();
+
+    auto _sp_ops = sp_ops_rate * _wc_val;
+
+    std::cout << "\n";
+    std::cout << "RATE_TUPLE : " << *obj << std::endl;
+    std::cout << "TUPLE      : " << *pt << std::endl;
+    std::cout << "WALL-CLOCK : " << *wc << std::endl;
+
+    EXPECT_NEAR(_sp_ops, _pt_val.at(0), 0.1 * _pt_val.at(0));
+
+    auto total_expected  = std::get<1>(ret) / _wc_val;
+    auto total_measured  = obj->get<double>().at(0);
+    auto total_tolerance = rate_tolerance * total_expected;
+    details::report<double>(total_measured, total_expected,
+                            static_cast<double>(total_tolerance), "PAPI SP flops rate");
+
+#if !defined(TIMEMORY_USE_COVERAGE)
+    EXPECT_NEAR(total_measured, total_expected, total_tolerance);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
 TEST_F(papi_tests, tuple_load_store_ins_rate)
 {
     using check_type = papi_tuple<PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
     using test_type = papi_rate_tuple<wall_clock, PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
-
     CHECK_AVAILABLE(test_type);
+    CHECK_PRESET(PAPI_LD_INS)
+    CHECK_PRESET(PAPI_SR_INS)
+    CHECK_PRESET(PAPI_LST_INS)
 
     tim::lightweight_tuple<check_type, wall_clock> check{};
 
