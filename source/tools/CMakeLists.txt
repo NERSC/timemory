@@ -80,6 +80,12 @@ timemory_message(STATUS "Adding source/tools/timemory-nvml...")
 add_subdirectory(timemory-nvml)
 
 # ----------------------------------------------------------------------------------------#
+# Build and install timemory-ert
+#
+timemory_message(STATUS "Adding source/tools/timemory-ert...")
+add_subdirectory(timemory-ert)
+
+# ----------------------------------------------------------------------------------------#
 # Build and install timemory-connector libraries for kokkos
 #
 timemory_message(STATUS "Adding source/tools/kokkos-connector...")
