@@ -255,8 +255,8 @@ extern "C"
         tim::trace::lock<tim::trace::library> lk{};
         get_library_state()[1] = true;
 
-        auto _manager  = tim::manager::master_instance();
-        auto _settings = tim::settings::instance();
+        auto  _manager  = tim::manager::master_instance();
+        auto* _settings = tim::settings::instance();
         if(!_manager || !_settings)
             return;
 
@@ -279,7 +279,7 @@ extern "C"
             keys.insert(itr.first);
 
         // delete all the records
-        for(auto& itr : keys)
+        for(const auto& itr : keys)
             timemory_delete_record(itr);
 
         // clear the map
