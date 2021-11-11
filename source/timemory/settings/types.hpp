@@ -22,11 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/settings/types.hpp
- * \brief Declare the settings types
- */
-
 #pragma once
 
 #include "timemory/compat/macros.h"

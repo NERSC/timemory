@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/environment/declaration.hpp"
+#include "timemory/settings/macros.hpp"
 #include "timemory/settings/types.hpp"
 #include "timemory/settings/vsettings.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"

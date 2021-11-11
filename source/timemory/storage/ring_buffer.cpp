@@ -223,7 +223,7 @@ ring_buffer::as_string() const
        << ", write count: " << m_write_count;
     return ss.str();
 }
-
+//
 TIMEMORY_RING_BUFFER_INLINE
 void*
 ring_buffer::request(size_t _length)
@@ -250,7 +250,7 @@ ring_buffer::request(size_t _length)
 
     return _out;
 }
-
+//
 TIMEMORY_RING_BUFFER_INLINE
 void*
 ring_buffer::retrieve(size_t _length)
@@ -276,7 +276,7 @@ ring_buffer::retrieve(size_t _length)
 
     return _out;
 }
-
+//
 TIMEMORY_RING_BUFFER_INLINE
 size_t
 ring_buffer::rewind(size_t n) const
@@ -286,6 +286,5 @@ ring_buffer::rewind(size_t n) const
     m_read_count -= n;
     return n;
 }
-
 }  // namespace base
 }  // namespace tim

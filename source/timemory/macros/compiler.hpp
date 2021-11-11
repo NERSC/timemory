@@ -33,36 +33,28 @@
 //======================================================================================//
 
 //  clang compiler
-#if defined(__clang__) && !defined(_TIMEMORY_CLANG)
-#    define _TIMEMORY_CLANG 1
+#if defined(__clang__) && !defined(TIMEMORY_CLANG_COMPILER)
+#    define TIMEMORY_CLANG_COMPILER 1
 #endif
 
 //--------------------------------------------------------------------------------------//
 
-//  nvcc compiler
-#if defined(__NVCC__) && !defined(_TIMEMORY_NVCC)
-#    define _TIMEMORY_NVCC 1
+// GNU compiler
+#if defined(__GNUC__) && !defined(TIMEMORY_CLANG_COMPILER) &&                            \
+    !defined(TIMEMORY_GNU_COMPILER)
+#    if(__GNUC__ <= 4 && __GNUC_MINOR__ < 9)
+#        warning "GCC compilers < 4.9 have been known to have compiler errors"
+#        define TIMEMORY_GNU_COMPILER 1
+#    elif(__GNUC__ >= 4 && __GNUC_MINOR__ >= 9) || __GNUC__ >= 5
+#        define TIMEMORY_GNU_COMPILER
+#    endif
 #endif
-
-//--------------------------------------------------------------------------------------//
-
-//  nvcc compiler
-#if defined(__CUDACC__) && !defined(_TIMEMORY_CUDACC)
-#    define _TIMEMORY_CUDACC 1
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-//  assume openmp target is enabled
-// #if defined(_TIMEMORY_CUDACC) && defined(_OPENMP) && !defined(_TIMEMORY_OPENMP_TARGET)
-// #    define _TIMEMORY_OPENMP_TARGET 1
-// #endif
 
 //--------------------------------------------------------------------------------------//
 
 //  Intel compiler
-#if defined(__INTEL_COMPILER) && !defined(_TIMEMORY_INTEL)
-#    define _TIMEMORY_INTEL 1
+#if defined(__INTEL_COMPILER) && !defined(TIMEMORY_INTEL_COMPILER)
+#    define TIMEMORY_INTEL_COMPILER 1
 #    if __INTEL_COMPILER < 1500
 #        warning "Intel compilers < 1500 have been known to have compiler errors"
 #    endif
@@ -70,21 +62,74 @@
 
 //--------------------------------------------------------------------------------------//
 
-// GNU compiler
-#if defined(__GNUC__) && !defined(_TIMEMORY_CLANG) && !defined(_TIMEMORY_GNU)
-#    if(__GNUC__ <= 4 && __GNUC_MINOR__ < 9)
-#        warning "GCC compilers < 4.9 have been known to have compiler errors"
-#        define _TIMEMORY_GNU 1
-#    elif(__GNUC__ >= 4 && __GNUC_MINOR__ >= 9) || __GNUC__ >= 5
-#        define _TIMEMORY_GNU
-#    endif
+//  nvcc compiler
+#if defined(__NVCC__) && !defined(TIMEMORY_NVCC_COMPILER)
+#    define TIMEMORY_NVCC_COMPILER 1
 #endif
 
 //--------------------------------------------------------------------------------------//
 
+//  cuda compilation mode
+#if defined(__CUDACC__) && !defined(TIMEMORY_CUDACC)
+#    define TIMEMORY_CUDACC 1
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+//  hcc or hip-clang compiler
+#if(defined(__HCC__) || (defined(__clang__) && defined(__HIP__))) &&                     \
+    !defined(TIMEMORY_HIP_COMPILER)
+#    define TIMEMORY_HIP_COMPILER 1
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+//  hip compilation mode
+#if defined(__HIPCC__) && !defined(TIMEMORY_HIPCC)
+#    define TIMEMORY_HIPCC 1
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+// gpu compilation mode (may be host or device code)
+#if(defined(__CUDACC__) || defined(__HIPCC__)) && !defined(TIMEMORY_GPUCC)
+#    define TIMEMORY_GPUCC 1
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+// cuda compilation - device code
+#if defined(__CUDA_ARCH__) && !defined(TIMEMORY_CUDA_DEVICE_COMPILE)
+#    define TIMEMORY_CUDA_DEVICE_COMPILE 1
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+// hip compilation - device code
+#if defined(__HIP_DEVICE_COMPILE__) && !defined(TIMEMORY_HIP_DEVICE_COMPILE)
+#    define TIMEMORY_HIP_DEVICE_COMPILE 1
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+// gpu compiler - device code
+#if(defined(__CUDA_ARCH__) || defined(__HIP_DEVICE_COMPILE__)) &&                        \
+    !defined(TIMEMORY_GPU_DEVICE_COMPILE)
+#    define TIMEMORY_GPU_DEVICE_COMPILE 1
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+//  assume openmp target is enabled
+// #if defined(TIMEMORY_CUDACC) && defined(_OPENMP) && !defined(TIMEMORY_OPENMP_TARGET)
+// #    define TIMEMORY_OPENMP_TARGET 1
+// #endif
+
+//--------------------------------------------------------------------------------------//
+
 //  MSVC compiler
-#if defined(_MSC_VER) && _MSC_VER > 0 && !defined(_TIMEMORY_MSVC)
-#    define _TIMEMORY_MSVC 1
+#if defined(_MSC_VER) && _MSC_VER > 0 && !defined(TIMEMORY_MSVC_COMPILER)
+#    define TIMEMORY_MSVC_COMPILER 1
 #endif
 
 //======================================================================================//
@@ -93,8 +138,9 @@
 //
 //======================================================================================//
 
-#if(defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG) || defined(_TIMEMORY_INTEL) ||    \
-    defined(_TIMEMORY_NVCC)) &&                                                          \
+#if(defined(TIMEMORY_GNU_COMPILER) || defined(TIMEMORY_CLANG_COMPILER) ||                \
+    defined(TIMEMORY_INTEL_COMPILER) || defined(TIMEMORY_NVCC_COMPILER) ||               \
+    defined(TIMEMORY_HIP_COMPILER)) &&                                                   \
     defined(TIMEMORY_UNIX)
 #    if !defined(TIMEMORY_ENABLE_DEMANGLE)
 #        define TIMEMORY_ENABLE_DEMANGLE 1
@@ -107,7 +153,7 @@
 //
 //======================================================================================//
 
-#if defined(_TIMEMORY_MSVC) && !defined(TIMEMORY_MSVC_WARNINGS)
+#if defined(TIMEMORY_MSVC_COMPILER) && !defined(TIMEMORY_MSVC_WARNINGS)
 
 #    pragma warning(disable : 4003)   // not enough actual params
 #    pragma warning(disable : 4061)   // enum in switch of enum not explicitly handled

@@ -153,7 +153,7 @@ using get_trait_type_t = typename get_trait_type<TraitT, T...>::type;
 //======================================================================================//
 // check if any types are integral types
 //
-template <typename...>
+template <typename... Tp>
 struct is_one_of_integral
 {
     static constexpr bool value = false;
@@ -373,7 +373,28 @@ struct remove_type<Tp, Tuple<Types...>>
 
 //======================================================================================//
 
+template <typename LhsT, typename RhsT>
+struct subtract;
+
+template <typename... LhsT, typename... RhsT>
+struct subtract<type_list<LhsT...>, type_list<RhsT...>>
+{
+    using type = type_concat_t<conditional_t<is_one_of<LhsT, type_list<RhsT...>>::value,
+                                             type_list<>, type_list<LhsT>>...>;
+};
+
+//======================================================================================//
+
 }  // namespace impl
+
+template <typename T>
+struct dynamic_buffer_size
+{
+    constexpr size_t operator()()
+    {
+        return (std::is_pointer<T>::value) ? sizeof(std::remove_pointer_t<T>) : 0;
+    }
+};
 
 /// append type to a tuple/bundler
 template <typename Tp, typename... Types>
@@ -400,6 +421,9 @@ using remove_duplicates_t = typename impl::unique<T, type_list<>>::type;
 
 template <typename T, typename TupleT = type_list<>>
 using unique_t = convert_t<typename impl::unique<T, type_list<>>::type, TupleT>;
+
+template <typename LhsT, typename RhsT>
+using subtract_t = typename impl::subtract<LhsT, RhsT>::type;
 
 //======================================================================================//
 //

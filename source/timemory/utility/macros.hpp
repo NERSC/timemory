@@ -35,8 +35,13 @@
 
 #if defined(TIMEMORY_CORE_SOURCE)
 #    define TIMEMORY_UTILITY_SOURCE
+#    define TIMEMORY_UTILITY_INLINE
 #elif defined(TIMEMORY_USE_CORE_EXTERN)
 #    define TIMEMORY_USE_UTILITY_EXTERN
+#    define TIMEMORY_UTILITY_INLINE
+#else
+#    define TIMEMORY_UTILITY_INLINE inline
+#    define TIMEMORY_UTILITY_HEADER_ONLY 1
 #endif
 //
 #if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_UTILITY_EXTERN)
@@ -203,7 +208,7 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 #endif
 
 #if !defined(PRETTY_PRINT_HERE)
-#    if defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG)
+#    if defined(TIMEMORY_GNU_COMPILER) || defined(TIMEMORY_CLANG_COMPILER)
 #        define PRETTY_PRINT_HERE(...)                                                   \
             timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
                                 TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),        \

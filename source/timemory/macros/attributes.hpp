@@ -31,7 +31,7 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_ATTRIBUTE)
-#    if defined(_TIMEMORY_MSVC)
+#    if defined(TIMEMORY_MSVC_COMPILER)
 #        define TIMEMORY_ATTRIBUTE(...) __declspec(__VA_ARGS__)
 #    else
 #        define TIMEMORY_ATTRIBUTE(...) __attribute__((__VA_ARGS__))
@@ -41,7 +41,7 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_ALWAYS_INLINE)
-#    if defined(_TIMEMORY_MSVC)
+#    if defined(TIMEMORY_MSVC_COMPILER)
 #        define TIMEMORY_ALWAYS_INLINE __forceinline
 #    else
 #        define TIMEMORY_ALWAYS_INLINE TIMEMORY_ATTRIBUTE(always_inline) inline
@@ -65,7 +65,7 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_FLATTEN)
-#    if !defined(_TIMEMORY_MSVC)
+#    if !defined(TIMEMORY_MSVC_COMPILER)
 #        define TIMEMORY_FLATTEN [[gnu::flatten]]
 #    else
 #        define TIMEMORY_FLATTEN
@@ -75,7 +75,7 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_HOT)
-#    if !defined(_TIMEMORY_MSVC)
+#    if !defined(TIMEMORY_MSVC_COMPILER)
 #        define TIMEMORY_HOT TIMEMORY_ATTRIBUTE(hot)
 #    else
 #        define TIMEMORY_HOT
@@ -85,7 +85,7 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_COLD)
-#    if !defined(_TIMEMORY_MSVC)
+#    if !defined(TIMEMORY_MSVC_COMPILER)
 #        define TIMEMORY_COLD TIMEMORY_ATTRIBUTE(cold)
 #    else
 #        define TIMEMORY_COLD
@@ -113,7 +113,7 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_HIDDEN)
-#    if !defined(_TIMEMORY_MSVC)
+#    if !defined(TIMEMORY_MSVC_COMPILER)
 #        define TIMEMORY_HIDDEN TIMEMORY_ATTRIBUTE(visibility("hidden"))
 #    else
 #        define TIMEMORY_HIDDEN
@@ -135,7 +135,7 @@
 //======================================================================================//
 //
 #if !defined(TIMEMORY_NOCLONE)
-#    if defined(_TIMEMORY_GNU)
+#    if defined(TIMEMORY_GNU_COMPILER)
 #        define TIMEMORY_NOCLONE TIMEMORY_ATTRIBUTE(noclone)
 #    else
 #        define TIMEMORY_NOCLONE
@@ -162,9 +162,10 @@
 //======================================================================================//
 //  device decorators
 //
-#if defined(__CUDACC__)
+#if defined(__CUDACC__) || defined(__HIPCC__)
 #    define TIMEMORY_LAMBDA __host__ __device__
 #    define TIMEMORY_HOST_LAMBDA __host__
+#    define TIMEMORY_HOST_FUNCTION __host__
 #    define TIMEMORY_DEVICE_LAMBDA __device__
 #    define TIMEMORY_DEVICE_FUNCTION __device__
 #    define TIMEMORY_GLOBAL_FUNCTION __global__
@@ -175,6 +176,7 @@
 #else
 #    define TIMEMORY_LAMBDA
 #    define TIMEMORY_HOST_LAMBDA
+#    define TIMEMORY_HOST_FUNCTION
 #    define TIMEMORY_DEVICE_LAMBDA
 #    define TIMEMORY_DEVICE_FUNCTION
 #    define TIMEMORY_GLOBAL_FUNCTION

@@ -69,7 +69,7 @@ struct push_node
         (*this)(obj, _scope, _hash);
     }
 
-    TIMEMORY_HOT push_node(type& obj, scope::config _scope, const string_view_t& _key)
+    TIMEMORY_HOT push_node(type& obj, scope::config _scope, string_view_cref_t _key)
     : push_node(obj, _scope, get_hash_id(_key))
     {}
 
@@ -81,7 +81,7 @@ struct push_node
     }
 
     TIMEMORY_HOT auto operator()(type& obj, scope::config _scope,
-                                 const string_view_t& _key) const
+                                 string_view_cref_t _key) const
     {
         return (*this)(obj, _scope, get_hash_id(_key));
     }

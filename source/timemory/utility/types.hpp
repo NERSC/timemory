@@ -35,6 +35,7 @@
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/mpl/concepts.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <array>
 #include <bitset>
@@ -124,9 +125,9 @@
 //
 #if !defined(TIMEMORY_DEFAULT_OBJECT)
 #    define TIMEMORY_DEFAULT_OBJECT(NAME)                                                \
-        NAME()                = default;                                                 \
-        NAME(const NAME&)     = default;                                                 \
-        NAME(NAME&&) noexcept = default;                                                 \
+        TIMEMORY_HOST_DEVICE_FUNCTION NAME() = default;                                  \
+        NAME(const NAME&)                    = default;                                  \
+        NAME(NAME&&) noexcept                = default;                                  \
         NAME& operator=(const NAME&) = default;                                          \
         NAME& operator=(NAME&&) noexcept = default;
 #endif
@@ -335,6 +336,10 @@ struct lightweight
 //
 template <typename... Tp>
 struct piecewise_select
+{};
+//
+template <typename... Tp>
+struct piecewise_ignore
 {};
 //
 //--------------------------------------------------------------------------------------//
@@ -624,19 +629,12 @@ struct config : public data_type
         if(is_tree<ForceTreeT::value, ForceTimeT::value>() ||
            is_flat<ForceFlatT::value>())
         {
-            // printf("compute_hash is tree or flat at %i\n", (int) _depth);
             _id = get_combined_hash_id(_id, _depth);
-            // _id ^= _depth;
         }
         if(ForceTimeT::value || is_timeline())
         {
-            // printf("compute_hash is timeline at %i\n", (int) _depth);
             _id = get_combined_hash_id(_id, _counter++);
-            // _id ^= _counter++;
         }
-        // printf("compute_hash is %i at depth %i (counter = %i)\n", (int) _id, (int)
-        // _depth,
-        //       (int) _counter);
         return _id;
     }
 };
