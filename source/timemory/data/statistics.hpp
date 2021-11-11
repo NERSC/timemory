@@ -28,12 +28,13 @@
 #include "timemory/data/functional.hpp"
 #include "timemory/data/stream.hpp"
 #include "timemory/macros/compiler.hpp"
-#include "timemory/mpl/math.hpp"
-#include "timemory/mpl/stl.hpp"
+#include "timemory/math/compute.hpp"
+#include "timemory/math/stl.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <functional>
 #include <iomanip>
@@ -53,12 +54,20 @@ namespace cereal
 namespace detail
 {
 template <typename Tp>
+struct StaticVersion;
+
+template <typename Tp>
 struct StaticVersion<::tim::statistics<Tp>>
 {
     static constexpr uint32_t version = 0;
 };
 }  // namespace detail
 }  // namespace cereal
+namespace math
+{
+template <typename Tp, typename Up>
+struct compute;
+}
 }  // namespace tim
 
 namespace tim
@@ -75,7 +84,7 @@ struct statistics
 public:
     using value_type   = Tp;
     using this_type    = statistics<Tp>;
-    using compute_type = math::compute<Tp>;
+    using compute_type = math::compute<Tp, Tp>;
     template <typename Vp>
     using compute_value_t = math::compute<Tp, Vp>;
 
@@ -115,13 +124,13 @@ public:
 
 public:
     // Accumulated values
-    TIMEMORY_NODISCARD inline int64_t           get_count() const { return m_cnt; }
-    TIMEMORY_NODISCARD inline const value_type& get_min() const { return m_min; }
-    TIMEMORY_NODISCARD inline const value_type& get_max() const { return m_max; }
-    TIMEMORY_NODISCARD inline const value_type& get_sum() const { return m_sum; }
-    TIMEMORY_NODISCARD inline const value_type& get_sqr() const { return m_sqr; }
-    TIMEMORY_NODISCARD inline value_type        get_mean() const { return m_sum / m_cnt; }
-    TIMEMORY_NODISCARD inline value_type        get_variance() const
+    inline int64_t           get_count() const { return m_cnt; }
+    inline const value_type& get_min() const { return m_min; }
+    inline const value_type& get_max() const { return m_max; }
+    inline const value_type& get_sum() const { return m_sum; }
+    inline const value_type& get_sqr() const { return m_sqr; }
+    inline value_type        get_mean() const { return m_sum / m_cnt; }
+    inline value_type        get_variance() const
     {
         if(m_cnt < 2)
         {
@@ -144,7 +153,7 @@ public:
         return compute_variance();
     }
 
-    TIMEMORY_NODISCARD inline value_type get_stddev() const
+    inline value_type get_stddev() const
     {
         return compute_type::sqrt(compute_type::abs(get_variance()));
     }
@@ -260,7 +269,8 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const statistics& obj)
     {
         using namespace tim::stl::ostream;
-        os << "[sum: " << obj.get_sum() << "] [mean: " << obj.get_mean()
+        auto _mean = (obj.get_count() > 0) ? obj.get_mean() : value_type{};
+        os << "[sum: " << obj.get_sum() << "] [mean: " << _mean
            << "] [min: " << obj.get_min() << "] [max: " << obj.get_max()
            << "] [var: " << obj.get_variance() << "] [stddev: " << obj.get_stddev()
            << "] [count: " << obj.get_count() << "]";

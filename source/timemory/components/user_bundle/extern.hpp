@@ -36,13 +36,13 @@
 #include "timemory/components/types.hpp"
 #include "timemory/components/user_bundle/components.hpp"
 #include "timemory/components/user_bundle/types.hpp"
-#include "timemory/environment/extern.hpp"
-#include "timemory/hash/extern.hpp"
-#include "timemory/manager/extern.hpp"
+#include "timemory/environment/types.hpp"
+#include "timemory/hash/types.hpp"
+#include "timemory/manager/manager.hpp"
 #include "timemory/operations/definition.hpp"
-#include "timemory/plotting/extern.hpp"
+#include "timemory/plotting/types.hpp"
 #include "timemory/runtime/enumerate.hpp"
-#include "timemory/settings/extern.hpp"
+#include "timemory/settings/settings.hpp"
 #include "timemory/storage/declaration.hpp"
 
 #if defined(TIMEMORY_USER_BUNDLE_SOURCE)

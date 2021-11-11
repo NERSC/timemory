@@ -26,6 +26,7 @@
 
 #include "timemory/components/base/data.hpp"
 #include "timemory/components/base/types.hpp"
+#include "timemory/components/opaque/types.hpp"
 #include "timemory/components/properties.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
@@ -47,7 +48,31 @@ using graph_const_iterator_t = typename graph<node::graph<Tp>>::const_iterator;
 /// \struct tim::component::empty_base
 /// \brief The default base class for timemory components.
 struct empty_base
-{};
+{
+    struct empty_storage
+    {
+        static constexpr empty_storage* noninit_instance() { return nullptr; }
+        constexpr bool                  empty() const { return true; }
+        constexpr size_t                size() const { return 0; }
+        constexpr size_t                true_size() const { return 0; }
+        constexpr void                  reset() const {}
+        constexpr void                  print() const {}
+        template <typename ArchiveT>
+        constexpr void do_serialize(ArchiveT&)
+        {}
+    };
+
+    using storage_type = empty_storage;
+    using base_type    = void;
+
+    void get() const {}
+
+    template <typename... Args>
+    static opaque get_opaque(Args&&...)
+    {
+        return opaque{};
+    }
+};
 //
 //======================================================================================//
 //
@@ -133,6 +158,7 @@ private:
 
 public:
     TIMEMORY_DEFAULT_OBJECT(base)
+    TIMEMORY_HOST_DEVICE_FUNCTION ~base() = default;
 
 public:
     template <typename... Args>
@@ -156,11 +182,11 @@ public:
     void get(void*& ptr, size_t _typeid_hash) const;
 
     /// retrieve the current measurement value in the units for the type
-    TIMEMORY_NODISCARD auto get() const { return this->load(); }
+    auto get() const { return this->load(); }
 
     /// retrieve the current measurement value in the units for the type in a format
     /// that can be piped to the output stream operator ('<<')
-    TIMEMORY_NODISCARD auto get_display() const { return this->load(); }
+    auto get_display() const { return this->load(); }
 
     Type& operator+=(const Type& rhs) { return plus_oper(rhs); }
     Type& operator-=(const Type& rhs) { return minus_oper(rhs); }
@@ -201,10 +227,10 @@ public:
     static void add_sample(Vp&&);  /// add a sample
 
     /// get number of measurement
-    TIMEMORY_NODISCARD TIMEMORY_INLINE int64_t get_laps() const { return laps; }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE auto    get_iterator() const { return graph_itr; }
-    TIMEMORY_INLINE void                       set_laps(int64_t v) { laps = v; }
-    TIMEMORY_INLINE void set_iterator(graph_iterator itr) { graph_itr = itr; }
+    TIMEMORY_INLINE int64_t get_laps() const { return laps; }
+    TIMEMORY_INLINE auto    get_iterator() const { return graph_itr; }
+    TIMEMORY_INLINE void    set_laps(int64_t v) { laps = v; }
+    TIMEMORY_INLINE void    set_iterator(graph_iterator itr) { graph_itr = itr; }
 
     using base_state::get_depth_change;
     using base_state::get_is_flat;
@@ -227,10 +253,7 @@ public:
     using data_type::set_value;
 
     decltype(auto) load() { return data_type::load(get_is_transient()); }
-    TIMEMORY_NODISCARD decltype(auto) load() const
-    {
-        return data_type::load(get_is_transient());
-    }
+    decltype(auto) load() const { return data_type::load(get_is_transient()); }
 
     static base_storage_type* get_storage();
 
@@ -382,11 +405,11 @@ public:
     /// get the opaque binding for user-bundle
     static opaque get_opaque(scope::config);
 
-    void                                       set_started();
-    void                                       set_stopped();
-    void                                       reset();
-    TIMEMORY_NODISCARD TIMEMORY_INLINE int64_t get_laps() const { return 0; }
-    TIMEMORY_NODISCARD TIMEMORY_INLINE void* get_iterator() const { return nullptr; }
+    void                    set_started();
+    void                    set_stopped();
+    void                    reset();
+    TIMEMORY_INLINE int64_t get_laps() const { return 0; }
+    TIMEMORY_INLINE void*   get_iterator() const { return nullptr; }
 
     TIMEMORY_INLINE void set_laps(int64_t) {}
     TIMEMORY_INLINE void set_iterator(void*) {}
@@ -394,7 +417,7 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const base_type&) { return os; }
 
     TIMEMORY_INLINE void get() {}
-    TIMEMORY_INLINE void get(void*& ptr, size_t _typeid_hash) const;
+    void                 get(void*& ptr, size_t _typeid_hash) const;
 
     void operator+=(const base_type&) {}
     void operator-=(const base_type&) {}

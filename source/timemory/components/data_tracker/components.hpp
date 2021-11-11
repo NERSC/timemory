@@ -158,20 +158,64 @@ struct data_tracker : public base<data_tracker<InpT, Tag>, InpT>
     friend struct operation::set_started<this_type>;
     friend struct operation::set_stopped<this_type>;
 
+    // a pair
+    template <typename LhsT, typename RhsT, typename HashT = std::hash<LhsT>>
+    class vector_map : public std::vector<std::pair<LhsT, RhsT>>
+    {
+    public:
+        using value_type     = std::pair<LhsT, RhsT>;
+        using base_type      = std::vector<value_type>;
+        using iterator       = typename base_type::iterator;
+        using const_iterator = typename base_type::const_iterator;
+        using hash_type      = HashT;
+        using key_type       = LhsT;
+        using mapped_type    = RhsT;
+
+        template <typename... Args>
+        vector_map(Args&&... args)
+        : base_type{ std::forward<Args>(args)... }
+        {}
+
+        template <typename... Args>
+        std::pair<iterator, bool> emplace(Args&&... args)
+        {
+            return { base_type::emplace(base_type::end(), std::forward<Args>(args)...),
+                     true };
+        }
+
+        iterator find(const key_type& _key)
+        {
+            auto _hkey = hash_type{}(_key);
+            for(auto itr = base_type::begin(); itr != base_type::end(); ++itr)
+            {
+                if(hash_type{}(itr->first) == _hkey)
+                    return itr;
+            }
+            return base_type::end();
+        }
+
+        const_iterator find(const key_type& _key) const
+        {
+            auto _hkey = hash_type{}(_key);
+            for(auto itr = base_type::begin(); itr != base_type::end(); ++itr)
+            {
+                if(hash_type{}(itr->first) == _hkey)
+                    return itr;
+            }
+            return base_type::end();
+        }
+
+        mapped_type& operator[](const key_type& _key) { return find(_key)->second; }
+    };
+
 private:
     // private aliases
     template <typename T, typename U = int>
     using enable_if_acceptable_t =
         enable_if_t<concepts::is_acceptable_conversion<decay_t<T>, InpT>::value, U>;
 
-    template <typename FuncT, typename T, typename U = int>
-    using enable_if_acceptable_and_func_t =
-        enable_if_t<concepts::is_acceptable_conversion<decay_t<T>, InpT>::value &&
-                        std::is_function<FuncT>::value,
-                    U>;
-
     using value_ptr_t     = std::shared_ptr<value_type>;
-    using secondary_map_t = std::unordered_map<std::string, this_type>;
+    using secondary_map_t = vector_map<std::string, this_type>;
     using secondary_ptr_t = std::shared_ptr<secondary_map_t>;
     using start_t =
         operation::generic_operator<this_type, operation::start<this_type>, Tag>;
@@ -205,13 +249,10 @@ public:
     void stop() {}
 
     /// get the data in the final form after unit conversion
-    TIMEMORY_NODISCARD auto get() const { return handler_type::get(*this); }
+    auto get() const { return handler_type::get(*this); }
 
     /// get the data in a form suitable for display
-    TIMEMORY_NODISCARD auto get_display() const
-    {
-        return handler_type::get_display(*this);
-    }
+    auto get_display() const { return handler_type::get_display(*this); }
 
     /// map of the secondary entries. When TIMEMORY_ADD_SECONDARY is enabled
     /// contents of this map will be added as direct children of the current
@@ -340,14 +381,14 @@ public:
     /// handler updates the values
     template <typename FuncT, typename T>
     this_type* add_secondary(const std::string& _key, FuncT&& f, T&& val,
-                             enable_if_acceptable_and_func_t<FuncT, T, int> = 0);
+                             enable_if_acceptable_t<T, int> = 0);
 
     /// overload which uses a lambda to bypass the default behavior of how the
     /// handler updates the values and takes a handler to ensure proper
     /// overload resolution
     template <typename FuncT, typename T>
     this_type* add_secondary(const std::string& _key, handler_type&& h, FuncT&& f,
-                             T&& val, enable_if_acceptable_and_func_t<FuncT, T, int> = 0);
+                             T&& val, enable_if_acceptable_t<T, int> = 0);
 
     //----------------------------------------------------------------------------------//
     //
@@ -363,6 +404,10 @@ public:
 
     using base_type::value;
 
+    void       set_last(value_type&& _v) { m_last_value = std::move(_v); }
+    void       set_last(value_type& _v) { m_last_value = _v; }
+    value_type get_last() const { return m_last_value; }
+
 private:
     /// map of the secondary entries. When TIMEMORY_ADD_SECONDARY is enabled
     /// contents of this map will be added as direct children of the current
@@ -377,15 +422,16 @@ private:
     void allocate_temporary() const
     {
         if(!m_last)
-            const_cast<this_type*>(this)->m_last = std::make_shared<value_type>();
+            m_last = std::make_shared<value_type>();
     }
 
     value_type&       get_temporary() { return (allocate_temporary(), *m_last); }
     const value_type& get_temporary() const { return (allocate_temporary(), *m_last); }
 
 private:
-    value_ptr_t     m_last{ nullptr };
-    secondary_ptr_t m_secondary{ nullptr };
+    mutable value_ptr_t m_last{ nullptr };
+    secondary_ptr_t     m_secondary{ nullptr };
+    value_type          m_last_value{};
 };
 //
 /// \typedef typename T::handler_type tim::component::data_handler_t
@@ -456,7 +502,8 @@ template <typename T>
 void
 data_tracker<InpT, Tag>::store(T&& val, enable_if_acceptable_t<T, int>)
 {
-    handler_type::store(*this, compute_type::divide(std::forward<T>(val), get_unit()));
+    set_last(compute_type::divide(std::forward<T>(val), get_unit()));
+    handler_type::store(*this, get_last());
     if(!get_is_running())
         ++laps;
 }
@@ -466,7 +513,8 @@ template <typename T>
 void
 data_tracker<InpT, Tag>::store(handler_type&&, T&& val, enable_if_acceptable_t<T, int>)
 {
-    handler_type::store(*this, compute_type::divide(std::forward<T>(val), get_unit()));
+    set_last(compute_type::divide(std::forward<T>(val), get_unit()));
+    handler_type::store(*this, get_last());
     if(!get_is_running())
         ++laps;
 }
@@ -479,8 +527,8 @@ data_tracker<InpT, Tag>::store(FuncT&& f, T&& val, enable_if_acceptable_t<T, int
                                                    std::forward<T>(val)),
                 void())
 {
-    handler_type::store(*this, std::forward<FuncT>(f),
-                        compute_type::divide(std::forward<T>(val), get_unit()));
+    set_last(compute_type::divide(std::forward<T>(val), get_unit()));
+    handler_type::store(*this, std::forward<FuncT>(f), get_last());
     if(!get_is_running())
         ++laps;
 }
@@ -494,8 +542,8 @@ data_tracker<InpT, Tag>::store(handler_type&&, FuncT&& f, T&& val,
                                                    std::forward<T>(val)),
                 void())
 {
-    handler_type::store(*this, std::forward<FuncT>(f),
-                        compute_type::divide(std::forward<T>(val), get_unit()));
+    set_last(compute_type::divide(std::forward<T>(val), get_unit()));
+    handler_type::store(*this, std::forward<FuncT>(f), get_last());
     if(!get_is_running())
         ++laps;
 }
@@ -587,12 +635,14 @@ data_tracker<InpT, Tag>*
 data_tracker<InpT, Tag>::add_secondary(const std::string& _key, T&& val,
                                        enable_if_acceptable_t<T, int>)
 {
-    this_type _tmp;
-    start_t   _start(_tmp);
+    this_type _tmp{};
+    if(get_is_running())
+        start_t{ _tmp };
     _tmp.store(std::forward<T>(val));
-    stop_t _stop(_tmp);
-    auto&  _map = *get_secondary_map();
-    _map.insert({ _key, _tmp });
+    if(get_is_running())
+        stop_t{ _tmp };
+    auto& _map = *get_secondary_map();
+    _map.emplace(_key, std::move(_tmp));
     return &(_map[_key]);
 }
 //
@@ -602,12 +652,16 @@ data_tracker<InpT, Tag>*
 data_tracker<InpT, Tag>::add_secondary(const std::string& _key, handler_type&& h, T&& val,
                                        enable_if_acceptable_t<T, int>)
 {
-    this_type _tmp;
-    start_t   _start(_tmp);
+    this_type _tmp{};
+    if(get_is_running())
+        start_t{ _tmp };
     _tmp.store(std::forward<handler_type>(h), std::forward<T>(val));
-    stop_t _stop(_tmp);
-    auto&  _map = *get_secondary_map();
-    _map.insert({ _key, _tmp });
+    if(get_is_running())
+        stop_t{ _tmp };
+    auto& _map = *get_secondary_map();
+    if(_map.empty())
+        _map.reserve(20);
+    _map.emplace(_key, std::move(_tmp));
     return &(_map[_key]);
 }
 //
@@ -615,14 +669,18 @@ template <typename InpT, typename Tag>
 template <typename FuncT, typename T>
 data_tracker<InpT, Tag>*
 data_tracker<InpT, Tag>::add_secondary(const std::string& _key, FuncT&& f, T&& val,
-                                       enable_if_acceptable_and_func_t<FuncT, T, int>)
+                                       enable_if_acceptable_t<T, int>)
 {
-    this_type _tmp;
-    start_t   _start(_tmp);
+    this_type _tmp{};
+    if(get_is_running())
+        start_t{ _tmp };
     _tmp.store(std::forward<FuncT>(f), std::forward<T>(val));
-    stop_t _stop(_tmp);
-    auto&  _map = *get_secondary_map();
-    _map.insert({ _key, _tmp });
+    if(get_is_running())
+        stop_t{ _tmp };
+    auto& _map = *get_secondary_map();
+    if(_map.empty())
+        _map.reserve(20);
+    _map.emplace(_key, std::move(_tmp));
     return &(_map[_key]);
 }
 //
@@ -630,16 +688,19 @@ template <typename InpT, typename Tag>
 template <typename FuncT, typename T>
 data_tracker<InpT, Tag>*
 data_tracker<InpT, Tag>::add_secondary(const std::string& _key, handler_type&& h,
-                                       FuncT&& f, T&& val,
-                                       enable_if_acceptable_and_func_t<FuncT, T, int>)
+                                       FuncT&& f, T&& val, enable_if_acceptable_t<T, int>)
 {
-    this_type _tmp;
-    start_t   _start(_tmp);
+    this_type _tmp{};
+    if(get_is_running())
+        start_t{ _tmp };
     _tmp.store(std::forward<handler_type>(h), std::forward<FuncT>(f),
                std::forward<T>(val));
-    stop_t _stop(_tmp);
-    auto&  _map = *get_secondary_map();
-    _map.insert({ _key, _tmp });
+    if(get_is_running())
+        stop_t{ _tmp };
+    auto& _map = *get_secondary_map();
+    if(_map.empty())
+        _map.reserve(20);
+    _map.emplace(_key, std::move(_tmp));
     return &(_map[_key]);
 }
 //
