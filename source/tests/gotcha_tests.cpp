@@ -602,10 +602,19 @@ TEST_F(gotcha_tests, replacement)
     cmath_intercept_t::get_default_ready() = true;
     cmath_intercept_t::get_initializer()   = []() {
         puts("Generating exp intercept...");
+#if defined(TIMEMORY_HIPCC)
+        cmath_intercept_t::template instrument<0, double, double>::generate("exp");
+#else
         TIMEMORY_C_GOTCHA(cmath_intercept_t, 0, exp);
+#endif
         // TIMEMORY_C_GOTCHA(cmath_intercept_t, 1, test_exp);
         TIMEMORY_CXX_GOTCHA(cmath_intercept_t, 2, ext::do_puts);
+#if defined(TIMEMORY_HIPCC)
+        cmath_intercept_t::template instrument<0, double, double>::generate(
+            "__exp_finite");
+#else
         TIMEMORY_DERIVED_GOTCHA(cmath_intercept_t, 3, exp, "__exp_finite");
+#endif
     };
 
     auto inp = std::min<double>(10.0, exp(5.0));

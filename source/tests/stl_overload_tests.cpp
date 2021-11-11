@@ -57,10 +57,10 @@ get_test_name()
 }
 
 // this function consumes approximately "n" milliseconds of real time
-inline void
+inline TIMEMORY_HOT void
 do_sleep(long n)
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(n));
+    std::this_thread::sleep_for(std::chrono::milliseconds{ n });
 }
 
 // this function consumes an unknown number of cpu resources
@@ -292,6 +292,53 @@ TEST_F(stl_overload_tests, statistics)
         apply(stat_v, init_v);
 
     std::cout << '\n';
+}
+
+//--------------------------------------------------------------------------------------//
+
+class statistics_tests : public ::testing::Test
+{
+protected:
+    TIMEMORY_TEST_DEFAULT_SUITE_BODY
+};
+
+namespace comp = tim::component;
+
+TEST_F(statistics_tests, update_statistics)
+{
+    using bundle_t = tim::lightweight_tuple<comp::wall_clock, comp::data_tracker_integer>;
+    bundle_t _bundle{ details::get_test_name() };
+    _bundle.push();
+    for(int64_t i = 0; i < 10; ++i)
+    {
+        auto _v = 4 + ((i % 2 == 0) ? 0 : 2);
+        _bundle.start().store(std::plus<int64_t>{}, _v);
+        details::do_sleep(10 * _v);
+        _bundle.stop().update_statistics(true);
+        EXPECT_EQ(_bundle.get<comp::data_tracker_integer>()->get_last(), _v);
+    }
+    _bundle.pop();
+
+    auto _storage = tim::storage<comp::data_tracker_integer>::instance()->get();
+    int  _checks  = 0;
+    for(const auto& itr : _storage)
+    {
+        if(itr.prefix().find(details::get_test_name()) != std::string::npos)
+        {
+            ++_checks;
+            std::ostringstream _msg;
+            _msg << "data: " << itr.data() << ", stats: " << itr.stats();
+            const auto& _stats = itr.stats();
+            EXPECT_EQ(_stats.get_sum(), 50) << _msg.str();
+            EXPECT_EQ(_stats.get_count(), 10) << _msg.str();
+            EXPECT_EQ(_stats.get_mean(), 5) << _msg.str();
+            EXPECT_EQ(_stats.get_min(), 4) << _msg.str();
+            EXPECT_EQ(_stats.get_max(), 6) << _msg.str();
+            EXPECT_EQ(_stats.get_stddev(), 1) << _msg.str();
+            EXPECT_EQ(_stats.get_variance(), 1) << _msg.str();
+        }
+    }
+    ASSERT_EQ(_checks, 1) << "Test did not perform appropriate number of checks";
 }
 
 //--------------------------------------------------------------------------------------//

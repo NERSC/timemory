@@ -97,6 +97,23 @@ fibonacci(long n, bool instr)
     }
 }
 
+// this function consumes an unknown number of cpu resources
+inline long
+static_string_fibonacci(long n, bool instr)
+{
+    if(instr)
+    {
+        toolset_t _marker{ tim::static_string{ "static_string_fibonacci" } };
+        return (n < 2) ? n
+                       : (static_string_fibonacci(n - 1, true) +
+                          static_string_fibonacci(n - 2, false));
+    }
+    else
+    {
+        return (n < 2) ? n : (fibonacci(n - 1) + fibonacci(n - 2));
+    }
+}
+
 // this function consumes approximately "t" milliseconds of cpu time
 void
 consume(long n)
@@ -178,6 +195,30 @@ TEST_F(timeline_tests, general)
     {
         TIMEMORY_BLANK_MARKER(toolset_t, details::get_test_name());
         auto ret = details::fibonacci(n, false);
+        printf("\nfibonacci(%li) = %li\n", n, ret);
+    }
+
+    auto esize = tim::storage<wall_clock>::instance()->size();
+    printf("\nbsize = %lu\n", (unsigned long) bsize);
+    printf("esize = %lu\n\n", (unsigned long) esize);
+    auto data = tim::storage<wall_clock>::instance()->get();
+
+    EXPECT_EQ(esize - bsize, 10);
+    EXPECT_EQ(data.at(bsize + 1).depth(), 0);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(timeline_tests, general_static_string)
+{
+    auto bsize                        = tim::storage<wall_clock>::instance()->size();
+    tim::settings::timeline_profile() = true;
+
+    long n = 10;
+    for(long i = 0; i < n; ++i)
+    {
+        toolset_t _marker{ tim::static_string{ "timeline_tests.general_static_string" } };
+        auto      ret = details::static_string_fibonacci(n, false);
         printf("\nfibonacci(%li) = %li\n", n, ret);
     }
 
@@ -292,6 +333,35 @@ TEST_F(timeline_tests, nested)
         long      ret = 0;
         for(int i = 0; i < 5; ++i)
             ret += details::fibonacci(n, true);
+        printf("\nfibonacci(%li) * 5 = %li\n", n, ret);
+    }
+
+    auto esize = tim::storage<wall_clock>::instance()->size();
+    printf("\nbsize = %lu\n", (unsigned long) bsize);
+    printf("esize = %lu\n\n", (unsigned long) esize);
+    auto data = tim::storage<wall_clock>::instance()->get();
+
+    EXPECT_EQ(esize - bsize, 26);
+    EXPECT_EQ(data.at(bsize + 1).depth(), 1);
+    EXPECT_EQ(data.at(bsize + 2).depth(), 2);
+    EXPECT_EQ(data.at(bsize + 6).depth(), 1);
+    EXPECT_EQ(data.at(bsize + 7).depth(), 2);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(timeline_tests, nested_static_string)
+{
+    auto bsize = tim::storage<wall_clock>::instance()->size();
+    // tim::settings::timeline_profile() = true;
+
+    long n = 5;
+    {
+        toolset_t _marker{ tim::static_string{ "timeline_tests.nested_static_string" },
+                           tim::scope::config{ false, false, false } };
+        long      ret = 0;
+        for(int i = 0; i < 5; ++i)
+            ret += details::static_string_fibonacci(n, true);
         printf("\nfibonacci(%li) * 5 = %li\n", n, ret);
     }
 

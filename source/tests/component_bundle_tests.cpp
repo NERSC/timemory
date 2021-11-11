@@ -758,7 +758,7 @@ TEST_F(component_bundle_tests, dont_stop_last_instance)
               std::string{ "|_" } + details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 1);
     EXPECT_EQ(wc_end.back().data().get_laps(), 6);
-    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+    EXPECT_NEAR((wc_end.back().data().get() * wall_clock::get_unit()) / tim::units::msec,
                 300., 100.);
 }
 
@@ -785,7 +785,7 @@ TEST_F(component_bundle_tests, template_stop_last_instance)
     EXPECT_EQ(details::get_substr(wc_end.back().prefix()), details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 0);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
-    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+    EXPECT_NEAR((wc_end.back().data().get() * wall_clock::get_unit()) / tim::units::msec,
                 600., 100.);
 }
 
@@ -811,7 +811,7 @@ TEST_F(component_bundle_tests, ctor_stop_last_instance)
     EXPECT_EQ(details::get_substr(wc_end.back().prefix()), details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 0);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
-    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+    EXPECT_NEAR((wc_end.back().data().get() * wall_clock::get_unit()) / tim::units::msec,
                 600., 200.);
 }
 
@@ -841,7 +841,7 @@ TEST_F(component_bundle_tests, both_stop_last_instance)
     EXPECT_EQ(details::get_substr(wc_end.back().prefix()), details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 0);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
-    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+    EXPECT_NEAR((wc_end.back().data().get() * wall_clock::get_unit()) / tim::units::msec,
                 600., 100.);
 }
 
@@ -891,7 +891,7 @@ TEST_F(component_bundle_tests, mixed_stop_last_instance)
               std::string{ "|_" } + details::get_test_name());
     EXPECT_EQ(wc_end.back().depth(), 1);
     EXPECT_EQ(wc_end.back().data().get_laps(), 12);
-    EXPECT_NEAR((wc_end.back().data().get() / wall_clock::get_unit()) * tim::units::msec,
+    EXPECT_NEAR((wc_end.back().data().get() * wall_clock::get_unit()) / tim::units::msec,
                 600., 100.);
 }
 
@@ -986,6 +986,76 @@ TEST_F(component_bundle_tests, rekey)
     rekey<rekey_bundle_t<tim::auto_tuple<>>>(details::get_test_name());
     rekey<rekey_bundle_t<tim::auto_list<>>>(details::get_test_name());
     rekey<rekey_bundle_t<tim::auto_bundle<TIMEMORY_API>>>(details::get_test_name());
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(component_bundle_tests, piecewise_ignore)
+{
+    auto wc_beg = tim::storage<wall_clock>::instance()->get();
+    auto cc_beg = tim::storage<cpu_clock>::instance()->get();
+    auto tc_beg = tim::storage<trip_count>::instance()->get();
+
+    static_assert(
+        std::is_same<tim::mpl::subtract_t<
+                         tim::mpl::implemented_t<wall_clock, cpu_clock, trip_count>,
+                         tim::type_list<wall_clock, trip_count>>,
+                     tim::type_list<cpu_clock>>::value,
+        "Subtract error");
+
+    static auto _ign = tim::mpl::piecewise_ignore<wall_clock, trip_count>{};
+    auto        _run = [](auto& _obj) {
+        _obj.start(_ign);
+        details::consume(500);
+        _obj.stop(_ign);
+    };
+
+    tim::component_tuple<wall_clock, cpu_clock, trip_count> _ct{
+        details::get_test_name()
+    };
+    tim::component_list<wall_clock, cpu_clock, trip_count> _cl{
+        details::get_test_name(), tim::scope::get_default(),
+        [](auto& _cl) { _cl.template initialize<wall_clock, cpu_clock, trip_count>(); }
+    };
+    tim::component_bundle<TIMEMORY_API, wall_clock, cpu_clock, trip_count> _cb{
+        details::get_test_name()
+    };
+    tim::lightweight_tuple<wall_clock, cpu_clock, trip_count> _lt{
+        details::get_test_name()
+    };
+
+    _run(_ct);
+    _run(_cl);
+    _run(_cb);
+    _run(_lt);
+
+    ASSERT_TRUE(_cl.get<wall_clock>() != nullptr);
+    ASSERT_TRUE(_cl.get<cpu_clock>() != nullptr);
+    ASSERT_TRUE(_cl.get<trip_count>() != nullptr);
+
+    auto _check = [](auto& _obj) {
+        auto _name = tim::demangle<decltype(_obj)>();
+        ASSERT_TRUE(_obj.template get<wall_clock>() != nullptr) << _name;
+        ASSERT_TRUE(_obj.template get<cpu_clock>() != nullptr) << _name;
+        ASSERT_TRUE(_obj.template get<trip_count>() != nullptr) << _name;
+
+        EXPECT_EQ(_obj.template get<wall_clock>()->get_laps(), 0) << _name << " " << _obj;
+        EXPECT_EQ(_obj.template get<cpu_clock>()->get_laps(), 1) << _name << " " << _obj;
+        EXPECT_EQ(_obj.template get<trip_count>()->get_laps(), 0) << _name << " " << _obj;
+    };
+
+    _check(_ct);
+    _check(_cl);
+    _check(_cb);
+    _check(_lt);
+
+    auto wc_end = tim::storage<wall_clock>::instance()->get();
+    auto cc_end = tim::storage<cpu_clock>::instance()->get();
+    auto tc_end = tim::storage<trip_count>::instance()->get();
+
+    EXPECT_EQ(wc_beg.size(), wc_end.size());
+    EXPECT_NE(cc_beg.size(), cc_end.size());
+    EXPECT_EQ(tc_beg.size(), tc_end.size());
 }
 
 //--------------------------------------------------------------------------------------//

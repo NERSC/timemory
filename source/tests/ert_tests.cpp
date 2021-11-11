@@ -35,13 +35,13 @@ TIMEMORY_TEST_DEFAULT_MAIN
 #include <set>
 
 namespace dmp    = tim::dmp;
-namespace cuda   = tim::cuda;
+namespace gpu    = tim::gpu;
 namespace ert    = tim::ert;
 namespace device = tim::device;
 
 using settings       = tim::settings;
 using counter_type   = tim::component::wall_clock;
-using fp16_t         = tim::cuda::fp16_t;
+using fp16_t         = tim::gpu::fp16_t;
 using ert_data_t     = ert::exec_data<counter_type>;
 using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
 using init_list_t    = std::set<uint64_t>;
@@ -123,7 +123,7 @@ protected:
 
 TEST_F(ert_tests, run)
 {
-    auto data  = ert_data_ptr_t(new ert_data_t());
+    auto data  = std::make_shared<ert_data_t>();
     auto nproc = dmp::size();
 
     auto cpu_min_size = 64;
@@ -165,7 +165,7 @@ TEST_F(ert_tests, run)
         auto gpu_max_data = 500 * units::megabyte;
 
         // determine how many GPUs to execute on (or on CPU if zero)
-        int         num_gpus        = cuda::device_count();
+        int         num_gpus        = gpu::device_count();
         init_list_t gpu_num_streams = { 1 };
         init_list_t gpu_block_sizes = { 32, 128, 256, 512, 1024 };
 
@@ -271,7 +271,7 @@ details::run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size,
     //
     auto set_counter_device = [=](uint64_t tid, ert_counter_type&) {
         if(num_gpus > 0)
-            cuda::set_device(tid % num_gpus);
+            gpu::set_device(tid % num_gpus);
     };
 
     //
