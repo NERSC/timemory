@@ -25,17 +25,17 @@
 #ifndef TIMEMORY_CONFIG_CONFIG_CPP_
 #define TIMEMORY_CONFIG_CONFIG_CPP_ 1
 
-#include "timemory/config/config.hpp"
 #include "timemory/config/macros.hpp"
-#include "timemory/config/types.hpp"
-#include "timemory/utility/argparse.hpp"
 
 #if defined(TIMEMORY_CONFIG_SOURCE) || !defined(TIMEMORY_USE_CONFIG_EXTERN)
 //
 #    include "timemory/backends/process.hpp"
+#    include "timemory/config/config.hpp"
+#    include "timemory/config/types.hpp"
 #    include "timemory/manager/declaration.hpp"
 #    include "timemory/mpl/filters.hpp"
 #    include "timemory/settings/declaration.hpp"
+#    include "timemory/utility/argparse.hpp"
 #    include "timemory/utility/signals.hpp"
 #    include "timemory/utility/utility.hpp"
 
