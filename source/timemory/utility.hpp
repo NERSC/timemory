@@ -28,6 +28,7 @@
 #include "timemory/utility/conditional.hpp"
 #include "timemory/utility/declaration.hpp"
 #include "timemory/utility/filepath.hpp"
+#include "timemory/utility/launch_process.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/mangler.hpp"
 #include "timemory/utility/popen.hpp"

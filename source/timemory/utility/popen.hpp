@@ -97,7 +97,6 @@ flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter = 0);
 }  // namespace tim
 
 #    if !defined(TIMEMORY_UTILITY_SOURCE) && !defined(TIMEMORY_USE_UTILITY_EXTERN)
-#        include "timemory/utility/launch_process.cpp"
 #        include "timemory/utility/popen.cpp"
 #    endif
 
