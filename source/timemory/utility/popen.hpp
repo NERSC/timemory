@@ -85,72 +85,11 @@ drop_privileges(int permanent);
 TIMEMORY_UTILITY_LINKAGE(void)  // NOLINT
 restore_privileges();
 //
-inline strvec_t
-read_fork(TIMEMORY_PIPE* proc, int max_counter = 50)
-{
-    int      counter = 0;
-    strvec_t linked_libraries;
-
-    while(proc)
-    {
-        char  buffer[4096];
-        auto* ret = fgets(buffer, 4096, proc->read_fd);
-        if(ret == nullptr || strlen(buffer) == 0)
-        {
-            if(max_counter == 0)
-            {
-                pid_t cpid = waitpid(proc->child_pid, &proc->child_status, WNOHANG);
-                if(cpid == 0)
-                    continue;
-                else
-                    break;
-            }
-            if(counter++ > max_counter)
-                break;
-            continue;
-        }
-        auto line = string_t(buffer);
-        auto loc  = string_t::npos;
-        while((loc = line.find_first_of("\n\t")) != string_t::npos)
-            line.erase(loc, 1);
-        auto delim = delimit(line, " \n\t=>");
-        for(const auto& itr : delim)
-        {
-            if(itr.find('/') == 0)
-                linked_libraries.push_back(itr);
-        }
-    }
-
-    return linked_libraries;
-}
+TIMEMORY_UTILITY_LINKAGE(strvec_t)
+read_fork(TIMEMORY_PIPE* proc, int max_counter = 50);
 //
-inline std::ostream&
-flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter = 0)
-{
-    int counter = 0;
-    while(proc)
-    {
-        char  buffer[4096];
-        auto* ret = fgets(buffer, 4096, proc->read_fd);
-        if(ret == nullptr || strlen(buffer) == 0)
-        {
-            if(max_counter == 0)
-            {
-                pid_t cpid = waitpid(proc->child_pid, &proc->child_status, WNOHANG);
-                if(cpid == 0)
-                    continue;
-                else
-                    break;
-            }
-            if(counter++ > max_counter)
-                break;
-            continue;
-        }
-        os << string_t{ buffer } << std::flush;
-    }
-
-    return os;
-}
+TIMEMORY_UTILITY_LINKAGE(std::ostream&)
+flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter = 0);
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -158,83 +97,8 @@ flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter = 0)
 }  // namespace tim
 
 #    if !defined(TIMEMORY_UTILITY_SOURCE) && !defined(TIMEMORY_USE_UTILITY_EXTERN)
+#        include "timemory/utility/launch_process.cpp"
 #        include "timemory/utility/popen.cpp"
 #    endif
 
 #endif
-
-namespace tim
-{
-//
-//--------------------------------------------------------------------------------------//
-//
-inline bool
-launch_process(const char* cmd, const std::string& extra, std::ostream* os)
-{
-#if !defined(TIMEMORY_WINDOWS)
-    auto                       delim = tim::delimit(cmd, " \t");
-    tim::popen::TIMEMORY_PIPE* fp    = nullptr;
-    if(delim.size() < 2)
-    {
-        fp = tim::popen::popen(cmd, nullptr, nullptr);
-    }
-    else
-    {
-        static std::string   _c = "-c";
-        std::array<char*, 4> _args;
-        _args.fill(nullptr);
-        char*       _cshell = getenv("SHELL");
-        char*       _ushell = getusershell();
-        std::string _shell = (_cshell) ? _cshell : (_ushell) ? getusershell() : "/bin/sh";
-        _args.at(0)        = (char*) _shell.c_str();
-        _args.at(1)        = (char*) _c.c_str();
-        _args.at(2)        = (char*) cmd;
-        fp                 = tim::popen::popen(_args.at(0), _args.data());
-    }
-
-    if(fp == nullptr)
-    {
-        std::stringstream ss;
-        ss << "[timemory]> Error launching command: '" << cmd << "'... " << extra;
-        perror(ss.str().c_str());
-        return false;
-    }
-    if(os)
-    {
-        popen::flush_output(*os, fp);
-    }
-
-    auto ec = tim::popen::pclose(fp);
-    if(ec != 0)
-    {
-        std::stringstream ss;
-        ss << "[timemory]> Command: '" << cmd << "' returned a non-zero exit code: " << ec
-           << "... " << extra;
-        perror(ss.str().c_str());
-        return false;
-    }
-#else
-    if(std::system(nullptr) != 0)
-    {
-        int ec = std::system(cmd);
-
-        if(ec != 0)
-        {
-            fprintf(stderr,
-                    "[timemory]> Command: '%s' returned a non-zero exit code: %i... %s\n",
-                    cmd, ec, extra.c_str());
-            return false;
-        }
-    }
-    else
-    {
-        fprintf(stderr, "std::system unavailable for command: '%s'... %s\n", cmd,
-                extra.c_str());
-        return false;
-    }
-    (void) os;
-#endif
-
-    return true;
-}
-}  // namespace tim

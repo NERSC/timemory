@@ -380,6 +380,77 @@ pclose(TIMEMORY_PIPE* p)
 //
 //--------------------------------------------------------------------------------------//
 //
+strvec_t
+read_fork(TIMEMORY_PIPE* proc, int max_counter)
+{
+    int      counter = 0;
+    strvec_t linked_libraries;
+
+    while(proc)
+    {
+        char  buffer[4096];
+        auto* ret = fgets(buffer, 4096, proc->read_fd);
+        if(ret == nullptr || strlen(buffer) == 0)
+        {
+            if(max_counter == 0)
+            {
+                pid_t cpid = waitpid(proc->child_pid, &proc->child_status, WNOHANG);
+                if(cpid == 0)
+                    continue;
+                else
+                    break;
+            }
+            if(counter++ > max_counter)
+                break;
+            continue;
+        }
+        auto line = string_t(buffer);
+        auto loc  = string_t::npos;
+        while((loc = line.find_first_of("\n\t")) != string_t::npos)
+            line.erase(loc, 1);
+        auto delim = delimit(line, " \n\t=>");
+        for(const auto& itr : delim)
+        {
+            if(itr.find('/') == 0)
+                linked_libraries.push_back(itr);
+        }
+    }
+
+    return linked_libraries;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+std::ostream&
+flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter)
+{
+    int counter = 0;
+    while(proc)
+    {
+        char  buffer[4096];
+        auto* ret = fgets(buffer, 4096, proc->read_fd);
+        if(ret == nullptr || strlen(buffer) == 0)
+        {
+            if(max_counter == 0)
+            {
+                pid_t cpid = waitpid(proc->child_pid, &proc->child_status, WNOHANG);
+                if(cpid == 0)
+                    continue;
+                else
+                    break;
+            }
+            if(counter++ > max_counter)
+                break;
+            continue;
+        }
+        os << string_t{ buffer } << std::flush;
+    }
+
+    return os;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 }  // namespace popen
 }  // namespace tim
 
