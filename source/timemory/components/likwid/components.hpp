@@ -77,6 +77,13 @@ struct likwid_marker : public base<likwid_marker, void>
 #endif
     }
 
+    static void global_finalize()
+    {
+#if defined(TIMEMORY_USE_LIKWID_PERFMON)
+        likwid_markerClose();
+#endif
+    }
+
     static void next()
     {
 #if defined(TIMEMORY_USE_LIKWID_PERFMON)
@@ -164,6 +171,13 @@ struct likwid_nvmarker : public base<likwid_nvmarker, void>
     {
 #if defined(TIMEMORY_USE_LIKWID_NVMON)
         likwid_gpuMarkerInit();
+#endif
+    }
+
+    static void global_finalize()
+    {
+#if defined(TIMEMORY_USE_LIKWID_NVMON)
+        likwid_gpuMarkerClose();
 #endif
     }
 
