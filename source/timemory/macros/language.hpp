@@ -84,11 +84,13 @@
 //
 namespace tim
 {
-using string_view_t = std::string_view;
-}
+using string_view_t      = std::string_view;
+using string_view_cref_t = std::string_view;
+// string_views are trivially copyable so the instead of 'const string_view_t&' as a
+// function parameter, pass by value bc it enables more optimizations
+}  // namespace tim
 //
 #else
-//
 #    include <string>
 //
 #    if !defined(TIMEMORY_STRING_VIEW)
@@ -97,9 +99,11 @@ using string_view_t = std::string_view;
 //
 namespace tim
 {
-using string_view_t = std::string;
-}
-//
+using string_view_t      = std::string;
+using string_view_cref_t = const std::string&;
+// strings are not trivially copyable so, in C++14, we want to pass the string via
+// const ref
+}  // namespace tim
 #endif
 
 //--------------------------------------------------------------------------------------//

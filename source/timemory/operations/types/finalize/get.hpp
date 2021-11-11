@@ -290,12 +290,30 @@ get<Type, true>::operator()(result_type& ret)
         result_type _list{};
         {
             // the head node should always be ignored
-            int64_t _min = std::numeric_limits<int64_t>::max();
-            for(const auto& itr : data.graph())
-                _min = std::min<int64_t>(_min, itr.depth());
-
-            for(auto itr = data.graph().begin(); itr != data.graph().end(); ++itr)
+            int64_t _min   = std::numeric_limits<int64_t>::max();
+            auto&   _graph = data.graph();
+            for(auto itr = _graph.begin(); itr != _graph.end(); ++itr)
             {
+                if(!itr)
+                {
+                    PRINT_HERE("[%s] Warning! Invalid iterator!",
+                               demangle<Type>().c_str());
+                    continue;
+                }
+                _min = std::min<int64_t>(_min, itr->depth());
+            }
+
+            for(auto itr = _graph.begin(); itr != _graph.end(); ++itr)
+            {
+                if(!itr)
+                {
+                    PRINT_HERE("[%s] Warning! Invalid iterator!",
+                               demangle<Type>().c_str());
+                    continue;
+                }
+                // skip if invalid
+                if(operation::get_is_invalid<Type, false>{}(itr->data()))
+                    continue;
                 if(itr->depth() > _min)
                 {
                     auto _depth     = itr->depth() - (_min + 1);
@@ -306,16 +324,13 @@ get<Type, true>::operator()(result_type& ret)
                     auto _hierarchy = hierarchy_type{};
                     auto _tid       = itr->tid();
                     auto _pid       = itr->pid();
-                    if(_parent && _parent->depth() > _min)
+                    while(_parent && _parent->depth() > _min)
                     {
-                        while(_parent)
-                        {
-                            _hierarchy.push_back(_parent->id());
-                            _rolling += _parent->id();
-                            _parent = graph_type::parent(_parent);
-                            if(!_parent || !(_parent->depth() > _min))
-                                break;
-                        }
+                        if(operation::get_is_invalid<Type, false>{}(_parent->data()))
+                            break;
+                        _hierarchy.push_back(_parent->id());
+                        _rolling += _parent->id();
+                        _parent = graph_type::parent(_parent);
                     }
                     if(_hierarchy.size() > 1)
                         std::reverse(_hierarchy.begin(), _hierarchy.end());

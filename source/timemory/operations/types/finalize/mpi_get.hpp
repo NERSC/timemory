@@ -76,9 +76,9 @@ struct mpi_get<Type, true>
 
     // this serializes a type (src) and adds it to dst, if !collapse_processes
     // then it uses the adder to combine the data
-    TIMEMORY_COLD mpi_get(
-        std::vector<Type>& dst, const Type& src,
-        std::function<Type&(Type& lhs, const Type& rhs)>&& adder = this_type::plus);
+    TIMEMORY_COLD
+    mpi_get(std::vector<Type>& dst, const Type& src,
+            std::function<Type&(Type& lhs, const Type& rhs)>&& adder = this_type::plus);
 
 private:
     storage_type* m_storage = nullptr;
@@ -289,10 +289,10 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         auto init_size = get_num_records(results);
         if(settings::debug() || settings::verbose() > 3)
         {
-            PRINT_HERE(
-                "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks into %i bins",
-                demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
-                comm_rank, init_size, comm_size, (int) binmap.size());
+            PRINT_HERE("[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks into "
+                       "%i bins",
+                       demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                       comm_rank, init_size, comm_size, (int) binmap.size());
         }
 
         assert((int32_t) binmap.size() <= (int32_t) settings::node_count());

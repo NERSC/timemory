@@ -22,13 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/settings/definition.hpp
- * \brief The definitions for the types in settings
- */
-
 #pragma once
 
+#include "timemory/settings/declaration.hpp"
 #include "timemory/settings/macros.hpp"
 
 #if defined(TIMEMORY_SETTINGS_HEADER_MODE)

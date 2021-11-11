@@ -82,6 +82,8 @@ private:
 }  // namespace md5
 }  // namespace tim
 
+#include "timemory/utility/macros.hpp"
+
 #if defined(TIMEMORY_UTILITY_HEADER_MODE)
 #    include "timemory/utility/md5.cpp"
 #endif

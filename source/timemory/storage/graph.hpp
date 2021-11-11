@@ -131,8 +131,8 @@ public:
     ~graph();
     graph(const this_type&)     = delete;
     graph(this_type&&) noexcept = default;
-    graph& operator=(const this_type&) = delete;
-    graph& operator=(this_type&&) noexcept = default;
+    graph& operator=(const graph&) = delete;
+    graph& operator=(graph&&) noexcept = default;
 
     /// Base class for iterators, only pointers stored, no traversal logic.
     class iterator_base

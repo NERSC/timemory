@@ -67,6 +67,9 @@ struct print
         if(!trait::runtime_enabled<Tp>::get())
             return;
 
+        if(operation::get_is_invalid<Up, false>{}(_obj))
+            return;
+
         std::stringstream ss;
         ss << _obj;
         if(_endline)
@@ -79,6 +82,9 @@ struct print
                         std::ostream& _os, bool _endline)
     {
         if(!trait::runtime_enabled<Tp>::get())
+            return;
+
+        if(operation::get_is_invalid<Up, false>{}(_obj))
             return;
 
         std::stringstream ss;
@@ -102,6 +108,9 @@ struct print
     {
         auto _labels = common_utils::get_labels(_obj);
         auto _units  = common_utils::get_display_units(_obj);
+
+        if(operation::get_is_invalid<Up, false>{}(_obj))
+            return;
 
         utility::write_entry(_os, "LABEL", _prefix);
 
@@ -165,7 +174,7 @@ struct print
         if(!trait::runtime_enabled<Tp>::get())
             return;
 
-        if(_obj)
+        if(_obj && !operation::get_is_invalid<Up, false>{}(*_obj))
             print(*_obj, _os, _endline);
     }
 
@@ -176,7 +185,7 @@ struct print
         if(!trait::runtime_enabled<Tp>::get())
             return;
 
-        if(_obj)
+        if(_obj && !operation::get_is_invalid<Up, false>{}(*_obj))
             print(N, Ntot, *_obj, _os, _endline);
     }
 
@@ -188,7 +197,7 @@ struct print
         if(!trait::runtime_enabled<Tp>::get())
             return;
 
-        if(_obj)
+        if(_obj && !operation::get_is_invalid<Up, false>{}(*_obj))
             print(*_obj, _os, _prefix, _laps, _depth, _output_widths, _endline, _suffix);
     }
 

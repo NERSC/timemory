@@ -280,9 +280,9 @@ struct argument_vector : std::vector<std::string>
         auto& argv() { return std::get<1>(*this); }
         auto& args() { return std::get<2>(*this); }
 
-        TIMEMORY_NODISCARD const auto& argc() const { return std::get<0>(*this); }
-        TIMEMORY_NODISCARD const auto& argv() const { return std::get<1>(*this); }
-        TIMEMORY_NODISCARD const auto& args() const { return std::get<2>(*this); }
+        const auto& argc() const { return std::get<0>(*this); }
+        const auto& argv() const { return std::get<1>(*this); }
+        const auto& args() const { return std::get<2>(*this); }
 
         void clear()
         {
@@ -304,11 +304,10 @@ struct argument_vector : std::vector<std::string>
     explicit argument_vector(int& argc, char**& argv);
     explicit argument_vector(int& argc, const char**& argv);
     explicit argument_vector(int& argc, const char* const*& argv);
-    TIMEMORY_NODISCARD cargs_t
-    get_execv(const base_type& _prepend, size_t _beg = 0,
-              size_t _end = std::numeric_limits<size_t>::max()) const;
-    TIMEMORY_NODISCARD cargs_t
-    get_execv(size_t _beg = 0, size_t _end = std::numeric_limits<size_t>::max()) const;
+    cargs_t get_execv(const base_type& _prepend, size_t _beg = 0,
+                      size_t _end = std::numeric_limits<size_t>::max()) const;
+    cargs_t get_execv(size_t _beg = 0,
+                      size_t _end = std::numeric_limits<size_t>::max()) const;
 
     // helper function to free the memory created by get_execv, pass by reference
     // so that we can set values to nullptr and avoid multiple delete errors
@@ -349,7 +348,7 @@ struct argument_parser
 
         friend std::ostream& operator<<(std::ostream& os, const arg_result& dt);
 
-        TIMEMORY_NODISCARD const std::string& what() const { return m_what; }
+        const std::string& what() const { return m_what; }
 
     private:
         bool        m_error = false;
@@ -499,7 +498,7 @@ struct argument_parser
             return *this;
         }
 
-        TIMEMORY_NODISCARD bool found() const { return m_found; }
+        bool found() const { return m_found; }
 
         template <typename T>
         std::enable_if_t<helpers::is_container<T>::value, T> get()
@@ -547,9 +546,9 @@ struct argument_parser
             return get_bool(inp, found());
         }
 
-        TIMEMORY_NODISCARD size_t size() const { return m_values.size(); }
+        size_t size() const { return m_values.size(); }
 
-        TIMEMORY_NODISCARD std::string get_name() const
+        std::string get_name() const
         {
             std::stringstream ss;
             for(const auto& itr : m_names)
@@ -910,7 +909,7 @@ struct argument_parser
     ///     // ...
     /// }
     /// \endcode
-    TIMEMORY_NODISCARD bool exists(const std::string& name) const
+    bool exists(const std::string& name) const
     {
         std::string n = helpers::ltrim(
             name, [](int c) -> bool { return c != static_cast<int>('-'); });
