@@ -159,33 +159,91 @@ public:
     // public static functions
     //
     static constexpr std::size_t size() { return std::tuple_size<tuple_type>::value; }
+
     /// requests the component initialize their storage
     static void init_storage();
 
     //----------------------------------------------------------------------------------//
     // public member functions
     //
+    /// generic push into storage
     this_type& push();
+
+    /// generic pop out of storage
     this_type& pop();
-    template <typename... Args>
-    this_type& measure(Args&&...);
-    template <typename... Args>
-    this_type& sample(Args&&...);
+
+    /// selective push
+    template <typename... Tp>
+    this_type& push(mpl::piecewise_select<Tp...>);
+
+    /// selective push
+    template <typename... Tp>
+    this_type& push(mpl::piecewise_ignore<Tp...>);
+
+    /// selective pop
+    template <typename... Tp>
+    this_type& pop(mpl::piecewise_select<Tp...>);
+
+    /// selective pop
+    template <typename... Tp>
+    this_type& pop(mpl::piecewise_ignore<Tp...>);
+
+    /// start all applicable components
     template <typename... Args>
     this_type& start(Args&&...);
+
+    /// selective start
+    template <typename... Tp, typename... Args>
+    this_type& start(mpl::piecewise_select<Tp...>, Args&&...);
+
+    /// selective start
+    template <typename... Tp, typename... Args>
+    this_type& start(mpl::piecewise_ignore<Tp...>, Args&&...);
+
+    /// stop all applicable components
     template <typename... Args>
     this_type& stop(Args&&...);
+
+    /// selective stop
+    template <typename... Tp, typename... Args>
+    this_type& stop(mpl::piecewise_select<Tp...>, Args&&...);
+
+    /// selection stop
+    template <typename... Tp, typename... Args>
+    this_type& stop(mpl::piecewise_ignore<Tp...>, Args&&...);
+
+    /// generic
+    template <typename... Args>
+    this_type& measure(Args&&...);
+
+    /// generic
+    template <typename... Args>
+    this_type& sample(Args&&...);
+
+    /// generic
     template <typename... Args>
     this_type& record(Args&&...);
+
+    /// generic
     template <typename... Args>
     this_type& reset(Args&&...);
+
+    /// generic
     template <typename... Args>
     auto get(Args&&...) const;
+
+    /// generic
     template <typename... Args>
-    auto             get_labeled(Args&&...) const;
-    data_type&       data();
+    auto get_labeled(Args&&...) const;
+
+    /// get tuple
+    data_type& data();
+
+    /// get tuple
     const data_type& data() const;
-    this_type&       set_scope(scope::config);
+
+    /// set scope configuration
+    this_type& set_scope(scope::config);
 
     using bundle_type::get_prefix;
     using bundle_type::get_scope;
@@ -205,7 +263,6 @@ public:
                             std::forward<FuncT>(func)(std::forward<Args>(args)...));
     }
 
-    //----------------------------------------------------------------------------------//
     /// construct the objects that have constructors with matching arguments
     //
     template <typename... Args>
@@ -213,10 +270,9 @@ public:
     {
         using construct_t = operation_t<operation::construct>;
         apply_v::access<construct_t>(m_data, std::forward<Args>(_args)...);
-        return *this;
+        return get_this_type();
     }
 
-    //----------------------------------------------------------------------------------//
     /// provide preliminary info to the objects with matching arguments. This is typically
     /// used to notify a component that it has been bundled alongside another component
     /// that it can extract data from.
@@ -227,10 +283,9 @@ public:
     this_type& assemble(Args&&... _args)
     {
         invoke::assemble(m_data, std::forward<Args>(_args)...);
-        return *this;
+        return get_this_type();
     }
 
-    //----------------------------------------------------------------------------------//
     /// provide conclusive info to the objects with matching arguments. This is typically
     /// used by components to extract data from another component it has been bundled
     /// alongside, e.g. the cpu_util component can extract data from \ref
@@ -242,10 +297,9 @@ public:
     this_type& derive(Args&&... _args)
     {
         invoke::derive(m_data, std::forward<Args>(_args)...);
-        return *this;
+        return get_this_type();
     }
 
-    //----------------------------------------------------------------------------------//
     /// mark a beginning position in the execution (typically used by asynchronous
     /// structures)
     //
@@ -253,10 +307,9 @@ public:
     this_type& mark_begin(Args&&... _args)
     {
         invoke::mark_begin(m_data, std::forward<Args>(_args)...);
-        return *this;
+        return get_this_type();
     }
 
-    //----------------------------------------------------------------------------------//
     /// mark a beginning position in the execution (typically used by asynchronous
     /// structures)
     //
@@ -264,20 +317,17 @@ public:
     this_type& mark_end(Args&&... _args)
     {
         invoke::mark_end(m_data, std::forward<Args>(_args)...);
-        return *this;
+        return get_this_type();
     }
 
-    //----------------------------------------------------------------------------------//
     /// store a value
-    //
     template <typename... Args>
     this_type& store(Args&&... _args)
     {
         invoke::store(m_data, std::forward<Args>(_args)...);
-        return *this;
+        return get_this_type();
     }
 
-    //----------------------------------------------------------------------------------//
     /// allow the components to inspect the incoming arguments before start
     /// or out-going return value before returning (typically using in GOTCHA components)
     //
@@ -285,36 +335,58 @@ public:
     this_type& audit(Args&&... _args)
     {
         invoke::audit(m_data, std::forward<Args>(_args)...);
-        return *this;
+        return get_this_type();
     }
 
-    //----------------------------------------------------------------------------------//
-    /// apply a user-defined operation to all the components
+    /// perform an add_secondary operation. This operation allows components to add
+    /// additional entries to storage which are their direct descendant
+    template <typename... Args>
+    this_type& add_secondary(Args&&... _args)
+    {
+        return invoke<operation::add_secondary>(std::forward<Args>(_args)...);
+    }
+
+    /// perform an add_secondary operation. This operation allows components to add
+    /// additional entries to storage which are their direct descendant
+    template <typename... Args>
+    this_type& update_statistics(Args&&... _args)
+    {
+        return invoke<operation::add_statistics>(std::forward<Args>(_args)...);
+    }
+
     /// \tparam OpT Operation struct
-    //
+    /// \brief apply a user-defined operation to all the components
     template <template <typename> class OpT, typename... Args>
     this_type& invoke(Args&&... _args)
     {
         invoke::invoke<OpT>(m_data, std::forward<Args>(_args)...);
-        return *this;
+        return get_this_type();
     }
 
-    //----------------------------------------------------------------------------------//
-    /// generic member function for invoking user-provided operations on a specific
-    /// set of component types
     /// \tparam OpT Operation struct
-    //
+    /// \brief generic member function for invoking user-provided operations on a specific
+    /// set of component types
     template <template <typename> class OpT, typename... Tp, typename... Args>
     this_type& invoke(mpl::piecewise_select<Tp...>, Args&&... _args)
     {
-        TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, TIMEMORY_API>(
-            this->get<Tp>(), std::forward<Args>(_args)...));
-        return *this;
+        invoke_piecewise<OpT>(mpl::available_t<type_list<Tp...>>{},
+                              std::forward<Args>(_args)...);
+        return get_this_type();
     }
 
-    //----------------------------------------------------------------------------------//
+    /// \tparam OpT Operation struct
+    /// \brief generic member function for invoking user-provided operations on a specific
+    /// set of component types
+    template <template <typename> class OpT, typename... Tp, typename... Args>
+    this_type& invoke(mpl::piecewise_ignore<Tp...>, Args&&... _args)
+    {
+        invoke_piecewise<OpT>(
+            mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>{},
+            std::forward<Args>(_args)...);
+        return get_this_type();
+    }
+
     /// get member functions taking either a type
-    //
     template <typename T, enable_if_t<is_one_of<T, data_type>::value, int> = 0>
     T* get()
     {
@@ -339,8 +411,15 @@ public:
     {
         using get_t = operation_t<operation::get>;
         apply_v::access<get_t>(m_data, ptr, _hash);
-        return const_cast<this_type&>(*this);
+        return get_this_type();
     }
+
+    /// get member functions finding component and applying lambda
+    template <typename T, typename FuncT>
+    decltype(auto) get(FuncT&& _func);
+
+    template <typename T, typename FuncT>
+    decltype(auto) get(FuncT&& _func) const;
 
     //----------------------------------------------------------------------------------//
     /// this is a simple alternative to get<T>() when used from SFINAE in operation
@@ -398,14 +477,14 @@ public:
     {
         auto&& _obj = get<T>();
         ((_obj).*(_func))(std::forward<Args>(_args)...);
-        return *this;
+        return get_this_type();
     }
 
     template <typename T, typename Func, typename... Args,
               enable_if_t<!is_one_of<T, data_type>::value, int> = 0>
     this_type& type_apply(Func&&, Args&&...)
     {
-        return *this;
+        return get_this_type();
     }
 
     //----------------------------------------------------------------------------------//
@@ -424,7 +503,7 @@ public:
     {
         using minus_t = operation_t<operation::minus>;
         apply_v::access<minus_t>(m_data, std::forward<Op>(rhs));
-        return *this;
+        return get_this_type();
     }
 
     template <typename Op>
@@ -432,7 +511,7 @@ public:
     {
         using plus_t = operation_t<operation::plus>;
         apply_v::access<plus_t>(m_data, std::forward<Op>(rhs));
-        return *this;
+        return get_this_type();
     }
 
     template <typename Op>
@@ -440,7 +519,7 @@ public:
     {
         using multiply_t = operation_t<operation::multiply>;
         apply_v::access<multiply_t>(m_data, std::forward<Op>(rhs));
-        return *this;
+        return get_this_type();
     }
 
     template <typename Op>
@@ -448,7 +527,7 @@ public:
     {
         using divide_t = operation_t<operation::divide>;
         apply_v::access<divide_t>(m_data, std::forward<Op>(rhs));
-        return *this;
+        return get_this_type();
     }
 
     //----------------------------------------------------------------------------------//
@@ -487,9 +566,9 @@ public:
     {
         using printer_t = typename bundle_type::print_type;
         if(size() == 0)
-            return const_cast<this_type&>(*this);
+            return get_this_type();
         if(m_hash == 0 && skip_wo_hash)
-            return const_cast<this_type&>(*this);
+            return get_this_type();
         std::stringstream ss_data;
         apply_v::access_with_indices<printer_t>(m_data, std::ref(ss_data), false);
         IF_CONSTEXPR(PrintPrefix)
@@ -506,13 +585,17 @@ public:
                 os << ss_prefix.str();
             }
         }
-        if(ss_data.str().length() > 0)
-        {
-            os << ss_data.str();
-            if(m_laps > 0 && PrintLaps)
-                os << " [laps: " << m_laps << "]";
-        }
-        return const_cast<this_type&>(*this);
+        std::string _s = ss_data.str();
+        if(_s.empty())
+            return get_this_type();
+        while(_s.find_last_of(", ") == _s.length() - 1)
+            _s = _s.substr(0, _s.length() - 1);
+        if(_s.empty())
+            return get_this_type();
+        os << _s;
+        if(m_laps > 0 && PrintLaps)
+            os << " [laps: " << m_laps << "]";
+        return get_this_type();
     }
 
     //----------------------------------------------------------------------------------//
@@ -565,12 +648,13 @@ public:
     TIMEMORY_INLINE void rekey(const captured_location_t& _loc);
     TIMEMORY_INLINE void rekey(uint64_t _hash);
 
-protected:
-    // protected member functions
     data_type&       get_data();
     const data_type& get_data() const;
-    void             set_prefix(const string_t&) const;
-    void             set_prefix(size_t) const;
+
+protected:
+    // protected member functions
+    void set_prefix(const string_t&) const;
+    void set_prefix(size_t) const;
 
 protected:
     // objects
@@ -582,6 +666,20 @@ protected:
     using bundle_type::m_scope;
     using bundle_type::m_store;
     mutable data_type m_data = data_type{};
+
+private:
+    template <template <typename> class OpT, typename... Tp, typename... Args>
+    void invoke_piecewise(type_list<Tp...>, Args&&... _args)
+    {
+        TIMEMORY_FOLD_EXPRESSION(operation::generic_operator<Tp, OpT<Tp>, TIMEMORY_API>(
+            this->get<Tp>(), std::forward<Args>(_args)...));
+    }
+
+    this_type& get_this_type() { return static_cast<this_type&>(*this); }
+    this_type& get_this_type() const
+    {
+        return const_cast<this_type&>(static_cast<const this_type&>(*this));
+    }
 };
 
 //
@@ -614,6 +712,53 @@ lightweight_tuple<Types...>::rekey(uint64_t _hash)
     m_hash = _hash;
     set_prefix(_hash);
 }
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename... Types>
+template <typename T, typename FuncT>
+decltype(auto)
+lightweight_tuple<Types...>::get(FuncT&& _func)
+{
+    auto* _obj = this->get<T>();
+    if(_obj)
+        return std::forward<FuncT>(_func)(_obj);
+    using return_type = decltype(_func(std::declval<decltype(_obj)>()));
+#if defined(CXX17)
+    if constexpr(std::is_void<decay_t<return_type>>::value)
+        return;
+    else if constexpr(std::is_pointer<decay_t<return_type>>::value)
+        return static_cast<decay_t<return_type>>(nullptr);
+    else
+        return decltype(_func(std::declval<decltype(_obj)>())){};
+#else
+    return return_type();
+#endif
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename... Types>
+template <typename T, typename FuncT>
+decltype(auto)
+lightweight_tuple<Types...>::get(FuncT&& _func) const
+{
+    auto* _obj = this->get<T>();
+    if(_obj)
+        return std::forward<FuncT>(_func)(_obj);
+    using return_type = decltype(_func(std::declval<decltype(_obj)>()));
+#if defined(CXX17)
+    if constexpr(std::is_void<decay_t<return_type>>::value)
+        return;
+    else if constexpr(std::is_pointer<decay_t<return_type>>::value)
+        return static_cast<decay_t<return_type>>(nullptr);
+    else
+        return decltype(_func(std::declval<decltype(_obj)>())){};
+#else
+    return return_type();
+#endif
+}
+
 //
 //======================================================================================//
 
