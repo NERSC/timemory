@@ -33,6 +33,7 @@
 #include "timemory/operations/types/finalize/get.hpp"
 #include "timemory/plotting/declaration.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/filepath.hpp"
 
 #include <cstdint>
 #include <fstream>
