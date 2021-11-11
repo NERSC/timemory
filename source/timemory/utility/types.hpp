@@ -35,6 +35,7 @@
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/mpl/concepts.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <array>
 #include <bitset>
@@ -168,11 +169,6 @@
 //
 namespace tim
 {
-// definition in popen.hpp
-bool
-launch_process(const char* cmd, const std::string& extra = "",
-               std::ostream* os = nullptr);
-//
 /// Alias template make_integer_sequence
 template <typename Tp, Tp Num>
 using make_integer_sequence = std::make_integer_sequence<Tp, Num>;

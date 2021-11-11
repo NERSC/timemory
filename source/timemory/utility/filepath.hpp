@@ -32,6 +32,7 @@
 #pragma once
 
 #include "timemory/macros/os.hpp"
+#include "timemory/utility/launch_process.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <cstring>

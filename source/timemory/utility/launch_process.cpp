@@ -33,7 +33,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-inline bool
+TIMEMORY_UTILITY_LINKAGE(bool)
 launch_process(const char* cmd, const std::string& extra, std::ostream* os)
 {
 #if !defined(TIMEMORY_WINDOWS)
