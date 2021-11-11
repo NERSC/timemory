@@ -38,7 +38,7 @@
 #include "timemory/manager/types.hpp"
 #include "timemory/mpl/available.hpp"
 #include "timemory/mpl/policy.hpp"
-#include "timemory/settings/declaration.hpp"
+#include "timemory/settings/settings.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 
 #include <atomic>
@@ -128,7 +128,6 @@ public:
     void cleanup();
     void initialize();
     void finalize();
-    void read_command_line();
     bool is_initialized() const { return m_is_initialized; }
     bool is_finalized() const { return m_is_finalized; }
 
@@ -404,6 +403,7 @@ public:
         f_settings() = std::make_shared<settings>(_settings);
     }
 
+#if !defined(DOXYGEN_SHOULD_SKIP_THIS)
     /// swaps out the actual settings instance
     static settings&& swap_settings(settings _settings)
     {
@@ -411,6 +411,7 @@ public:
         *(f_settings()) = std::move(_settings);
         return std::move(_tmp);
     }
+#endif
 };
 //
 //----------------------------------------------------------------------------------//

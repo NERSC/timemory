@@ -304,6 +304,9 @@ struct gotcha
     static bool construct(const std::string& _func, int _priority = 0,
                           const std::string& _tool = "")
     {
+        if(_func.empty())
+            return false;
+
         gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
 
         init_storage<bundle_type>(0);
@@ -325,7 +328,7 @@ struct gotcha
             storage_type::instance()->add_hash_id(_func);
             storage_type::instance()->add_hash_id(_label);
 
-            if(_tool.length() > 0 && _label.find(_tool + "/") != 0)
+            if(!_tool.empty() && _label.find(_tool + "/") != 0)
             {
                 _label = _tool + "/" + _label;
                 while(_label.find("//") != std::string::npos)
@@ -697,12 +700,13 @@ private:
            (_func.find("MPI_") != std::string::npos ||
             _func.find("mpi_") != std::string::npos))
         {
-            static auto mpi_reject_list = { "MPI_Init",           "MPI_Finalize",
-                                            "MPI_Pcontrol",       "MPI_Init_thread",
+            static auto mpi_reject_list = { // "MPI_Init",           "MPI_Finalize",
+                                            "MPI_Pcontrol",  // "MPI_Init_thread",
                                             "MPI_Initialized",    "MPI_Comm_rank",
                                             "MPI_Comm_size",      "MPI_T_init_thread",
                                             "MPI_Comm_split",     "MPI_Abort",
-                                            "MPI_Comm_split_type" };
+                                            "MPI_Comm_split_type"
+            };
 
             auto tofortran = [](std::string _fort) {
                 for(auto& itr : _fort)
@@ -735,9 +739,9 @@ private:
         {
             if(settings::debug())
             {
-                printf(
-                    "[gotcha]> GOTCHA binding for function '%s' is in reject list...\n",
-                    _func.c_str());
+                printf("[gotcha]> GOTCHA binding for function '%s' is in reject "
+                       "list...\n",
+                       _func.c_str());
             }
             return false;
         }
@@ -766,14 +770,14 @@ private:
     template <size_t N>
     static void check_error(error_t _ret, const std::string& _prefix)
     {
-        if(_ret != GOTCHA_SUCCESS)
+        if(_ret != GOTCHA_SUCCESS && (settings::verbose() > -1 || settings::debug()))
         {
             auto&             _data = get_data()[N];
             std::stringstream msg;
             msg << _prefix << " at index '" << N << "' for function '" << _data.wrap_id
                 << "' returned error code " << static_cast<int>(_ret) << ": "
                 << backend::gotcha::get_error(_ret) << "\n";
-            std::cerr << msg.str() << std::endl;
+            std::cerr << msg.str();
         }
         else if(settings::verbose() > 1 || settings::debug())
         {

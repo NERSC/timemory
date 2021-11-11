@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/macros/attributes.hpp"
 #include "timemory/math/abs.hpp"
 #include "timemory/math/assign.hpp"
 #include "timemory/math/divide.hpp"

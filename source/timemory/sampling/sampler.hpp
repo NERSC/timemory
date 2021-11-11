@@ -364,7 +364,7 @@ private:
         double                  m_delay  = 0.001;
         double                  m_freq   = 1.0 / 2.0;
         sigaction_t             m_custom_sigaction;
-        itimerval_t             m_custom_itimerval = { { 1, 0 }, { 0, units::msec } };
+        itimerval_t             m_custom_itimerval = { { 1, 0 }, { 0, 1000 } };
         sigaction_t             m_original_sigaction;
         itimerval_t             m_original_itimerval;
         std::set<int>           m_signals   = {};
@@ -663,11 +663,11 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
     {
         if(_verbose > 0)
         {
-            fprintf(
-                stderr,
-                "[sampler::configure]> No existing sampler has been configured to "
-                "sample at a specific signal or fail at a specific signal. itimer "
-                "for will not be set. Sampler will only wait for target pid to exit\n");
+            fprintf(stderr,
+                    "[sampler::configure]> No existing sampler has been configured to "
+                    "sample at a specific signal or fail at a specific signal. itimer "
+                    "for will not be set. Sampler will only wait for target pid to "
+                    "exit\n");
         }
         _signals.clear();
     }
@@ -696,9 +696,10 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
             auto _itimer = get_itimer(itr);
             if(_itimer < 0)
             {
-                TIMEMORY_EXCEPTION(TIMEMORY_JOIN(
-                    " ", "Error! Alarm cannot be set for signal", itr,
-                    "because the signal does not map to a known itimer value\n"));
+                TIMEMORY_EXCEPTION(
+                    TIMEMORY_JOIN(" ", "Error! Alarm cannot be set for signal", itr,
+                                  "because the signal does not map to a known itimer "
+                                  "value\n"));
             }
 
             // configure the sigaction
@@ -921,11 +922,12 @@ void
 sampler<CompT<Types...>, N, SigIds...>::set_delay(double fdelay)
 {
     get_persistent_data().m_freq = fdelay;
-    int delay_sec                = double(fdelay * units::usec) / units::usec;
-    int delay_usec               = int(fdelay * units::usec) % units::usec;
+    int delay_sec                = fdelay;
+    int delay_usec               = static_cast<int>(fdelay * 1000000) % 1000000;
     if(settings::debug() || settings::verbose() > 0)
     {
-        fprintf(stderr, "sampler delay     : %i sec + %i usec\n", delay_sec, delay_usec);
+        fprintf(stderr, "sampler delay         : %i sec + %i usec\n", delay_sec,
+                delay_usec);
     }
     // Configure the timer to expire after designated delay...
     get_persistent_data().m_custom_itimerval.it_value.tv_sec  = delay_sec;
@@ -939,8 +941,8 @@ void
 sampler<CompT<Types...>, N, SigIds...>::set_frequency(double ffreq)
 {
     get_persistent_data().m_freq = ffreq;
-    int freq_sec                 = double(ffreq * units::usec) / units::usec;
-    int freq_usec                = int(ffreq * units::usec) % units::usec;
+    int freq_sec                 = ffreq;
+    int freq_usec                = static_cast<int>(ffreq * 1000000) % 1000000;
     if(settings::debug() || settings::verbose() > 0)
     {
         fprintf(stderr, "sampler frequency     : %i sec + %i usec\n", freq_sec,
@@ -957,9 +959,10 @@ template <template <typename...> class CompT, size_t N, typename... Types, int..
 inline int64_t
 sampler<CompT<Types...>, N, SigIds...>::get_delay(int64_t units)
 {
-    float _us = (get_persistent_data().m_custom_itimerval.it_value.tv_sec * units::usec) +
-                get_persistent_data().m_custom_itimerval.it_value.tv_usec;
-    _us *= static_cast<float>(units) / units::usec;
+    double _us = (get_persistent_data().m_custom_itimerval.it_value.tv_sec * 1000000) +
+                 get_persistent_data().m_custom_itimerval.it_value.tv_usec;
+    _us *= units::usec;
+    _us /= units;
     return std::max<int64_t>(_us, 1);
 }
 //
@@ -969,10 +972,10 @@ template <template <typename...> class CompT, size_t N, typename... Types, int..
 inline int64_t
 sampler<CompT<Types...>, N, SigIds...>::get_frequency(int64_t units)
 {
-    float _us =
-        (get_persistent_data().m_custom_itimerval.it_interval.tv_sec * units::usec) +
-        get_persistent_data().m_custom_itimerval.it_interval.tv_usec;
-    _us *= static_cast<float>(units) / units::usec;
+    double _us = (get_persistent_data().m_custom_itimerval.it_interval.tv_sec * 1000000) +
+                 get_persistent_data().m_custom_itimerval.it_interval.tv_usec;
+    _us *= units::usec;
+    _us /= units;
     return std::max<int64_t>(_us, 1);
 }
 //
