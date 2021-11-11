@@ -786,7 +786,7 @@ get_hash(T&& obj)
 }
 
 TIMEMORY_INLINE size_t
-get_hash(const string_view_t& str)
+get_hash(string_view_cref_t str)
 {
     return std::hash<string_view_t>{}(str);
 }

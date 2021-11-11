@@ -50,7 +50,7 @@ namespace filesystem
 {
 #if defined(CXX17) && defined(__cpp_lib_filesystem)
 inline auto
-list_directory(const string_view_t& _path)
+list_directory(string_view_cref_t _path)
 {
     namespace fs = std::filesystem;
     std::vector<std::string> _entries{};
@@ -62,7 +62,7 @@ list_directory(const string_view_t& _path)
 }
 #elif defined(_UNIX)
 inline auto
-list_directory(const string_view_t& _path)
+list_directory(string_view_cref_t _path)
 {
     DIR*                     _dir;
     struct dirent*           _diread;
@@ -84,7 +84,7 @@ list_directory(const string_view_t& _path)
 }
 #else
 inline auto
-list_directory(const string_view_t& _path)
+list_directory(string_view_cref_t _path)
 {
     return std::vector<std::string>{};
 }

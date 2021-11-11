@@ -44,13 +44,13 @@ namespace component
 //
 struct opaque
 {
-    using init_func_t  = std::function<void()>;
-    using setup_func_t = std::function<void*(void*, const string_view_t&, scope::config)>;
-    using push_func_t  = std::function<void(void*&, const string_view_t&, scope::config)>;
-    using start_func_t = std::function<void(void*)>;
-    using stop_func_t  = std::function<void(void*)>;
-    using pop_func_t   = std::function<void(void*)>;
-    using get_func_t   = std::function<void(void*, void*&, size_t)>;
+    using init_func_t   = std::function<void()>;
+    using setup_func_t  = std::function<void*(void*, string_view_cref_t, scope::config)>;
+    using push_func_t   = std::function<void(void*&, string_view_cref_t, scope::config)>;
+    using start_func_t  = std::function<void(void*)>;
+    using stop_func_t   = std::function<void(void*)>;
+    using pop_func_t    = std::function<void(void*)>;
+    using get_func_t    = std::function<void(void*, void*&, size_t)>;
     using delete_func_t = std::function<void(void*)>;
     using sample_func_t = std::function<void(void*)>;
     using stats_func_t  = std::function<void(void*, bool)>;
@@ -72,8 +72,8 @@ struct opaque
     operator bool() const { return m_valid; }
 
     void init() const;
-    void setup(const string_view_t& _prefix, scope::config _scope);
-    void push(const string_view_t& _prefix, scope::config _scope);
+    void setup(string_view_cref_t _prefix, scope::config _scope);
+    void push(string_view_cref_t _prefix, scope::config _scope);
     void sample() const;
     void start() const;
     void stop() const;
@@ -88,10 +88,10 @@ struct opaque
     size_t       m_typeid = 0;
     void*        m_data   = nullptr;
     init_func_t  m_init   = []() {};
-    setup_func_t m_setup  = [](void*, const string_view_t&, scope::config) {
+    setup_func_t m_setup  = [](void*, string_view_cref_t, scope::config) {
         return nullptr;
     };
-    push_func_t   m_push         = [](void*&, const string_view_t&, scope::config) {};
+    push_func_t   m_push         = [](void*&, string_view_cref_t, scope::config) {};
     start_func_t  m_start        = [](void*) {};
     stop_func_t   m_stop         = [](void*) {};
     pop_func_t    m_pop          = [](void*) {};

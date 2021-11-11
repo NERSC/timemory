@@ -110,14 +110,14 @@ public:
     auto_base_bundle();
 
     template <typename... T>
-    auto_base_bundle(const string_view_t&, quirk::config<T...>,
+    auto_base_bundle(string_view_cref_t, quirk::config<T...>,
                      transient_func_t = get_initializer());
 
     template <typename... T>
     auto_base_bundle(const captured_location_t&, quirk::config<T...>,
                      transient_func_t = get_initializer());
 
-    explicit auto_base_bundle(const string_view_t&, scope::config = scope::get_default(),
+    explicit auto_base_bundle(string_view_cref_t, scope::config = scope::get_default(),
                               bool report_at_exit = settings::destructor_report(),
                               transient_func_t    = get_initializer());
 
@@ -134,7 +134,7 @@ public:
                               bool report_at_exit = settings::destructor_report());
 
     template <typename Arg, typename... Args>
-    auto_base_bundle(const string_view_t&, bool store, scope::config _scope,
+    auto_base_bundle(string_view_cref_t, bool store, scope::config _scope,
                      transient_func_t, Arg&&, Args&&...);
 
     template <typename Arg, typename... Args>
@@ -301,7 +301,7 @@ public:
     this_type& report_at_exit(bool val);
 
     /// update key
-    this_type& rekey(const string_view_t& _key);
+    this_type& rekey(string_view_cref_t _key);
 
     /// update key
     this_type& rekey(captured_location_t _loc);

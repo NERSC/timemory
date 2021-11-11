@@ -214,11 +214,9 @@ public:
     }
 
 public:
-    static std::string get_message(const string_view_t& _msg)
+    static std::string get_message(string_view_cref_t _msg)
     {
-        std::stringstream ss;
-        ss << "[kokkos_kernel_logger]> " << _msg;
-        return ss.str();
+        return std::string{ "[kokkos_kernel_logger]> " } + std::string{ _msg };
     }
 
     static int64_t& get_depth()

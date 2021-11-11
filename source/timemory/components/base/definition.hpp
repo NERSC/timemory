@@ -434,7 +434,7 @@ base<Tp, Value>::get_opaque(scope::config _scope)
 
     _obj.m_typeid = _typeid_hash;
 
-    _obj.m_setup = [](void* v_result, const string_view_t& _prefix,
+    _obj.m_setup = [](void* v_result, string_view_cref_t _prefix,
                       scope::config arg_scope) {
         DEBUG_PRINT_HERE("Setting up %s", demangle<Tp>().c_str());
         Tp* _result = static_cast<Tp*>(v_result);
@@ -445,7 +445,7 @@ base<Tp, Value>::get_opaque(scope::config _scope)
         return (void*) _result;
     };
 
-    _obj.m_push = [_scope](void*& v_result, const string_view_t& _prefix,
+    _obj.m_push = [_scope](void*& v_result, string_view_cref_t _prefix,
                            scope::config arg_scope) {
         if(v_result)
         {
@@ -537,7 +537,7 @@ base<Tp, void>::get_opaque(scope::config _scope)
 
     _obj.m_typeid = _typeid_hash;
 
-    _obj.m_setup = [](void* v_result, const string_view_t& _prefix,
+    _obj.m_setup = [](void* v_result, string_view_cref_t _prefix,
                       scope::config arg_scope) {
         DEBUG_PRINT_HERE("Setting up %s", demangle<Tp>().c_str());
         Tp* _result = static_cast<Tp*>(v_result);
@@ -548,7 +548,7 @@ base<Tp, void>::get_opaque(scope::config _scope)
         return (void*) _result;
     };
 
-    _obj.m_push = [_scope](void*& v_result, const string_view_t& _prefix,
+    _obj.m_push = [_scope](void*& v_result, string_view_cref_t _prefix,
                            scope::config arg_scope) {
         if(v_result)
         {

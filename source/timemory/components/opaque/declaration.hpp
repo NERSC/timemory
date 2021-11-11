@@ -85,7 +85,7 @@ opaque::init() const
 //--------------------------------------------------------------------------------------//
 //
 inline void
-opaque::setup(const string_view_t& _prefix, scope::config _scope)
+opaque::setup(string_view_cref_t _prefix, scope::config _scope)
 {
     if(m_data)
     {
@@ -99,7 +99,7 @@ opaque::setup(const string_view_t& _prefix, scope::config _scope)
 //--------------------------------------------------------------------------------------//
 //
 inline void
-opaque::push(const string_view_t& _prefix, scope::config _scope)
+opaque::push(string_view_cref_t _prefix, scope::config _scope)
 {
     if(m_data)
         m_push(m_data, _prefix, _scope);

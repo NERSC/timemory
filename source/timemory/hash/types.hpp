@@ -179,15 +179,15 @@ get_hash_id(const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id) TIMEMORY
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \fn hash_value_t add_hash_id(hash_map_ptr_t&, const string_view_t&)
+/// \fn hash_value_t add_hash_id(hash_map_ptr_t&, string_view_cref_t)
 /// \brief add an string to the given hash-map (if it doesn't already exist) and return
 /// the hash
 ///
 hash_value_t
-add_hash_id(hash_map_ptr_t& _hash_map, const string_view_t& _prefix) TIMEMORY_HOT;
+add_hash_id(hash_map_ptr_t& _hash_map, string_view_cref_t _prefix) TIMEMORY_HOT;
 //
 inline hash_value_t
-add_hash_id(hash_map_ptr_t& _hash_map, const string_view_t& _prefix)
+add_hash_id(hash_map_ptr_t& _hash_map, string_view_cref_t _prefix)
 {
     hash_value_t _hash_id = get_hash_id(_prefix);
     if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
@@ -199,15 +199,15 @@ add_hash_id(hash_map_ptr_t& _hash_map, const string_view_t& _prefix)
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \fn hash_value_t add_hash_id(const string_view_t&)
+/// \fn hash_value_t add_hash_id(string_view_cref_t)
 /// \brief add an string to the default hash-map (if it doesn't already exist) and return
 /// the hash
 ///
 hash_value_t
-add_hash_id(const string_view_t& _prefix) TIMEMORY_HOT;
+add_hash_id(string_view_cref_t _prefix) TIMEMORY_HOT;
 //
 inline hash_value_t
-add_hash_id(const string_view_t& _prefix)
+add_hash_id(string_view_cref_t _prefix)
 {
     return add_hash_id(get_hash_ids(), _prefix);
 }

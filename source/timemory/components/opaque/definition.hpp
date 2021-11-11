@@ -119,7 +119,7 @@ get_opaque(scope::config _scope, Args... args)
 
     _obj.m_init = []() {};
 
-    auto _setup = [=](void* v_result, const string_view_t& _prefix,
+    auto _setup = [=](void* v_result, string_view_cref_t _prefix,
                       scope::config _arg_scope) {
         DEBUG_PRINT_HERE("Setting up %s", demangle<Toolset>().c_str());
         Toolset_t* _result = static_cast<Toolset_t*>(v_result);
@@ -137,7 +137,7 @@ get_opaque(scope::config _scope, Args... args)
 
     _obj.m_setup = _setup;
 
-    _obj.m_push = [_setup](void*& v_result, const string_view_t& _prefix,
+    _obj.m_push = [_setup](void*& v_result, string_view_cref_t _prefix,
                            scope::config arg_scope) {
         v_result = _setup(v_result, _prefix, arg_scope);
         if(v_result)
