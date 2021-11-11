@@ -1031,6 +1031,14 @@ struct uses_value_storage<T, type_list<>, A>
 : uses_value_storage<T, type_list<>, conditional_t<A::value, true_type, false_type>>
 {};
 
+/// \struct tim::trait::perfetto_category
+/// \brief Provides the static category for perfetto traces
+template <typename ApiT>
+struct perfetto_category
+{
+    static constexpr auto value = "timemory";
+};
+
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::is_component
 /// \brief trait that designates the type is a timemory component

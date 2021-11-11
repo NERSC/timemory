@@ -308,6 +308,9 @@ struct timeline_storage;
 template <typename T, typename V = trait::data<T>, typename A = trait::uses_storage<T>>
 struct uses_value_storage;
 
+template <typename ApiT>
+struct perfetto_category;
+
 //--------------------------------------------------------------------------------------//
 //
 //                              ALIASES
@@ -686,7 +689,7 @@ struct apply_transform<CheckT, CheckV, TransformT, type_list<ApiT, In...>,
 //======================================================================================//
 // check if type is in expansion
 //
-template <typename...>
+template <typename... Tp>
 struct is_one_of
 {
     static constexpr bool value = false;
