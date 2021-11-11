@@ -47,7 +47,7 @@ namespace tim
 {
 /// \class tim::bundle
 /// \brief Static polymorphic base class for component bundlers
-template <typename...>
+template <typename... Tp>
 class bundle;
 //
 /// \class tim::bundle< Tag, BundleT, TupleT >
@@ -255,26 +255,21 @@ public:
     }
 
     // friend operators
-    friend this_type operator+(const this_type& lhs, const this_type& rhs)
-    {
-        return this_type{ lhs } += rhs;
-    }
+    friend this_type operator+(this_type lhs, const this_type& rhs) { return lhs += rhs; }
+    friend this_type operator-(this_type lhs, const this_type& rhs) { return lhs -= rhs; }
 
-    friend this_type operator-(const this_type& lhs, const this_type& rhs)
+    template <typename Op>
+    friend enable_if_t<!std::is_arithmetic<Op>::value, this_type> operator*(this_type lhs,
+                                                                            const Op& rhs)
     {
-        return this_type{ lhs } -= rhs;
+        return lhs *= rhs;
     }
 
     template <typename Op>
-    friend this_type operator*(const this_type& lhs, Op&& rhs)
+    friend enable_if_t<!std::is_arithmetic<Op>::value, this_type> operator/(this_type lhs,
+                                                                            const Op& rhs)
     {
-        return this_type{ lhs } *= std::forward<Op>(rhs);
-    }
-
-    template <typename Op>
-    friend this_type operator/(const this_type& lhs, Op&& rhs)
-    {
-        return this_type{ lhs } /= std::forward<Op>(rhs);
+        return lhs /= rhs;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const bundle& obj)
@@ -399,13 +394,25 @@ public:
     template <typename... Tp>
     this_type& push(mpl::piecewise_select<Tp...>);
 
+    /// selective push
+    template <typename... Tp>
+    this_type& push(mpl::piecewise_ignore<Tp...>);
+
     /// selective push with scope configuration
     template <typename... Tp>
     this_type& push(mpl::piecewise_select<Tp...>, scope::config);
 
+    /// selective push with scope configuration
+    template <typename... Tp>
+    this_type& push(mpl::piecewise_ignore<Tp...>, scope::config);
+
     /// selective pop
     template <typename... Tp>
     this_type& pop(mpl::piecewise_select<Tp...>);
+
+    /// selective pop
+    template <typename... Tp>
+    this_type& pop(mpl::piecewise_ignore<Tp...>);
 
     /// requests each component record a measurment
     template <typename... Args>
@@ -443,9 +450,17 @@ public:
     template <typename... Tp, typename... Args>
     this_type& start(mpl::piecewise_select<Tp...>, Args&&...);
 
+    /// variant of start() which gets applied to non-Tp types
+    template <typename... Tp, typename... Args>
+    this_type& start(mpl::piecewise_ignore<Tp...>, Args&&...);
+
     /// variant of stop() which only gets applied to Tp types
     template <typename... Tp, typename... Args>
     this_type& stop(mpl::piecewise_select<Tp...>, Args&&...);
+
+    /// variant of stop() which gets applied to non-Tp types
+    template <typename... Tp, typename... Args>
+    this_type& stop(mpl::piecewise_ignore<Tp...>, Args&&...);
 
     using bundle_type::get_prefix;
     using bundle_type::get_scope;
@@ -516,6 +531,11 @@ public:
     template <typename... Args>
     this_type& add_secondary(Args&&... _args);
 
+    /// perform an add_secondary operation. This operation allows components to add
+    /// additional entries to storage which are their direct descendant
+    template <typename... Args>
+    this_type& update_statistics(Args&&... _args);
+
     /// generic member function for invoking user-provided operations
     /// \tparam OpT Operation struct
     template <template <typename> class OpT, typename... Args>
@@ -526,6 +546,12 @@ public:
     /// \tparam OpT Operation struct
     template <template <typename> class OpT, typename... Tp, typename... Args>
     this_type& invoke(mpl::piecewise_select<Tp...>, Args&&... _args);
+
+    /// generic member function for invoking user-provided operations on all types
+    /// that are not listed
+    /// \tparam OpT Operation struct
+    template <template <typename> class OpT, typename... Tp, typename... Args>
+    this_type& invoke(mpl::piecewise_ignore<Tp...>, Args&&... _args);
 
     template <bool PrintPrefix = true, bool PrintLaps = true>
     this_type& print(std::ostream& os, bool _endl = false) const;
@@ -551,6 +577,14 @@ public:
     /// get a component from the bundle
     template <typename U>
     decltype(auto) get() const;
+
+    /// get a component from the bundle and apply function if the pointer is valid
+    template <typename U, typename FuncT>
+    decltype(auto) get(FuncT&&);
+
+    /// get a component from the bundle
+    template <typename U, typename FuncT>
+    decltype(auto) get(FuncT&&) const;
 
     /// performs an opaque search. Opaque searches are generally provided by user_bundles
     /// with a functor such as this:
@@ -624,7 +658,15 @@ public:
                 printf("[bundle::init]> initializing type '%s'...\n",
                        demangle<T>().c_str());
             }
-            _obj = new T(std::forward<Args>(_args)...);
+            if(!bundle_type::init_buffer())
+            {
+                _obj = new T(std::forward<Args>(_args)...);
+            }
+            else
+            {
+                T in(std::forward<Args>(_args)...);
+                _obj = m_buffer->write(&in).second;
+            }
             set_prefix(_obj, internal_tag{});
             set_scope(_obj, internal_tag{});
             return true;
@@ -659,7 +701,15 @@ public:
                 fprintf(stderr, "[bundle::init]> initializing type '%s'...\n",
                         demangle<T>().c_str());
             }
-            _obj = new T{};
+            if(!bundle_type::init_buffer())
+            {
+                _obj = new T{};
+            }
+            else
+            {
+                T in{};
+                _obj = m_buffer->write(&in).second;
+            }
             set_prefix(_obj, internal_tag{});
             set_scope(_obj, internal_tag{});
             return true;
@@ -787,6 +837,7 @@ protected:
 
 protected:
     // objects
+    using bundle_type::m_buffer;
     using bundle_type::m_config;
     using bundle_type::m_enabled;
     using bundle_type::m_hash;
@@ -818,6 +869,9 @@ private:
             _old_instance->stop();
         _old_instance = _new_instance;
     }
+
+    template <template <typename> class OpT, typename... Tp, typename... Args>
+    void invoke_piecewise(type_list<Tp...>, Args&&... _args);
 
 public:
     // archive serialization
@@ -875,6 +929,52 @@ decltype(auto)
 bundle<Tag, BundleT, TupleT>::get() const
 {
     return tim::variadic::impl::get<U, Tag>(m_data);
+}
+
+//----------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename U, typename FuncT>
+decltype(auto)
+bundle<Tag, BundleT, TupleT>::get(FuncT&& _func)
+{
+    auto* _obj = tim::variadic::impl::get<U, Tag>(m_data);
+    if(_obj)
+        return std::forward<FuncT>(_func)(_obj);
+    using return_type = decltype(_func(std::declval<decltype(_obj)>()));
+#if defined(CXX17)
+    if constexpr(std::is_void<decay_t<return_type>>::value)
+        return;
+    else if constexpr(std::is_pointer<decay_t<return_type>>::value)
+        return static_cast<decay_t<return_type>>(nullptr);
+    else
+        return decltype(_func(std::declval<decltype(_obj)>())){};
+#else
+    return return_type();
+#endif
+}
+
+//----------------------------------------------------------------------------------//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename U, typename FuncT>
+decltype(auto)
+bundle<Tag, BundleT, TupleT>::get(FuncT&& _func) const
+{
+    auto* _obj = tim::variadic::impl::get<U, Tag>(m_data);
+    if(_obj)
+        return std::forward<FuncT>(_func)(_obj);
+    using return_type = decltype(_func(std::declval<decltype(_obj)>()));
+#if defined(CXX17)
+    if constexpr(std::is_void<decay_t<return_type>>::value)
+        return;
+    else if constexpr(std::is_pointer<decay_t<return_type>>::value)
+        return static_cast<decay_t<return_type>>(nullptr);
+    else
+        return decltype(_func(std::declval<decltype(_obj)>())){};
+#else
+    return return_type();
+#endif
 }
 
 //----------------------------------------------------------------------------------//
