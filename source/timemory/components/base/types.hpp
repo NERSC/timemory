@@ -86,6 +86,8 @@ operator-(Tp lhs, const Tp& rhs)
 //
 struct empty_base;
 //
+struct empty_storage;
+//
 struct dynamic_base;
 //
 template <typename Tp, typename Value>

@@ -83,7 +83,10 @@ typename init_storage<Tp>::get_type init_storage<Tp>::get(
 template <typename Tp>
 template <typename U, typename V>
 typename init_storage<Tp>::get_type init_storage<Tp>::get(
-    enable_if_t<!trait::uses_value_storage<U, V>::value, int>)
+    enable_if_t<
+        !trait::uses_value_storage<U, V>::value &&
+            !std::is_same<typename U::storage_type, component::empty_storage>::value,
+        int>)
 {
 #if defined(TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT)
     return get_type{ nullptr, false, false, false };
@@ -99,6 +102,19 @@ typename init_storage<Tp>::get_type init_storage<Tp>::get(
     }();
     return _instance;
 #endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+template <typename U, typename V>
+typename init_storage<Tp>::get_type init_storage<Tp>::get(
+    enable_if_t<
+        !trait::uses_value_storage<U, V>::value &&
+            std::is_same<typename U::storage_type, component::empty_storage>::value,
+        int>)
+{
+    return get_type{ nullptr, false, false, false };
 }
 //
 //--------------------------------------------------------------------------------------//
