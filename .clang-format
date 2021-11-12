@@ -1,3 +1,4 @@
+# requires clang-format version 9.0+
 ---
 Language:        Cpp
 AccessModifierOffset: -4

@@ -67,7 +67,7 @@ function(TIMEMORY_CONFIGURE_PYTARGET _TARGET)
         set(LIB_RELPATH ../../../..)
     else()
         file(RELATIVE_PATH LIB_RELPATH "${_PYLIB}"
-            "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
+             "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
     endif()
 
     if(UNIX AND NOT APPLE)
