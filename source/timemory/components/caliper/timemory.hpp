@@ -224,7 +224,7 @@ struct caliper_config
     ///     args --> pybind11::args --> pybind11::tuple
     ///     kwargs --> pybind11::kwargs --> pybind11::dict
     ///
-    void configure(project::python, pybind11::args _args, pybind11::kwargs _kwargs)
+    static void configure(project::python, pybind11::args _args, pybind11::kwargs _kwargs)
     {
         std::string cmd = "";
         {
