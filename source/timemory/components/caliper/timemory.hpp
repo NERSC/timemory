@@ -272,18 +272,24 @@ struct caliper_config
 
     void start()
     {
-        DEBUG_PRINT_HERE("%s", "Starting Caliper ConfigManager");
         auto cnt = instance_tracker_t::start();
         if(cnt == 0)
+        {
+            CONDITIONAL_PRINT_HERE(tim::settings::debug(), "%s",
+                                   "Starting Caliper ConfigManager");
             get_manager().start();
+        }
     }
 
     void stop()
     {
-        DEBUG_PRINT_HERE("%s", "Flushing Caliper ConfigManager");
         auto cnt = instance_tracker_t::stop();
         if(cnt == 0)
+        {
+            CONDITIONAL_PRINT_HERE(tim::settings::debug(), "%s",
+                                   "Flushing Caliper ConfigManager");
             get_manager().flush();
+        }
     }
 };
 //
