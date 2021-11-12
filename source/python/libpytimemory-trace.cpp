@@ -262,12 +262,20 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
 
     // get the arguments
     auto _get_args = [&]() {
-        _disable     = true;
-        auto inspect = py::module::import("inspect");
-        auto _ret    = py::cast<string_t>(
-            inspect.attr("formatargvalues")(*inspect.attr("getargvalues")(pframe)));
-        _disable = false;
-        return _ret;
+        _disable = true;
+        tim::scope::destructor _dtor{ [&_disable]() { _disable= false; } };
+        auto                   inspect = py::module::import("inspect");
+        try
+        {
+            return py::cast<string_t>(
+                inspect.attr("formatargvalues")(*inspect.attr("getargvalues")(pframe)));
+        } catch(py::error_already_set& _exc)
+        {
+            CONDITIONAL_PRINT_HERE(_config.verbose > 1, "Error! %s", _exc.what());
+            if(!_exc.matches(PyExc_AttributeError))
+                throw;
+        }
+        return std::string{};
     };
 
     // get the final label
