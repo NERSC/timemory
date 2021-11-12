@@ -165,7 +165,8 @@ component_decorator(py::list components, const std::string& key)
     if(!tim::settings::enabled())
         return _ptr;
 
-    return &(*_ptr = create_component_list(key, components_enum_to_vec(components)));
+    return &(*_ptr = create_component_list(
+                 key, components_enum_to_vec(std::move(components))));
 }
 //
 }  // namespace init

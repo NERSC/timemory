@@ -46,7 +46,6 @@ import time
 import unittest
 import threading
 import inspect
-import numpy as np
 import timemory as tim
 from timemory import settings as settings
 

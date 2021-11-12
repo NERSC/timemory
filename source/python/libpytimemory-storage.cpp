@@ -130,7 +130,7 @@ from_json(py::object _inp)
         tim::policy::input_archive<tim::cereal::JSONInputArchive, tim::project::python>;
 
     DataT             _obj{};
-    std::stringstream iss{ read_object(_inp) };
+    std::stringstream iss{ read_object(std::move(_inp)) };
 
     {
         auto ia = policy_type::get(iss);
@@ -424,7 +424,7 @@ construct(py::module& _pymod, int, tim::enable_if_t<storage_bindings<Tp>::value>
         auto _from = [_base](py::object _obj) {
             std::stringstream _msg;
             py::object        _ret = py::none{};
-            std::stringstream iss{ read_object(_obj) };
+            std::stringstream iss{ read_object(std::move(_obj)) };
 
             for(const auto& itr :
                 { "load_json", "load_json_dmp", "load_json_tree", "load_json_tree_dmp" })
