@@ -219,7 +219,10 @@ repr(py::class_<pytuple_t<T>>& _pyclass,
         if(!obj)
             return std::string{};
         std::stringstream ss;
-        obj->template print<true, true>(ss, false);
+        if(obj->hash() == 0)
+            obj->template print<false, true>(ss, false);
+        else
+            obj->template print<true, true>(ss, false);
         return ss.str();
     };
     _pyclass.def("__repr__", _repr, "String representation");
@@ -485,7 +488,7 @@ struct process_args<OpT, Arg, Args...>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
-            return obj->audit(arg, args...);
+            return &obj->audit(arg, args...);
         };
         _pycomp.def("audit", _func, "Audit incoming or outgoing values");
     }
@@ -494,7 +497,7 @@ struct process_args<OpT, Arg, Args...>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
-            return obj->start(arg, args...);
+            return &obj->start(arg, args...);
         };
         _pycomp.def("start", _func, "Start measurement");
     }
@@ -503,7 +506,7 @@ struct process_args<OpT, Arg, Args...>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
-            return obj->stop(arg, args...);
+            return &obj->stop(arg, args...);
         };
         _pycomp.def("stop", _func, "Stop measurement");
     }
@@ -512,7 +515,7 @@ struct process_args<OpT, Arg, Args...>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
-            return obj->store(arg, args...);
+            return &obj->store(arg, args...);
         };
         _pycomp.def("store", _func, "Store measurement");
     }
@@ -533,7 +536,7 @@ struct process_args<OpT, Arg, Args...>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
-            return obj->measure(arg, args...);
+            return &obj->measure(arg, args...);
         };
         _pycomp.def("measure", _func, "Take a measurement");
     }
@@ -543,7 +546,7 @@ struct process_args<OpT, Arg, Args...>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
-            return obj->mark_begin(arg, args...);
+            return &obj->mark_begin(arg, args...);
         };
         _pycomp.def("mark_begin", _func, "Mark a begin point");
     }
@@ -553,7 +556,7 @@ struct process_args<OpT, Arg, Args...>
     static void generate(py::class_<U>& _pycomp)
     {
         auto _func = [](U* obj, Arg arg, Args... args) {
-            return obj->mark_end(arg, args...);
+            return &obj->mark_end(arg, args...);
         };
         _pycomp.def("mark_end", _func, "Mark an end point");
     }
@@ -698,17 +701,22 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
     _pycomp.def(py::init(_init), "Creates component");
     _pycomp.def(py::init(_sinit), "Creates component with a label");
     _pycomp.def(
-        "push", [](bundle_t* obj) { return obj->push(); }, "Push into the call-graph");
+        "push", [](bundle_t* obj) { return &obj->push(); }, "Push into the call-graph");
     _pycomp.def(
-        "pop", [](bundle_t* obj) { return obj->pop(); }, "Pop off the call-graph");
+        "pop", [](bundle_t* obj) { return &obj->pop(); }, "Pop off the call-graph");
     _pycomp.def(
-        "start", [](bundle_t* obj) { return obj->start(); }, "Start measurement");
+        "start", [](bundle_t* obj) { return &obj->start(); }, "Start measurement");
     _pycomp.def(
-        "stop", [](bundle_t* obj) { return obj->stop(); }, "Stop measurement");
-    _pycomp.def("measure", &bundle_t::template measure<>, "Take a measurement");
-    _pycomp.def("reset", &bundle_t::template reset<>, "Reset the values");
-    _pycomp.def("mark_begin", &bundle_t::template mark_begin<>, "Mark an begin point");
-    _pycomp.def("mark_end", &bundle_t::template mark_end<>, "Mark an end point");
+        "stop", [](bundle_t* obj) { return &obj->stop(); }, "Stop measurement");
+    _pycomp.def(
+        "measure", [](bundle_t* obj) { return &obj->measure(); }, "Take a measurement");
+    _pycomp.def(
+        "reset", [](bundle_t* obj) { return &obj->reset(); }, "Reset the values");
+    _pycomp.def(
+        "mark_begin", [](bundle_t* obj) { return &obj->mark_begin(); },
+        "Mark an begin point");
+    _pycomp.def(
+        "mark_end", [](bundle_t* obj) { return &obj->mark_end(); }, "Mark an end point");
 
     // these require further evaluation
     pyinternal::get(_pycomp);
