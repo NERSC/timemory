@@ -25,7 +25,6 @@
 # SOFTWARE.
 
 import sys
-import threading
 from functools import wraps
 
 from ..libs.libpytimemory.trace import tracer_function as _tracer_function

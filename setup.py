@@ -414,7 +414,10 @@ if _use_skbuild:
         from skbuild.command.install import install as skinstall
     except (ImportError, ModuleNotFoundError) as e:
         sys.stderr.write(
-            "Warning! timemory requires scikit-build for full installation. Generating dist-info only...\n"
+            "{} {}".format(
+                "Warning! timemory requires scikit-build for full installation.",
+                "Generating dist-info only...\n",
+            )
         )
         sys.stderr.write(f"{e}\n")
         sys.stderr.flush()

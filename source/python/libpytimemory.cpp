@@ -66,13 +66,21 @@ manager_wrapper::get()
 namespace impl
 {
 //
+//
+template <typename Tp>
+struct storage_bindings
+{
+    static constexpr bool value =
+        tim::trait::is_available<Tp>::value && tim::trait::uses_value_storage<Tp>::value;
+};
+//
 template <typename Tp>
 using basic_dmp_tree_t = std::vector<std::vector<tim::basic_tree<tim::node::tree<Tp>>>>;
 //
 template <typename Tp, typename Archive>
 auto
 get_json(Archive& ar, const pytim::pyenum_set_t& _types,
-         tim::enable_if_t<tim::trait::is_available<Tp>::value, int>)
+         tim::enable_if_t<storage_bindings<Tp>::value, int>)
     -> decltype(
         tim::storage<Tp>::instance()->dmp_get(std::declval<basic_dmp_tree_t<Tp>&>()),
         void())
@@ -99,10 +107,10 @@ get_json(Archive&, const pytim::pyenum_set_t&, long)
 //
 template <typename Tp, typename ValueT = typename Tp::value_type, typename StreamT>
 auto
-get_stream(StreamT& strm, const pytim::pyenum_set_t& _types,
-           tim::enable_if_t<tim::trait::is_available<Tp>::value &&
-                                !tim::concepts::is_null_type<ValueT>::value,
-                            int>)
+get_stream(
+    StreamT& strm, const pytim::pyenum_set_t& _types,
+    tim::enable_if_t<
+        storage_bindings<Tp>::value && !tim::concepts::is_null_type<ValueT>::value, int>)
     -> decltype(tim::storage<Tp>::instance()->dmp_get(), void())
 {
     using printer_t = tim::operation::finalize::print<Tp, true>;
@@ -223,7 +231,7 @@ PYBIND11_MODULE(libpytimemory, timemory)
         if(_settings->get_enable_signal_handler())
         {
             auto default_signals = tim::signal_settings::get_default();
-            for(auto& itr : default_signals)
+            for(const auto& itr : default_signals)
                 tim::signal_settings::enable(itr);
             // should return default and any modifications from environment
             auto enabled_signals = tim::signal_settings::get_enabled();
@@ -289,7 +297,7 @@ PYBIND11_MODULE(libpytimemory, timemory)
     {
         namespace scope   = tim::scope;
         auto _config_init = [](py::object _flat, py::object _time) {
-            auto _val = new scope::config{};
+            auto* _val = new scope::config{};
             if(!_flat.is_none())
             {
                 try
@@ -434,13 +442,17 @@ PYBIND11_MODULE(libpytimemory, timemory)
     //
     //==================================================================================//
     auto report = [](std::string fname) {
+        bool _empty  = fname.empty();
         auto _path   = tim::settings::output_path();
         auto _prefix = tim::settings::output_prefix();
+
+        if(!_empty)
+            tim::settings::output_path() = std::move(fname);
 
         using tuple_type = tim::convert_t<tim::available_types_t, tim::type_list<>>;
         tim::manager::get_storage<tuple_type>::print();
 
-        if(fname.length() > 0)
+        if(!_empty)
         {
             tim::settings::output_path()   = _path;
             tim::settings::output_prefix() = _prefix;
@@ -448,7 +460,7 @@ PYBIND11_MODULE(libpytimemory, timemory)
     };
     //----------------------------------------------------------------------------------//
     auto _do_clear = [](py::list _list) {
-        auto _types = pytim::get_enum_set(_list);
+        auto _types = pytim::get_enum_set(std::move(_list));
         if(_types.empty())
             _types = pytim::get_type_enums<tim::available_types_t>();
         using tuple_type = tim::convert_t<tim::available_types_t, tim::type_list<>>;
@@ -456,7 +468,7 @@ PYBIND11_MODULE(libpytimemory, timemory)
     };
     //----------------------------------------------------------------------------------//
     auto _get_size = [](py::list _list) {
-        auto _types = pytim::get_enum_set(_list);
+        auto _types = pytim::get_enum_set(std::move(_list));
         if(_types.empty())
             _types = pytim::get_type_enums<tim::available_types_t>();
         using tuple_type = tim::convert_t<tim::available_types_t, tim::type_list<>>;
@@ -547,7 +559,7 @@ PYBIND11_MODULE(libpytimemory, timemory)
     };
     //----------------------------------------------------------------------------------//
     auto _init = [](py::list argv, std::string _prefix, std::string _suffix) {
-        if(argv.size() < 1)
+        if(argv.empty())
             return;
         int    _argc = argv.size();
         char** _argv = new char*[argv.size()];
