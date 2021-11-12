@@ -49,11 +49,11 @@ struct config
 {
     using scope_config              = tim::scope::config;
     bool         is_running         = false;
-    bool         trace_c            = true;
+    bool         trace_c            = false;
     bool         include_internal   = false;
     bool         include_args       = false;
     bool         include_line       = false;
-    bool         include_filename   = true;
+    bool         include_filename   = false;
     bool         full_filepath      = false;
     int32_t      max_stack_depth    = std::numeric_limits<uint16_t>::max();
     int32_t      ignore_stack_depth = 0;
@@ -200,17 +200,29 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     // get the arguments
     auto _get_args = [&]() {
         auto inspect = py::module::import("inspect");
-        return py::cast<std::string>(
-            inspect.attr("formatargvalues")(*inspect.attr("getargvalues")(pframe)));
+        try
+        {
+            return py::cast<std::string>(
+                inspect.attr("formatargvalues")(*inspect.attr("getargvalues")(pframe)));
+        } catch(py::error_already_set& _exc)
+        {
+            CONDITIONAL_PRINT_HERE(_config.verbose > 1, "Error! %s", _exc.what());
+            if(!_exc.matches(PyExc_AttributeError))
+                throw;
+        }
+        return std::string{};
     };
 
     // get the final label
     auto _get_label = [&](auto& _func, auto& _filename, auto& _fullpath) {
-        _func.insert(0, "[");
+        auto _bracket = _config.include_filename || _config.include_line;
+        if(_bracket)
+            _func.insert(0, "[");
         // append the arguments
         if(_config.include_args)
             _func.append(_get_args());
-        _func.append("]");
+        if(_bracket)
+            _func.append("]");
         // append the filename
         if(_config.include_filename)
         {
