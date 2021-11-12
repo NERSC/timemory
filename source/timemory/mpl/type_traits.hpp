@@ -96,44 +96,6 @@ struct base_has_last : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
-/// \struct tim::trait::is_available
-/// \brief trait that signifies that an implementation for the component is available.
-/// When this is set to false, the variadic component bundlers like \ref component_tuple
-/// will silently filter out this type from the template parameters, e.g.
-///
-/// \code{.cpp}
-/// TIMEMORY_DECLARE_COMPONENT(foo)
-/// TIMEMORY_DECLARE_COMPONENT(bar)
-///
-/// namespace tim {
-/// namespace trait {
-/// template <>
-/// struct is_available<component::bar> : false_type {};
-/// }
-/// }
-/// \endcode
-///
-/// will cause these two template instantiations to become identical:
-///
-/// \code{.cpp}
-/// using A_t = component_tuple<foo>;
-/// using B_t = component_tuple<foo, bar>;
-/// \endcode
-///
-/// and a definition of 'bar' will not be required for compilation.
-///
-template <typename T>
-struct is_available : TIMEMORY_DEFAULT_AVAILABLE
-{};
-
-template <typename T>
-struct is_available<T*> : is_available<std::remove_pointer_t<T>>
-{};
-
-template <typename T>
-using is_available_t = typename is_available<T>::type;
-
-//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::data
 /// \brief trait to specify the value type of a component before the definition of
 /// the component

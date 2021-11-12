@@ -77,6 +77,11 @@
 namespace tim
 {
 //
+namespace component
+{
+struct empty_storage;
+}
+//
 //--------------------------------------------------------------------------------------//
 //
 ///
@@ -598,7 +603,16 @@ struct init_storage
     static get_type get(enable_if_t<trait::uses_value_storage<U, V>::value, int> = 0);
 
     template <typename U = Tp, typename V = typename U::value_type>
-    static get_type get(enable_if_t<!trait::uses_value_storage<U, V>::value, int> = 0);
+    static get_type get(enable_if_t<!trait::uses_value_storage<U, V>::value &&
+                                        !std::is_same<typename U::storage_type,
+                                                      component::empty_storage>::value,
+                                    int> = 0);
+
+    template <typename U = Tp, typename V = typename U::value_type>
+    static get_type get(enable_if_t<!trait::uses_value_storage<U, V>::value &&
+                                        std::is_same<typename U::storage_type,
+                                                     component::empty_storage>::value,
+                                    int> = 0);
 
     static void init();
 };

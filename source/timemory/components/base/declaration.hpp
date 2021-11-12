@@ -45,23 +45,24 @@ using graph_iterator_t = typename graph<node::graph<Tp>>::iterator;
 template <typename Tp>
 using graph_const_iterator_t = typename graph<node::graph<Tp>>::const_iterator;
 //
+/// \struct tim::component::empty_storage
+/// \brief A very lightweight storage class which provides nothing
+struct empty_storage
+{
+    static constexpr empty_storage* noninit_instance() { return nullptr; }
+    constexpr bool                  empty() const { return true; }
+    constexpr size_t                size() const { return 0; }
+    constexpr size_t                true_size() const { return 0; }
+    constexpr void                  reset() const {}
+    constexpr void                  print() const {}
+    template <typename ArchiveT>
+    constexpr void do_serialize(ArchiveT&)
+    {}
+};
 /// \struct tim::component::empty_base
-/// \brief The default base class for timemory components.
+/// \brief A very lightweight base which provides no storage
 struct empty_base
 {
-    struct empty_storage
-    {
-        static constexpr empty_storage* noninit_instance() { return nullptr; }
-        constexpr bool                  empty() const { return true; }
-        constexpr size_t                size() const { return 0; }
-        constexpr size_t                true_size() const { return 0; }
-        constexpr void                  reset() const {}
-        constexpr void                  print() const {}
-        template <typename ArchiveT>
-        constexpr void do_serialize(ArchiveT&)
-        {}
-    };
-
     using storage_type = empty_storage;
     using base_type    = void;
 
