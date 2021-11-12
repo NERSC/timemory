@@ -23,6 +23,7 @@ if(TIMEMORY_USE_PAPI OR TIMEMORY_USE_CUPTI)
         HEADERS ${header_files}
         SOURCES ${source_files}
         DEPENDS ${DEPS}
-        PRIVATE_LINK timemory-cpu-roofline timemory-gpu-roofline timemory-roofline
+        PRIVATE_LINK timemory::timemory-cpu-roofline timemory::timemory-gpu-roofline
+                     timemory::timemory-roofline
         PROPERTY_DEPENDS GLOBAL)
 endif()
