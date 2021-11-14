@@ -148,10 +148,10 @@ public:
     ~auto_base_bundle();
 
     // copy and move
-    auto_base_bundle(const auto_base_bundle&)     = default;
-    auto_base_bundle(auto_base_bundle&&) noexcept = default;
+    auto_base_bundle(const auto_base_bundle&) = default;
+    auto_base_bundle(auto_base_bundle&&)      = default;
     auto_base_bundle& operator=(const auto_base_bundle&) = default;
-    auto_base_bundle& operator=(auto_base_bundle&&) noexcept = default;
+    auto_base_bundle& operator=(auto_base_bundle&&) = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
 

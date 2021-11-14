@@ -91,12 +91,12 @@ public:
     template <typename... Args>
     component_tuple(Args&&...);
 
-    ~component_tuple()                          = default;
-    component_tuple(const component_tuple&)     = default;
-    component_tuple(component_tuple&&) noexcept = default;
+    ~component_tuple()                      = default;
+    component_tuple(const component_tuple&) = default;
+    component_tuple(component_tuple&&)      = default;
 
     component_tuple& operator=(const component_tuple& rhs) = default;
-    component_tuple& operator=(component_tuple&&) noexcept = default;
+    component_tuple& operator=(component_tuple&&) = default;
 };
 
 template <typename... Types>
