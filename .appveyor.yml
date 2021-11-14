@@ -124,7 +124,7 @@ build_script:
     -DTIMEMORY_USE_ARCH="%USE_ARCH%"
     -DTIMEMORY_BUILD_C="%BUILD_C%"
     -DTIMEMORY_BUILD_EXAMPLES="%EXAMPLES%"
-    -DTIMEMORY_BUILD_TESTING="%BUILD_TESTING%"
+    -DTIMEMORY_BUILD_TESTING=OFF
     -DTIMEMORY_BUILD_MINIMAL_TESTING="%BUILD_TESTING%"
     -DTIMEMORY_BUILD_TOOLS="%TOOLS%"
     -DTIMEMORY_BUILD_GOOGLE_TEST="%BUILD_TESTING%"
@@ -136,7 +136,7 @@ build_script:
   - ls
   - ps: |
       if ($env:BUILD_TESTING -eq "ON") {
-          iex "ctest . --output-on-failure -C $env:CONFIG"
+          iex "ctest --output-on-failure -C $env:CONFIG"
       }
   - ps: |
       if ($env:EXAMPLES -eq "ON") {

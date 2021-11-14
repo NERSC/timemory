@@ -270,7 +270,7 @@ TEST_F(threading_tests, stl)
 
     auto run_fib = [](uint64_t n) { return details::fibonacci(n); };
 
-    std::atomic<int64_t> sum(0);
+    std::atomic<int64_t> sum{ 0 };
 
     auto run_a = [&]() {
         for(int i = 0; i < 2; ++i)
@@ -278,7 +278,7 @@ TEST_F(threading_tests, stl)
             TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/worker/AAAAA/",
                                   get_tid());
             sum += run_fib(nfib);
-            details::do_sleep(500);
+            details::do_sleep(100);
         }
         if(get_tid() > 0)
             thread_count--;
@@ -289,7 +289,7 @@ TEST_F(threading_tests, stl)
         {
             TIMEMORY_BLANK_MARKER(tuple_t, details::get_test_name(), "/worker/BBBBB/",
                                   get_tid());
-            sum += run_fib(45);
+            sum += run_fib(30);
             details::do_sleep(nfib + noff);
         }
         if(get_tid() > 0)
