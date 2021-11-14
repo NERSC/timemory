@@ -271,11 +271,11 @@ protected:
                 enable_if_t<std::tuple_size<U>::value == 0, int> = 0)
     {}
 
-    ~base_bundle()                      = default;
-    base_bundle(const base_bundle&)     = default;
-    base_bundle(base_bundle&&) noexcept = default;
+    ~base_bundle()                  = default;
+    base_bundle(const base_bundle&) = default;
+    base_bundle(base_bundle&&)      = default;
     base_bundle& operator=(const base_bundle&) = default;
-    base_bundle& operator=(base_bundle&&) noexcept = default;
+    base_bundle& operator=(base_bundle&&) = default;
 
 public:
     void rekey(const string_t& _key)

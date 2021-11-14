@@ -77,11 +77,11 @@ public:
     explicit auto_tuple(Args&&... args);
 
     // copy and move
-    ~auto_tuple()                     = default;
-    auto_tuple(const auto_tuple&)     = default;
-    auto_tuple(auto_tuple&&) noexcept = default;
+    ~auto_tuple()                 = default;
+    auto_tuple(const auto_tuple&) = default;
+    auto_tuple(auto_tuple&&)      = default;
     auto_tuple& operator=(const auto_tuple&) = default;
-    auto_tuple& operator=(auto_tuple&&) noexcept = default;
+    auto_tuple& operator=(auto_tuple&&) = default;
 
     static constexpr std::size_t size() { return poly_base::size(); }
 

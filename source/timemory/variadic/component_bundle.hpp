@@ -89,12 +89,12 @@ public:
     template <typename... Args>
     component_bundle(Args&&...);
 
-    ~component_bundle()                           = default;
-    component_bundle(const component_bundle&)     = default;
-    component_bundle(component_bundle&&) noexcept = default;
+    ~component_bundle()                       = default;
+    component_bundle(const component_bundle&) = default;
+    component_bundle(component_bundle&&)      = default;
 
     component_bundle& operator=(const component_bundle& rhs) = default;
-    component_bundle& operator=(component_bundle&&) noexcept = default;
+    component_bundle& operator=(component_bundle&&) = default;
 };
 
 template <typename Tag, typename... Types>

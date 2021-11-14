@@ -109,12 +109,12 @@ public:
     template <typename... Args>
     component_list(Args&&...);
 
-    ~component_list()                         = default;
-    component_list(const component_list&)     = default;
-    component_list(component_list&&) noexcept = default;
+    ~component_list()                     = default;
+    component_list(const component_list&) = default;
+    component_list(component_list&&)      = default;
 
     component_list& operator=(const component_list& rhs) = default;
-    component_list& operator=(component_list&&) noexcept = default;
+    component_list& operator=(component_list&&) = default;
 };
 
 template <typename... Types>

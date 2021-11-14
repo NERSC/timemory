@@ -103,11 +103,11 @@ public:
     explicit auto_list(Args&&... args);
 
     // copy and move
-    ~auto_list()                    = default;
-    auto_list(const auto_list&)     = default;
-    auto_list(auto_list&&) noexcept = default;
+    ~auto_list()                = default;
+    auto_list(const auto_list&) = default;
+    auto_list(auto_list&&)      = default;
     auto_list& operator=(const auto_list&) = default;
-    auto_list& operator=(auto_list&&) noexcept = default;
+    auto_list& operator=(auto_list&&) = default;
 
     static constexpr std::size_t size() { return poly_base::size(); }
 

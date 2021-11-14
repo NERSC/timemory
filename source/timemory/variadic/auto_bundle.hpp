@@ -112,11 +112,11 @@ public:
     explicit auto_bundle(Args&&... args);
 
     // copy and move
-    ~auto_bundle()                      = default;
-    auto_bundle(const auto_bundle&)     = default;
-    auto_bundle(auto_bundle&&) noexcept = default;
+    ~auto_bundle()                  = default;
+    auto_bundle(const auto_bundle&) = default;
+    auto_bundle(auto_bundle&&)      = default;
     auto_bundle& operator=(const auto_bundle&) = default;
-    auto_bundle& operator=(auto_bundle&&) noexcept = default;
+    auto_bundle& operator=(auto_bundle&&) = default;
 
     static constexpr std::size_t size() { return poly_base::size(); }
 

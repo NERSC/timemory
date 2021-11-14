@@ -216,11 +216,11 @@ public:
 
     ~bundle();
     bundle(const bundle& rhs);
-    bundle(bundle&&) noexcept = default;
+    bundle(bundle&&) = default;
 
     // this_type operators
     bundle& operator=(const bundle& rhs);
-    bundle& operator=(bundle&&) noexcept = default;
+    bundle& operator=(bundle&&) = default;
 
     this_type& operator-=(const this_type& rhs);
     this_type& operator+=(const this_type& rhs);
