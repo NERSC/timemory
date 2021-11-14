@@ -234,11 +234,14 @@ add_timemory_google_test(
     SOURCES type_trait_tests.cpp
     LINK_LIBRARIES common-test-libs timemory::timemory-core)
 
-add_timemory_google_test(
-    warning_tests
-    SOURCES warning_tests.cpp
-    LINK_LIBRARIES test-werror-flags $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
-                   timemory::timemory-core)
+if(NOT WIN32)
+    # no support for -Wall in windows flags
+    add_timemory_google_test(
+        warning_tests
+        SOURCES warning_tests.cpp
+        LINK_LIBRARIES test-werror-flags $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
+                       timemory::timemory-core)
+endif()
 
 if(TIMEMORY_SOCKET_TESTS)
     add_timemory_google_test(
