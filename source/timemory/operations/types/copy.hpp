@@ -32,6 +32,9 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/operations/types/set.hpp"
+
+#include <memory>
 
 namespace tim
 {
@@ -52,46 +55,84 @@ struct copy
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(copy)
+    TIMEMORY_DEFAULT_OBJECT(copy)
+
+    copy(Tp& obj, const Tp& rhs) { (*this)(obj, rhs); }
+    copy(Tp*& obj, const Tp* rhs) { (*this)(obj, rhs); }
+    copy(Tp*& obj, const std::shared_ptr<Tp>& rhs) { (*this)(obj, rhs.get()); }
+    copy(Tp*& obj, const std::unique_ptr<Tp>& rhs) { (*this)(obj, rhs.get()); }
 
     template <typename Up = Tp>
-    copy(Up& obj, const Up& rhs,
-         enable_if_t<trait::is_available<Up>::value &&
-                         !std::is_pointer<decay_t<Up>>::value,
-                     int> = 0)
+    TIMEMORY_INLINE auto operator()(Tp& obj, Up&& v) const
     {
-        obj = Up{ rhs };
-        obj.set_iterator(nullptr);
+        return sfinae(obj, std::forward<Up>(v));
     }
 
     template <typename Up = Tp>
-    copy(
-        Up& obj, const Up& rhs,
-        enable_if_t<trait::is_available<Up>::value && std::is_pointer<decay_t<Up>>::value,
-                    long> = 0)
+    TIMEMORY_INLINE auto operator()(Tp*& obj, Up&& v) const
     {
-        if(rhs)
-        {
-            if(!obj)
-            {
-                obj = new type{ *rhs };
-            }
-            else
-            {
-                *obj = type{ *rhs };
-            }
-            obj->set_iterator(nullptr);
-        }
+        return sfinae(obj, std::forward<Up>(v));
     }
 
-    template <typename Up = Tp>
-    copy(Up&, const Up&, enable_if_t<!trait::is_available<Up>::value, int> = 0)
+private:
+    template <typename Up, typename Dp = decay_t<Up>>
+    TIMEMORY_INLINE Tp& sfinae(Tp& obj, Up&& rhs,
+                               enable_if_t<trait::is_available<Dp>::value &&
+                                               !std::is_pointer<decay_t<Dp>>::value,
+                                           int> = 0) const;
+
+    template <typename Up, typename Dp = decay_t<Up>>
+    TIMEMORY_INLINE Tp* sfinae(
+        Tp*& obj, Up&& rhs,
+        enable_if_t<trait::is_available<Dp>::value && std::is_pointer<decay_t<Dp>>::value,
+                    long> = 0) const;
+
+    template <typename Up, typename Dp = decay_t<Up>>
+    TIMEMORY_INLINE auto sfinae(
+        Tp&, Up&&, enable_if_t<!trait::is_available<Dp>::value, int> = 0) const
     {}
 
-    template <typename Up = Tp>
-    copy(Up*&, const Up*, enable_if_t<!trait::is_available<Up>::value, long> = 0)
+    template <typename Up, typename Dp = decay_t<Up>>
+    TIMEMORY_INLINE auto sfinae(
+        Tp*&, Up&&, enable_if_t<!trait::is_available<Dp>::value, int> = 0) const
     {}
 };
+//
+template <typename Tp>
+template <typename Up, typename Dp>
+Tp&
+copy<Tp>::sfinae(
+    Tp& obj, Up&& rhs,
+    enable_if_t<trait::is_available<Dp>::value && !std::is_pointer<decay_t<Dp>>::value,
+                int>) const
+{
+    obj = Up{ std::forward<Up>(rhs) };
+    operation::set_iterator<Tp>{}(obj, nullptr);
+    return obj;
+}
+
+template <typename Tp>
+template <typename Up, typename Dp>
+Tp*
+copy<Tp>::sfinae(
+    Tp*& obj, Up&& rhs,
+    enable_if_t<trait::is_available<Dp>::value && std::is_pointer<decay_t<Dp>>::value,
+                long>) const
+{
+    if(rhs)
+    {
+        if(!obj)
+        {
+            obj = new type{ *std::forward<Up>(rhs) };
+        }
+        else
+        {
+            *obj = type{ *std::forward<Up>(rhs) };
+        }
+        operation::set_iterator<Tp>{}(*obj, nullptr);
+    }
+    return obj;
+}
 //
 //--------------------------------------------------------------------------------------//
 //

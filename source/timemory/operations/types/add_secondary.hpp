@@ -284,7 +284,7 @@ struct add_secondary
     TIMEMORY_DEFAULT_OBJECT(add_secondary)
 
     add_secondary(const type& _rhs, typename type::storage_type* _storage)
-    : base_type{ _storage, _rhs.get_iterator(), _rhs }
+    : base_type{ _storage, operation::get_iterator<Tp>{}(_rhs), _rhs }
     {}
 
     //----------------------------------------------------------------------------------//

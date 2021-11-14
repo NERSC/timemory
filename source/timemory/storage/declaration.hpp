@@ -39,6 +39,7 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/operations/types/cleanup.hpp"
+#include "timemory/operations/types/set.hpp"
 #include "timemory/storage/graph.hpp"
 #include "timemory/storage/graph_data.hpp"
 #include "timemory/storage/macros.hpp"
@@ -411,7 +412,7 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     auto& _stats = _node.stats();
     operation::add_statistics<Type>(_tmp, _stats);
     auto itr = _data().emplace_child(_itr, std::move(_node));
-    itr->obj().set_iterator(itr);
+    operation::set_iterator<Type>{}(itr->data(), itr);
     m_node_ids[_depth][_hash] = itr;
     return itr;
 }
@@ -452,7 +453,7 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     auto&& _tmp = std::get<2>(_secondary);
     auto   itr  = _data().emplace_child(
         _itr, graph_node_t{ _hash, _tmp, static_cast<int64_t>(_depth), m_thread_idx });
-    itr->obj().set_iterator(itr);
+    operation::set_iterator<Type>{}(itr->data(), itr);
     m_node_ids[_depth][_hash] = itr;
     return itr;
 }

@@ -28,6 +28,8 @@
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
 
+#include <utility>
+
 namespace tim
 {
 //
@@ -383,21 +385,21 @@ struct set_iterator
     TIMEMORY_DEFAULT_OBJECT(set_iterator)
 
     template <typename Up>
-    TIMEMORY_HOT auto operator()(Tp& obj, Up&& v) const
+    TIMEMORY_HOT auto operator()(Tp& obj, Up&& v)
     {
-        return sfinae(obj, 0, v);
+        return sfinae(obj, 0, std::forward<Up>(v));
     }
 
 private:
-    template <typename Up>
-    TIMEMORY_HOT auto sfinae(Tp& obj, int, Up&& v) const
-        -> decltype(obj.set_iterator(std::forward<Up>(v)))
+    template <typename ObjT, typename ItrT>
+    TIMEMORY_HOT auto sfinae(ObjT& obj, int, ItrT&& v)
+        -> decltype(std::declval<ObjT>().set_iterator(std::forward<ItrT>(v)))
     {
-        return obj.set_iterator(std::forward<Up>(v));
+        return obj.set_iterator(std::forward<ItrT>(v));
     }
 
-    template <typename Up>
-    TIMEMORY_INLINE auto sfinae(Tp&, long, Up&&) const
+    template <typename ObjT, typename ItrT>
+    TIMEMORY_INLINE auto sfinae(ObjT&, long, ItrT&&)
     {}
 };
 //
