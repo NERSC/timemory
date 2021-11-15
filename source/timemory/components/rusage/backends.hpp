@@ -144,6 +144,19 @@ struct rusage_cache
     inline int64_t get_user_mode_time() const;
     inline int64_t get_kernel_mode_time() const;
 
+    friend std::ostream& operator<<(std::ostream& _os, const rusage_cache& _rc)
+    {
+        _os << "peak_rss: " << _rc.get_peak_rss()
+            << ", kernel mode time: " << _rc.get_kernel_mode_time()
+            << ", user mode time: " << _rc.get_user_mode_time()
+            << ", io in: " << _rc.get_num_io_in() << ", io out: " << _rc.get_num_io_out()
+            << ", major page faults: " << _rc.get_num_major_page_faults()
+            << ", minor page faults: " << _rc.get_num_minor_page_faults()
+            << ", prio ctx switch: " << _rc.get_num_priority_context_switch()
+            << ", vol ctx switch: " << _rc.get_num_voluntary_context_switch();
+        return _os;
+    }
+
 #if defined(TIMEMORY_UNIX)
 private:
     using rusage_t = struct rusage;

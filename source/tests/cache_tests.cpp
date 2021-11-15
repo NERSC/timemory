@@ -653,13 +653,15 @@ TEST_F(cache_tests, complete_tuple)
     tim::settings::verbose() = 0;
 
     namespace component = tim::component;
+    namespace mpl       = tim::mpl;
+
     tim::component_tuple_t<TIMEMORY_COMPONENT_TYPES> _bundle{ details::get_test_name() };
     auto&                                            _bcache = *cache.at(0);
     auto&                                            _ecache = *cache.at(1);
     _bundle.start(_bcache);
     details::consume(1000);
-    _bundle.store(1000);
-    _bundle.store(1000.0);
+    _bundle.store(mpl::piecewise_ignore<perfetto_trace>{}, 1000);
+    _bundle.store(mpl::piecewise_ignore<perfetto_trace>{}, 1000.0);
     _bundle.stop(_ecache);
 
     puts("\n>>> INITIAL CACHE <<<\n");
@@ -669,12 +671,12 @@ TEST_F(cache_tests, complete_tuple)
     puts("\n>>> FINAL CACHE <<<\n");
     puts(print_rusage_cache(_ecache).c_str());
 
-    _bundle.push(tim::mpl::piecewise_select<data_tracker_floating, data_tracker_integer,
-                                            data_tracker_unsigned>{});
-    _bundle.store(100);
-    _bundle.store(100.0);
-    _bundle.pop(tim::mpl::piecewise_select<data_tracker_floating, data_tracker_integer,
-                                           data_tracker_unsigned>{});
+    _bundle.push(mpl::piecewise_select<data_tracker_floating, data_tracker_integer,
+                                       data_tracker_unsigned>{});
+    _bundle.store(mpl::piecewise_ignore<perfetto_trace>{}, 100);
+    _bundle.store(mpl::piecewise_ignore<perfetto_trace>{}, 100.0);
+    _bundle.pop(mpl::piecewise_select<data_tracker_floating, data_tracker_integer,
+                                      data_tracker_unsigned>{});
 
     EXPECT_NEAR(tot_size, _bundle.get<peak_rss>()->get(), peak_tolerance);
     EXPECT_NEAR(std::get<0>(_bundle.get<current_peak_rss>()->get()),

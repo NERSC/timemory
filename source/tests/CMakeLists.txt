@@ -332,7 +332,7 @@ if(WIN32) # for now just enable for Windows
         LINK_LIBRARIES common-test-libs ${_LIBRARY})
 endif()
 
-if(NOT WIN32 AND NOT TIMEMORY_USE_PERFETTO)
+if(NOT WIN32)
     # cache structures are designed for use on Windows
     add_timemory_google_test(
         cache_tests
