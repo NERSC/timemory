@@ -143,6 +143,8 @@ perfetto_trace::global_finalize()
     ::perfetto::TrackEvent::Flush();
 
     auto& _session = get_config().session;
+    if(!_session)
+        return;
 
     // Stop tracing and read the trace data.
     _session->StopBlocking();

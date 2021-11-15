@@ -754,12 +754,38 @@ generate(py::module& _pymod, std::array<bool, N>& _boolgen,
         return T::description();
     };
 
+    namespace operation = tim::operation;
+
+    auto _global_init = []() {
+        operation::init<T>{}(operation::mode_constant<operation::init_mode::global>{});
+    };
+
+    auto _thread_init = []() {
+        operation::init<T>{}(operation::mode_constant<operation::init_mode::thread>{});
+    };
+
+    auto _global_fini = []() {
+        operation::fini<T>{}(operation::mode_constant<operation::fini_mode::global>{});
+    };
+
+    auto _thread_fini = []() {
+        operation::fini<T>{}(operation::mode_constant<operation::fini_mode::thread>{});
+    };
+
     auto _true = [](py::object) { return true; };
 
     _pycomp.def_static("label", _label, "Get the label for the type");
     _pycomp.def_static("description", _desc, "Get the description for the type");
     _pycomp.def_property_readonly_static("available", _true,
                                          "Whether the component is available");
+    _pycomp.def_static("global_init", _global_init,
+                       "Execute global initialization routine");
+    _pycomp.def_static("thread_init", _thread_init,
+                       "Execute thread initialization routine");
+    _pycomp.def_static("global_finalize", _global_fini,
+                       "Execute global finalization routine");
+    _pycomp.def_static("thread_finalize", _thread_fini,
+                       "Execute thread finalization routine");
 
     std::set<std::string> _keys = property_t::ids();
     _keys.insert(id);
