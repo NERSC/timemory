@@ -201,17 +201,30 @@ add_arg_bool_option("upcxx", "TIMEMORY_USE_UPCXX")
 # components
 add_arg_bool_option("cuda", "TIMEMORY_USE_CUDA")
 add_arg_bool_option("cupti", "TIMEMORY_USE_CUPTI")
+add_arg_bool_option("hip", "TIMEMORY_USE_HIP")
 add_arg_bool_option("papi", "TIMEMORY_USE_PAPI")
 add_arg_bool_option("ompt", "TIMEMORY_USE_OMPT")
 add_arg_bool_option("gotcha", "TIMEMORY_USE_GOTCHA", default=gotcha_opt)
-add_arg_bool_option("tau", "TIMEMORY_USE_TAU")
 add_arg_bool_option("caliper", "TIMEMORY_USE_CALIPER")
 add_arg_bool_option("likwid", "TIMEMORY_USE_LIKWID")
+add_arg_bool_option("perfetto", "TIMEMORY_USE_PERFETTO")
 add_arg_bool_option("gperftools", "TIMEMORY_USE_GPERFTOOLS")
+add_arg_bool_option("tau", "TIMEMORY_USE_TAU")
 add_arg_bool_option("vtune", "TIMEMORY_USE_VTUNE")
 # submodules
 add_arg_bool_option("build-caliper", "TIMEMORY_BUILD_CALIPER")
 add_arg_bool_option("build-gotcha", "TIMEMORY_BUILD_GOTCHA")
+add_arg_bool_option("build-dyninst", "TIMEMORY_BUILD_DYNINST")
+add_arg_bool_option(
+    "build-dyninst-tpls",
+    "TIMEMORY_BUILD_DYNINST_TPLS",
+    doc="Build third-party library dependencies for Dyninst",
+)
+add_arg_bool_option(
+    "build-ert",
+    "TIMEMORY_BUILD_ERT",
+    doc="Build/install empirical roofline toolkit tool",
+)
 add_arg_bool_option(
     "build-ompt",
     "TIMEMORY_BUILD_OMPT",
