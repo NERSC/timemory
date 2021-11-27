@@ -26,6 +26,7 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/sampling/allocator.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/utility.hpp"
@@ -81,6 +82,14 @@ namespace trait
 template <typename CompT, size_t N>
 struct is_component<sampling::sampler<CompT, N>> : true_type
 {};
+
+template <typename Tp>
+struct check_signals : std::true_type
+{};
+
+template <typename Tp>
+struct buffer_size : std::integral_constant<size_t, 0>
+{};
 }  // namespace trait
 //
 //--------------------------------------------------------------------------------------//
@@ -94,7 +103,7 @@ namespace sampling
 /// \brief A bare enumeration value implicitly convertible to zero.
 enum
 {
-    dynamic = 0
+    dynamic = 0,
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -160,14 +169,19 @@ struct sampler<CompT<Types...>, N, SigIds...>
 {
     using this_type    = sampler<CompT<Types...>, N, SigIds...>;
     using base_type    = component::base<this_type, void>;
-    using components_t = CompT<Types...>;
+    using bundle_type  = CompT<Types...>;
     using signal_set_t = std::set<int>;
     using pid_cb_t     = std::function<bool(pid_t, int, int)>;
-    using array_t = conditional_t<fixed_size_t<N>::value, std::array<components_t, N>,
-                                  std::vector<components_t>>;
+    using array_t      = conditional_t<fixed_size_t<N>::value, std::array<bundle_type, N>,
+                                  std::vector<bundle_type>>;
+    using data_type    = array_t;
+    using allocator_t =
+        conditional_t<fixed_size_t<N>::value, allocator<void>, allocator<this_type>>;
 
     using array_type   = array_t;
     using tracker_type = policy::instance_tracker<this_type, false>;
+
+    friend struct allocator<this_type>;
 
     static void  execute(int signum);
     static void  execute(int signum, siginfo_t*, void*);
@@ -202,8 +216,8 @@ public:
     void stop();
 
 public:
-    TIMEMORY_NODISCARD bool is_good(int v) const { return m_good.count(v) > 0; }
-    TIMEMORY_NODISCARD bool is_bad(int v) const { return m_bad.count(v) > 0; }
+    bool is_good(int v) const { return m_good.count(v) > 0; }
+    bool is_bad(int v) const { return m_bad.count(v) > 0; }
 
     auto good_count() const { return m_good.size(); }
     auto bad_count() const { return m_bad.size(); }
@@ -218,21 +232,21 @@ public:
     auto backtrace_enabled() const { return m_backtrace; }
     void enable_backtrace(bool val) { m_backtrace = val; }
 
-    components_t*& get_last() { return m_last; }
-    components_t*  get_last() const { return m_last; }
+    bundle_type*& get_last() { return m_last; }
+    bundle_type*  get_last() const { return m_last; }
 
-    components_t*& get_latest() { return m_last; }
-    components_t*  get_latest() const { return m_last; }
-
-    template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
-    components_t& get(size_t idx);
-    template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
-    components_t& get(size_t idx);
+    bundle_type*& get_latest() { return m_last; }
+    bundle_type*  get_latest() const { return m_last; }
 
     template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
-    const components_t& get(size_t idx) const;
+    bundle_type& get(size_t idx);
     template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
-    const components_t& get(size_t idx) const;
+    bundle_type& get(size_t idx);
+
+    template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
+    const bundle_type& get(size_t idx) const;
+    template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
+    const bundle_type& get(size_t idx) const;
 
     array_t&       get_data() { return m_data; }
     const array_t& get_data() const { return m_data; }
@@ -345,13 +359,57 @@ public:
     /// \brief Checks to see if there was an error setting or getting itimer val
     static bool check_itimer(int _stat, bool _throw_exception = false);
 
+    size_t get_buffer_size() const { return m_buffer_size; }
+    void   set_buffer_size(size_t _v) { m_buffer_size = _v; }
+
+    allocator_t&       get_allocator() { return m_alloc; }
+    const allocator_t& get_allocator() const { return m_alloc; }
+
+    template <typename FuncT>
+    void set_notify(FuncT&& _v)
+    {
+        m_notify = std::forward<FuncT>(_v);
+    }
+
+    template <typename FuncT>
+    void set_exit(FuncT&& _v)
+    {
+        m_exit = std::forward<FuncT>(_v);
+    }
+
+    template <typename FuncT>
+    void set_swap_data(FuncT&& _v)
+    {
+        m_swap_data = std::forward<FuncT>(_v);
+    }
+
+    data_type& swap_data(data_type& _data)
+    {
+        {
+            std::unique_lock<std::mutex> _lk{ m_lock, std::defer_lock };
+            if(!_lk.owns_lock())
+                _lk.lock();
+            std::swap(m_data, _data);
+        }
+        return _data;
+    }
+
+    void swap_data() { m_swap_data(m_data); }
+
 protected:
-    bool          m_backtrace = false;
-    size_t        m_idx       = 0;
-    components_t* m_last      = nullptr;
-    signal_set_t  m_good      = {};
-    signal_set_t  m_bad       = {};
-    array_t       m_data      = {};
+    bool                            m_backtrace   = false;
+    size_t                          m_idx         = 0;
+    size_t                          m_buffer_size = trait::buffer_size<this_type>::value;
+    bundle_type*                    m_last        = nullptr;
+    signal_set_t                    m_good        = {};
+    signal_set_t                    m_bad         = {};
+    array_t                         m_data        = {};
+    std::function<void()>           m_notify      = []() {};
+    std::function<void()>           m_exit        = []() {};
+    std::function<void(data_type&)> m_swap_data   = [](data_type&) {};
+    std::mutex                      m_lock{};
+    allocator_t                     m_alloc;
+    std::string                     m_label = {};
 
 private:
     using sigaction_t = struct sigaction;
@@ -391,8 +449,8 @@ template <template <typename...> class CompT, size_t N, typename... Types, int..
 inline auto
 sampler<CompT<Types...>, N, SigIds...>::get_latest_samples()
 {
-    std::vector<components_t*> _last{};
-    auto_lock_t                lk(type_mutex<this_type>());
+    std::vector<bundle_type*> _last{};
+    auto_lock_t               lk(type_mutex<this_type>());
     _last.reserve(get_persistent_data().m_instances.size());
     for(auto& itr : get_persistent_data().m_instances)
         _last.emplace_back(itr->get_last());
@@ -408,11 +466,13 @@ sampler<CompT<Types...>, N, SigIds...>::sampler(const std::string& _label,
 : m_last(nullptr)
 , m_good(std::move(_good))
 , m_bad(std::move(_bad))
+, m_alloc{ this }
+, m_label{ _label }
 {
     TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
-    m_data.fill(components_t(_label));
+    m_data.fill(bundle_type{ m_label });
     m_last = &m_data.front();
-    auto_lock_t lk(type_mutex<this_type>());
+    auto_lock_t _lk{ type_mutex<this_type>() };
     get_samplers().push_back(this);
 }
 //
@@ -425,11 +485,12 @@ sampler<CompT<Types...>, N, SigIds...>::sampler(const std::string& _label,
 : m_last(nullptr)
 , m_good(std::move(_good))
 , m_bad(std::move(_bad))
+, m_alloc{ this }
+, m_label{ _label }
 {
     TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
-    m_data.emplace_back(components_t(_label));
-    m_last = &m_data.front();
-    auto_lock_t lk(type_mutex<this_type>());
+    m_data.reserve(m_buffer_size);
+    auto_lock_t _lk{ type_mutex<this_type>() };
     get_samplers().push_back(this);
 }
 //
@@ -438,9 +499,12 @@ sampler<CompT<Types...>, N, SigIds...>::sampler(const std::string& _label,
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 sampler<CompT<Types...>, N, SigIds...>::~sampler()
 {
-    auto_lock_t lk(type_mutex<this_type>());
-    auto&       _samplers = get_samplers();
-    auto        itr       = std::find(_samplers.begin(), _samplers.end(), this);
+    m_exit();
+    auto_lock_t _lk{ type_mutex<this_type>(), std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
+    auto& _samplers = get_samplers();
+    auto  itr       = std::find(_samplers.begin(), _samplers.end(), this);
     if(itr != _samplers.end())
         _samplers.erase(itr);
 }
@@ -452,8 +516,6 @@ template <typename Tp, enable_if_t<Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::sample()
 {
-    // if(!base_type::get_is_running())
-    //    return;
     m_last = &(m_data.at((m_idx++) % N));
     // get last 4 of 7 backtrace entries (i.e. offset by 3)
     if(m_backtrace)
@@ -473,10 +535,16 @@ template <typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::sample()
 {
-    // if(!base_type::get_is_running())
-    //    return;
+    auto                         _n = (m_idx++) % m_buffer_size;
+    std::unique_lock<std::mutex> _lk{ m_lock, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
+    // notify when there are only 10 slots left in buffer. Even at a high sampling rate,
+    // this should be enough time to acquire the lock, wake, and swap out the memory
+    if(_n == m_buffer_size - 1)
+        m_notify();
+    m_data.emplace_back(bundle_type{});
     m_last = &m_data.back();
-    m_data.emplace_back(components_t(m_last->hash()));
     // get last 4 of 7 backtrace entries (i.e. offset by 3)
     if(m_backtrace)
     {
@@ -546,7 +614,7 @@ sampler<CompT<Types...>, N, SigIds...>::stop()
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 template <typename Tp, enable_if_t<Tp::value>>
-typename sampler<CompT<Types...>, N, SigIds...>::components_t&
+typename sampler<CompT<Types...>, N, SigIds...>::bundle_type&
 sampler<CompT<Types...>, N, SigIds...>::get(size_t idx)
 {
     return m_data.at(idx % N);
@@ -556,7 +624,7 @@ sampler<CompT<Types...>, N, SigIds...>::get(size_t idx)
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 template <typename Tp, enable_if_t<Tp::value>>
-const typename sampler<CompT<Types...>, N, SigIds...>::components_t&
+const typename sampler<CompT<Types...>, N, SigIds...>::bundle_type&
 sampler<CompT<Types...>, N, SigIds...>::get(size_t idx) const
 {
     return m_data.at(idx % N);
@@ -566,7 +634,7 @@ sampler<CompT<Types...>, N, SigIds...>::get(size_t idx) const
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 template <typename Tp, enable_if_t<!Tp::value>>
-typename sampler<CompT<Types...>, N, SigIds...>::components_t&
+typename sampler<CompT<Types...>, N, SigIds...>::bundle_type&
 sampler<CompT<Types...>, N, SigIds...>::get(size_t idx)
 {
     return m_data.at(idx);
@@ -576,7 +644,7 @@ sampler<CompT<Types...>, N, SigIds...>::get(size_t idx)
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 template <typename Tp, enable_if_t<!Tp::value>>
-const typename sampler<CompT<Types...>, N, SigIds...>::components_t&
+const typename sampler<CompT<Types...>, N, SigIds...>::bundle_type&
 sampler<CompT<Types...>, N, SigIds...>::get(size_t idx) const
 {
     return m_data.at(idx);
@@ -596,19 +664,23 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
 
     for(auto& itr : get_samplers())
     {
-        if(itr->is_good(signum))
+        IF_CONSTEXPR(trait::check_signals<this_type>::value)
         {
-            itr->sample();
+            if(itr->is_good(signum))
+            {
+                itr->sample();
+            }
+            else if(itr->is_bad(signum))
+            {
+                char msg[1024];
+                sprintf(msg, "[timemory]> sampler instance caught bad signal: %i ...",
+                        signum);
+                perror(msg);
+                signal(signum, SIG_DFL);
+                raise(signum);
+            }
         }
-        else if(itr->is_bad(signum))
-        {
-            char msg[1024];
-            sprintf(msg, "[timemory]> sampler instance caught bad signal: %i ...",
-                    signum);
-            perror(msg);
-            signal(signum, SIG_DFL);
-            raise(signum);
-        }
+        else { itr->sample(); }
     }
 }
 //
@@ -626,19 +698,25 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t*, void*)
 
     for(auto& itr : get_samplers())
     {
-        if(itr->is_good(signum))
+        if(!itr)
+            continue;
+        IF_CONSTEXPR(trait::check_signals<this_type>::value)
         {
-            itr->sample();
+            if(itr->is_good(signum))
+            {
+                itr->sample();
+            }
+            else if(itr->is_bad(signum))
+            {
+                char msg[1024];
+                sprintf(msg, "[timemory]> sampler instance caught bad signal: %i ...",
+                        signum);
+                perror(msg);
+                signal(signum, SIG_DFL);
+                raise(signum);
+            }
         }
-        else if(itr->is_bad(signum))
-        {
-            char msg[1024];
-            sprintf(msg, "[timemory]> sampler instance caught bad signal: %i ...",
-                    signum);
-            perror(msg);
-            signal(signum, SIG_DFL);
-            raise(signum);
-        }
+        else { itr->sample(); }
     }
 }
 //
@@ -654,7 +732,7 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
 
     size_t wait_count = 0;
     {
-        auto_lock_t lk(type_mutex<this_type>());
+        auto_lock_t _lk{ type_mutex<this_type>() };
         for(auto& itr : get_samplers())
             wait_count += itr->count();
     }
