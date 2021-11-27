@@ -33,6 +33,7 @@
 #include "timemory/backends/gperftools.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/hash/declaration.hpp"
+#include "timemory/hash/types.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
@@ -229,14 +230,16 @@ public:
 
     std::shared_ptr<printer_t> get_printer() const { return m_printer; }
 
-    iterator_hash_map_t get_node_ids() const { return m_node_ids; }
+    // don't expose this
+    // iterator_hash_map_t get_node_ids() const { return m_node_ids; }
 
     void stack_push(Type* obj) { m_stack.insert(obj); }
     void stack_pop(Type* obj);
 
     void ensure_init();
 
-    iterator insert(scope::config scope_data, const Type& obj, uint64_t hash_id);
+    iterator insert(scope::config scope_data, const Type& obj, uint64_t hash_id,
+                    int64_t _tid = -1);
 
     // append a value to the the graph
     template <typename Vp, enable_if_t<!std::is_same<decay_t<Vp>, Type>::value, int> = 0>
@@ -255,11 +258,14 @@ public:
     const auto& get_samples() const { return m_samples; }
 
 protected:
-    iterator insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
-    iterator insert_timeline(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
-    iterator insert_flat(uint64_t hash_id, const Type& obj, uint64_t hash_depth);
+    iterator insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
+                         int64_t _tid);
+    iterator insert_timeline(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
+                             int64_t _tid);
+    iterator insert_flat(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
+                         int64_t _tid);
     iterator insert_hierarchy(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
-                              bool has_head);
+                              bool has_head, int64_t _tid);
 
     void     merge();
     void     merge(this_type* itr);
@@ -285,10 +291,10 @@ private:
 private:
     uint64_t                   m_timeline_counter    = 1;
     mutable graph_data_t*      m_graph_data_instance = nullptr;
-    iterator_hash_map_t        m_node_ids;
-    std::unordered_set<Type*>  m_stack;
-    std::shared_ptr<printer_t> m_printer;
-    sample_array_t             m_samples;
+    std::shared_ptr<printer_t> m_printer             = {};
+    iterator_hash_map_t        m_node_ids            = {};
+    std::unordered_set<Type*>  m_stack               = {};
+    sample_array_t             m_samples             = {};
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -323,7 +329,8 @@ storage<Type, true>::reset()
 //
 template <typename Type>
 typename storage<Type, true>::iterator
-storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t hash_id)
+storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t hash_id,
+                            int64_t _tid)
 {
     ensure_init();
 
@@ -339,6 +346,9 @@ storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t 
        _data().dummy_count() < m_settings->get_max_thread_bookmarks())
         _data().add_dummy();
 
+    if(_tid < 0)
+        _tid = m_thread_idx;
+
     // compute the insertion depth
     auto hash_depth = scope_data.compute_depth<force_tree_t, force_flat_t, force_time_t>(
         _data().depth());
@@ -353,7 +363,7 @@ storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t 
     // even when flat is combined with timeline, it still inserts at depth of 1
     // so this is easiest check
     if(scope_data.is_flat() || force_flat_t::value)
-        return insert_flat(hash_value, obj, hash_depth);
+        return insert_flat(hash_value, obj, hash_depth, _tid);
 
     // in the case of tree + timeline, timeline will have appropriately modified the
     // depth and hash so it doesn't really matter which check happens first here
@@ -363,7 +373,7 @@ storage<Type, true>::insert(scope::config scope_data, const Type& obj, uint64_t 
     //    return insert_timeline(hash_value, obj, hash_depth);
 
     // default fall-through if neither flat nor timeline
-    return insert_tree(hash_value, obj, hash_depth);
+    return insert_tree(hash_value, obj, hash_depth, _tid);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -384,22 +394,24 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     auto _hash_id = add_hash_id(std::get<1>(_secondary));
     // compute hash w.r.t. parent iterator (so identical kernels from different
     // call-graph parents do not locate same iterator)
-    auto _hash = _hash_id ^ _itr->id();
+    auto _hash = get_combined_hash_id(_hash_id, _itr->id());
+    // unique thread-hash
+    auto _uniq_hash = get_combined_hash_id(_hash, _itr->tid());
     // add the hash alias
     add_hash_id(_hash_id, _hash);
     // compute depth
     auto _depth = _itr->depth() + 1;
 
     // see if depth + hash entry exists already
-    auto _nitr = m_node_ids[_depth].find(_hash);
+    auto _nitr = m_node_ids[_depth].find(_uniq_hash);
     if(_nitr != m_node_ids[_depth].end())
     {
         // if so, then update
-        auto& _obj = _nitr->second->obj();
+        auto& _obj = _nitr->second->data();
         _obj += std::get<2>(_secondary);
-        _obj.set_laps(_nitr->second->obj().get_laps() + 1);
+        _obj.set_laps(_nitr->second->data().get_laps() + 1);
         auto& _stats = _nitr->second->stats();
-        operation::add_statistics<Type>(_nitr->second->obj(), _stats);
+        operation::add_statistics<Type>(_nitr->second->data(), _stats);
         return _nitr->second;
     }
 
@@ -407,13 +419,13 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     auto&& _tmp = Type{};
     _tmp += std::get<2>(_secondary);
     _tmp.set_laps(_tmp.get_laps() + 1);
-    graph_node_t _node{ _hash, _tmp, _depth, m_thread_idx };
+    graph_node_t _node{ _hash, _tmp, _depth, static_cast<uint32_t>(_itr->tid()) };
     _node.stats() += _tmp.get();
     auto& _stats = _node.stats();
     operation::add_statistics<Type>(_tmp, _stats);
     auto itr = _data().emplace_child(_itr, std::move(_node));
     operation::set_iterator<Type>{}(itr->data(), itr);
-    m_node_ids[_depth][_hash] = itr;
+    m_node_ids[_depth][_uniq_hash] = itr;
     return itr;
 }
 //
@@ -435,26 +447,29 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     auto _hash_id = add_hash_id(std::get<1>(_secondary));
     // compute hash w.r.t. parent iterator (so identical kernels from different
     // call-graph parents do not locate same iterator)
-    auto _hash = _hash_id ^ _itr->id();
+    auto _hash = get_combined_hash_id(_hash_id, _itr->id(), _itr->tid());
+    // unique thread-hash
+    auto _uniq_hash = get_combined_hash_id(_hash, _itr->tid());
     // add the hash alias
     add_hash_id(_hash_id, _hash);
     // compute depth
     auto _depth = _itr->depth() + 1;
 
     // see if depth + hash entry exists already
-    auto _nitr = m_node_ids[_depth].find(_hash);
+    auto _nitr = m_node_ids[_depth].find(_uniq_hash);
     if(_nitr != m_node_ids[_depth].end())
     {
-        _nitr->second->obj() += std::get<2>(_secondary);
+        _nitr->second->data() += std::get<2>(_secondary);
         return _nitr->second;
     }
 
     // else, create a new entry
     auto&& _tmp = std::get<2>(_secondary);
     auto   itr  = _data().emplace_child(
-        _itr, graph_node_t{ _hash, _tmp, static_cast<int64_t>(_depth), m_thread_idx });
+        _itr, graph_node_t{ _hash, _tmp, static_cast<int64_t>(_depth),
+                            static_cast<uint32_t>(_itr->tid()) });
     operation::set_iterator<Type>{}(itr->data(), itr);
-    m_node_ids[_depth][_hash] = itr;
+    m_node_ids[_depth][_uniq_hash] = itr;
     return itr;
 }
 //
@@ -462,10 +477,11 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
 //
 template <typename Type>
 typename storage<Type, true>::iterator
-storage<Type, true>::insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
+storage<Type, true>::insert_tree(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
+                                 int64_t _tid)
 {
     bool has_head = _data().has_head();
-    return insert_hierarchy(hash_id, obj, hash_depth, has_head);
+    return insert_hierarchy(hash_id, obj, hash_depth, has_head, _tid);
 }
 
 //----------------------------------------------------------------------------------//
@@ -473,22 +489,25 @@ storage<Type, true>::insert_tree(uint64_t hash_id, const Type& obj, uint64_t has
 template <typename Type>
 typename storage<Type, true>::iterator
 storage<Type, true>::insert_timeline(uint64_t hash_id, const Type& obj,
-                                     uint64_t hash_depth)
+                                     uint64_t hash_depth, int64_t _tid)
 {
     auto _current = _data().current();
-    return _data().emplace_child(
-        _current,
-        graph_node_t{ hash_id, obj, static_cast<int64_t>(hash_depth), m_thread_idx });
+    return _data().emplace_child(_current, graph_node_t{ hash_id, obj,
+                                                         static_cast<int64_t>(hash_depth),
+                                                         static_cast<uint32_t>(_tid) });
 }
 
 //----------------------------------------------------------------------------------//
 //
 template <typename Type>
 typename storage<Type, true>::iterator
-storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t hash_depth)
+storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t hash_depth,
+                                 int64_t _tid)
 {
     static thread_local auto _current = _data().head();
     static thread_local bool _first   = true;
+    // unique thread-hash
+    auto _uniq_hash = get_combined_hash_id(hash_id, _tid);
     if(_first)
     {
         _first = false;
@@ -500,21 +519,21 @@ storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t has
         {
             auto itr = _data().emplace_child(
                 _current, graph_node_t{ hash_id, obj, static_cast<int64_t>(hash_depth),
-                                        m_thread_idx });
-            m_node_ids[hash_depth][hash_id] = itr;
-            _current                        = itr;
+                                        static_cast<uint32_t>(_tid) });
+            m_node_ids[hash_depth][_uniq_hash] = itr;
+            _current                           = itr;
             return itr;
         }
     }
 
-    auto _existing = m_node_ids[hash_depth].find(hash_id);
+    auto _existing = m_node_ids[hash_depth].find(_uniq_hash);
     if(_existing != m_node_ids[hash_depth].end())
-        return m_node_ids[hash_depth].find(hash_id)->second;
+        return m_node_ids[hash_depth].find(_uniq_hash)->second;
 
     auto itr = _data().emplace_child(
-        _current,
-        graph_node_t{ hash_id, obj, static_cast<int64_t>(hash_depth), m_thread_idx });
-    m_node_ids[hash_depth][hash_id] = itr;
+        _current, graph_node_t{ hash_id, obj, static_cast<int64_t>(hash_depth),
+                                static_cast<uint32_t>(_tid) });
+    m_node_ids[hash_depth][_uniq_hash] = itr;
     return itr;
 }
 //
@@ -523,19 +542,22 @@ storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t has
 template <typename Type>
 typename storage<Type, true>::iterator
 storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
-                                      uint64_t hash_depth, bool has_head)
+                                      uint64_t hash_depth, bool has_head, int64_t _tid)
 {
     using id_hash_map_t = typename iterator_hash_map_t::mapped_type;
 
     auto& m_data = m_graph_data_instance;
-    auto  tid    = m_thread_idx;
+
+    // unique thread-hash
+    auto _uniq_hash = get_combined_hash_id(hash_id, _tid);
 
     // if first instance
     if(!has_head || (m_is_master && m_node_ids.empty()))
     {
-        auto itr = m_data->append_child(
-            graph_node_t{ hash_id, obj, static_cast<int64_t>(hash_depth), tid });
-        m_node_ids[hash_depth][hash_id] = itr;
+        auto itr = m_data->append_child(graph_node_t{ hash_id, obj,
+                                                      static_cast<int64_t>(hash_depth),
+                                                      static_cast<uint32_t>(_tid) });
+        m_node_ids[hash_depth][_uniq_hash] = itr;
         return itr;
     }
 
@@ -545,14 +567,14 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
         return (m_data->current() = itr);
     };
 
-    if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
-       m_node_ids[hash_depth].find(hash_id)->second->depth() == m_data->depth())
+    auto _nitr = m_node_ids[hash_depth].find(_uniq_hash);
+    if(_nitr != m_node_ids[hash_depth].end() && _nitr->second->depth() == m_data->depth())
     {
-        return _update(m_node_ids[hash_depth].find(hash_id)->second);
+        return _update(_nitr->second);
     }
 
     using sibling_itr = typename graph_t::sibling_iterator;
-    graph_node_t node{ hash_id, obj, m_data->depth(), tid };
+    graph_node_t node{ hash_id, obj, m_data->depth(), static_cast<uint32_t>(_tid) };
 
     // lambda for inserting child
     auto _insert_child = [&]() {
@@ -561,10 +583,10 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
         auto ditr    = m_node_ids.find(hash_depth);
         if(ditr == m_node_ids.end())
             m_node_ids.insert({ hash_depth, id_hash_map_t{} });
-        auto hitr = m_node_ids.at(hash_depth).find(hash_id);
+        auto hitr = m_node_ids.at(hash_depth).find(_uniq_hash);
         if(hitr == m_node_ids.at(hash_depth).end())
-            m_node_ids.at(hash_depth).insert({ hash_id, iterator{} });
-        m_node_ids.at(hash_depth).at(hash_id) = itr;
+            m_node_ids.at(hash_depth).insert({ _uniq_hash, iterator{} });
+        m_node_ids.at(hash_depth).at(_uniq_hash) = itr;
         return itr;
     };
 
@@ -578,7 +600,7 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
     {
         for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
         {
-            if((hash_id) == itr->id())
+            if((hash_id) == itr->id() && _tid == itr->tid())
                 return _update(itr);
         }
     }
@@ -587,7 +609,7 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
     // has to do with the head node. Protected against mis-matches in hierarchy
     // because the actual hash includes the depth so "example" at depth 2
     // has a different hash than "example" at depth 3.
-    if((hash_id) == current->id())
+    if((hash_id) == current->id() && _tid == current->tid())
         return current;
 
     // check siblings
@@ -597,7 +619,7 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
         if(itr == current)
             continue;
         // check hash id's
-        if((hash_id) == itr->id())
+        if((hash_id) == itr->id() && _tid == itr->tid())
             return _update(itr);
     }
 

@@ -328,7 +328,7 @@ bundle<Tag, BundleT, TupleT>::init_storage()
 //
 template <typename Tag, typename BundleT, typename TupleT>
 typename bundle<Tag, BundleT, TupleT>::this_type&
-bundle<Tag, BundleT, TupleT>::push()
+bundle<Tag, BundleT, TupleT>::push(int64_t _tid)
 {
     if(!m_enabled())
         return get_this_type();
@@ -340,7 +340,7 @@ bundle<Tag, BundleT, TupleT>::push()
         // avoid pushing/popping when already pushed/popped
         m_is_pushed(true);
         // insert node or find existing node
-        invoke::push<Tag>(m_data, m_scope, m_hash);
+        invoke::push<Tag>(m_data, m_scope, m_hash, _tid);
     }
     return get_this_type();
 }
@@ -350,8 +350,8 @@ bundle<Tag, BundleT, TupleT>::push()
 //
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename... Tp>
-typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::push(
-    mpl::piecewise_select<Tp...>)
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>, int64_t _tid)
 {
     if(!m_enabled())
         return get_this_type();
@@ -360,26 +360,7 @@ typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::
     // reset the data
     invoke::invoke<operation::reset, Tag>(pw_type{}, m_data);
     // insert node or find existing node
-    invoke::invoke<operation::push_node, Tag>(pw_type{}, m_data, m_scope, m_hash);
-    return get_this_type();
-}
-
-//--------------------------------------------------------------------------------------//
-// insert into graph
-//
-template <typename Tag, typename BundleT, typename TupleT>
-template <typename... Tp>
-typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::push(
-    mpl::piecewise_ignore<Tp...>)
-{
-    if(!m_enabled())
-        return get_this_type();
-
-    using pw_type = mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>;
-    // reset the data
-    invoke_piecewise<operation::reset>(pw_type{});
-    // insert node or find existing node
-    invoke_piecewise<operation::push_node>(pw_type{}, m_scope, m_hash);
+    invoke::invoke<operation::push_node, Tag>(pw_type{}, m_data, m_scope, m_hash, _tid);
     return get_this_type();
 }
 
@@ -389,16 +370,16 @@ typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename... Tp>
 typename bundle<Tag, BundleT, TupleT>::this_type&
-bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>, scope::config _scope)
+bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_ignore<Tp...>, int64_t _tid)
 {
     if(!m_enabled())
         return get_this_type();
 
-    using pw_type = convert_t<mpl::implemented_t<Tp...>, mpl::piecewise_select<>>;
+    using pw_type = mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>;
     // reset the data
-    invoke::invoke<operation::reset, Tag>(pw_type{}, m_data);
+    invoke_piecewise<operation::reset>(pw_type{});
     // insert node or find existing node
-    invoke::invoke<operation::push_node, Tag>(pw_type{}, m_data, _scope, m_hash);
+    invoke_piecewise<operation::push_node>(pw_type{}, m_scope, m_hash, _tid);
     return get_this_type();
 }
 
@@ -408,7 +389,28 @@ bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>, scope::config _
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename... Tp>
 typename bundle<Tag, BundleT, TupleT>::this_type&
-bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_ignore<Tp...>, scope::config _scope)
+bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_select<Tp...>, scope::config _scope,
+                                   int64_t _tid)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    using pw_type = convert_t<mpl::implemented_t<Tp...>, mpl::piecewise_select<>>;
+    // reset the data
+    invoke::invoke<operation::reset, Tag>(pw_type{}, m_data);
+    // insert node or find existing node
+    invoke::invoke<operation::push_node, Tag>(pw_type{}, m_data, _scope, m_hash, _tid);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+// insert into graph
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Tp>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_ignore<Tp...>, scope::config _scope,
+                                   int64_t _tid)
 {
     if(!m_enabled())
         return get_this_type();
@@ -417,7 +419,7 @@ bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_ignore<Tp...>, scope::config _
     // reset the data
     invoke_piecewise<operation::reset>(pw_type{});
     // insert node or find existing node
-    invoke_piecewise<operation::push_node>(pw_type{}, _scope, m_hash);
+    invoke_piecewise<operation::push_node>(pw_type{}, _scope, m_hash, _tid);
     return get_this_type();
 }
 

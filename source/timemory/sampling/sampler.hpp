@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/backends/threading.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/sampling/allocator.hpp"
@@ -35,6 +36,7 @@
 // C++ includes
 #include <algorithm>
 #include <array>
+#include <bits/stdint-intn.h>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -183,18 +185,21 @@ struct sampler<CompT<Types...>, N, SigIds...>
 
     friend struct allocator<this_type>;
 
-    static void  execute(int signum);
-    static void  execute(int signum, siginfo_t*, void*);
-    static auto& get_samplers() { return get_persistent_data().m_instances; }
+    static void execute(int signum);
+    static void execute(int signum, siginfo_t*, void*);
+
     static auto  get_latest_samples();
+    static auto& get_samplers() { return get_persistent_data().m_instances; }
+    static auto& get_samplers(int64_t _v)
+    {
+        return get_persistent_data().m_thread_instances[_v];
+    }
 
+private:
 public:
-    template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
-    sampler(const std::string& _label, signal_set_t _good,
-            signal_set_t _bad = signal_set_t{});
+    sampler(std::string _label, signal_set_t _good, signal_set_t _bad = signal_set_t{});
 
-    template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
-    sampler(const std::string& _label, signal_set_t _good,
+    sampler(std::string _label, int64_t _tid, signal_set_t _good,
             signal_set_t _bad = signal_set_t{});
 
     ~sampler();
@@ -417,16 +422,18 @@ private:
 
     struct persistent_data
     {
-        bool                    m_active = false;
-        int                     m_flags  = SA_RESTART | SA_SIGINFO;
-        double                  m_delay  = 0.001;
-        double                  m_freq   = 1.0 / 2.0;
-        sigaction_t             m_custom_sigaction;
-        itimerval_t             m_custom_itimerval = { { 1, 0 }, { 0, 1000 } };
-        sigaction_t             m_original_sigaction;
-        itimerval_t             m_original_itimerval;
-        std::set<int>           m_signals   = {};
-        std::vector<this_type*> m_instances = {};
+        using instance_array_t    = std::deque<this_type*>;
+        bool             m_active = false;
+        int              m_flags  = SA_RESTART | SA_SIGINFO;
+        double           m_delay  = 0.001;
+        double           m_freq   = 1.0 / 2.0;
+        sigaction_t      m_custom_sigaction;
+        itimerval_t      m_custom_itimerval = { { 1, 0 }, { 0, 1000 } };
+        sigaction_t      m_original_sigaction;
+        itimerval_t      m_original_itimerval;
+        std::set<int>    m_signals                             = {};
+        instance_array_t m_instances                           = {};
+        std::map<int64_t, instance_array_t> m_thread_instances = {};
     };
 
     static persistent_data& get_persistent_data()
@@ -441,6 +448,12 @@ private:
     {
         return [](pid_t _id, int, int) { return _id != process::get_id(); };
     }
+
+    template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
+    void _init_sampler(int64_t _tid = threading::get_id());
+
+    template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
+    void _init_sampler(int64_t _tid = threading::get_id());
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -460,38 +473,27 @@ sampler<CompT<Types...>, N, SigIds...>::get_latest_samples()
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
-template <typename Tp, enable_if_t<Tp::value>>
-sampler<CompT<Types...>, N, SigIds...>::sampler(const std::string& _label,
+sampler<CompT<Types...>, N, SigIds...>::sampler(std::string _label, int64_t _tid,
                                                 signal_set_t _good, signal_set_t _bad)
-: m_last(nullptr)
-, m_good(std::move(_good))
+: m_good(std::move(_good))
 , m_bad(std::move(_bad))
 , m_alloc{ this }
-, m_label{ _label }
+, m_label{ std::move(_label) }
 {
-    TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
-    m_data.fill(bundle_type{ m_label });
-    m_last = &m_data.front();
-    auto_lock_t _lk{ type_mutex<this_type>() };
-    get_samplers().push_back(this);
+    _init_sampler(_tid);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
-template <typename Tp, enable_if_t<!Tp::value>>
-sampler<CompT<Types...>, N, SigIds...>::sampler(const std::string& _label,
-                                                signal_set_t _good, signal_set_t _bad)
-: m_last(nullptr)
-, m_good(std::move(_good))
+sampler<CompT<Types...>, N, SigIds...>::sampler(std::string _label, signal_set_t _good,
+                                                signal_set_t _bad)
+: m_good(std::move(_good))
 , m_bad(std::move(_bad))
 , m_alloc{ this }
-, m_label{ _label }
+, m_label{ std::move(_label) }
 {
-    TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
-    m_data.reserve(m_buffer_size);
-    auto_lock_t _lk{ type_mutex<this_type>() };
-    get_samplers().push_back(this);
+    _init_sampler(threading::get_id());
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -503,10 +505,14 @@ sampler<CompT<Types...>, N, SigIds...>::~sampler()
     auto_lock_t _lk{ type_mutex<this_type>(), std::defer_lock };
     if(!_lk.owns_lock())
         _lk.lock();
-    auto& _samplers = get_samplers();
-    auto  itr       = std::find(_samplers.begin(), _samplers.end(), this);
-    if(itr != _samplers.end())
-        _samplers.erase(itr);
+    auto _erase_samplers = [](auto& _samplers, this_type* _ptr) {
+        auto itr = std::find(_samplers.begin(), _samplers.end(), _ptr);
+        if(itr != _samplers.end())
+            _samplers.erase(itr);
+    };
+    _erase_samplers(get_samplers(), this);
+    for(auto& itr : get_persistent_data().m_thread_instances)
+        _erase_samplers(itr.second, this);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -662,7 +668,8 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
                (int) threading::get_id(), demangle<this_type>().c_str());
     }
 
-    for(auto& itr : get_samplers())
+    for(auto& itr :
+        (signum == SIGALRM) ? get_samplers() : get_samplers(threading::get_id()))
     {
         IF_CONSTEXPR(trait::check_signals<this_type>::value)
         {
@@ -696,7 +703,8 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t*, void*)
                (int) threading::get_id(), demangle<this_type>().c_str());
     }
 
-    for(auto& itr : get_samplers())
+    for(auto& itr :
+        (signum == SIGALRM) ? get_samplers() : get_samplers(threading::get_id()))
     {
         if(!itr)
             continue;
@@ -1109,6 +1117,35 @@ sampler<CompT<Types...>, N, SigIds...>::check_itimer(int _stat, bool _throw_exce
         }
     }
     return (_stat != EFAULT && _stat != EINVAL);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<Tp::value>>
+void
+sampler<CompT<Types...>, N, SigIds...>::_init_sampler(int64_t _tid)
+{
+    TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
+    m_data.fill(bundle_type{ m_label });
+    m_last = &m_data.front();
+    auto_lock_t _lk{ type_mutex<this_type>() };
+    get_samplers().emplace_back(this);
+    get_samplers(_tid).emplace_back(this);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+template <typename Tp, enable_if_t<!Tp::value>>
+void
+sampler<CompT<Types...>, N, SigIds...>::_init_sampler(int64_t _tid)
+{
+    TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
+    m_data.reserve(m_buffer_size);
+    auto_lock_t _lk{ type_mutex<this_type>() };
+    get_samplers().emplace_back(this);
+    get_samplers(_tid).emplace_back(this);
 }
 //
 //--------------------------------------------------------------------------------------//
