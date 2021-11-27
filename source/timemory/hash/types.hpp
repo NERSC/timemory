@@ -30,6 +30,7 @@
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/mpl/concepts.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <functional>
 #include <memory>
@@ -120,12 +121,12 @@ get_hash_resolvers() TIMEMORY_HOT;
 template <typename Tp,
           std::enable_if_t<concepts::is_string_type<std::decay_t<Tp>>::value, int> = 0>
 TIMEMORY_INLINE hash_value_t
-get_hash_id(Tp&& _prefix);
+get_hash_id(Tp&& _v);
 //
 template <typename Tp,
           std::enable_if_t<!concepts::is_string_type<std::decay_t<Tp>>::value, int> = 0>
 TIMEMORY_INLINE hash_value_t
-get_hash_id(Tp&& _prefix);
+get_hash_id(Tp&& _v);
 //
 TIMEMORY_INLINE hash_value_t
 get_combined_hash_id(hash_value_t _lhs, hash_value_t _rhs);
@@ -135,14 +136,26 @@ template <typename Tp,
 TIMEMORY_INLINE hash_value_t
 get_combined_hash_id(hash_value_t _lhs, Tp&& _rhs);
 //
+template <typename Tp, typename Arg, typename... Args>
+TIMEMORY_INLINE hash_value_t
+get_combined_hash_id(hash_value_t _lhs, Tp&& _rhs, Arg&& _arg, Args&&... _args);
+//
+template <typename Tp, typename... Args>
+TIMEMORY_INLINE hash_value_t
+get_hash_id(hash_value_t _lhs, Tp&& _rhs, Args&&... _args)
+{
+    return get_combined_hash_id(_lhs, get_hash_id(std::forward<Tp>(_rhs)),
+                                std::forward<Args>(_args)...);
+}
+//
 //  get hash of a string type
 //
 template <typename Tp,
           std::enable_if_t<concepts::is_string_type<std::decay_t<Tp>>::value, int>>
 hash_value_t
-get_hash_id(Tp&& _prefix)
+get_hash_id(Tp&& _v)
 {
-    return std::hash<string_view_t>{}(std::forward<Tp>(_prefix));
+    return std::hash<string_view_t>{}(std::forward<Tp>(_v));
 }
 //
 //  get hash of a non-string type
@@ -150,9 +163,9 @@ get_hash_id(Tp&& _prefix)
 template <typename Tp,
           std::enable_if_t<!concepts::is_string_type<std::decay_t<Tp>>::value, int>>
 hash_value_t
-get_hash_id(Tp&& _prefix)
+get_hash_id(Tp&& _v)
 {
-    return std::hash<std::decay_t<Tp>>{}(std::forward<Tp>(_prefix));
+    return std::hash<std::decay_t<Tp>>{}(std::forward<Tp>(_v));
 }
 //
 //  combine two existing hashes
@@ -170,6 +183,18 @@ hash_value_t
 get_combined_hash_id(hash_value_t _lhs, Tp&& _rhs)
 {
     return get_combined_hash_id(_lhs, get_hash_id(std::forward<Tp>(_rhs)));
+}
+//
+//  recursively process extra arguments
+//
+template <typename Tp, typename Arg, typename... Args>
+hash_value_t
+get_combined_hash_id(hash_value_t _lhs, Tp&& _rhs, Arg&& _arg, Args&&... _args)
+{
+    return get_combined_hash_id(_lhs,
+                                get_combined_hash_id(get_hash_id(std::forward<Tp>(_rhs)),
+                                                     std::forward<Arg>(_arg),
+                                                     std::forward<Args>(_args)...));
 }
 //
 //--------------------------------------------------------------------------------------//

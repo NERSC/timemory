@@ -486,8 +486,8 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
         };
 
         // provide environment variable for suppressing wrappers
-        mpip_gotcha_t::get_reject_list() = [reject]() {
-            auto _reject = reject;
+        mpip_gotcha_t::get_reject_list() = [&reject]() {
+            auto _reject = std::move(reject);
             // check environment
             auto reject_list = tim::get_env<std::string>("TIMEMORY_MPIP_REJECT_LIST", "");
             // add environment setting
@@ -497,8 +497,8 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
         };
 
         // provide environment variable for selecting wrappers
-        mpip_gotcha_t::get_permit_list() = [permit]() {
-            auto _permit = permit;
+        mpip_gotcha_t::get_permit_list() = [&permit]() {
+            auto _permit = std::move(permit);
             // check environment
             auto permit_list = tim::get_env<std::string>("TIMEMORY_MPIP_PERMIT_LIST", "");
             // add environment setting
