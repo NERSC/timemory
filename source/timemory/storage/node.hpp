@@ -28,6 +28,7 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/data/statistics.hpp"
 #include "timemory/hash.hpp"
+#include "timemory/hash/types.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types/decode.hpp"
@@ -209,6 +210,8 @@ public:
     auto&       hash() { return this->id(); }
     const auto& data() const { return this->obj(); }
     const auto& hash() const { return this->id(); }
+
+    hash_value_t uniq_hash() const { return get_combined_hash_id(id(), tid(), depth()); }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -426,7 +429,7 @@ template <typename Tp>
 bool
 graph<Tp>::operator==(const graph& rhs) const
 {
-    return (id() == rhs.id() && depth() == rhs.depth());
+    return (id() == rhs.id() && depth() == rhs.depth() && tid() == rhs.tid());
 }
 //
 //--------------------------------------------------------------------------------------//

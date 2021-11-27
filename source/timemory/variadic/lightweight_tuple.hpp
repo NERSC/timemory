@@ -167,18 +167,28 @@ public:
     // public member functions
     //
     /// generic push into storage
-    this_type& push();
+    this_type& push(int64_t _tid = threading::get_id());
 
     /// generic pop out of storage
     this_type& pop();
 
     /// selective push
     template <typename... Tp>
-    this_type& push(mpl::piecewise_select<Tp...>);
+    this_type& push(mpl::piecewise_select<Tp...>, int64_t _tid = threading::get_id());
 
     /// selective push
     template <typename... Tp>
-    this_type& push(mpl::piecewise_ignore<Tp...>);
+    this_type& push(mpl::piecewise_ignore<Tp...>, int64_t _tid = threading::get_id());
+
+    /// selective push with scope configuration
+    template <typename... Tp>
+    this_type& push(mpl::piecewise_select<Tp...>, scope::config,
+                    int64_t _tid = threading::get_id());
+
+    /// selective push with scope configuration
+    template <typename... Tp>
+    this_type& push(mpl::piecewise_ignore<Tp...>, scope::config,
+                    int64_t _tid = threading::get_id());
 
     /// selective pop
     template <typename... Tp>
