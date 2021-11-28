@@ -73,9 +73,10 @@ private:
     /// this function makes sure
     static void block_signals();
 
-    bool               m_ready = false;
-    int64_t            m_tid   = threading::get_id();
-    data_type          m_data  = {};
+    bool               m_ready   = false;
+    int                m_verbose = 0;
+    int64_t            m_tid     = threading::get_id();
+    data_type          m_data    = {};
     std::thread        m_thread;
     std::exception_ptr m_thread_exception = {};
 };
@@ -166,6 +167,7 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
         while(!_completed)
         {
             data_type _buff{};
+            _buffer_size = _obj->get_buffer_size();
             _buff.reserve(_buffer_size);
 
             std::unique_lock<std::mutex> _lk{ _obj->m_lock };
@@ -190,15 +192,20 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
         _alloc->m_thread_exception = std::current_exception();
     }
 
-    std::cerr << "[" << _alloc->m_tid << "] Sampler allocator performed " << _swap_count
-              << " swaps and has " << _alloc->m_data.size() << " entries\n";
+    if(_alloc->m_verbose > 0)
+    {
+        std::cerr << "[" << _alloc->m_tid << "] Sampler allocator performed "
+                  << _swap_count << " swaps and has " << _alloc->m_data.size()
+                  << " entries\n";
+    }
 }
 
 template <>
 struct allocator<void>
 {
     template <typename Tp>
-    explicit allocator(Tp*);
+    explicit allocator(Tp*)
+    {}
 
     ~allocator()                    = default;
     allocator(const allocator&)     = delete;
