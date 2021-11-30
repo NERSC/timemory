@@ -252,7 +252,7 @@ public:
 
     entry_type get_display(int evt_type) const { return accum[evt_type]; }
 
-    TIMEMORY_NODISCARD string_t get_display() const
+    string_t get_display() const
     {
         auto val          = load();
         auto _get_display = [&](std::ostream& os, size_type idx) {

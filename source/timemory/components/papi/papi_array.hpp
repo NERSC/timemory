@@ -221,17 +221,15 @@ public:
 
     static std::string label()
     {
-        return "papi_array" + std::to_string((event_set<common_type>() < 0)
-                                                 ? 0
-                                                 : event_set<common_type>());
+        auto _event_set = event_set<common_type>();
+        if(_event_set > 0)
+            return "papi_array" + std::to_string(_event_set);
+        return "papi_array";
     }
 
     static std::string description() { return "Fixed-size array of PAPI HW counters"; }
 
-    TIMEMORY_NODISCARD entry_type get_display(int evt_type) const
-    {
-        return accum.at(evt_type);
-    }
+    entry_type get_display(int evt_type) const { return accum.at(evt_type); }
 
     //----------------------------------------------------------------------------------//
     // serialization
@@ -260,7 +258,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of descriptions
     //
-    TIMEMORY_NODISCARD std::vector<std::string> label_array() const
+    std::vector<std::string> label_array() const
     {
         std::vector<std::string> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)
@@ -296,7 +294,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    TIMEMORY_NODISCARD std::vector<std::string> description_array() const
+    std::vector<std::string> description_array() const
     {
         std::vector<std::string> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)
@@ -307,7 +305,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit
     //
-    TIMEMORY_NODISCARD std::vector<std::string> display_unit_array() const
+    std::vector<std::string> display_unit_array() const
     {
         std::vector<std::string> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)
@@ -318,7 +316,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit values
     //
-    TIMEMORY_NODISCARD std::vector<int64_t> unit_array() const
+    std::vector<int64_t> unit_array() const
     {
         std::vector<int64_t> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)
@@ -328,7 +326,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    TIMEMORY_NODISCARD string_t get_display() const
+    string_t get_display() const
     {
         if(events.size() == 0)
             return "";
