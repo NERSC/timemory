@@ -980,14 +980,80 @@ endif()
 #
 # ----------------------------------------------------------------------------------------#
 
-if(TIMEMORY_USE_LIBUNWIND)
+if(TIMEMORY_USE_LIBUNWIND AND NOT TIMEMORY_BUILD_LIBUNWIND)
     find_package(libunwind ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
+elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
+    checkout_git_submodule(
+        RECURSIVE
+        RELATIVE_PATH external/libunwind
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://github.com/jrmadsen/libunwind.git
+        REPO_BRANCH master)
+    include(ExternalProject)
+    execute_process(
+        COMMAND
+            ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/external/libunwind
+            ${PROJECT_BINARY_DIR}/external/libunwind)
+    execute_process(
+        COMMAND autoreconf -i
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
+        OUTPUT_QUIET ERROR_QUIET)
+    externalproject_add(
+        libunwind-external
+        SOURCE_DIR ${PROJECT_BINARY_DIR}/external/libunwind
+        PREFIX ${CMAKE_BINARY_DIR}/external/libunwind
+        BUILD_IN_SOURCE 1
+        CONFIGURE_COMMAND
+            ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER} CFLAGS=-fPIC\ -O2\ -g
+            CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=-fPIC\ -O2\ -g ./configure
+            --enable-shared=no --enable-static=yes
+            --prefix=${PROJECT_BINARY_DIR}/external/libunwind/install
+        BUILD_COMMAND make install
+        INSTALL_COMMAND "")
+    foreach(_HEADER libunwind-common.h libunwind-coredump.h libunwind-dynamic.h
+                    libunwind.h libunwind-ptrace.h libunwind-x86_64.h unwind.h)
+        timemory_install_header_files(
+            ${PROJECT_BINARY_DIR}/external/libunwind/install/include/${_HEADER})
+    endforeach()
+    foreach(
+        _LIB
+        libunwind.a
+        libunwind-coredump.a
+        libunwind-coredump.la
+        libunwind-generic.a
+        libunwind.la
+        libunwind-ptrace.a
+        libunwind-ptrace.la
+        libunwind-setjmp.a
+        libunwind-setjmp.la
+        libunwind-x86_64.a
+        libunwind-x86_64.la)
+        install(
+            FILES ${PROJECT_BINARY_DIR}/external/libunwind/install/lib/${_LIB}
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            OPTIONAL)
+    endforeach()
 endif()
 
-if(TIMEMORY_USE_LIBUNWIND AND libunwind_FOUND)
+if(TIMEMORY_USE_LIBUNWIND
+   AND NOT TIMEMORY_BUILD_LIBUNWIND
+   AND libunwind_FOUND)
     target_link_libraries(timemory-libunwind INTERFACE ${libunwind_LIBRARIES})
     target_include_directories(timemory-libunwind SYSTEM
                                INTERFACE ${libunwind_INCLUDE_DIRS})
+    timemory_target_compile_definitions(timemory-libunwind INTERFACE
+                                        TIMEMORY_USE_LIBUNWIND UNW_LOCAL_ONLY)
+elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
+    add_dependencies(timemory-libunwind libunwind-external)
+    target_link_directories(
+        timemory-libunwind INTERFACE
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/libunwind/install/libs>)
+    target_link_libraries(timemory-libunwind INTERFACE unwind)
+    target_include_directories(
+        timemory-libunwind SYSTEM
+        INTERFACE
+            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/libunwind/install/include>
+            $<INSTALL_INTERFACE:include>)
     timemory_target_compile_definitions(timemory-libunwind INTERFACE
                                         TIMEMORY_USE_LIBUNWIND UNW_LOCAL_ONLY)
 else()

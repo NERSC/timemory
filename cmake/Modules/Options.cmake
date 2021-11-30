@@ -47,6 +47,7 @@ set(_USE_COVERAGE OFF)
 set(_BUILD_OPT OFF)
 set(_BUILD_GOTCHA OFF)
 set(_BUILD_CALIPER ON)
+set(_BUILD_LIBUNWIND ON)
 set(_BUILD_FORTRAN ON)
 set(_NON_APPLE_UNIX OFF)
 set(_UNIX_OS ${UNIX})
@@ -118,6 +119,7 @@ endif()
 
 if(WIN32)
     set(_BUILD_CALIPER OFF)
+    set(_BUILD_LIBUNWIND OFF)
 endif()
 
 # intel compiler has had issues with rapidxml library in past so default to off
@@ -125,7 +127,11 @@ if(CMAKE_CXX_COMPILER_IS_INTEL)
     set(_USE_XML OFF)
 endif()
 
-timemory_test_find_package(libunwind _USE_LIBUNWIND)
+if(NOT TIMEMORY_BUILD_LIBUNWIND)
+    timemory_test_find_package(libunwind _USE_LIBUNWIND)
+else()
+    set(_USE_LIBUNWIND ON)
+endif()
 
 set(_REQUIRE_LIBUNWIND OFF)
 set(_HATCHET ${_UNIX_OS})
@@ -378,6 +384,9 @@ add_option(
     TIMEMORY_BUILD_DYNINST_TPLS
     "Enable building Dyninst third-party library dependencies (TBB, Boost, elfutils, libiberty). See also: DYNINST_BUILD_<TPL> options"
     OFF)
+add_option(
+    TIMEMORY_BUILD_LIBUNWIND "Enable building libunwind submodule (set to OFF for external)"
+    ${_BUILD_LIBUNWIND})
 add_option(TIMEMORY_BUILD_DEVELOPER "Enable building with developer flags" OFF)
 add_option(TIMEMORY_FORCE_GPERFTOOLS_PYTHON
            "Enable gperftools + Python (may cause termination errors)" ON)
