@@ -31,3 +31,6 @@
 [submodule "external/perfetto"]
 	path = external/perfetto
 	url = https://android.googlesource.com/platform/external/perfetto
+[submodule "external/libunwind"]
+	path = external/libunwind
+	url = https://github.com/jrmadsen/libunwind.git
