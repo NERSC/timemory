@@ -36,5 +36,5 @@
 #include "timemory/config/config.hpp"
 //
 #if !defined(TIMEMORY_USE_CONFIG_EXTERN)
-#    include "timemory/config/_config.cpp"
+#    include "timemory/config/config.cpp"
 #endif
