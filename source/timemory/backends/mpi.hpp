@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include "timemory/api.hpp"
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/environment/declaration.hpp"
@@ -39,10 +40,24 @@
 #include "timemory/utility/utility.hpp"
 
 #include <cstdint>
+#include <map>
 #include <unordered_map>
 
-#if defined(TIMEMORY_USE_MPI)
+#if !defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_MPI_HEADERS) &&                   \
+    !defined(OMPI_SKIP_MPICXX)
+#    define TIMEMORY_UNDEFINE_OMPI_SKIP_MPICXX 1
+#    define OMPI_SKIP_MPICXX 1
+#endif
+
+#if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
 #    include <mpi.h>
+#endif
+
+#if defined(MPICH) && MPICH > 0
+#    define TIMEMORY_MPI_MPICH 1
+#elif defined(OMPI_MAJOR_VERSION) && defined(OMPI_MINOR_VERSION) &&                      \
+    defined(OMPI_PATCH_VERSION)
+#    define TIMEMORY_MPI_OPENMPI 1
 #endif
 
 namespace tim
@@ -78,24 +93,44 @@ struct dummy_data_type
 #endif
 
 //--------------------------------------------------------------------------------------//
-#if defined(TIMEMORY_USE_MPI)
-using comm_t                           = MPI_Comm;
-using info_t                           = MPI_Info;
-using data_type_t                      = MPI_Datatype;
-using status_t                         = MPI_Status;
-static const comm_t comm_world_v       = MPI_COMM_WORLD;
-static const comm_t comm_self_v        = MPI_COMM_SELF;
-static const info_t info_null_v        = MPI_INFO_NULL;
-static const int    success_v          = MPI_SUCCESS;
-static const int    comm_type_shared_v = MPI_COMM_TYPE_SHARED;
+
+#if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
+#    if defined(MPICH) && (MPICH > 0)
+static constexpr bool is_mpich = true;
+#    else
+static constexpr bool is_mpich     = false;
+#    endif
+#    if defined(OPEN_MPI) && (OPEN_MPI > 0)
+static constexpr bool is_openmpi = true;
+#    else
+static constexpr bool is_openmpi   = false;
+#    endif
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
+
+using comm_t      = MPI_Comm;
+using info_t      = MPI_Info;
+using data_type_t = MPI_Datatype;
+using status_t    = MPI_Status;
+
+#    if !defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_MPI_HEADERS) &&               \
+        defined(OPEN_MPI) && (OPEN_MPI > 0)
+static const comm_t comm_world_v = nullptr;
+static const comm_t comm_self_v  = nullptr;
+static const info_t info_null_v  = nullptr;
+#    else
+static const comm_t   comm_world_v = MPI_COMM_WORLD;
+static const comm_t   comm_self_v  = MPI_COMM_SELF;
+static const info_t   info_null_v  = MPI_INFO_NULL;
+#    endif
+static const int success_v          = MPI_SUCCESS;
+static const int comm_type_shared_v = MPI_COMM_TYPE_SHARED;
+
 namespace threading
 {
-inline auto
-get_id()
-{
-    return ::tim::threading::get_id();
-}
-
 enum : int
 {
     /// Only one thread will execute.
@@ -112,8 +147,9 @@ enum : int
     multiple = MPI_THREAD_MULTIPLE
 };
 }  // namespace threading
-#else
-// dummy MPI types
+
+#else  // dummy MPI types
+
 using comm_t                           = int32_t;
 using info_t                           = int32_t;
 using data_type_t                      = int32_t;
@@ -123,14 +159,9 @@ static const comm_t comm_self_v        = 0;
 static const info_t info_null_v        = 0;
 static const int    success_v          = 0;
 static const int    comm_type_shared_v = 0;
+
 namespace threading
 {
-inline auto
-get_id()
-{
-    return ::tim::threading::get_id();
-}
-
 enum : int
 {
     /// Only one thread will execute.
@@ -147,17 +178,31 @@ enum : int
     multiple = 3
 };
 }  // namespace threading
+
 #endif
+
+//--------------------------------------------------------------------------------------//
+
+namespace threading
+{
+inline auto
+get_id()
+{
+    return ::tim::threading::get_id();
+}
+}  // namespace threading
 
 template <typename Tp>
 using communicator_map_t = std::unordered_map<comm_t, Tp>;
 
-inline int32_t
-rank(comm_t comm = comm_world_v);
+inline int32_t rank(comm_t = comm_world_v);
+inline int32_t size(comm_t = comm_world_v);
+inline void    set_rank(int32_t, comm_t = comm_world_v);
+inline void    set_size(int32_t, comm_t = comm_world_v);
 
 //--------------------------------------------------------------------------------------//
 
-static inline bool&
+inline bool&
 use_mpi_thread()
 {
     static bool _instance = tim::get_env("TIMEMORY_MPI_THREAD", true);
@@ -179,7 +224,7 @@ use_mpi_thread_type()
 inline bool&
 fail_on_error()
 {
-    static bool _instance = false;
+    static bool _instance = tim::get_env("TIMEMORY_MPI_FAIL_ON_ERROR", false);
     return _instance;
 }
 
@@ -188,7 +233,7 @@ fail_on_error()
 inline bool&
 quiet()
 {
-    static bool _instance = false;
+    static bool _instance = tim::get_env("TIMEMORY_MPI_QUIET", false);
     return _instance;
 }
 
@@ -215,9 +260,8 @@ check_error(const char* _func, int err_code, comm_t _comm = mpi::comm_world_v)
         int  len = 0;
         char msg[1024];
         PMPI_Error_string(err_code, msg, &len);
-        int idx   = (len < 1023) ? len + 1 : 1023;
-        msg[idx]  = '\0';
-        int _rank = rank();
+        msg[std::min<int>(len, 1023)] = '\0';
+        int _rank                     = rank();
         fprintf(stderr, "[rank=%i][pid=%i][tid=%i][%s]> Error code (%i): %s\n", _rank,
                 (int) process::get_id(), (int) threading::get_id(), _func, err_code, msg);
     }
@@ -264,15 +308,27 @@ is_finalized()
 
 //--------------------------------------------------------------------------------------//
 
+template <typename ApiT = TIMEMORY_API>
+inline std::function<bool()>&
+is_initialized_callback()
+{
+    static std::function<bool()> _v = []() -> bool {
+        int32_t _init = 0;
+#if defined(TIMEMORY_USE_MPI)
+        if(!is_finalized())
+            PMPI_Initialized(&_init);
+#endif
+        return (_init != 0) ? true : false;
+    };
+    return _v;
+}
+
+//--------------------------------------------------------------------------------------//
+
 inline bool
 is_initialized()
 {
-    int32_t _init = 0;
-#if defined(TIMEMORY_USE_MPI)
-    if(!is_finalized())
-        PMPI_Initialized(&_init);
-#endif
-    return (_init != 0) ? true : false;
+    return is_initialized_callback()();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -359,11 +415,12 @@ finalize()
 
 //--------------------------------------------------------------------------------------//
 
-inline int32_t
+#if defined(TIMEMORY_USE_MPI)
+
+int32_t
 rank(comm_t comm)
 {
     int32_t _rank = 0;
-#if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
     {
         // this is used to guard against the queries that might happen after an
@@ -379,19 +436,13 @@ rank(comm_t comm)
             _rank = (*_instance)[comm];
         }
     }
-#else
-    consume_parameters(comm);
-#endif
     return std::max(_rank, (int32_t) 0);
 }
 
-//--------------------------------------------------------------------------------------//
-
-inline int32_t
-size(comm_t comm = comm_world_v)
+int32_t
+size(comm_t comm)
 {
     int32_t _size = 1;
-#if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
     {
         // this is used to guard against the queries that might happen after an
@@ -407,11 +458,61 @@ size(comm_t comm = comm_world_v)
             _size = (*_instance)[comm];
         }
     }
-#else
-    consume_parameters(comm);
-#endif
     return std::max(_size, (int32_t) 1);
 }
+
+void set_rank(int32_t, comm_t) {}
+void set_size(int32_t, comm_t) {}
+
+#else
+
+struct comm_data
+{
+    using entry_t = std::array<int32_t, 2>;
+
+    static int32_t rank(comm_t _comm) { return m_data()[_comm][0]; }
+    static int32_t size(comm_t _comm)
+    {
+        m_data().emplace(_comm, entry_t{ 0, 1 });
+        return m_data()[_comm][1];
+    }
+
+    friend void set_rank(int32_t, comm_t);
+    friend void set_size(int32_t, comm_t);
+
+private:
+    static std::map<comm_t, entry_t>& m_data()
+    {
+        static std::map<comm_t, entry_t> _v = {};
+        return _v;
+    }
+};
+
+int32_t
+rank(comm_t comm)
+{
+    return comm_data::rank(comm);
+}
+
+int32_t
+size(comm_t comm)
+{
+    return comm_data::size(comm);
+}
+
+void
+set_rank(int32_t _rank, comm_t comm)
+{
+    comm_data::m_data()[comm][0] = _rank;
+}
+
+void
+set_size(int32_t _size, comm_t comm)
+{
+    comm_data::m_data()[comm][1] = _size;
+}
+
+#endif
 
 //--------------------------------------------------------------------------------------//
 
@@ -587,7 +688,8 @@ comm_spawn_multiple(int count, char** commands, char*** argv, const int* maxproc
 //--------------------------------------------------------------------------------------//
 
 }  // namespace mpi
-
 }  // namespace tim
 
-//--------------------------------------------------------------------------------------//
+#if defined(TIMEMORY_UNDEFINE_OMPI_SKIP_MPICXX) && TIMEMORY_UNDEFINE_OMPI_SKIP_MPICXX
+#    undef OMPI_SKIP_MPICXX
+#endif

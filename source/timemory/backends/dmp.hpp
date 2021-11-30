@@ -43,7 +43,7 @@ namespace dmp
 inline bool
 using_mpi()
 {
-#if defined(TIMEMORY_USE_MPI)
+#if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
     return mpi::is_initialized();
 #else
     return false;
@@ -71,7 +71,7 @@ is_supported()
 {
 #if defined(TIMEMORY_USE_UPCXX)
     return upc::is_supported();
-#elif defined(TIMEMORY_USE_MPI)
+#elif defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
     return mpi::is_supported();
 #else
     return false;
@@ -87,7 +87,7 @@ is_finalized()
     return upc::is_finalized() && mpi::is_finalized();
 #elif defined(TIMEMORY_USE_UPCXX)
     return upc::is_finalized();
-#elif defined(TIMEMORY_USE_MPI)
+#elif defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
     return mpi::is_finalized();
 #else
     static bool _instance = true;
@@ -106,7 +106,7 @@ set_finalized(bool v)
 #    if defined(TIMEMORY_USE_UPCXX)
     upc::is_finalized() = v;
 #    endif
-#    if defined(TIMEMORY_USE_MPI)
+#    if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
     mpi::is_finalized() = v;
 #    endif
 #endif
@@ -119,7 +119,7 @@ is_initialized()
 {
 #if defined(TIMEMORY_USE_UPCXX)
     return upc::is_initialized();
-#elif defined(TIMEMORY_USE_MPI)
+#elif defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
     return mpi::is_initialized();
 #else
     return false;
@@ -161,7 +161,7 @@ rank(ArgsT&&... _args)
 {
 #if defined(TIMEMORY_USE_UPCXX)
     return upc::rank(std::forward<ArgsT>(_args)...);
-#elif defined(TIMEMORY_USE_MPI)
+#elif defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
     return mpi::rank(std::forward<ArgsT>(_args)...);
 #else
     consume_parameters(_args...);
@@ -177,7 +177,7 @@ size(ArgsT&&... _args)
 {
 #if defined(TIMEMORY_USE_UPCXX)
     return upc::size(std::forward<ArgsT>(_args)...);
-#elif defined(TIMEMORY_USE_MPI)
+#elif defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
     return mpi::size(std::forward<ArgsT>(_args)...);
 #else
     consume_parameters(_args...);
