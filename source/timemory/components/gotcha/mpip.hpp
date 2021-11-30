@@ -39,6 +39,12 @@
 #include <string>
 #include <unordered_map>
 
+#if !defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_MPI_HEADERS) &&                   \
+    !defined(OMPI_SKIP_MPICXX)
+#    define TIMEMORY_UNDEFINE_OMPI_SKIP_MPICXX 1
+#    define OMPI_SKIP_MPICXX 1
+#endif
+
 #if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
 #    include <mpi.h>
 #endif
@@ -288,14 +294,14 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 48, MPI_Comm_group);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 49, MPI_Comm_idup);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 50, MPI_Comm_join);
-            TIMEMORY_C_GOTCHA(mpip_gotcha_t, 51, MPI_Comm_rank);
+            // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 51, MPI_Comm_rank);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 52, MPI_Comm_remote_group);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 53, MPI_Comm_remote_size);
             // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 54, MPI_Comm_set_attr);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 55, MPI_Comm_set_errhandler);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 56, MPI_Comm_set_info);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 57, MPI_Comm_set_name);
-            TIMEMORY_C_GOTCHA(mpip_gotcha_t, 58, MPI_Comm_size);
+            // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 58, MPI_Comm_size);
             // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 59, MPI_Comm_spawn);
             // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 60, MPI_Comm_spawn_multiple);
             // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 61, MPI_Comm_split);
@@ -515,3 +521,7 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
 //
 //======================================================================================//
 //
+
+#if defined(TIMEMORY_UNDEFINE_OMPI_SKIP_MPICXX) && TIMEMORY_UNDEFINE_OMPI_SKIP_MPICXX
+#    undef OMPI_SKIP_MPICXX
+#endif
