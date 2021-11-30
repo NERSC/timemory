@@ -98,13 +98,16 @@ struct base_data<Tp, 1>
     using value_type = Tp;
     using accum_type = empty_type;
     using last_type  = empty_type;
+    using cref_return_type =
+        std::conditional_t<std::is_trivially_copyable<value_type>::value, value_type,
+                           const value_type&>;
 
-    TIMEMORY_INLINE const value_type& get_value() const { return value; }
-    TIMEMORY_INLINE const value_type& get_accum() const { return value; }
-    TIMEMORY_INLINE const value_type& get_last() const { return value; }
-    TIMEMORY_INLINE void              set_value(value_type v) { value = v; }
-    TIMEMORY_INLINE void              set_accum(value_type) {}
-    TIMEMORY_INLINE void              set_last(value_type) {}
+    TIMEMORY_INLINE cref_return_type get_value() const { return value; }
+    TIMEMORY_INLINE cref_return_type get_accum() const { return value; }
+    TIMEMORY_INLINE cref_return_type get_last() const { return value; }
+    TIMEMORY_INLINE void             set_value(value_type v) { value = std::move(v); }
+    TIMEMORY_INLINE void             set_accum(value_type) {}
+    TIMEMORY_INLINE void             set_last(value_type) {}
 
     base_data()  = default;
     ~base_data() = default;
@@ -194,13 +197,16 @@ struct base_data<Tp, 2>
     using value_type = Tp;
     using accum_type = Tp;
     using last_type  = empty_type;
+    using cref_return_type =
+        std::conditional_t<std::is_trivially_copyable<value_type>::value, value_type,
+                           const value_type&>;
 
-    TIMEMORY_INLINE const value_type& get_value() const { return value; }
-    TIMEMORY_INLINE const value_type& get_accum() const { return accum; }
-    TIMEMORY_INLINE const value_type& get_last() const { return value; }
-    TIMEMORY_INLINE void              set_value(value_type v) { value = v; }
-    TIMEMORY_INLINE void              set_accum(value_type v) { accum = v; }
-    TIMEMORY_INLINE void              set_last(value_type) {}
+    TIMEMORY_INLINE cref_return_type get_value() const { return value; }
+    TIMEMORY_INLINE cref_return_type get_accum() const { return accum; }
+    TIMEMORY_INLINE cref_return_type get_last() const { return value; }
+    TIMEMORY_INLINE void             set_value(value_type v) { value = std::move(v); }
+    TIMEMORY_INLINE void             set_accum(value_type v) { accum = std::move(v); }
+    TIMEMORY_INLINE void             set_last(value_type) {}
 
     base_data()  = default;
     ~base_data() = default;
@@ -312,13 +318,16 @@ struct base_data<Tp, 3>
     using value_type = Tp;
     using accum_type = Tp;
     using last_type  = Tp;
+    using cref_return_type =
+        std::conditional_t<std::is_trivially_copyable<value_type>::value, value_type,
+                           const value_type&>;
 
-    TIMEMORY_INLINE const value_type& get_value() const { return value; }
-    TIMEMORY_INLINE const value_type& get_accum() const { return accum; }
-    TIMEMORY_INLINE const value_type& get_last() const { return last; }
-    TIMEMORY_INLINE void              set_value(value_type v) { value = v; }
-    TIMEMORY_INLINE void              set_accum(value_type v) { accum = v; }
-    TIMEMORY_INLINE void              set_last(value_type v) { last = v; }
+    TIMEMORY_INLINE cref_return_type get_value() const { return value; }
+    TIMEMORY_INLINE cref_return_type get_accum() const { return accum; }
+    TIMEMORY_INLINE cref_return_type get_last() const { return last; }
+    TIMEMORY_INLINE void             set_value(value_type v) { value = std::move(v); }
+    TIMEMORY_INLINE void             set_accum(value_type v) { accum = std::move(v); }
+    TIMEMORY_INLINE void             set_last(value_type v) { last = std::move(v); }
 
     base_data()  = default;
     ~base_data() = default;
