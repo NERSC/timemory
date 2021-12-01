@@ -989,7 +989,6 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         REPO_URL https://github.com/jrmadsen/libunwind.git
         REPO_BRANCH master)
-    include(ExternalProject)
     execute_process(
         COMMAND
             ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/external/libunwind
@@ -997,7 +996,8 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
     if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/configure)
         find_program(AUTORECONF_EXE NAMES autoreconf)
         if(NOT AUTORECONF_EXE)
-            timemory_message(FATAL_ERROR "Building libunwind submodule requires autoreconf")
+            timemory_message(FATAL_ERROR
+                             "Building libunwind submodule requires autoreconf")
         else()
             timemory_message(STATUS "Generating libunwind configure...")
             execute_process(
