@@ -994,10 +994,12 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
         COMMAND
             ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/external/libunwind
             ${PROJECT_BINARY_DIR}/external/libunwind)
-    execute_process(
-        COMMAND autoreconf -i
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
-        OUTPUT_QUIET ERROR_QUIET)
+    if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/configure)
+        execute_process(
+            COMMAND autoreconf -i
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
+            OUTPUT_QUIET)
+    endif()
     if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/Makefile)
         execute_process(
             COMMAND
@@ -1006,7 +1008,7 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
                 --enable-shared=no --enable-static=yes
                 --prefix=${PROJECT_BINARY_DIR}/external/libunwind/install
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
-            OUTPUT_QUIET ERROR_QUIET)
+            OUTPUT_QUIET)
     endif()
     externalproject_add(
         libunwind-external
@@ -1066,8 +1068,10 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
                                                                          ERROR_QUIET)
     add_dependencies(timemory-libunwind libunwind-external)
     target_link_directories(
-        timemory-libunwind INTERFACE
+        timemory-libunwind
+        INTERFACE
         $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/libunwind/install/libs>
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/libunwind/src/.libs>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}/timemory/libunwind>)
     target_link_libraries(timemory-libunwind INTERFACE unwind)
     target_include_directories(
