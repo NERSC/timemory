@@ -1001,24 +1001,26 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
             OUTPUT_QUIET)
     endif()
     if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/Makefile)
+        timemory_message(STATUS "Configuring libunwind...")
         execute_process(
             COMMAND
                 ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER} CFLAGS=-fPIC\ -O2\ -g
                 CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=-fPIC\ -O2\ -g ./configure
-                --enable-shared=no --enable-static=yes
+                --enable-shared=yes --enable-static=no
                 --prefix=${PROJECT_BINARY_DIR}/external/libunwind/install
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
             OUTPUT_QUIET)
+        timemory_message(STATUS "Building libunwind...")
+        execute_process(
+            COMMAND make
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
+            OUTPUT_QUIET)
+        timemory_message(STATUS "Installing libunwind...")
+        execute_process(
+            COMMAND make install
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
+            OUTPUT_QUIET)
     endif()
-    externalproject_add(
-        libunwind-external
-        SOURCE_DIR ${PROJECT_BINARY_DIR}/external/libunwind
-        PREFIX ${CMAKE_BINARY_DIR}/external/libunwind
-        BUILD_IN_SOURCE 1
-        BUILD_ALWAYS OFF
-        CONFIGURE_COMMAND make install
-        BUILD_COMMAND ""
-        INSTALL_COMMAND "")
     foreach(_HEADER libunwind-common.h libunwind-coredump.h libunwind-dynamic.h
                     libunwind.h libunwind-ptrace.h libunwind-x86_64.h unwind.h)
         if(NOT TIMEMORY_INSTALL_HEADER_FILES)
@@ -1066,7 +1068,6 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
         COMMAND ${CMAKE_COMMAND} -E make_directory
                 ${PROJECT_BINARY_DIR}/external/libunwind/install/include OUTPUT_QUIET
                                                                          ERROR_QUIET)
-    add_dependencies(timemory-libunwind libunwind-external)
     target_link_directories(
         timemory-libunwind
         INTERFACE
