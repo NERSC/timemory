@@ -995,10 +995,16 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
             ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/external/libunwind
             ${PROJECT_BINARY_DIR}/external/libunwind)
     if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/configure)
-        execute_process(
-            COMMAND autoreconf -i
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
-            OUTPUT_QUIET)
+        find_program(AUTORECONF_EXE NAMES autoreconf)
+        if(NOT AUTORECONF_EXE)
+            timemory_message(FATAL_ERROR "Building libunwind submodule requires autoreconf")
+        else()
+            timemory_message(STATUS "Generating libunwind configure...")
+            execute_process(
+                COMMAND ${AUTORECONF_EXE} -i
+                WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
+                OUTPUT_QUIET)
+        endif()
     endif()
     if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/Makefile)
         timemory_message(STATUS "Configuring libunwind...")
