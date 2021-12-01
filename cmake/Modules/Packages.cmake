@@ -1003,7 +1003,13 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
             execute_process(
                 COMMAND ${AUTORECONF_EXE} -i
                 WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
-                OUTPUT_QUIET)
+                OUTPUT_VARIABLE OUT
+                ERROR_VARIABLE ERR
+                RESULT_VARIABLE RET)
+            if(NOT RET EQUAL 0)
+                timemory_message(FATAL_ERROR
+                                 "'${AUTORECONF_EXE} -i' failed:\n${OUT}\n${ERR}")
+            endif()
         endif()
     endif()
     if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/Makefile)
@@ -1027,34 +1033,31 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
             OUTPUT_QUIET)
     endif()
-    foreach(_HEADER libunwind-common.h libunwind-coredump.h libunwind-dynamic.h
-                    libunwind.h libunwind-ptrace.h libunwind-x86_64.h unwind.h)
+    file(GLOB_RECURSE libunwind_headers
+         "${PROJECT_BINARY_DIR}/external/libunwind/install/include/*.h")
+    foreach(_HEADER ${libunwind_headers})
         if(NOT TIMEMORY_INSTALL_HEADER_FILES)
             continue()
         endif()
         install(
-            FILES ${PROJECT_BINARY_DIR}/external/libunwind/install/include/${_HEADER}
+            FILES ${_HEADER}
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory/libunwind
             OPTIONAL)
     endforeach()
-    foreach(
-        _LIB
-        libunwind.a
-        libunwind-coredump.a
-        libunwind-coredump.la
-        libunwind-generic.a
-        libunwind.la
-        libunwind-ptrace.a
-        libunwind-ptrace.la
-        libunwind-setjmp.a
-        libunwind-setjmp.la
-        libunwind-x86_64.a
-        libunwind-x86_64.la)
+    file(GLOB libunwind_libs "${PROJECT_BINARY_DIR}/external/libunwind/install/lib/*")
+    foreach(_LIB ${libunwind_libs})
+        if(IS_DIRECTORY ${_LIB})
+            continue()
+        endif()
         install(
-            FILES ${PROJECT_BINARY_DIR}/external/libunwind/install/lib/${_LIB}
+            FILES ${_LIB}
             DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/libunwind
             OPTIONAL)
     endforeach()
+    install(
+        DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind/install/lib/pkgconfig
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/libunwind/pkgconfig
+        OPTIONAL)
 endif()
 
 if(TIMEMORY_USE_LIBUNWIND
@@ -1068,17 +1071,15 @@ if(TIMEMORY_USE_LIBUNWIND
 elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E make_directory
-                ${PROJECT_BINARY_DIR}/external/libunwind/install/libs OUTPUT_QUIET
-                                                                      ERROR_QUIET)
+                ${PROJECT_BINARY_DIR}/external/libunwind/install/lib OUTPUT_QUIET
+                                                                     ERROR_QUIET)
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E make_directory
                 ${PROJECT_BINARY_DIR}/external/libunwind/install/include OUTPUT_QUIET
                                                                          ERROR_QUIET)
     target_link_directories(
-        timemory-libunwind
-        INTERFACE
-        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/libunwind/install/libs>
-        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/libunwind/src/.libs>
+        timemory-libunwind INTERFACE
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/libunwind/install/lib>
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}/timemory/libunwind>)
     target_link_libraries(timemory-libunwind INTERFACE unwind)
     target_include_directories(
