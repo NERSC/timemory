@@ -30,7 +30,6 @@
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/mpl/concepts.hpp"
-#include "timemory/utility/types.hpp"
 
 #include <functional>
 #include <memory>
@@ -142,11 +141,7 @@ get_combined_hash_id(hash_value_t _lhs, Tp&& _rhs, Arg&& _arg, Args&&... _args);
 //
 template <typename Tp, typename... Args>
 TIMEMORY_INLINE hash_value_t
-get_hash_id(hash_value_t _lhs, Tp&& _rhs, Args&&... _args)
-{
-    return get_combined_hash_id(_lhs, get_hash_id(std::forward<Tp>(_rhs)),
-                                std::forward<Args>(_args)...);
-}
+get_hash_id(hash_value_t _lhs, Tp&& _rhs, Args&&... _args);
 //
 //  get hash of a string type
 //
@@ -195,6 +190,16 @@ get_combined_hash_id(hash_value_t _lhs, Tp&& _rhs, Arg&& _arg, Args&&... _args)
                                 get_combined_hash_id(get_hash_id(std::forward<Tp>(_rhs)),
                                                      std::forward<Arg>(_arg),
                                                      std::forward<Args>(_args)...));
+}
+//
+//
+//
+template <typename Tp, typename... Args>
+hash_value_t
+get_hash_id(hash_value_t _lhs, Tp&& _rhs, Args&&... _args)
+{
+    return get_combined_hash_id(_lhs, get_hash_id(std::forward<Tp>(_rhs)),
+                                std::forward<Args>(_args)...);
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -624,11 +624,11 @@ struct config : public data_type
         if(is_tree<ForceTreeT::value, ForceTimeT::value>() ||
            is_flat<ForceFlatT::value>())
         {
-            _id = get_hash_id(_id, _depth);
+            _id = hash::get_hash_id(_id, _depth);
         }
         if(ForceTimeT::value || is_timeline())
         {
-            _id = get_hash_id(_id, _counter++);
+            _id = hash::get_hash_id(_id, _counter++);
         }
         return _id;
     }

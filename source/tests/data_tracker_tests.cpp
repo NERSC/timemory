@@ -362,7 +362,7 @@ TEST_F(data_tracker_tests, convergence_test)
 
                 log_bundle_t{ _name + "/ignore" }
                     .push(tim::mpl::piecewise_select<myproject_logger>{},
-                          tim::scope::flat{})
+                          tim::scope::config{} + tim::scope::flat{})
                     .start(tim::mpl::piecewise_select<myproject_logger>{})
                     .stop(tim::mpl::piecewise_select<myproject_logger>{})
                     .pop(tim::mpl::piecewise_select<myproject_logger>{});
