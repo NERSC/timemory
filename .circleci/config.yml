@@ -12,7 +12,7 @@ jobs:
           name: apt-fixes
           command: >
             apt-get update &&
-            apt-get install -y git ssh autoconf
+            apt-get install -y git ssh autoconf libtool
       - checkout
       - run:
           name: build
@@ -39,7 +39,7 @@ jobs:
           name: apt-fixes
           command: >
             apt-get update &&
-            apt-get install -y git ssh autoconf
+            apt-get install -y git ssh autoconf libtool
       - checkout
       - run:
           name: conda-installation
@@ -96,7 +96,7 @@ jobs:
           name: apt-fixes
           command: >
             apt-get update &&
-            apt-get install -y git ssh autoconf
+            apt-get install -y git ssh autoconf libtool
       - checkout
       - run:
           name: conda-installation
@@ -141,7 +141,7 @@ jobs:
           name: apt-fixes
           command: >
             apt-get update &&
-            apt-get install -y git ssh autoconf
+            apt-get install -y git ssh autoconf libtool
       - checkout
       - run:
           name: conda-installation
@@ -183,7 +183,7 @@ jobs:
           name: apt-fixes
           command: >
             apt-get update &&
-            apt-get install -y git ssh autoconf
+            apt-get install -y git ssh autoconf libtool
       - checkout
       - run:
           name: conda-installation
