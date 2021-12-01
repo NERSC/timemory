@@ -1,0 +1,25 @@
+
+# Load the module and generate the functions
+module timemory
+    using CxxWrap
+    @wrapmodule(joinpath(@__DIR__, "./libs", "libtimemory-jl"))
+
+    function __init__()
+    @initcxx
+    end
+
+    """
+    @marker
+    `@marker <name> <expression>` runs your expression can creates a measurements referenced by <label>.
+    """
+    macro profile(name, ex)
+        return quote
+            try
+                push($name)
+                $(esc(ex))
+            finally
+                pop($name)
+            end
+        end
+    end
+end
