@@ -24,6 +24,10 @@
 
 #include "timemory/components/roofline/extern.hpp"
 
+// disable warning #177-D: variable "<unnamed>::timemory_storage_initializer_<N>" was
+// declared but never referenced
+#pragma nv_diag_suppress 177
+
 #if defined(TIMEMORY_USE_CUPTI)
 #    if defined(TIMEMORY_USE_CUDA_HALF)
 TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(

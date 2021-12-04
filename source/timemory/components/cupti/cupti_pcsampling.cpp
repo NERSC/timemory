@@ -516,17 +516,21 @@ TIMEMORY_CUPTI_INLINE std::string
     return ss.str();
 }
 //
-TIMEMORY_CUPTI_INLINE std::vector<uint32_t>
+TIMEMORY_CUPTI_INLINE std::vector<int64_t>
                       cupti_pcsampling::get() const
 {
-    auto                  _n = cupti::pcstall::get_size();
-    std::vector<uint32_t> _data{};
+    auto                 _n = cupti::pcstall::get_size();
+    std::vector<int64_t> _data{};
     _data.reserve(_n);
     auto _val = load();
     for(size_t i = 0; i < _n; ++i)
     {
         if(cupti::pcstall::enabled(i) && strlen(cupti::pcstall::name(i)) > 0)
-            _data.push_back(_val.stalls[i].samples);
+        {
+            // this is a packed field so directly emplacing it can cause compiler errors
+            uint32_t _v = _val.stalls[i].samples;
+            _data.emplace_back(static_cast<int64_t>(_v));
+        }
     }
     return _data;
 }
