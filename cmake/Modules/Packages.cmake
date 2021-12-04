@@ -993,13 +993,15 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
         COMMAND
             ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/external/libunwind
             ${PROJECT_BINARY_DIR}/external/libunwind)
+    configure_file(${PROJECT_SOURCE_DIR}/external/libunwind/CMakeLists.txt
+                   ${PROJECT_BINARY_DIR}/external/libunwind/CMakeLists.txt COPYONLY)
     if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/configure)
         find_program(AUTORECONF_EXE NAMES autoreconf)
         if(NOT AUTORECONF_EXE)
             timemory_message(FATAL_ERROR
                              "Building libunwind submodule requires autoreconf")
         else()
-            timemory_message(STATUS "Generating libunwind configure...")
+            message(STATUS "[timemory] Generating libunwind configure...")
             execute_process(
                 COMMAND ${AUTORECONF_EXE} -i
                 WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
@@ -1013,25 +1015,33 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
         endif()
     endif()
     if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/Makefile)
-        timemory_message(STATUS "Configuring libunwind...")
+        message(STATUS "[timemory] Configuring libunwind...")
         execute_process(
             COMMAND
-                ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER} CFLAGS=-fPIC\ -O2\ -g
-                CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=-fPIC\ -O2\ -g ./configure
-                --enable-shared=yes --enable-static=no
+                ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER}
+                CFLAGS=-fPIC\ -O2\ -g\ -Wno-unused-result\ -Wno-unused-but-set-variable
+                CXX=${CMAKE_CXX_COMPILER}
+                CXXFLAGS=-fPIC\ -O2\ -g\ -Wno-unused-result\ -Wno-unused-but-set-variable
+                ./configure --enable-shared=yes --enable-static=no
                 --prefix=${PROJECT_BINARY_DIR}/external/libunwind/install
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
             OUTPUT_QUIET)
-        timemory_message(STATUS "Building libunwind...")
-        execute_process(
-            COMMAND make
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
-            OUTPUT_QUIET)
-        timemory_message(STATUS "Installing libunwind...")
-        execute_process(
-            COMMAND make install
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
-            OUTPUT_QUIET)
+        find_program(MAKE_EXE NAMES make gmake)
+        if(NOT MAKE_EXE)
+            timemory_message(FATAL_ERROR
+                             "Building libunwind submodule requires make / gmake")
+        else()
+            message(STATUS "[timemory] Building libunwind...")
+            execute_process(
+                COMMAND ${MAKE_EXE}
+                WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
+                OUTPUT_QUIET)
+            message(STATUS "[timemory] Installing libunwind...")
+            execute_process(
+                COMMAND ${MAKE_EXE} install
+                WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
+                OUTPUT_QUIET)
+        endif()
     endif()
     file(GLOB_RECURSE libunwind_headers
          "${PROJECT_BINARY_DIR}/external/libunwind/install/include/*.h")
@@ -1069,24 +1079,21 @@ if(TIMEMORY_USE_LIBUNWIND
     timemory_target_compile_definitions(timemory-libunwind INTERFACE
                                         TIMEMORY_USE_LIBUNWIND UNW_LOCAL_ONLY)
 elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E make_directory
-                ${PROJECT_BINARY_DIR}/external/libunwind/install/lib OUTPUT_QUIET
-                                                                     ERROR_QUIET)
-    execute_process(
-        COMMAND ${CMAKE_COMMAND} -E make_directory
-                ${PROJECT_BINARY_DIR}/external/libunwind/install/include OUTPUT_QUIET
-                                                                         ERROR_QUIET)
-    target_link_directories(
-        timemory-libunwind INTERFACE
-        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/libunwind/install/lib>
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}/timemory/libunwind>)
-    target_link_libraries(timemory-libunwind INTERFACE unwind)
     target_include_directories(
         timemory-libunwind SYSTEM
         INTERFACE
             $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/libunwind/install/include>
             $<INSTALL_INTERFACE:include/timemory/libunwind>)
+    target_link_directories(
+        timemory-libunwind INTERFACE
+        $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/libunwind/install/lib>
+        $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}/timemory/libunwind>)
+    target_link_libraries(
+        timemory-libunwind
+        INTERFACE
+            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/libunwind/install/lib/libunwind${CMAKE_SHARED_LIBRARY_SUFFIX}>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}/timemory/libunwind/libunwind${CMAKE_SHARED_LIBRARY_SUFFIX}>
+        )
     timemory_target_compile_definitions(timemory-libunwind INTERFACE
                                         TIMEMORY_USE_LIBUNWIND UNW_LOCAL_ONLY)
 else()
