@@ -33,6 +33,7 @@
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/nvtx.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/macros/compiler.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
@@ -51,13 +52,6 @@
 #    include <cuda_fp16.hpp>
 #    include <cuda_profiler_api.h>
 #    include <cuda_runtime_api.h>
-#endif
-
-#if defined(TIMEMORY_USE_CUDA) && (defined(__NVCC__) || defined(__CUDACC__)) &&          \
-    defined(__CUDA_ARCH__) && (__CUDA_ARCH__ >= 530)
-#    if defined(TIMEMORY_USE_CUDA_HALF)
-#        undef TIMEMORY_USE_CUDA_HALF
-#    endif
 #endif
 
 //======================================================================================//
@@ -122,8 +116,7 @@ private:
     value_type value = 0.0f;
 };
 
-using __half2 = half2;
-using fp16_t  = half2;
+using fp16_t = half2;
 
 #else
 using fp16_t = half2;

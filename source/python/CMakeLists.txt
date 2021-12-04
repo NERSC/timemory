@@ -25,9 +25,12 @@ else()
     set(CMAKE_UNITY_BUILD_BATCH_SIZE 4)
 endif()
 
+option(TIMEMORY_BUILD_PYTHON_HIDDEN "Build python interface with hidden symbols" OFF)
+mark_as_advanced(TIMEMORY_BUILD_PYTHON_HIDDEN)
 set(_visibility timemory::timemory-default-visibility)
 if(TIMEMORY_BUILD_PYTHON_HIDDEN)
     set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+    set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
     set(_visibility timemory::timemory-hidden-visibility)
 endif()
 

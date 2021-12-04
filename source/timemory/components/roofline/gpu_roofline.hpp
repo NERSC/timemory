@@ -214,7 +214,7 @@ public:
             if(mpl::is_one_of_integral<types_tuple>::value ||
                settings::instruction_roofline())
             {
-                for(const string_t& itr :
+                for(const auto* itr :
                     { "ipc", "inst_executed", "inst_integer", "inst_fp_64", "inst_fp_32",
                       "inst_fp_16", "local_load_transactions_per_request",
                       "local_store_transactions_per_request",
@@ -225,7 +225,7 @@ public:
                       "inst_executed_global_loads", "inst_executed_local_loads",
                       "inst_executed_local_stores", "inst_executed_shared_loads",
                       "inst_executed_shared_stores" })
-                    metrics.push_back(itr);
+                    metrics.emplace_back(itr);
             }
 
             // add in extra events

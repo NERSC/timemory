@@ -61,8 +61,7 @@ const char*
 get_error_string(error_t err);
 
 // half-precision floating point
-using __half2 = cuda::half2;
-using fp16_t  = cuda::half2;
+using fp16_t = cuda::fp16_t;
 
 //--------------------------------------------------------------------------------------//
 //
