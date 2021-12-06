@@ -984,6 +984,10 @@ struct argument_parser
     //----------------------------------------------------------------------------------//
     //
     void set_help_width(int _v) { m_width = _v; }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void set_description_width(int _v) { m_desc_width = _v; }
 
 private:
     //
@@ -1076,6 +1080,7 @@ private:
     bool                       m_help_enabled   = false;
     int                        m_current        = -1;
     int                        m_width          = 30;
+    size_t                     m_desc_width     = 90;
     std::string                m_desc           = {};
     std::string                m_bin            = {};
     error_func_t               m_error_func     = [](this_type&, const result_type&) {};

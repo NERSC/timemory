@@ -25,7 +25,10 @@
 #ifndef TIMEMORY_UTILITY_ARGPARSE_CPP_
 #define TIMEMORY_UTILITY_ARGPARSE_CPP_
 
-#include "timemory/utility/macros.hpp"
+#include "timemory/utility/delimit.hpp"
+
+#include <iostream>
+#include <string>
 
 #if !defined(TIMEMORY_UTILITY_HEADER_MODE)
 #    include "timemory/utility/argparse.hpp"
@@ -217,7 +220,7 @@ argument_parser::print_help(const std::string& _extra)
             name.append(", " + a.m_names[n]);
         std::stringstream ss;
         ss << name;
-        if(a.m_choices.size() > 0)
+        if(!a.m_choices.empty())
         {
             ss << " [";
             auto itr = a.m_choices.begin();
@@ -230,36 +233,77 @@ argument_parser::print_help(const std::string& _extra)
         prefix << "    " << std::setw(m_width) << std::left << ss.str();
         std::cerr << std::left << prefix.str();
 
-        auto desc = a.m_desc;
-        if(ss.str().length() >= static_cast<size_t>(m_width))
-            desc = std::string("\n%{NEWLINE}%") + desc;
+        bool _autoformat = a.m_desc.find("%{NEWLINE}%") == std::string::npos &&
+                           a.m_desc.find("%{INDENT}%") == std::string::npos;
 
+        std::stringstream _newline;
+        _newline << "\n" << std::setw(m_width + 5) << "";
+
+        std::stringstream _indent;
+        _indent << std::setw(m_width + 5) << "";
+
+        auto _replace = [](std::string& _desc, const std::string& _key,
+                           const std::string& _str) {
+            const auto npos = std::string::npos;
+            auto       pos  = npos;
+            while((pos = _desc.find(_key)) != npos)
+                _desc = _desc.replace(pos, _key.length(), _str);
+        };
+
+        if(!_autoformat)
         {
-            // replace %{INDENT}% with indentation
-            const std::string indent_key = "%{INDENT}%";
-            const auto        npos       = std::string::npos;
-            auto              pos        = npos;
-            std::stringstream indent;
-            indent << std::setw(prefix.str().length()) << "";
-            while((pos = desc.find(indent_key)) != npos)
-                desc = desc.replace(pos, indent_key.length(), indent.str());
+            auto desc = ((ss.str().length() > static_cast<size_t>(m_width))
+                             ? std::string{ "%{NEWLINE}%}" }
+                             : std::string{}) +
+                        a.m_desc;
+
+            if(a.m_required)
+                desc += " (Required)";
+
+            _replace(desc, "%{INDENT}%", _indent.str());
+            _replace(desc, "%{NEWLINE}%", _newline.str());
+
+            std::cerr << " " << std::setw(m_width) << desc;
+        }
+        else
+        {
+            if(ss.str().length() > static_cast<size_t>(m_width) && ss.str().at(0) != '[')
+                std::cerr << "\n" << std::setw(m_width + 4) << "";
+
+            std::string desc = a.m_desc;
+
+            if(a.m_required)
+                desc += " (Required)";
+
+            _replace(desc, "%{INDENT}%", _indent.str());
+            _replace(desc, "%{NEWLINE}%", _newline.str());
+
+            auto              _desc = delimit(desc, " \n");
+            std::stringstream _desc_ss{};
+            size_t            _w = 0;
+            for(auto& itr : _desc)
+            {
+                if(itr.length() > m_desc_width)
+                {
+                    _desc_ss << itr << _newline.str();
+                    _w = 0;
+                }
+                else if(_w + itr.length() < m_desc_width)
+                {
+                    _desc_ss << itr << " ";
+                    _w += itr.length() + 1;
+                }
+                else
+                {
+                    _desc_ss << _newline.str() << itr << " ";
+                    _w = itr.length() + 1;
+                }
+            }
+            desc = _desc_ss.str();
+
+            std::cerr << " " << std::setw(m_width) << desc;
         }
 
-        {
-            // replace %{NEWLINE}% with indentation
-            const std::string indent_key = "%{NEWLINE}%";
-            const auto        npos       = std::string::npos;
-            auto              pos        = npos;
-            std::stringstream indent;
-            indent << std::setw(m_width + 5) << "";
-            while((pos = desc.find(indent_key)) != npos)
-                desc = desc.replace(pos, indent_key.length(), indent.str());
-        }
-
-        std::cerr << " " << std::setw(m_width) << desc;
-
-        if(a.m_required)
-            std::cerr << " (Required)";
         std::cerr << std::endl;
     }
     std::cerr << '\n';
@@ -276,7 +320,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
                           (_argc > 1 && help_args.find(_argv[1]) != help_args.end()));
         if(_help_req && !exists("help"))
         {
-            for(auto hitr : help_args)
+            for(const auto& hitr : help_args)
             {
                 auto hstr = hitr.substr(hitr.find_first_not_of('-'));
                 auto itr  = m_name_map.find(hstr);
@@ -296,10 +340,10 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     }
 
     // parse the known args and get the remaining argc/argv
-    auto _pargs = parse_known_args(*argc, *argv, _args, _delim, verbose_level);
-    auto _perrc = std::get<0>(_pargs);
-    auto _pargc = std::get<1>(_pargs);
-    auto _pargv = std::get<2>(_pargs);
+    auto  _pargs = parse_known_args(*argc, *argv, _args, _delim, verbose_level);
+    auto  _perrc = std::get<0>(_pargs);
+    auto  _pargc = std::get<1>(_pargs);
+    auto* _pargv = std::get<2>(_pargs);
 
     // check if help was requested before the dash (if dash exists)
     if(help_check((_pdash) ? 0 : _pargc, _pargv))
