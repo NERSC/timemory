@@ -29,6 +29,7 @@
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/compat/macros.h"
+#include "timemory/defines.h"
 #include "timemory/environment/declaration.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/mpl/filters.hpp"
@@ -253,7 +254,8 @@ struct settings
 
 public:
     TIMEMORY_STATIC_ACCESSOR(bool, use_output_suffix,
-                             get_env<bool>("TIMEMORY_USE_OUTPUT_SUFFIX", false))
+                             get_env<bool>(TIMEMORY_SETTINGS_PREFIX "USE_OUTPUT_SUFFIX",
+                                           false))
 #if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_UPCXX)
     TIMEMORY_STATIC_ACCESSOR(int32_t, default_process_suffix, dmp::rank())
 #else

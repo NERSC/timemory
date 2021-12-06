@@ -111,7 +111,7 @@ struct static_properties<void, false>
 {
     static bool matches(const char* _ckey, const char* _enum_str, const idset_t& _ids)
     {
-        static bool       _debug       = tim::get_env<bool>("TIMEMORY_DEBUG", false);
+        static bool _debug = tim::get_env<bool>(TIMEMORY_SETTINGS_PREFIX "DEBUG", false);
         static const auto regex_consts = std::regex_constants::ECMAScript |
                                          std::regex_constants::icase |
                                          std::regex_constants::optimize;
