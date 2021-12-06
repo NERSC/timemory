@@ -34,6 +34,7 @@
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/extern.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <array>
 #include <memory>

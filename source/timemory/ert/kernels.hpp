@@ -40,17 +40,15 @@
 #include "timemory/mpl/apply.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
 
+#include <algorithm>  // std::max
 #include <cstdint>
-#include <functional>
-#include <future>
-#include <iomanip>
-#include <sstream>
-#include <string>
-#include <tuple>
-#include <type_traits>
-#include <utility>
+#include <functional>   // std::ref
+#include <mutex>        // std::mutex, std::unique_lock
+#include <thread>       // std::thread
+#include <type_traits>  // std::is_same
+#include <utility>      // std::forward
+#include <vector>
 
 namespace tim
 {

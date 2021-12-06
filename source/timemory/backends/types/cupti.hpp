@@ -29,8 +29,7 @@
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/settings/declaration.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <cassert>
 #include <cstdint>

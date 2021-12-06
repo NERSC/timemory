@@ -24,26 +24,39 @@
 
 #pragma once
 
-#include "timemory/utility/argparse.hpp"
-#include "timemory/utility/backtrace.hpp"
-#include "timemory/utility/conditional.hpp"
-#include "timemory/utility/console.hpp"
-#include "timemory/utility/declaration.hpp"
-#include "timemory/utility/delimit.hpp"
-#include "timemory/utility/demangle.hpp"
-#include "timemory/utility/filepath.hpp"
-#include "timemory/utility/launch_process.hpp"
-#include "timemory/utility/locking.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/mangler.hpp"
-#include "timemory/utility/path.hpp"
-#include "timemory/utility/popen.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/utility/singleton.hpp"
-#if !defined(TIMEMORY_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
-#    include "timemory/utility/socket.hpp"
+
+#include <string>
+
+namespace tim
+{
+namespace utility
+{
+class path : public std::string
+{
+public:
+    using size_type = std::string::size_type;
+
+public:
+    TIMEMORY_UTILITY_INLINE path(const std::string& _path);
+    TIMEMORY_UTILITY_INLINE path(char* _path);
+    TIMEMORY_UTILITY_INLINE path(const path& rhs);
+    TIMEMORY_UTILITY_INLINE path(const char* _path);
+
+    TIMEMORY_UTILITY_INLINE path& operator=(const std::string& rhs);
+    TIMEMORY_UTILITY_INLINE path& operator=(const path& rhs);
+    TIMEMORY_UTILITY_INLINE path& insert(size_type __pos, const std::string& __s);
+    TIMEMORY_UTILITY_INLINE path& insert(size_type __pos, const path& __s);
+
+    // OS-dependent representation
+    static TIMEMORY_UTILITY_INLINE std::string osrepr(std::string _path);
+    static TIMEMORY_UTILITY_INLINE std::string os();
+    static TIMEMORY_UTILITY_INLINE std::string inverse();
+    static TIMEMORY_UTILITY_INLINE std::string canonical(std::string _path);
+};
+}  // namespace utility
+}  // namespace tim
+
+#if defined(TIMEMORY_UTILITY_HEADER_MODE)
+#    include "timemory/utility/path.cpp"
 #endif
-#include "timemory/utility/type_id.hpp"
-#include "timemory/utility/types.hpp"
-#include "timemory/utility/utility.hpp"

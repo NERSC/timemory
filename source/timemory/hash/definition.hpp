@@ -28,7 +28,8 @@
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/macros.hpp"
 #include "timemory/hash/types.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/utility/demangle.hpp"
+#include "timemory/utility/locking.hpp"
 
 #include <cstdint>
 #include <iomanip>

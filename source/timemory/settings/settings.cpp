@@ -39,7 +39,6 @@
 #include "timemory/utility/declaration.hpp"
 #include "timemory/utility/filepath.hpp"
 #include "timemory/utility/md5.hpp"
-#include "timemory/utility/utility.hpp"
 #include "timemory/variadic/macros.hpp"
 
 #include <cctype>

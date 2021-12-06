@@ -29,6 +29,7 @@
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/demangle.hpp"
 //
 #include "timemory/components/ompt/backends.hpp"
 #include "timemory/components/ompt/components.hpp"

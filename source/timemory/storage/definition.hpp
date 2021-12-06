@@ -42,6 +42,7 @@
 #include "timemory/storage/declaration.hpp"
 #include "timemory/storage/macros.hpp"
 #include "timemory/storage/types.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <fstream>
 #include <memory>

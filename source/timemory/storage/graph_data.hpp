@@ -31,6 +31,7 @@
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/graph.hpp"
 #include "timemory/storage/types.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <algorithm>
 #include <cstdint>

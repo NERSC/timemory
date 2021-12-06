@@ -27,6 +27,7 @@
 #include "timemory/macros/compiler.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/utility/demangle.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -53,18 +54,6 @@
 namespace tim
 {
 #if defined(TIMEMORY_UNIX)
-//
-TIMEMORY_UTILITY_INLINE std::string
-                        demangle_backtrace(const char* cstr);
-//
-TIMEMORY_UTILITY_INLINE std::string
-                        demangle_backtrace(const std::string& str);
-//
-TIMEMORY_UTILITY_INLINE std::string
-                        demangle_unw_backtrace(const char* cstr);
-//
-TIMEMORY_UTILITY_INLINE std::string
-                        demangle_unw_backtrace(const std::string& str);
 //
 template <size_t Depth, size_t Offset = 1>
 TIMEMORY_NOINLINE inline auto
@@ -315,18 +304,6 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix 
 #else
 //
 // define these dummy functions since they are used in operation::decode
-//
-static inline auto
-demangle_backtrace(const char* cstr)
-{
-    return std::string{ cstr };
-}
-//
-static inline auto
-demangle_backtrace(const std::string& str)
-{
-    return str;
-}
 //
 template <size_t Depth, size_t Offset = 2>
 static inline std::ostream&

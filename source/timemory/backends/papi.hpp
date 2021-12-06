@@ -38,8 +38,7 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/backends/types/papi.hpp"
 #include "timemory/settings/declaration.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <cassert>
 #include <cstdint>

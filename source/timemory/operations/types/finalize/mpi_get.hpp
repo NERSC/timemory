@@ -34,6 +34,7 @@
 #include "timemory/operations/types.hpp"
 #include "timemory/operations/types/finalize/get.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/demangle.hpp"
 
 namespace tim
 {

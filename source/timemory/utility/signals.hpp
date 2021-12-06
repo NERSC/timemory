@@ -35,13 +35,15 @@
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/signals.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/declaration.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <cfenv>
 #include <csignal>
+#include <cstring>
 #include <initializer_list>
+#include <iostream>
 #include <set>
 #include <type_traits>
 
@@ -308,8 +310,8 @@ enable_signal_detection(signal_settings::signal_set_t operations)
     }
     signal_settings::set_active(true);
 
-    if(settings::verbose() > 0 || settings::debug())
-        std::cout << signal_settings::str() << std::endl;
+    // if(settings::verbose() > 0 || settings::debug())
+    //    std::cout << signal_settings::str() << std::endl;
 
     return true;
 }

@@ -32,8 +32,8 @@
 
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/function_traits.hpp"
+#include "timemory/utility/delimit.hpp"
 #include "timemory/utility/type_id.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <string>
 #include <tuple>

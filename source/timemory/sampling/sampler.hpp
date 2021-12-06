@@ -30,7 +30,8 @@
 #include "timemory/sampling/allocator.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/utility/backtrace.hpp"
+#include "timemory/utility/demangle.hpp"
 #include "timemory/variadic/macros.hpp"
 
 // C++ includes

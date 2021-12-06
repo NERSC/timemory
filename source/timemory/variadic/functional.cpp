@@ -25,8 +25,6 @@
 #ifndef TIMEMORY_VARIADIC_FUNCTIONAL_CPP_
 #define TIMEMORY_VARIADIC_FUNCTIONAL_CPP_ 1
 
-// #include "timemory/variadic/functional.hpp"
-
 #include "timemory/api.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/mpl/apply.hpp"
@@ -35,7 +33,11 @@
 #include "timemory/operations/types/generic.hpp"
 #include "timemory/utility/types.hpp"
 
-#include <type_traits>
+#include <functional>   // std::ref
+#include <ostream>      // std::ostream
+#include <tuple>        // std::get, std::tuple
+#include <type_traits>  // std::remove_pointer_t
+#include <utility>      // std::forward
 
 namespace tim
 {

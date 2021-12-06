@@ -33,6 +33,7 @@
 
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/launch_process.hpp"
+#include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <cstring>
@@ -42,17 +43,11 @@
 #include <string>
 
 #if defined(TIMEMORY_UNIX)
-#    include <cxxabi.h>
 #    include <execinfo.h>
 #    include <sys/stat.h>
 #    include <sys/types.h>
 #elif defined(TIMEMORY_WINDOWS)
 #    include <direct.h>
-using pid_t = int;
-#endif
-
-#if !defined(TIMEMORY_DEFAULT_UMASK)
-#    define TIMEMORY_DEFAULT_UMASK 0777
 #endif
 
 namespace tim

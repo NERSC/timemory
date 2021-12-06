@@ -29,6 +29,7 @@
 #include "libpytimemory-components.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/data/statistics.hpp"
+#include "timemory/utility/demangle.hpp"
 
 namespace pystatistics
 {

@@ -36,6 +36,7 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #if defined(TIMEMORY_PYBIND11_SOURCE)
 #    include "pybind11/cast.h"

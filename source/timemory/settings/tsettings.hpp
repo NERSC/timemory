@@ -30,6 +30,7 @@
 #include "timemory/settings/vsettings.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/argparse.hpp"
+#include "timemory/utility/demangle.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <cstdlib>

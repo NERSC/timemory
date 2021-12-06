@@ -36,7 +36,6 @@
 #include "timemory/macros/os.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <cstdint>
 #include <string>

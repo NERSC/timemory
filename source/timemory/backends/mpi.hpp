@@ -35,9 +35,7 @@
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/environment/declaration.hpp"
-#include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <cstdint>
 #include <map>

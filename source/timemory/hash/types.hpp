@@ -35,6 +35,7 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <typeindex>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -89,6 +90,70 @@ using hash_map_ptr_pair_t = std::pair<hash_map_ptr_t, hash_map_ptr_t>;
 using hash_alias_ptr_t    = std::shared_ptr<hash_alias_map_t>;
 using hash_resolver_t     = std::function<bool(hash_value_t, std::string&)>;
 using hash_resolver_vec_t = std::vector<hash_resolver_t>;
+//
+//--------------------------------------------------------------------------------------//
+//
+//                              Generic hash functions
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace internal
+{
+template <typename Tp>
+inline auto
+typeid_name()
+{
+    // static because a type demangle will always be the same
+    return typeid(Tp).name();
+}
+
+template <typename Tp, typename Up = Tp>
+inline auto
+typeid_hash(int) -> decltype(typeid_name<Tp>(), size_t{})
+{
+    return std::type_index(typeid(Tp)).hash_code();
+}
+//
+template <typename Tp, typename Up = Tp>
+inline auto
+typeid_hash(long)
+{
+    return 0;
+}
+}  // namespace internal
+
+template <typename Tp>
+inline auto
+typeid_hash()
+{
+    return internal::typeid_hash<Tp>(0);
+}
+//
+template <typename T>
+TIMEMORY_INLINE size_t
+get_hash(T&& obj)
+{
+    return std::hash<std::decay_t<T>>()(std::forward<T>(obj));
+}
+
+TIMEMORY_INLINE size_t
+get_hash(string_view_cref_t str)
+{
+    return std::hash<string_view_t>{}(str);
+}
+
+TIMEMORY_INLINE size_t
+get_hash(const char* cstr)
+{
+    return std::hash<string_view_t>{}(cstr);
+}
+
+template <typename T>
+struct hasher
+{
+    inline size_t operator()(T&& val) const { return get_hash(std::forward<T>(val)); }
+    inline size_t operator()(const T& val) const { return get_hash(val); }
+};
 //
 //--------------------------------------------------------------------------------------//
 //

@@ -32,6 +32,7 @@
 #include "timemory/operations/types.hpp"
 #include "timemory/storage/node.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <cctype>
 #include <map>

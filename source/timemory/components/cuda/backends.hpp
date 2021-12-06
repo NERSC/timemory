@@ -36,7 +36,6 @@
 #include "timemory/macros/compiler.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <array>
 #include <cstdint>

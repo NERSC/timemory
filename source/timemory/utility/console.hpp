@@ -24,26 +24,45 @@
 
 #pragma once
 
-#include "timemory/utility/argparse.hpp"
-#include "timemory/utility/backtrace.hpp"
-#include "timemory/utility/conditional.hpp"
-#include "timemory/utility/console.hpp"
-#include "timemory/utility/declaration.hpp"
-#include "timemory/utility/delimit.hpp"
-#include "timemory/utility/demangle.hpp"
-#include "timemory/utility/filepath.hpp"
-#include "timemory/utility/launch_process.hpp"
-#include "timemory/utility/locking.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/mangler.hpp"
-#include "timemory/utility/path.hpp"
-#include "timemory/utility/popen.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/utility/singleton.hpp"
-#if !defined(TIMEMORY_WINDOWS) || defined(TIMEMORY_USE_WINSOCK)
-#    include "timemory/utility/socket.hpp"
+#include "timemory/macros/os.hpp"
+
+#include <cstdint>
+#include <cstdio>
+#include <string>
+#include <tuple>
+
+#if defined(TIMEMORY_UNIX)
+#    include <sys/ioctl.h>
+#    include <unistd.h>
+#elif defined(TIMEMORY_WINDOWS)
+#    include <windows.h>  // GetConsoleScreenBufferInfo
+// should already be included by os.hpp
 #endif
-#include "timemory/utility/type_id.hpp"
-#include "timemory/utility/types.hpp"
-#include "timemory/utility/utility.hpp"
+
+namespace tim
+{
+namespace utility
+{
+namespace console
+{
+inline std::tuple<int32_t, std::string>
+get_columns()
+{
+    using return_type = std::tuple<int32_t, std::string>;
+
+#if defined(TIMEMORY_UNIX)
+    struct winsize size;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
+    return return_type{ size.ws_col - 1, "ioctl" };
+#elif defined(TIMEMORY_WINDOWS)
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    return return_type{ csbi.srWindow.Right - csbi.srWindow.Left,
+                        "GetConsoleScreenBufferInfo" };
+#else
+    return return_type{ 0, "none" };
+#endif
+}
+}  // namespace console
+}  // namespace utility
+}  // namespace tim

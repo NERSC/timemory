@@ -174,17 +174,15 @@ main(int argc, char** argv)
     parser
         .add_argument(
             { "--disable-sample", "--disable-sampling" },
-            "Disable UNIX signal-based sampling.\n%{INDENT}% Sampling is the most common "
-            "culprit for timem hanging (i.e. failing to exit after the child "
-            "process exits)")
+            "Disable UNIX signal-based sampling. Sampling is the most common culprit for "
+            "timem hanging (i.e. failing to exit after the child process exits)")
         .count(0)
         .action([](parser_t&) { use_sample() = false; });
     parser
-        .add_argument(
-            { "-b", "--buffer-size" },
-            "If set to value > 0, timem will record a history of every sample.\n"
-            "%{INDENT}%This requires spawning an extra thread which will periodically "
-            "wake and flush the buffer.")
+        .add_argument({ "-b", "--buffer-size" },
+                      "If set to value > 0, timem will record a history of every sample. "
+                      "This requires spawning an extra thread which will periodically "
+                      "wake and flush the buffer.")
         .max_count(1)
         .dtype("size_t")
         .set_default(buffer_size())
@@ -211,14 +209,14 @@ main(int argc, char** argv)
         .add_argument({ "-o", "--output" },
                       // indented 35 spaces
                       R"(Write results to JSON output file.
-%{INDENT}% Use:
-%{INDENT}% - '%m' to encode md5sum of command line
-%{INDENT}% - '%p' to encode the process ID
-%{INDENT}% - '%j' to encode the SLURM job ID
-%{INDENT}% - '%r' to encode the MPI comm rank
-%{INDENT}% - '%s' to encode the MPI comm size
-%{INDENT}% E.g. '-o timem-output-%p'.
-%{INDENT}% If verbosity >= 2 or debugging is enabled, will also write sampling data to log file.)")
+%{INDENT}%Use:
+%{INDENT}%- '%m' to encode md5sum of command line
+%{INDENT}%- '%p' to encode the process ID
+%{INDENT}%- '%j' to encode the SLURM job ID
+%{INDENT}%- '%r' to encode the MPI comm rank
+%{INDENT}%- '%s' to encode the MPI comm size
+%{INDENT}%E.g. '-o timem-output-%p'.
+%{INDENT}%If verbosity >= 2 or debugging is enabled, will also write sampling data to log file.)")
         .max_count(1);
     parser
         .add_argument({ "-s", "--shell" }, "Enable launching command via a shell command "
@@ -246,11 +244,10 @@ main(int argc, char** argv)
     parser.add_argument()
         .names({ "-F", "--forward-signal" })
         .description(
-            "If any of these signals are sent to timem, forward them to the process.\n"
-            "%{INDENT}% E.g. '--forward-signal 2' (default behavior) will cause timem "
-            "to forward\n%{INDENT}% SIGINT to the process if (Cntl+C) is sent by the "
-            "user.\n"
-            "%{INDENT}% Use '--forward-signal 0' to disable this behavior.")
+            "If any of these signals are sent to timem, forward them to the process. "
+            "E.g. '--forward-signal 2' (default behavior) will cause timem to forward "
+            "SIGINT to the process if (Cntl+C) is sent by the user. Use "
+            "'--forward-signal 0' to disable this behavior.")
         .dtype("int")
         .min_count(1)
         .action([&](parser_t& p) {

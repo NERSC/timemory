@@ -40,7 +40,7 @@
 #include "timemory/runtime/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <algorithm>
 #include <functional>

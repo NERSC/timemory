@@ -25,7 +25,7 @@
 #pragma once
 
 #include "timemory/enum.h"
-#include "timemory/utility/utility.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <string>
 

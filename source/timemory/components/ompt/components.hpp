@@ -32,6 +32,7 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/hash/types.hpp"
+#include "timemory/utility/demangle.hpp"
 //
 #include "timemory/components/data_tracker/components.hpp"
 #include "timemory/components/ompt/backends.hpp"

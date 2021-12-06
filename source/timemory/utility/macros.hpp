@@ -48,6 +48,17 @@
 #    define TIMEMORY_USE_UTILITY_EXTERN
 #endif
 
+#if !defined(TIMEMORY_DEFAULT_UMASK)
+#    define TIMEMORY_DEFAULT_UMASK 0777
+#endif
+
+#if defined(TIMEMORY_WINDOWS)
+namespace tim
+{
+using pid_t = int;
+}
+#endif
+
 //======================================================================================//
 //
 //      Quick way to create a globally accessible setting

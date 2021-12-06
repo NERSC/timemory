@@ -29,6 +29,7 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/environment/types.hpp"
 #include "timemory/settings/types.hpp"
+#include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <cstdint>

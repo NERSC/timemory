@@ -33,6 +33,7 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/utility/demangle.hpp"
 
 namespace tim
 {

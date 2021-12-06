@@ -29,6 +29,7 @@
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/utility/demangle.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/transient_function.hpp"
 #include "timemory/variadic/base_bundle.hpp"

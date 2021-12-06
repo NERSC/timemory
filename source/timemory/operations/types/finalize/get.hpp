@@ -40,6 +40,7 @@
 #include "timemory/storage/node.hpp"
 #include "timemory/storage/types.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <string>
 #include <vector>

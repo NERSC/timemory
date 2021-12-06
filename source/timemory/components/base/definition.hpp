@@ -32,6 +32,7 @@
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/types.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/demangle.hpp"
 
 namespace tim
 {

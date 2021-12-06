@@ -26,8 +26,6 @@
 
 #include "timemory/environment/declaration.hpp"
 #include "timemory/storage/ring_buffer.hpp"
-#include "timemory/units.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <cstddef>
 #include <functional>

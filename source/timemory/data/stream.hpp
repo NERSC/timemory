@@ -32,8 +32,8 @@
 
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/demangle.hpp"
 #include "timemory/utility/types.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <algorithm>
 #include <cassert>

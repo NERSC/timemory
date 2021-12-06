@@ -33,6 +33,7 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/operations/types/sample.hpp"
+#include "timemory/utility/demangle.hpp"
 #include "timemory/variadic/functional.hpp"
 
 #include <cassert>

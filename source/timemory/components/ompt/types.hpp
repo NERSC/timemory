@@ -122,7 +122,6 @@ TIMEMORY_PROPERTY_SPECIALIZATION(ompt_handle<TIMEMORY_API>, TIMEMORY_OMPT_HANDLE
 //
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/utility/utility.hpp"
 //
 //======================================================================================//
 //
