@@ -151,6 +151,7 @@ private:
         TIMEMORY_VISIBILITY("hidden");
 
 private:
+    using base_type::m_categories;
     using base_type::m_count;
     using base_type::m_description;
     using base_type::m_env_name;
@@ -298,8 +299,8 @@ tsettings<Tp, Vp>::clone()
     using Up = decay_t<Tp>;
     return std::make_shared<tsettings<Up>>(
         noparse{}, Up{ m_value }, std::string{ m_name }, std::string{ m_env_name },
-        std::string{ m_description }, std::vector<std::string>{ m_cmdline },
-        int32_t{ m_count }, int32_t{ m_max_count },
+        std::string{ m_description }, std::set<std::string>{ m_categories },
+        std::vector<std::string>{ m_cmdline }, int32_t{ m_count }, int32_t{ m_max_count },
         std::vector<std::string>{ m_choices });
 }
 //
@@ -343,6 +344,7 @@ tsettings<Tp, Vp>::save(Archive& ar, const unsigned int,
     ar(cereal::make_nvp("count", m_count));
     ar(cereal::make_nvp("max_count", m_max_count));
     ar(cereal::make_nvp("cmdline", m_cmdline));
+    ar(cereal::make_nvp("categories", m_categories));
     ar(cereal::make_nvp("data_type", _dtype));
     ar(cereal::make_nvp("initial", m_init));
     ar(cereal::make_nvp("value", m_value));
@@ -351,7 +353,7 @@ tsettings<Tp, Vp>::save(Archive& ar, const unsigned int,
 template <typename Tp, typename Vp>
 template <typename Archive>
 void
-tsettings<Tp, Vp>::load(Archive& ar, const unsigned int)
+tsettings<Tp, Vp>::load(Archive& ar, const unsigned int ver)
 {
     try
     {
@@ -364,6 +366,8 @@ tsettings<Tp, Vp>::load(Archive& ar, const unsigned int)
         ar(cereal::make_nvp("cmdline", m_cmdline));
         ar(cereal::make_nvp("data_type", _dtype));
         ar(cereal::make_nvp("initial", m_init));
+        if(ver > 0)
+            ar(cereal::make_nvp("categories", m_categories));
     } catch(...)
     {}
     ar(cereal::make_nvp("value", m_value));

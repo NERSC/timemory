@@ -107,6 +107,7 @@ TEST_F(settings_tests, insert_via_args)
 {
     using settings_t = tim::settings;
     using strvec_t   = std::vector<std::string>;
+    using strset_t   = std::set<std::string>;
 
     reference_value = 10;
     copied_value    = 10;
@@ -116,11 +117,13 @@ TEST_F(settings_tests, insert_via_args)
     std::string _ref_env  = "SETTINGS_TEST_REFERENCE";
     std::string _ref_name = "test_reference";
     std::string _ref_cmd  = "--test-reference";
+    std::string _ref_cat  = "custom";
     std::string _ref_desc = TIMEMORY_JOIN("", "Reference value for settings_tests.",
                                           details::get_test_name());
 
     auto _ins = _settings->insert<uint64_t, uint64_t&>(
-        _ref_env, _ref_name, _ref_desc, reference_value, strvec_t({ _ref_cmd }), 1, -2);
+        _ref_env, _ref_name, _ref_desc, reference_value, strset_t{ _ref_cat },
+        strvec_t{ _ref_cmd }, 1, -2);
 
     EXPECT_TRUE(_ins.second);
 
@@ -155,6 +158,28 @@ TEST_F(settings_tests, insert_via_args)
     EXPECT_TRUE(itr->matches(_ref_name, false));
     EXPECT_TRUE(itr->matches(_ref_cmd, false));
 
+    EXPECT_TRUE(itr->matches(_ref_env, "custom"));
+    EXPECT_TRUE(itr->matches(_ref_name, "custom"));
+    EXPECT_TRUE(itr->matches(_ref_cmd, "custom"));
+
+    EXPECT_FALSE(itr->matches(_ref_env, "native"));
+    EXPECT_FALSE(itr->matches(_ref_name, "native"));
+    EXPECT_FALSE(itr->matches(_ref_cmd, "native"));
+
+    EXPECT_TRUE(itr->matches(_ref_env, "custom", true));
+    EXPECT_TRUE(itr->matches(_ref_name, "custom", true));
+    EXPECT_TRUE(itr->matches(_ref_cmd, "custom", true));
+
+    EXPECT_FALSE(itr->matches(_ref_env, "native", true));
+    EXPECT_FALSE(itr->matches(_ref_name, "native", true));
+    EXPECT_FALSE(itr->matches(_ref_cmd, "native", true));
+
+    EXPECT_TRUE(itr->matches("", "custom", true));
+    EXPECT_TRUE(itr->matches("", "custom", false));
+
+    EXPECT_FALSE(itr->matches("", "native", true));
+    EXPECT_FALSE(itr->matches("", "native", false));
+
     uint64_t _tmp = 0;
     EXPECT_TRUE(itr->get(_tmp));
     EXPECT_EQ(itr->get<uint64_t>().second, reference_value);
@@ -168,6 +193,7 @@ TEST_F(settings_tests, insert_via_args)
     EXPECT_EQ(_disp["env_name"], _ref_env);
     EXPECT_EQ(_disp["description"], _ref_desc);
     EXPECT_EQ(_disp["command_line"], _ref_cmd);
+    EXPECT_EQ(_disp["categories"], _ref_cat);
 
     reference_value = 5;
     EXPECT_TRUE(itr->get(_tmp));
@@ -219,6 +245,7 @@ TEST_F(settings_tests, insert_via_pointer)
 {
     using settings_t = tim::settings;
     using strvec_t   = std::vector<std::string>;
+    using strset_t   = std::set<std::string>;
 
     reference_value = 10;
     copied_value    = 10;
@@ -228,11 +255,13 @@ TEST_F(settings_tests, insert_via_pointer)
     std::string _ref_env  = "SETTINGS_TEST_COPY";
     std::string _ref_name = "test_copy";
     std::string _ref_cmd  = "--test-copy";
+    std::string _ref_cat  = "custom";
     std::string _ref_desc =
         TIMEMORY_JOIN("", "Copied value for settings_tests.", details::get_test_name());
 
     auto _ptr = std::make_shared<tim::tsettings<uint64_t>>(
-        reference_value, _ref_name, _ref_env, _ref_desc, strvec_t({ _ref_cmd }), 1, -2);
+        reference_value, _ref_name, _ref_env, _ref_desc, strvec_t({ _ref_cmd }), 1, -2,
+        strset_t{ _ref_cat });
     auto _ins = _settings->insert(_ptr);
 
     EXPECT_TRUE(_ins.second);
@@ -267,6 +296,28 @@ TEST_F(settings_tests, insert_via_pointer)
     EXPECT_TRUE(itr->matches(_ref_env, false));
     EXPECT_TRUE(itr->matches(_ref_name, false));
     EXPECT_TRUE(itr->matches(_ref_cmd, false));
+
+    EXPECT_TRUE(itr->matches(_ref_env, "custom"));
+    EXPECT_TRUE(itr->matches(_ref_name, "custom"));
+    EXPECT_TRUE(itr->matches(_ref_cmd, "custom"));
+
+    EXPECT_FALSE(itr->matches(_ref_env, "native"));
+    EXPECT_FALSE(itr->matches(_ref_name, "native"));
+    EXPECT_FALSE(itr->matches(_ref_cmd, "native"));
+
+    EXPECT_TRUE(itr->matches(_ref_env, "custom", true));
+    EXPECT_TRUE(itr->matches(_ref_name, "custom", true));
+    EXPECT_TRUE(itr->matches(_ref_cmd, "custom", true));
+
+    EXPECT_FALSE(itr->matches(_ref_env, "native", true));
+    EXPECT_FALSE(itr->matches(_ref_name, "native", true));
+    EXPECT_FALSE(itr->matches(_ref_cmd, "native", true));
+
+    EXPECT_TRUE(itr->matches("", "custom", true));
+    EXPECT_TRUE(itr->matches("", "custom", false));
+
+    EXPECT_FALSE(itr->matches("", "native", true));
+    EXPECT_FALSE(itr->matches("", "native", false));
 
     uint64_t _tmp = 0;
     EXPECT_TRUE(itr->get(_tmp));

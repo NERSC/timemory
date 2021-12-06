@@ -42,8 +42,9 @@ namespace tim
 //
 TIMEMORY_SETTINGS_INLINE
 vsettings::vsettings(std::string _name, std::string _env_name, std::string _descript,
-                     std::vector<std::string> _cmdline, int32_t _count,
-                     int32_t _max_count, std::vector<std::string> _choices)
+                     std::set<std::string> _categories, std::vector<std::string> _cmdline,
+                     int32_t _count, int32_t _max_count,
+                     std::vector<std::string> _choices)
 : m_count(_count)
 , m_max_count(_max_count)
 , m_name(std::move(_name))
@@ -51,6 +52,16 @@ vsettings::vsettings(std::string _name, std::string _env_name, std::string _desc
 , m_description(std::move(_descript))
 , m_cmdline(std::move(_cmdline))
 , m_choices(std::move(_choices))
+, m_categories(std::move(_categories))
+{}
+//
+TIMEMORY_SETTINGS_INLINE
+vsettings::vsettings(std::string _name, std::string _env_name, std::string _descript,
+                     std::vector<std::string> _cmdline, int32_t _count,
+                     int32_t _max_count, std::vector<std::string> _choices,
+                     std::set<std::string> _categories)
+: vsettings{ _name,    _env_name, _descript,  _categories,
+             _cmdline, _count,    _max_count, _choices }
 {}
 //
 TIMEMORY_SETTINGS_LINKAGE(vsettings::display_map_t)
@@ -71,10 +82,12 @@ vsettings::get_display(std::ios::fmtflags fmt, int _w, int _p)
     auto _arr_as_str = [&](auto _val) -> std::string {
         if(_val.empty())
             return "";
-        std::stringstream _ss;
-        for(size_t i = 0; i < _val.size(); ++i)
-            _ss << ", " << _as_str(_val.at(i));
-        return _ss.str().substr(2);
+        std::string _str;
+        for(auto&& itr : _val)
+            _str += std::string{ ", " } + _as_str(itr);
+        if(_str.empty())
+            return _str;
+        return _str.substr(2);
     };
 
     _data["name"]         = _as_str(m_name);
@@ -84,12 +97,29 @@ vsettings::get_display(std::ios::fmtflags fmt, int _w, int _p)
     _data["description"]  = _as_str(m_description);
     _data["command_line"] = _arr_as_str(m_cmdline);
     _data["choices"]      = _arr_as_str(m_choices);
+    _data["categories"]   = _arr_as_str(m_categories);
     return _data;
 }
 //
 TIMEMORY_SETTINGS_LINKAGE(bool)
 vsettings::matches(const std::string& inp, bool exact) const
 {
+    return matches(inp, "", exact);
+}
+//
+TIMEMORY_SETTINGS_LINKAGE(bool)
+vsettings::matches(const std::string& inp, const std::string& _category, bool exact) const
+{
+    // if category was provided
+    bool _category_match =
+        (_category.empty() || m_categories.find(_category) != m_categories.end());
+
+    if(inp.empty() || inp == ".*")
+        return _category_match;
+
+    if(!_category.empty() && !_category_match)
+        return false;
+
     // an exact match to name or env-name should always be checked
     if(inp == m_env_name || inp == m_name)
         return true;
@@ -134,12 +164,14 @@ vsettings::matches(const std::string& inp, bool exact) const
 TIMEMORY_SETTINGS_LINKAGE(void)
 vsettings::clone(std::shared_ptr<vsettings> rhs)
 {
+    m_count       = rhs->m_count;
+    m_max_count   = rhs->m_max_count;
     m_name        = rhs->m_name;
     m_env_name    = rhs->m_env_name;
     m_description = rhs->m_description;
+    m_categories  = rhs->m_categories;
     m_cmdline     = rhs->m_cmdline;
-    m_count       = rhs->m_count;
-    m_max_count   = rhs->m_max_count;
+    m_choices     = rhs->m_choices;
 }
 //
 }  // namespace tim

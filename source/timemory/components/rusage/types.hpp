@@ -324,13 +324,14 @@ struct units<component::current_peak_rss>
 
 //======================================================================================//
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(peak_rss, TIMEMORY_PEAK_RSS, "peak_rss", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(peak_rss, TIMEMORY_PEAK_RSS, "peak_rss", "memory_hwm",
+                                 "memory_high_water_mark")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(page_rss, TIMEMORY_PAGE_RSS, "page_rss", "")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(num_io_in, TIMEMORY_NUM_IO_IN, "num_io_in", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(num_io_in, TIMEMORY_NUM_IO_IN, "num_io_in", "io_in")
 //
-TIMEMORY_PROPERTY_SPECIALIZATION(num_io_out, TIMEMORY_NUM_IO_OUT, "num_io_out", "")
+TIMEMORY_PROPERTY_SPECIALIZATION(num_io_out, TIMEMORY_NUM_IO_OUT, "num_io_out", "io_out")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(num_minor_page_faults, TIMEMORY_NUM_MINOR_PAGE_FAULTS,
                                  "num_minor_page_faults", "minor_page_faults")
@@ -340,11 +341,13 @@ TIMEMORY_PROPERTY_SPECIALIZATION(num_major_page_faults, TIMEMORY_NUM_MAJOR_PAGE_
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(voluntary_context_switch,
                                  TIMEMORY_VOLUNTARY_CONTEXT_SWITCH,
-                                 "voluntary_context_switch", "vol_ctx_switch")
+                                 "voluntary_context_switch", "voluntary_context_switches",
+                                 "vol_ctx_switch", "vol_ctx_switches")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(priority_context_switch,
                                  TIMEMORY_PRIORITY_CONTEXT_SWITCH,
-                                 "priority_context_switch", "prio_ctx_switch")
+                                 "priority_context_switch", "priority_context_switches",
+                                 "prio_ctx_switch", "prio_ctx_switches")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(virtual_memory, TIMEMORY_VIRTUAL_MEMORY,
                                  "virtual_memory", "")
@@ -356,6 +359,7 @@ TIMEMORY_PROPERTY_SPECIALIZATION(kernel_mode_time, TIMEMORY_KERNEL_MODE_TIME,
                                  "kernel_mode_time", "")
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(current_peak_rss, TIMEMORY_CURRENT_PEAK_RSS,
-                                 "current_peak_rss", "")
+                                 "current_peak_rss", "current_memory_hwm",
+                                 "current_memory_high_water_mark")
 //
 //======================================================================================//

@@ -77,7 +77,6 @@ public:
     using comm_group_t       = std::tuple<mpi::comm_t, int32_t>;
     using mutex_t            = std::recursive_mutex;
     using auto_lock_t        = std::unique_lock<mutex_t>;
-    using auto_lock_ptr_t    = std::shared_ptr<std::unique_lock<mutex_t>>;
     using initializer_func_t = std::function<bool()>;
     using initializer_list_t = std::deque<initializer_func_t>;
     using finalizer_func_t   = std::function<void()>;
@@ -328,7 +327,6 @@ private:
     std::thread::id m_thread_id        = threading::get_tid();
     string_t        m_metadata_prefix  = {};
     mutex_t         m_mutex;
-    auto_lock_ptr_t m_lock = auto_lock_ptr_t{ nullptr };
     /// increment the shared_ptr count here to ensure these instances live
     /// for the entire lifetime of the manager instance
     hash_map_ptr_t     m_hash_ids           = get_hash_ids();
@@ -442,12 +440,10 @@ template <typename InitFuncT>
 void
 manager::add_initializer(InitFuncT&& _init_func)
 {
-    bool _owns = m_lock->owns_lock();
-    if(!_owns)
-        m_lock->lock();
+    auto_lock_t _lk{ m_mutex, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
     m_initializers.emplace_back(std::forward<InitFuncT>(_init_func));
-    if(!_owns)
-        m_lock->unlock();
 }
 //
 //----------------------------------------------------------------------------------//

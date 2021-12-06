@@ -78,6 +78,7 @@ struct settings
                        uint64_t, size_t, float, double>;
     friend class manager;
     using strvector_t    = std::vector<std::string>;
+    using strset_t       = std::set<std::string>;
     using value_type     = std::shared_ptr<vsettings>;
     using data_type      = std::unordered_map<string_view_t, value_type>;
     using iterator       = typename data_type::iterator;
@@ -185,6 +186,7 @@ struct settings
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, profiler_components)
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, kokkos_components)
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, components)
+    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, network_interface)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, mpi_init)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, mpi_finalize)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, mpi_thread)
@@ -288,17 +290,17 @@ public:
                               std::string _ext) TIMEMORY_VISIBILITY("hidden");
 
 public:
-    template <typename Archive>
-    void load(Archive& ar, unsigned int);
+    template <typename ArchiveT>
+    void load(ArchiveT& ar, unsigned int);
 
-    template <typename Archive>
-    void save(Archive& ar, unsigned int) const;
+    template <typename ArchiveT>
+    void save(ArchiveT& ar, unsigned int) const;
 
-    template <typename Archive>
-    static void serialize_settings(Archive&);
+    template <typename ArchiveT>
+    static void serialize_settings(ArchiveT&);
 
-    template <typename Archive>
-    static void serialize_settings(Archive&, settings&);
+    template <typename ArchiveT>
+    static void serialize_settings(ArchiveT&, settings&);
 
     /// read a configuration file
     bool read(const string_t&);
@@ -375,13 +377,13 @@ public:
     static pointer_t pop();
 
 protected:
-    template <typename Archive, typename Tp>
+    template <typename ArchiveT, typename Tp>
     auto get_serialize_pair() const  // NOLINT
     {
-        using serialize_func_t = std::function<void(Archive&, value_type)>;
+        using serialize_func_t = std::function<void(ArchiveT&, value_type)>;
         using serialize_pair_t = std::pair<std::type_index, serialize_func_t>;
 
-        auto _func = [](Archive& _ar, value_type _val) {
+        auto _func = [](ArchiveT& _ar, value_type _val) {
             using Up = tsettings<Tp>;
             if(!_val)
                 _val = std::make_shared<Up>();
@@ -390,14 +392,14 @@ protected:
         return serialize_pair_t{ std::type_index(typeid(Tp)), _func };
     }
 
-    template <typename Archive, typename... Tail>
+    template <typename ArchiveT, typename... Tail>
     auto get_serialize_map(tim::type_list<Tail...>) const  // NOLINT
     {
-        using serialize_func_t = std::function<void(Archive&, value_type)>;
+        using serialize_func_t = std::function<void(ArchiveT&, value_type)>;
         using serialize_map_t  = std::map<std::type_index, serialize_func_t>;
 
         serialize_map_t _val{};
-        TIMEMORY_FOLD_EXPRESSION(_val.insert(get_serialize_pair<Archive, Tail>()));
+        TIMEMORY_FOLD_EXPRESSION(_val.insert(get_serialize_pair<ArchiveT, Tail>()));
         return _val;
     }
 
@@ -564,9 +566,9 @@ settings::indent_width(int64_t _w)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Archive>
+template <typename ArchiveT>
 void
-settings::serialize_settings(Archive& ar)
+settings::serialize_settings(ArchiveT& ar)
 {
     if(settings::instance())
         ar(cereal::make_nvp("settings", *settings::instance()));
@@ -574,25 +576,25 @@ settings::serialize_settings(Archive& ar)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Archive>
+template <typename ArchiveT>
 void
-settings::serialize_settings(Archive& ar, settings& _obj)
+settings::serialize_settings(ArchiveT& ar, settings& _obj)
 {
     ar(cereal::make_nvp("settings", _obj));
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Archive>
+template <typename ArchiveT>
 void
-settings::load(Archive& ar, unsigned int)
+settings::load(ArchiveT& ar, unsigned int)
 {
 #if !defined(TIMEMORY_DISABLE_SETTINGS_SERIALIZATION)
     using map_type = std::map<std::string, std::shared_ptr<vsettings>>;
     map_type _data;
     for(const auto& itr : m_data)
         _data.insert({ std::string{ itr.first }, itr.second->clone() });
-    auto _map = get_serialize_map<Archive>(data_type_list_t{});
+    auto _map = get_serialize_map<ArchiveT>(data_type_list_t{});
     for(const auto& itr : _data)
     {
         auto mitr = _map.find(itr.second->get_type_index());
@@ -621,9 +623,9 @@ settings::load(Archive& ar, unsigned int)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Archive>
+template <typename ArchiveT>
 void
-settings::save(Archive& ar, unsigned int) const
+settings::save(ArchiveT& ar, unsigned int) const
 {
 #if !defined(TIMEMORY_DISABLE_SETTINGS_SERIALIZATION)
     using map_type = std::map<std::string, std::shared_ptr<vsettings>>;
@@ -631,7 +633,7 @@ settings::save(Archive& ar, unsigned int) const
     for(const auto& itr : m_data)
         _data.insert({ std::string{ itr.first }, itr.second->clone() });
 
-    auto _map = get_serialize_map<Archive>(data_type_list_t{});
+    auto _map = get_serialize_map<ArchiveT>(data_type_list_t{});
     for(const auto& itr : _data)
     {
         auto mitr = _map.find(itr.second->get_type_index());

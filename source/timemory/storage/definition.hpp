@@ -38,6 +38,7 @@
 #include "timemory/operations/types/stop.hpp"
 #include "timemory/plotting/declaration.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/settings/macros.hpp"
 #include "timemory/storage/declaration.hpp"
 #include "timemory/storage/macros.hpp"
 #include "timemory/storage/types.hpp"
@@ -1016,7 +1017,7 @@ storage<Type, true>::get_shared_manager()
                 _pos = _label.erase(_pos, 1).find(itr);
         }
         std::stringstream env_var;
-        env_var << "TIMEMORY_" << _label << "_ENABLED";
+        env_var << TIMEMORY_SETTINGS_PREFIX << _label << "_ENABLED";
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
         trait::runtime_enabled<Type>::set(_enabled);
 
@@ -1263,7 +1264,7 @@ storage<Type, false>::get_shared_manager()
                 _pos = _label.erase(_pos, 1).find(itr);
         }
         std::stringstream env_var;
-        env_var << "TIMEMORY_" << _label << "_ENABLED";
+        env_var << TIMEMORY_SETTINGS_PREFIX << _label << "_ENABLED";
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
         trait::runtime_enabled<Type>::set(_enabled);
 

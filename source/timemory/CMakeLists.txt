@@ -18,6 +18,13 @@ foreach(_DEF ${_DEFAULT_CMAKE_DEFINES})
 endforeach()
 set(${PROJECT_NAME}_DEFAULT_CMAKE_DEFINES "${${PROJECT_NAME}_DEFAULT_CMAKE_DEFINES}\n")
 
+# remove old way of doing this
+foreach(_FILE defines.h version.h)
+    if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/${_FILE})
+        file(REMOVE ${CMAKE_CURRENT_SOURCE_DIR}/${_FILE})
+    endif()
+endforeach()
+
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/defines.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/defines.h.in @ONLY)
 

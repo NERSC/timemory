@@ -64,7 +64,7 @@ emit-separator "Executing instrumented run"
 # run
 ./@TEST_NAME@.inst.second
 
-for i in "wall" "cpu_util" "peak_rss"
+for i in "wall_clock" "cpu_util" "peak_rss"
 do
     emit-separator "Analyzing ${i} results in ${TIMEMORY_OUTPUT_PATH}"
     FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-${i}.txt"

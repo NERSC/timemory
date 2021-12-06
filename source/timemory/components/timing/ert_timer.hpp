@@ -49,7 +49,7 @@ struct ert_timer
     static const fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
-    static std::string get_label() { return "wall"; }
+    static std::string get_label() { return "wall_clock"; }
     static std::string get_description() { return "wall-clock timer for ERT"; }
     static int64_t     get_unit() { return units::sec; }
     static std::string get_display_unit() { return units::time_repr(units::sec); }

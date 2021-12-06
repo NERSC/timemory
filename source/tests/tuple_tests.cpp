@@ -588,8 +588,8 @@ TEST_F(tuple_tests, get)
     std::cout << std::setw(12) << std::get<0>(cc_l) << " = " << cc_v << "\n";
     std::cout << "\n" << std::flush;
 
-    ASSERT_TRUE(std::get<0>(wc_l) == "wall");
-    ASSERT_TRUE(std::get<0>(cc_l) == "cpu");
+    ASSERT_TRUE(std::get<0>(wc_l) == "wall_clock");
+    ASSERT_TRUE(std::get<0>(cc_l) == "cpu_clock");
 
     ASSERT_NEAR(wc_v, 2.0, 5.0e-2);
     ASSERT_NEAR(cc_v, 1.0, 5.0e-2);

@@ -35,6 +35,7 @@
 #include <iomanip>
 #include <map>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <typeindex>
@@ -61,10 +62,19 @@ struct vsettings
     struct noparse
     {};
 
-    vsettings(std::string _name = "", std::string _env_name = "",
-              std::string _descript = "", std::vector<std::string> _cmdline = {},
+    // vsettings() = default;
+
+    vsettings() = default;
+
+    vsettings(std::string _name, std::string _env_name, std::string _descript,
+              std::set<std::string> _categories, std::vector<std::string> _cmdline = {},
               int32_t _count = -1, int32_t _max_count = -1,
               std::vector<std::string> _choices = {});
+
+    vsettings(std::string _name, std::string _env_name, std::string _descript,
+              std::vector<std::string> _cmdline = {}, int32_t _count = -1,
+              int32_t _max_count = -1, std::vector<std::string> _choices = {},
+              std::set<std::string> _categories = {});
 
     virtual ~vsettings() = default;
 
@@ -90,6 +100,7 @@ struct vsettings
     const auto& get_description() const { return m_description; }
     const auto& get_command_line() const { return m_cmdline; }
     const auto& get_choices() const { return m_choices; }
+    const auto& get_categories() const { return m_categories; }
     const auto& get_count() const { return m_count; }
     const auto& get_max_count() const { return m_max_count; }
 
@@ -97,11 +108,13 @@ struct vsettings
     void set_max_count(int32_t v) { m_max_count = v; }
     void set_choices(const std::vector<std::string>& v) { m_choices = v; }
     void set_command_line(const std::vector<std::string>& v) { m_cmdline = v; }
+    void set_categories(const std::set<std::string>& v) { m_categories = v; }
 
     auto get_type_index() const { return m_type_index; }
     auto get_value_index() const { return m_value_index; }
 
     virtual bool matches(const std::string&, bool exact = true) const;
+    virtual bool matches(const std::string&, const std::string&, bool exact = true) const;
 
     template <typename Tp>
     std::pair<bool, Tp> get() const;
@@ -139,15 +152,16 @@ protected:
     void report_change(Tp _old, const Tp& _new);
 
 protected:
-    std::type_index          m_type_index  = std::type_index(typeid(void));  // NOLINT
-    std::type_index          m_value_index = std::type_index(typeid(void));  // NOLINT
-    int32_t                  m_count       = -1;                             // NOLINT
-    int32_t                  m_max_count   = -1;                             // NOLINT
-    std::string              m_name        = "";                             // NOLINT
-    std::string              m_env_name    = "";                             // NOLINT
-    std::string              m_description = "";                             // NOLINT
-    std::vector<std::string> m_cmdline     = {};                             // NOLINT
-    std::vector<std::string> m_choices     = {};                             // NOLINT
+    std::type_index          m_type_index  = std::type_index(typeid(void));
+    std::type_index          m_value_index = std::type_index(typeid(void));
+    int32_t                  m_count       = -1;
+    int32_t                  m_max_count   = -1;
+    std::string              m_name        = {};
+    std::string              m_env_name    = {};
+    std::string              m_description = {};
+    std::vector<std::string> m_cmdline     = {};
+    std::vector<std::string> m_choices     = {};
+    std::set<std::string>    m_categories  = {};
 };
 //
 template <typename Tp>

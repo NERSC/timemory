@@ -83,7 +83,6 @@ manager::manager()
 , m_rank(dmp::rank())
 , m_thread_index(threading::get_id())
 , m_thread_id(std::this_thread::get_id())
-, m_lock(std::make_shared<auto_lock_t>(m_mutex, std::defer_lock))
 , m_hash_ids(get_hash_ids())
 , m_hash_aliases(get_hash_aliases())
 {
@@ -251,14 +250,12 @@ manager::initialize()
     if(m_is_initialized)
         return;
     m_is_initialized = true;
-    bool _owns       = m_lock->owns_lock();
-    if(!_owns)
-        m_lock->lock();
+    auto_lock_t _lk{ m_mutex, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
     m_initializers.erase(std::remove_if(m_initializers.begin(), m_initializers.end(),
                                         [](auto& itr) { return itr(); }),
                          m_initializers.end());
-    if(!_owns)
-        m_lock->unlock();
 }
 //
 //----------------------------------------------------------------------------------//
@@ -467,10 +464,12 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
         return;
     }
 
-    auto fname = settings::compose_output_filename("metadata", "json", false, -1, false,
-                                                   _output_dir);
-    auto hname = settings::compose_output_filename("functions", "json", false, -1, false,
-                                                   _output_dir);
+    auto fname = settings::compose_output_filename(
+        "metadata", "json", settings::use_output_suffix(),
+        settings::default_process_suffix(), false, _output_dir);
+    auto hname = settings::compose_output_filename(
+        "functions", "json", settings::use_output_suffix(),
+        settings::default_process_suffix(), false, _output_dir);
 
     auto _settings = f_settings();
     auto _banner   = (_settings) ? _settings->get_banner() : false;
@@ -655,6 +654,9 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::add_file_output(const string_t& _category, const string_t& _label,
                          const string_t& _file)
 {
+    auto_lock_t _lk{ m_mutex, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
     m_output_files[_category][_label].insert(_file);
 }
 //
@@ -756,9 +758,10 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::add_synchronization(const std::string& _key, int64_t _id,
                              std::function<void()> _func)
 {
-    m_mutex.lock();
+    auto_lock_t _lk{ m_mutex, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
     m_synchronize[_key].emplace(_id, std::move(_func));
-    m_mutex.unlock();
 }
 //
 //----------------------------------------------------------------------------------//
@@ -766,10 +769,11 @@ manager::add_synchronization(const std::string& _key, int64_t _id,
 TIMEMORY_MANAGER_LINKAGE(void)
 manager::remove_synchronization(const std::string& _key, int64_t _id)
 {
-    m_mutex.lock();
+    auto_lock_t _lk{ m_mutex, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
     if(m_synchronize[_key].find(_id) != m_synchronize[_key].end())
         m_synchronize[_key].erase(_id);
-    m_mutex.unlock();
 }
 //
 //----------------------------------------------------------------------------------//
