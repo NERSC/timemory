@@ -223,7 +223,8 @@ private:
         using value_type       = typename map_type::mapped_type;
         using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;
         for(const auto& _data : _rhs.get_secondary())
-            _storage->append(secondary_data_t{ _itr, _data.first, _data.second });
+            storage_append_sfinae(_storage, 0,
+                                  secondary_data_t{ _itr, _data.first, _data.second });
     }
 
     //----------------------------------------------------------------------------------//
@@ -251,6 +252,23 @@ private:
     //
     template <typename Up, typename... Args>
     void sfinae(Up&, long, Args&&...) const
+    {}
+
+    //----------------------------------------------------------------------------------//
+    //  If the storage can append secondary data
+    //
+    template <typename Storage, typename DataT>
+    auto storage_append_sfinae(Storage* _storage, int, DataT&& _data) const
+        -> decltype(_storage->append(std::forward<DataT>(_data)))
+    {
+        return _storage->append(std::forward<DataT>(_data));
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  If the storage can NOT append secondary data
+    //
+    template <typename Storage, typename DataT>
+    void storage_append_sfinae(Storage*, long, DataT&&) const
     {}
 };
 //
@@ -309,6 +327,15 @@ struct add_secondary
     template <typename... Args>
     add_secondary(std::nullptr_t, Args...)
     {}
+
+    //----------------------------------------------------------------------------------//
+    // add_secondary function call operator
+    //
+    template <typename... Args>
+    auto operator()(Args&&... args) const
+    {
+        return base_type::operator()(std::forward<Args>(args)...);
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
