@@ -97,13 +97,12 @@ using hash_resolver_vec_t = std::vector<hash_resolver_t>;
 //
 //--------------------------------------------------------------------------------------//
 //
-namespace internal
+namespace hash_impl
 {
 template <typename Tp>
 inline auto
 typeid_name()
 {
-    // static because a type demangle will always be the same
     return typeid(Tp).name();
 }
 
@@ -120,13 +119,13 @@ typeid_hash(long)
 {
     return 0;
 }
-}  // namespace internal
+}  // namespace hash_impl
 
 template <typename Tp>
 inline auto
 typeid_hash()
 {
-    return internal::typeid_hash<Tp>(0);
+    return hash_impl::typeid_hash<Tp>(0);
 }
 //
 template <typename T>
