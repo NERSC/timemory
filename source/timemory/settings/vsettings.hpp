@@ -114,8 +114,9 @@ struct vsettings
     auto get_type_index() const { return m_type_index; }
     auto get_value_index() const { return m_value_index; }
 
-    virtual bool matches(const std::string&, bool exact = true) const;
+    virtual bool matches(const std::string&, bool&& exact = true) const;
     virtual bool matches(const std::string&, const std::string&, bool exact = true) const;
+    virtual bool matches(const std::string&, const char*, bool _exact = true) const;
 
     template <typename Tp>
     std::pair<bool, Tp> get() const;

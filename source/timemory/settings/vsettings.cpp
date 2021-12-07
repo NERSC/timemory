@@ -60,8 +60,10 @@ vsettings::vsettings(std::string _name, std::string _env_name, std::string _desc
                      std::vector<std::string> _cmdline, int32_t _count,
                      int32_t _max_count, std::vector<std::string> _choices,
                      std::set<std::string> _categories)
-: vsettings{ _name,    _env_name, _descript,  _categories,
-             _cmdline, _count,    _max_count, _choices }
+: vsettings{ std::move(_name),     std::move(_env_name),
+             std::move(_descript), std::move(_categories),
+             std::move(_cmdline),  _count,
+             _max_count,           std::move(_choices) }
 {}
 //
 TIMEMORY_SETTINGS_LINKAGE(vsettings::display_map_t)
@@ -102,9 +104,15 @@ vsettings::get_display(std::ios::fmtflags fmt, int _w, int _p)
 }
 //
 TIMEMORY_SETTINGS_LINKAGE(bool)
-vsettings::matches(const std::string& inp, bool exact) const
+vsettings::matches(const std::string& inp, bool&& exact) const
 {
-    return matches(inp, "", exact);
+    return matches(inp, std::string{}, exact);
+}
+//
+TIMEMORY_SETTINGS_LINKAGE(bool)
+vsettings::matches(const std::string& inp, const char* _category, bool exact) const
+{
+    return matches(inp, std::string{ _category }, exact);
 }
 //
 TIMEMORY_SETTINGS_LINKAGE(bool)

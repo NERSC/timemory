@@ -329,7 +329,7 @@ public:
     const_iterator cend() const { return m_data.cend(); }
 
     template <typename Sp = string_t>
-    auto find(Sp&& _key, bool _exact = true);
+    auto find(Sp&& _key, bool _exact = true, const std::string& _category = {});
 
     template <typename Tp, typename Sp = string_t>
     Tp get(Sp&& _key, bool _exact = true);
@@ -653,17 +653,18 @@ settings::save(ArchiveT& ar, unsigned int) const
 //
 template <typename Sp>
 inline auto
-settings::find(Sp&& _key, bool _exact)
+settings::find(Sp&& _key, bool _exact, const std::string& _category)
 {
     // exact match to map key
     auto itr = m_data.find(std::forward<Sp>(_key));
-    if(itr != m_data.end())
+    if(itr != m_data.end() && itr->second->matches(_key, _category, _exact))
         return itr;
 
     // match against env_name, name, command-line options
     for(auto ditr = begin(); ditr != end(); ++ditr)
     {
-        if(ditr->second && ditr->second->matches(std::forward<Sp>(_key), _exact))
+        if(ditr->second &&
+           ditr->second->matches(std::forward<Sp>(_key), _category, _exact))
             return ditr;
     }
 
