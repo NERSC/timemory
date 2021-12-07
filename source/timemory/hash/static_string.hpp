@@ -27,6 +27,7 @@
 #include "timemory/hash/macros.hpp"
 
 #include <cstddef>
+#include <functional>
 #include <memory>
 #include <unordered_set>
 
@@ -66,9 +67,6 @@ private:
 
 namespace std
 {
-template <typename Key>
-struct hash;
-
 template <>
 struct hash<tim::static_string>
 {

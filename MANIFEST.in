@@ -38,6 +38,7 @@ global-exclude *.pyc
 global-exclude *.git*
 global-exclude *__pycache__*
 global-exclude *.so
+global-exclude *.sql
 
 # recursive excludes
 
@@ -46,7 +47,10 @@ recursive-exclude _skbuild *
 recursive-exclude build *
 recursive-exclude dist *
 recursive-exclude external/hatchet/build *
+recursive-exclude external/perfetto *
 
 # bypass global exclude of git files
 
 include docs/.gitinfo
+include external/perfetto/sdk/perfetto.h
+include external/perfetto/sdk/perfetto.cc

@@ -42,6 +42,28 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::perfetto_trace, fa
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::perfetto_trace, false_type)
 #endif
 
+#if defined(TIMEMORY_PYBIND11_SOURCE)
+//
+namespace tim
+{
+namespace trait
+{
+//
+template <>
+struct python_args<TIMEMORY_STORE, component::perfetto_trace>
+{
+    using type = type_list<type_list<size_t>, type_list<const char*, size_t>>;
+};
+//
+template <>
+struct python_args<TIMEMORY_START, component::perfetto_trace>
+{
+    using type = type_list<type_list<const char*>>;
+};
+}  // namespace trait
+}  // namespace tim
+#endif
+
 // perfetto header
 #if defined(TIMEMORY_USE_PERFETTO)
 #    include <perfetto.h>
