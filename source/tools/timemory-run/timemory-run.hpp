@@ -40,8 +40,9 @@
 #include "timemory/environment.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/argparse.hpp"
-#include "timemory/utility/macros.hpp"
+#include "timemory/utility/demangle.hpp"
 #include "timemory/utility/popen.hpp"
+#include "timemory/utility/types.hpp"
 #include "timemory/variadic/macros.hpp"
 
 #include <cstring>
