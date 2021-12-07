@@ -163,7 +163,6 @@ if PY35:
     def is_coroutine(f):
         return inspect.iscoroutinefunction(f)
 
-
 else:
 
     def is_coroutine(f):

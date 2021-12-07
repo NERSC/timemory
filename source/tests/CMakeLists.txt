@@ -200,7 +200,9 @@ if(TARGET custom-record-functions)
 endif()
 
 # tracing is only used via dynamic instrumentation so only test on linux
-if(_LIBRARY_TARGET AND UNIX AND NOT APPLE)
+if(_LIBRARY_TARGET
+   AND UNIX
+   AND NOT APPLE)
     list(APPEND trace_tests_env "TIMEMORY_COLLAPSE_THREADS=ON")
     list(APPEND trace_tests_env "TIMEMORY_NODE_COUNT=2")
     list(APPEND trace_tests_env "TIMEMORY_MPI_THREAD=ON")
