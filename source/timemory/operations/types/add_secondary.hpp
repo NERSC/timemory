@@ -33,6 +33,9 @@
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/demangle.hpp"
+
+#include <stdexcept>
 
 namespace tim
 {
@@ -331,10 +334,30 @@ struct add_secondary
     //----------------------------------------------------------------------------------//
     // add_secondary function call operator
     //
-    template <typename... Args>
-    auto operator()(Args&&... args) const
+    template <typename Storage, typename... Args>
+    auto operator()(Storage* _storage, Args&&... _args) const
     {
-        return base_type::operator()(std::forward<Args>(args)...);
+        return base_type::operator()(_storage, std::forward<Args>(_args)...);
+    }
+
+    template <typename... Args>
+    auto operator()(std::nullptr_t, Args...)
+    {}
+
+    template <typename... Args>
+    auto operator()(type& _rhs, Args&&... _args) const
+    {
+        return base_type::operator()(_rhs, std::forward<Args>(_args)...);
+    }
+
+    template <typename... Args>
+    auto operator()(type* _rhs, Args&&... _args) const
+    {
+        using return_type =
+            decltype(base_type::operator()(*_rhs, std::forward<Args>(_args)...));
+        if(_rhs)
+            return base_type::operator()(*_rhs, std::forward<Args>(_args)...);
+        return return_type();
     }
 };
 //

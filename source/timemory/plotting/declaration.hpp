@@ -29,9 +29,12 @@
 #include "timemory/settings/declaration.hpp"
 
 #include <algorithm>
+#include <fstream>
 #include <initializer_list>
+#include <iostream>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 

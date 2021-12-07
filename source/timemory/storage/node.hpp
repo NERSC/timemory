@@ -29,6 +29,7 @@
 #include "timemory/data/statistics.hpp"
 #include "timemory/hash.hpp"
 #include "timemory/hash/types.hpp"
+#include "timemory/macros/os.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types/decode.hpp"
@@ -54,6 +55,13 @@ struct dummy;
 //
 namespace node
 {
+#if defined(TIMEMORY_WINDOWS)
+using pid_t = int;
+#endif
+
+using tid_t    = int64_t;
+using tidset_t = std::set<tid_t>;
+using pidset_t = std::set<pid_t>;
 //
 //--------------------------------------------------------------------------------------//
 /// \struct tim::node::entry
@@ -115,18 +123,17 @@ struct data
 {
     using string_t     = std::string;
     using strvector_t  = std::vector<string_t>;
-    using uintvector_t = std::vector<uint64_t>;
+    using uintvector_t = std::vector<hash_value_t>;
 
     using type         = typename trait::statistics<Tp>::type;
     using stats_policy = policy::record_statistics<Tp, type>;
     using stats_type   = typename stats_policy::statistics_type;
     using node_type =
-        std::tuple<bool, uint32_t, uint32_t, uint64_t, int64_t, Tp, stats_type>;
-    using result_type = std::tuple<uint32_t, uint32_t, int64_t, uint64_t, uint64_t,
+        std::tuple<bool, tid_t, pid_t, hash_value_t, int64_t, Tp, stats_type>;
+    using result_type = std::tuple<tid_t, pid_t, int64_t, hash_value_t, hash_value_t,
                                    string_t, uintvector_t, Tp, stats_type>;
-    using idset_type  = std::set<int64_t>;
     using entry_type  = entry<Tp, stats_type>;
-    using tree_type   = std::tuple<bool, uint64_t, int64_t, idset_type, idset_type,
+    using tree_type   = std::tuple<bool, hash_value_t, int64_t, tidset_t, pidset_t,
                                  entry_type, entry_type>;
 };
 //
@@ -148,8 +155,8 @@ struct graph : private data<Tp>::node_type
 public:
     // ctor, dtor
     graph();
-    graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint32_t _tid,
-          uint32_t _pid = process::get_id(), bool _is_dummy = false);
+    graph(hash_value_t _id, const Tp& _obj, int64_t _depth, tid_t _tid,
+          pid_t _pid = process::get_id(), bool _is_dummy = false);
 
     ~graph()                = default;
     graph(const graph&)     = default;
@@ -181,35 +188,36 @@ public:
     bool& is_dummy() { return std::get<0>(*this); }
 
     /// thread identifier
-    uint32_t& tid() { return std::get<1>(*this); }
+    tid_t& tid() { return std::get<1>(*this); }
 
     /// process identifier
-    uint32_t& pid() { return std::get<2>(*this); }
+    pid_t& pid() { return std::get<2>(*this); }
 
     /// hash identifer
-    uint64_t& id() { return std::get<3>(*this); }
+    hash_value_t& hash() { return std::get<3>(*this); }
 
     /// depth in call-graph
     int64_t& depth() { return std::get<4>(*this); }
 
     /// this is the instance that gets updated in call-graph
-    Tp& obj() { return std::get<5>(*this); }
+    Tp& data() { return std::get<5>(*this); }
 
     /// statistics data for entry in call-graph
     stats_type& stats() { return std::get<6>(*this); }
 
-    const bool&       is_dummy() const { return std::get<0>(*this); }
-    const uint32_t&   tid() const { return std::get<1>(*this); }
-    const uint32_t&   pid() const { return std::get<2>(*this); }
-    const uint64_t&   id() const { return std::get<3>(*this); }
-    const int64_t&    depth() const { return std::get<4>(*this); }
-    const Tp&         obj() const { return std::get<5>(*this); }
+    bool              is_dummy() const { return std::get<0>(*this); }
+    tid_t             tid() const { return std::get<1>(*this); }
+    pid_t             pid() const { return std::get<2>(*this); }
+    hash_value_t      hash() const { return std::get<3>(*this); }
+    int64_t           depth() const { return std::get<4>(*this); }
+    const Tp&         data() const { return std::get<5>(*this); }
     const stats_type& stats() const { return std::get<6>(*this); }
 
-    auto&       data() { return this->obj(); }
-    auto&       hash() { return this->id(); }
-    const auto& data() const { return this->obj(); }
-    const auto& hash() const { return this->id(); }
+    // backwards compatibility
+    auto&       id() { return this->hash(); }
+    auto        id() const { return this->hash(); }
+    auto&       obj() { return this->data(); }
+    const auto& obj() const { return this->data(); }
 
     hash_value_t uniq_hash() const { return get_combined_hash_id(id(), tid(), depth()); }
 };
@@ -224,7 +232,7 @@ public:
 template <typename Tp>
 struct result : public data<Tp>::result_type
 {
-    using uintvector_t = std::vector<uint64_t>;
+    using uintvector_t = std::vector<hash_value_t>;
     using base_type    = typename data<Tp>::result_type;
     using stats_type   = typename data<Tp>::stats_type;
     using this_type    = result<Tp>;
@@ -240,26 +248,26 @@ struct result : public data<Tp>::result_type
     : base_type(std::forward<base_type>(_base))
     {}
 
-    result(uint64_t _hash, const Tp& _data, const string_t& _prefix, int64_t _depth,
-           uint64_t _rolling, const uintvector_t& _hierarchy, const stats_type& _stats,
-           uint32_t _tid, uint32_t _pid);
+    result(hash_value_t _hash, const Tp& _data, const string_t& _prefix, int64_t _depth,
+           hash_value_t _rolling, const uintvector_t& _hierarchy,
+           const stats_type& _stats, tid_t _tid, pid_t _pid);
 
     /// measurement thread. May be `std::numeric_limits<uint16_t>::max()` (i.e. 65536) if
     /// this entry is a combination of multiple threads
-    uint32_t& tid() { return std::get<0>(*this); }
+    tid_t& tid() { return std::get<0>(*this); }
 
     /// the process identifier of the reporting process, if multiple process data is
     /// combined, or the process identifier of the collecting process
-    uint32_t& pid() { return std::get<1>(*this); }
+    pid_t& pid() { return std::get<1>(*this); }
 
     /// depth of the node in the calling-context
     int64_t& depth() { return std::get<2>(*this); }
 
     /// hash identifer of the node
-    uint64_t& hash() { return std::get<3>(*this); }
+    hash_value_t& hash() { return std::get<3>(*this); }
 
     /// the summation of this hash and it's parent hashes
-    uint64_t& rolling_hash() { return std::get<4>(*this); }
+    hash_value_t& rolling_hash() { return std::get<4>(*this); }
 
     /// the associated string with the hash + indentation and other decoration
     string_t& prefix() { return std::get<5>(*this); }
@@ -273,23 +281,23 @@ struct result : public data<Tp>::result_type
     /// reference to the associate statistical accumulation of the data (if any)
     stats_type& stats() { return std::get<8>(*this); }
 
-    /// alias for `hash()`
-    uint64_t& id() { return std::get<3>(*this); }
-
-    /// alias for `data()`
-    Tp& obj() { return std::get<7>(*this); }
-
-    const uint32_t&     tid() const { return std::get<0>(*this); }
-    const uint32_t&     pid() const { return std::get<1>(*this); }
-    const int64_t&      depth() const { return std::get<2>(*this); }
-    const uint64_t&     hash() const { return std::get<3>(*this); }
-    const uint64_t&     rolling_hash() const { return std::get<4>(*this); }
+    tid_t               tid() const { return std::get<0>(*this); }
+    pid_t               pid() const { return std::get<1>(*this); }
+    int64_t             depth() const { return std::get<2>(*this); }
+    hash_value_t        hash() const { return std::get<3>(*this); }
+    hash_value_t        rolling_hash() const { return std::get<4>(*this); }
     const string_t&     prefix() const { return std::get<5>(*this); }
     const uintvector_t& hierarchy() const { return std::get<6>(*this); }
     const Tp&           data() const { return std::get<7>(*this); }
     const stats_type&   stats() const { return std::get<8>(*this); }
-    const uint64_t&     id() const { return std::get<3>(*this); }
-    const Tp&           obj() const { return std::get<7>(*this); }
+
+    /// alias for `hash()`
+    hash_value_t& id() { return this->hash(); }
+    hash_value_t  id() const { return this->hash(); }
+
+    /// alias for `data()`
+    Tp&       obj() { return this->data(); }
+    const Tp& obj() const { return this->data(); }
 
     bool operator==(const this_type& rhs) const
     {
@@ -330,7 +338,6 @@ struct tree : private data<Tp>::tree_type
     using data_base_type  = typename Tp::base_type;
     using stats_type      = typename data<Tp>::stats_type;
     using entry_type      = typename data<Tp>::entry_type;
-    using idset_type      = typename data<Tp>::idset_type;
     using string_t        = std::string;
 
 public:
@@ -344,7 +351,7 @@ public:
     ~tree()               = default;
     tree(const tree&)     = default;
     tree(tree&&) noexcept = default;
-    tree(bool _is_dummy, uint32_t _tid, uint32_t _pid, uint64_t _hash, int64_t _depth,
+    tree(bool _is_dummy, tid_t _tid, pid_t _pid, hash_value_t _hash, int64_t _depth,
          const Tp& _obj);
 
 public:
@@ -377,17 +384,17 @@ public:
     bool& is_dummy() { return std::get<0>(*this); }
 
     /// returns the hash identifier for the associated string identifier
-    uint64_t& hash() { return std::get<1>(*this); }
+    hash_value_t& hash() { return std::get<1>(*this); }
 
     /// returns the depth of the node in the tree. NOTE: this value may be relative to
     /// dummy nodes
     int64_t& depth() { return std::get<2>(*this); }
 
     /// the set of thread ids this data was collected from
-    idset_type& tid() { return std::get<3>(*this); }
+    tidset_t& tid() { return std::get<3>(*this); }
 
     /// the set of process ids this data was collected from
-    idset_type& pid() { return std::get<4>(*this); }
+    pidset_t& pid() { return std::get<4>(*this); }
 
     /// the inclusive data + statistics
     entry_type& inclusive() { return std::get<5>(*this); }
@@ -395,11 +402,11 @@ public:
     /// the exclusive data + statistics
     entry_type& exclusive() { return std::get<6>(*this); }
 
-    const bool&       is_dummy() const { return std::get<0>(*this); }
-    const uint64_t&   hash() const { return std::get<1>(*this); }
-    const int64_t&    depth() const { return std::get<2>(*this); }
-    const idset_type& tid() const { return std::get<3>(*this); }
-    const idset_type& pid() const { return std::get<4>(*this); }
+    bool              is_dummy() const { return std::get<0>(*this); }
+    hash_value_t      hash() const { return std::get<1>(*this); }
+    int64_t           depth() const { return std::get<2>(*this); }
+    const tidset_t&   tid() const { return std::get<3>(*this); }
+    const pidset_t&   pid() const { return std::get<4>(*this); }
     const entry_type& inclusive() const { return std::get<5>(*this); }
     const entry_type& exclusive() const { return std::get<6>(*this); }
 };
@@ -418,8 +425,8 @@ graph<Tp>::graph()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-graph<Tp>::graph(uint64_t _id, const Tp& _obj, int64_t _depth, uint32_t _tid,
-                 uint32_t _pid, bool _is_dummy)
+graph<Tp>::graph(hash_value_t _id, const Tp& _obj, int64_t _depth, int64_t _tid,
+                 pid_t _pid, bool _is_dummy)
 : base_type(_is_dummy, _tid, _pid, _id, _depth, _obj, stats_type{})
 {}
 //
@@ -429,7 +436,7 @@ template <typename Tp>
 bool
 graph<Tp>::operator==(const graph& rhs) const
 {
-    return (id() == rhs.id() && depth() == rhs.depth() && tid() == rhs.tid());
+    return (hash() == rhs.hash() && depth() == rhs.depth() && tid() == rhs.tid());
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -453,25 +460,25 @@ graph<Tp>::get_dummy()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-result<Tp>::result(uint64_t _id, const Tp& _data, const string_t& _prefix, int64_t _depth,
-                   uint64_t _rolling, const uintvector_t& _hierarchy,
-                   const stats_type& _stats, uint32_t _tid, uint32_t _pid)
+result<Tp>::result(hash_value_t _id, const Tp& _data, const string_t& _prefix,
+                   int64_t _depth, hash_value_t _rolling, const uintvector_t& _hierarchy,
+                   const stats_type& _stats, int64_t _tid, pid_t _pid)
 : base_type(_tid, _pid, _depth, _id, _rolling, _prefix, _hierarchy, _data, _stats)
 {}
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
 tree<Tp>::tree()
-: base_type(false, 0, 0, idset_type{ threading::get_id() },
-            idset_type{ process::get_id() }, entry_type{}, entry_type{})
+: base_type(false, 0, 0, tidset_t{ threading::get_id() }, pidset_t{ process::get_id() },
+            entry_type{}, entry_type{})
 {}
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
 tree<Tp>::tree(const graph<Tp>& rhs)
-: base_type(rhs.is_dummy(), rhs.hash(), rhs.depth(), idset_type{ rhs.tid() },
-            idset_type{ rhs.pid() }, entry_type{ rhs.data(), rhs.stats() },
+: base_type(rhs.is_dummy(), rhs.hash(), rhs.depth(), tidset_t{ rhs.tid() },
+            pidset_t{ rhs.pid() }, entry_type{ rhs.data(), rhs.stats() },
             entry_type{ rhs.data(), rhs.stats() })
 {}
 //
@@ -509,8 +516,8 @@ template <typename Archive, typename Tp>
 void
 save(Archive& ar, const tim::node::graph<Tp>& d)
 {
-    auto _prefix = operation::decode<TIMEMORY_API>{}(::tim::get_hash_identifier(d.id()));
-    ar(cereal::make_nvp("hash", d.id()), cereal::make_nvp("prefix", _prefix),
+    auto _lbl = operation::decode<TIMEMORY_API>{}(::tim::get_hash_identifier(d.hash()));
+    ar(cereal::make_nvp("hash", d.hash()), cereal::make_nvp("prefix", _lbl),
        cereal::make_nvp("entry", d.obj()), cereal::make_nvp("depth", d.depth()),
        cereal::make_nvp("stats", d.stats()), cereal::make_nvp("tid", d.tid()),
        cereal::make_nvp("pid", d.pid()), cereal::make_nvp("dummy", d.is_dummy()));
@@ -523,13 +530,13 @@ void
 load(Archive& ar, tim::node::graph<Tp>& d)
 {
     std::string _prefix{};
-    ar(cereal::make_nvp("hash", d.id()), cereal::make_nvp("prefix", _prefix),
+    ar(cereal::make_nvp("hash", d.hash()), cereal::make_nvp("prefix", _prefix),
        cereal::make_nvp("entry", d.obj()), cereal::make_nvp("depth", d.depth()),
        cereal::make_nvp("stats", d.stats()), cereal::make_nvp("tid", d.tid()),
        cereal::make_nvp("pid", d.pid()), cereal::make_nvp("dummy", d.is_dummy()));
-    auto _id = tim::add_hash_id(_prefix);
-    if(_id != d.id())
-        tim::add_hash_id(_id, d.id());
+    auto _hash = tim::add_hash_id(_prefix);
+    if(_hash != d.hash())
+        tim::add_hash_id(_hash, d.hash());
 }
 //
 //--------------------------------------------------------------------------------------//

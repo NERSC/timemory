@@ -24,29 +24,27 @@
 
 #pragma once
 
-#include "timemory/plotting/declaration.hpp"
 #include "timemory/plotting/macros.hpp"
 #include "timemory/plotting/types.hpp"
-#include "timemory/settings/declaration.hpp"
-#include "timemory/utility/launch_process.hpp"
+
+#if defined(TIMEMORY_PLOTTING_SOURCE) || !defined(TIMEMORY_USE_PLOTTING_EXTERN)
+
+#    include "timemory/plotting/declaration.hpp"
+#    include "timemory/settings/settings.hpp"
+#    include "timemory/utility/launch_process.hpp"
+#    include "timemory/utility/locking.hpp"
+
+#    include <fstream>
+#    include <iostream>
+#    include <mutex>
+#    include <ostream>
+#    include <sstream>
+#    include <string>
 
 namespace tim
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              plotting
-//
-//--------------------------------------------------------------------------------------//
-//
 namespace plotting
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(TIMEMORY_PLOTTING_SOURCE) || !defined(TIMEMORY_USE_PLOTTING_EXTERN)
-//
-//--------------------------------------------------------------------------------------//
 //
 TIMEMORY_PLOTTING_LINKAGE(void)
 plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
@@ -67,11 +65,9 @@ plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
     if(settings::debug() || settings::verbose() > 2)
         PRINT_HERE("%s", "");
 
-    auto _info = TIMEMORY_LABEL("");
-
     const auto& _file = _json_file;
     {
-        std::ifstream ifs(_file.c_str());
+        std::ifstream ifs{ _file };
         bool          exists = ifs.good();
         ifs.close();
         if(!exists)
@@ -105,7 +101,8 @@ plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
         PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
 
     std::stringstream _log{};
-    auto _success = launch_process(cmd.c_str(), _info + " plot generation failed", &_log);
+    auto              _success = launch_process(cmd.c_str(),
+                                   TIMEMORY_LABEL("") + " plot generation failed", &_log);
     if(_success)
     {
         std::cout << _log.str() << '\n';
@@ -121,14 +118,7 @@ plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
     set_env<std::string>("TIMEMORY_LIBRARY_CTOR", _ctor, 1);
 }
 //
-//--------------------------------------------------------------------------------------//
-//
-#endif  // !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_PLOTTING_SOURCE)
-//
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace plotting
 }  // namespace tim
-//
-//--------------------------------------------------------------------------------------//
-//
+
+#endif  // !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_PLOTTING_SOURCE)

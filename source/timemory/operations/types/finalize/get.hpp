@@ -328,7 +328,7 @@ get<Type, true>::operator()(result_type& ret)
                     while(_parent && _parent->depth() > _min)
                     {
                         if(operation::get_is_invalid<Type, false>{}(_parent->data()))
-                            break;
+                            continue;
                         _hierarchy.push_back(_parent->id());
                         _rolling += _parent->id();
                         _parent = graph_type::parent(_parent);

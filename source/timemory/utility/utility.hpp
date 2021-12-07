@@ -36,6 +36,7 @@
 #include "timemory/macros/language.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <cctype>
 #include <cerrno>

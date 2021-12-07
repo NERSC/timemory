@@ -261,7 +261,7 @@ TEST_F(settings_tests, insert_via_pointer)
 
     auto _ptr = std::make_shared<tim::tsettings<uint64_t>>(
         reference_value, _ref_name, _ref_env, _ref_desc, strvec_t({ _ref_cmd }), 1, -2,
-        strset_t{ _ref_cat });
+        strvec_t{}, strset_t{ _ref_cat });
     auto _ins = _settings->insert(_ptr);
 
     EXPECT_TRUE(_ins.second);

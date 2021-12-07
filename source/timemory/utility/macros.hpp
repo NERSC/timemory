@@ -61,12 +61,72 @@ using pid_t = int;
 
 //======================================================================================//
 //
+#if !defined(TIMEMORY_DECLARE_EXTERN_TEMPLATE)
+#    define TIMEMORY_DECLARE_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE)
+#    define TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(...) template __VA_ARGS__;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_ESC)
+#    define TIMEMORY_ESC(...) __VA_ARGS__
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DELETED_OBJECT)
+#    define TIMEMORY_DELETED_OBJECT(NAME)                                                \
+        NAME()            = delete;                                                      \
+        NAME(const NAME&) = delete;                                                      \
+        NAME(NAME&&)      = delete;                                                      \
+        NAME& operator=(const NAME&) = delete;                                           \
+        NAME& operator=(NAME&&) = delete;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DELETE_COPY_MOVE_OBJECT)
+#    define TIMEMORY_DELETE_COPY_MOVE_OBJECT(NAME)                                       \
+        NAME(const NAME&) = delete;                                                      \
+        NAME(NAME&&)      = delete;                                                      \
+        NAME& operator=(const NAME&) = delete;                                           \
+        NAME& operator=(NAME&&) = delete;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DEFAULT_MOVE_ONLY_OBJECT)
+#    define TIMEMORY_DEFAULT_MOVE_ONLY_OBJECT(NAME)                                      \
+        NAME(const NAME&)     = delete;                                                  \
+        NAME(NAME&&) noexcept = default;                                                 \
+        NAME& operator=(const NAME&) = delete;                                           \
+        NAME& operator=(NAME&&) noexcept = default;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DEFAULT_OBJECT)
+#    define TIMEMORY_DEFAULT_OBJECT(NAME)                                                \
+        TIMEMORY_HOST_DEVICE_FUNCTION NAME() = default;                                  \
+        NAME(const NAME&)                    = default;                                  \
+        NAME(NAME&&) noexcept                = default;                                  \
+        NAME& operator=(const NAME&) = default;                                          \
+        NAME& operator=(NAME&&) noexcept = default;
+#endif
+
+//======================================================================================//
+//
 //      Quick way to create a globally accessible setting
 //
 //======================================================================================//
 
-#if !defined(CREATE_STATIC_VARIABLE_ACCESSOR)
-#    define CREATE_STATIC_VARIABLE_ACCESSOR(TYPE, FUNC_NAME, VARIABLE)                   \
+#if !defined(TIMEMORY_CREATE_STATIC_VARIABLE_ACCESSOR)
+#    define TIMEMORY_CREATE_STATIC_VARIABLE_ACCESSOR(TYPE, FUNC_NAME, VARIABLE)          \
         static TYPE& FUNC_NAME()                                                         \
         {                                                                                \
             static TYPE _instance = Type::VARIABLE;                                      \
@@ -76,8 +136,8 @@ using pid_t = int;
 
 //--------------------------------------------------------------------------------------//
 
-#if !defined(CREATE_STATIC_FUNCTION_ACCESSOR)
-#    define CREATE_STATIC_FUNCTION_ACCESSOR(TYPE, FUNC_NAME, VARIABLE)                   \
+#if !defined(TIMEMORY_CREATE_STATIC_FUNCTION_ACCESSOR)
+#    define TIMEMORY_CREATE_STATIC_FUNCTION_ACCESSOR(TYPE, FUNC_NAME, VARIABLE)          \
         static TYPE& FUNC_NAME()                                                         \
         {                                                                                \
             static TYPE _instance = Type::VARIABLE();                                    \

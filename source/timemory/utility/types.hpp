@@ -42,6 +42,7 @@
 #include <functional>
 #include <initializer_list>
 #include <memory>
+#include <mutex>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -74,80 +75,22 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_DECLARE_EXTERN_TEMPLATE)
-#    define TIMEMORY_DECLARE_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE)
-#    define TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(...) template __VA_ARGS__;
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_ESC)
-#    define TIMEMORY_ESC(...) __VA_ARGS__
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_DELETED_OBJECT)
-#    define TIMEMORY_DELETED_OBJECT(NAME)                                                \
-        NAME()            = delete;                                                      \
-        NAME(const NAME&) = delete;                                                      \
-        NAME(NAME&&)      = delete;                                                      \
-        NAME& operator=(const NAME&) = delete;                                           \
-        NAME& operator=(NAME&&) = delete;
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_DELETE_COPY_MOVE_OBJECT)
-#    define TIMEMORY_DELETE_COPY_MOVE_OBJECT(NAME)                                       \
-        NAME(const NAME&) = delete;                                                      \
-        NAME(NAME&&)      = delete;                                                      \
-        NAME& operator=(const NAME&) = delete;                                           \
-        NAME& operator=(NAME&&) = delete;
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_DEFAULT_MOVE_ONLY_OBJECT)
-#    define TIMEMORY_DEFAULT_MOVE_ONLY_OBJECT(NAME)                                      \
-        NAME(const NAME&)     = delete;                                                  \
-        NAME(NAME&&) noexcept = default;                                                 \
-        NAME& operator=(const NAME&) = delete;                                           \
-        NAME& operator=(NAME&&) noexcept = default;
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_DEFAULT_OBJECT)
-#    define TIMEMORY_DEFAULT_OBJECT(NAME)                                                \
-        TIMEMORY_HOST_DEVICE_FUNCTION NAME() = default;                                  \
-        NAME(const NAME&)                    = default;                                  \
-        NAME(NAME&&) noexcept                = default;                                  \
-        NAME& operator=(const NAME&) = default;                                          \
-        NAME& operator=(NAME&&) noexcept = default;
-#endif
-
-//======================================================================================//
-//
 #if !defined(TIMEMORY_EXCEPTION)
 #    define TIMEMORY_EXCEPTION(...)                                                      \
         {                                                                                \
-            std::stringstream _errmsg;                                                   \
-            _errmsg << __VA_ARGS__;                                                      \
-            perror(_errmsg.str().c_str());                                               \
-            std::cerr << _errmsg.str() << std::endl;                                     \
+            {                                                                            \
+                static std::mutex            _mtx{};                                     \
+                std::unique_lock<std::mutex> _lk{ _mtx };                                \
+                std::cerr << __VA_ARGS__ << std::endl;                                   \
+            }                                                                            \
             std::exit(EXIT_FAILURE);                                                     \
         }
 #endif
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_TESTING_EXCEPTION) && defined(TIMEMORY_INTERNAL_TESTING)
+#if !defined(TIMEMORY_TESTING_EXCEPTION) &&                                              \
+    (defined(TIMEMORY_INTERNAL_TESTING) || defined(TIMEMORY_TESTING))
 #    define TIMEMORY_TESTING_EXCEPTION(...)                                              \
         {                                                                                \
             TIMEMORY_EXCEPTION(__VA_ARGS__)                                              \
