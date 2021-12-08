@@ -78,78 +78,7 @@ struct tree;
 namespace base
 {
 //
-class storage
-{
-public:
-    using string_t  = std::string;
-    using this_type = storage;
-
-public:
-    storage(bool _is_master, int64_t _instance_id, std::string _label);
-    virtual ~storage();
-
-    explicit storage(const this_type&) = delete;
-    explicit storage(this_type&&)      = delete;
-    this_type& operator=(const this_type&) = delete;
-    this_type& operator=(this_type&& rhs) = delete;
-
-    virtual void print() {}
-    virtual void cleanup() {}
-    virtual void stack_clear() {}
-    virtual void disable() {}
-    virtual void initialize() {}
-    virtual void finalize() {}
-    virtual bool global_init() { return false; }
-    virtual bool thread_init() { return false; }
-    virtual bool data_init() { return false; }
-
-    template <typename Tp, typename Vp>
-    static this_type* base_instance();
-
-public:
-    const hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
-    const hash_alias_ptr_t& get_hash_aliases() const { return m_hash_aliases; }
-
-    hash_value_t add_hash_id(const std::string& _prefix);
-    void         add_hash_id(uint64_t _lhs, uint64_t _rhs);
-
-    bool    is_initialized() const { return m_initialized; }
-    int64_t instance_id() const { return m_instance_id; }
-    void    free_shared_manager();
-
-protected:
-    void add_file_output(const string_t& _category, const string_t& _label,
-                         const string_t& _file);
-    void add_text_output(const string_t& _label, const string_t& _file)
-    {
-        add_file_output("text", _label, _file);
-    }
-    void add_json_output(const string_t& _label, const string_t& _file)
-    {
-        add_file_output("json", _label, _file);
-    }
-
-    static std::atomic<int>& storage_once_flag();
-    static void              stop_profiler();
-
-protected:
-    bool                      m_initialized  = false;                      // NOLINT
-    bool                      m_finalized    = false;                      // NOLINT
-    bool                      m_global_init  = false;                      // NOLINT
-    bool                      m_thread_init  = false;                      // NOLINT
-    bool                      m_data_init    = false;                      // NOLINT
-    bool                      m_is_master    = false;                      // NOLINT
-    bool                      m_node_init    = dmp::is_initialized();      // NOLINT
-    int32_t                   m_node_rank    = dmp::rank();                // NOLINT
-    int32_t                   m_node_size    = dmp::size();                // NOLINT
-    uint32_t                  m_thread_idx   = threading::get_id();        // NOLINT
-    int64_t                   m_instance_id  = -1;                         // NOLINT
-    string_t                  m_label        = "";                         // NOLINT
-    hash_map_ptr_t            m_hash_ids     = ::tim::get_hash_ids();      // NOLINT
-    hash_alias_ptr_t          m_hash_aliases = ::tim::get_hash_aliases();  // NOLINT
-    std::shared_ptr<manager>  m_manager      = {};                         // NOLINT
-    std::shared_ptr<settings> m_settings     = {};                         // NOLINT
-};
+class TIMEMORY_VISIBILITY("default") storage;
 //
 }  // namespace base
 //
@@ -159,7 +88,7 @@ namespace impl
 {
 //
 template <typename Type, bool ImplementsStorage>
-class storage
+class TIMEMORY_VISIBILITY("default") storage
 {};
 //
 template <typename StorageType>
@@ -170,11 +99,15 @@ struct storage_deleter;
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Vp = typename trait::collects_data<Tp>::type>
-class storage;
+class TIMEMORY_VISIBILITY("default") storage;
 //
 template <typename Tp>
 using storage_singleton =
     singleton<Tp, std::unique_ptr<Tp, impl::storage_deleter<Tp>>, TIMEMORY_API>;
+//
+template <typename Tp>
+TIMEMORY_NOINLINE storage_singleton<Tp>*
+                  get_storage_singleton() TIMEMORY_VISIBILITY("default");
 //
 template <typename NodeT>
 class graph_data;

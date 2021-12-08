@@ -66,9 +66,9 @@
 #include "timemory/plotting/declaration.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/declaration.hpp"
+#include "timemory/storage/definition.hpp"
 
 #if defined(TIMEMORY_COMPONENT_SOURCE) || !defined(TIMEMORY_USE_COMPONENT_EXTERN)
 // source/header-only requirements
 #    include "timemory/components/opaque/definition.hpp"
-#    include "timemory/storage/definition.hpp"
 #endif

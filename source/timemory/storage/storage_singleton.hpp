@@ -22,40 +22,27 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/**
- * \file timemory/storage/macros.hpp
- * \brief Include the macros for storage
- */
-
 #pragma once
 
-//======================================================================================//
-//
-// Define macros for storage
-//
-//======================================================================================//
-//
-#if !defined(TIMEMORY_USE_STORAGE_EXTERN)
-#    if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_COMMON_EXTERN) ||           \
-        defined(TIMEMORY_USE_GLOBAL_EXTERN)
-#        define TIMEMORY_USE_STORAGE_EXTERN 1
-#    endif
-#endif
-//
-#if !defined(TIMEMORY_STORAGE_SOURCE)
-#    if defined(TIMEMORY_SOURCE) || defined(TIMEMORY_COMMON_SOURCE) ||                   \
-        defined(TIMEMORY_GLOBAL_SOURCE)
-#        define TIMEMORY_STORAGE_SOURCE 1
-#    endif
-#endif
-//
-#if defined(TIMEMORY_STORAGE_SOURCE)
-#    define TIMEMORY_STORAGE_INLINE
-#elif defined(TIMEMORY_USE_STORAGE_EXTERN)
-#    define TIMEMORY_STORAGE_INLINE
-#    define TIMEMORY_STORAGE_HIDE_DEFINITION 1
-#else
-#    define TIMEMORY_STORAGE_INLINE inline
-#    define TIMEMORY_STORAGE_HEADER_ONLY_MODE 1
-#endif
-//
+#include "timemory/mpl/type_traits.hpp"  // trait::runtime_enabled
+#include "timemory/storage/types.hpp"
+#include "timemory/utility/types.hpp"  // scope::destructor
+
+#include <memory>
+
+namespace tim
+{
+template <typename Tp>
+storage_singleton<Tp>*
+get_storage_singleton()
+{
+    using singleton_type  = tim::storage_singleton<Tp>;
+    using component_type  = typename Tp::component_type;
+    static auto _instance = (trait::runtime_enabled<component_type>::get())
+                                ? std::make_unique<singleton_type>()
+                                : std::unique_ptr<singleton_type>{};
+    static auto _dtor = scope::destructor{ []() { _instance.reset(); } };
+    return _instance.get();
+    consume_parameters(_dtor);
+}
+}  // namespace tim

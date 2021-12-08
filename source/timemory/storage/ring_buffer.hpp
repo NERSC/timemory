@@ -523,13 +523,8 @@ ring_buffer<Tp>::remove_copy(Tp* _v) const
 //
 }  // namespace tim
 
-#if !defined(TIMEMORY_COMMON_SOURCE) && !defined(TIMEMORY_USE_COMMON_EXTERN)
-#    if !defined(TIMEMORY_RING_BUFFER_INLINE)
-#        define TIMEMORY_RING_BUFFER_INLINE inline
-#    endif
+#include "timemory/storage/macros.hpp"
+
+#if defined(TIMEMORY_STORAGE_HEADER_ONLY_MODE)
 #    include "timemory/storage/ring_buffer.cpp"
-#else
-#    if !defined(TIMEMORY_RING_BUFFER_INLINE)
-#        define TIMEMORY_RING_BUFFER_INLINE
-#    endif
 #endif

@@ -22,7 +22,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/storage/ring_buffer.hpp"
+#ifndef TIMEMORY_STORAGE_RING_BUFFER_CPP_
+#define TIMEMORY_STORAGE_RING_BUFFER_CPP_ 1
+
+#include "timemory/storage/macros.hpp"
+
+#if !defined(TIMEMORY_STORAGE_HEADER_ONLY_MODE)
+#    include "timemory/storage/ring_buffer.hpp"
+#endif
 
 #include "timemory/macros/os.hpp"
 #include "timemory/settings/settings.hpp"
@@ -40,25 +47,21 @@
 #    include <unistd.h>
 #endif
 
-#if !defined(TIMEMORY_RING_BUFFER_INLINE)
-#    define TIMEMORY_RING_BUFFER_INLINE
-#endif
-
 namespace tim
 {
 namespace base
 {
-TIMEMORY_RING_BUFFER_INLINE
+TIMEMORY_STORAGE_INLINE
 ring_buffer::ring_buffer(size_t _size, bool _use_mmap)
 {
     set_use_mmap(_use_mmap);
     init(_size);
 }
 
-TIMEMORY_RING_BUFFER_INLINE
+TIMEMORY_STORAGE_INLINE
 ring_buffer::~ring_buffer() { destroy(); }
 
-TIMEMORY_RING_BUFFER_INLINE
+TIMEMORY_STORAGE_INLINE
 ring_buffer::ring_buffer(const ring_buffer& rhs)
 : m_use_mmap{ rhs.m_use_mmap }
 , m_use_mmap_explicit{ rhs.m_use_mmap_explicit }
@@ -66,7 +69,7 @@ ring_buffer::ring_buffer(const ring_buffer& rhs)
     init(rhs.m_size);
 }
 
-TIMEMORY_RING_BUFFER_INLINE
+TIMEMORY_STORAGE_INLINE
 ring_buffer&
 ring_buffer::operator=(const ring_buffer& rhs)
 {
@@ -79,7 +82,7 @@ ring_buffer::operator=(const ring_buffer& rhs)
     return *this;
 }
 
-TIMEMORY_RING_BUFFER_INLINE
+TIMEMORY_STORAGE_INLINE
 void
 ring_buffer::init(size_t _size)
 {
@@ -126,10 +129,9 @@ ring_buffer::init(size_t _size)
     if((m_fd = mkstemp(path)) < 0)
         destroy();
 
-    // Remove file from filesystem. Note the file is still open by the
-    // process.
+    // Remove file from filesystem. Note the file is still open by the process.
     // XXX there might be a security problem with this, if so, use umaks 0600.
-    if(unlink(path))
+    if(unlink(path) != 0)
         destroy();
 
     // Resize file to buffer size.
@@ -137,7 +139,7 @@ ring_buffer::init(size_t _size)
         destroy();
 
     // Map twice the buffer size.
-    if((m_ptr = mmap(NULL, 2 * m_size, PROT_NONE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)) ==
+    if((m_ptr = mmap(nullptr, 2 * m_size, PROT_NONE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)) ==
        MAP_FAILED)
         destroy();
 
@@ -159,7 +161,7 @@ ring_buffer::init(size_t _size)
 #endif
 }
 
-TIMEMORY_RING_BUFFER_INLINE
+TIMEMORY_STORAGE_INLINE
 void
 ring_buffer::destroy()
 {
@@ -186,7 +188,7 @@ ring_buffer::destroy()
             auto ret = munmap(m_ptr, m_size * 2);
             // Close the backing file.
             close(m_fd);
-            if(ret)
+            if(ret != 0)
                 perror("munmap");
         }
 #else
@@ -200,7 +202,7 @@ ring_buffer::destroy()
     m_ptr         = nullptr;
 }
 
-TIMEMORY_RING_BUFFER_INLINE
+TIMEMORY_STORAGE_INLINE
 void
 ring_buffer::set_use_mmap(bool _v)
 {
@@ -211,7 +213,7 @@ ring_buffer::set_use_mmap(bool _v)
     m_use_mmap_explicit = true;
 }
 
-TIMEMORY_RING_BUFFER_INLINE
+TIMEMORY_STORAGE_INLINE
 std::string
 ring_buffer::as_string() const
 {
@@ -224,7 +226,7 @@ ring_buffer::as_string() const
     return ss.str();
 }
 //
-TIMEMORY_RING_BUFFER_INLINE
+TIMEMORY_STORAGE_INLINE
 void*
 ring_buffer::request(size_t _length)
 {
@@ -251,7 +253,7 @@ ring_buffer::request(size_t _length)
     return _out;
 }
 //
-TIMEMORY_RING_BUFFER_INLINE
+TIMEMORY_STORAGE_INLINE
 void*
 ring_buffer::retrieve(size_t _length)
 {
@@ -277,7 +279,7 @@ ring_buffer::retrieve(size_t _length)
     return _out;
 }
 //
-TIMEMORY_RING_BUFFER_INLINE
+TIMEMORY_STORAGE_INLINE
 size_t
 ring_buffer::rewind(size_t n) const
 {
@@ -288,3 +290,5 @@ ring_buffer::rewind(size_t n) const
 }
 }  // namespace base
 }  // namespace tim
+
+#endif
