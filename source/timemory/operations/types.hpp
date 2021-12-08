@@ -668,7 +668,7 @@ private:
 ///
 /// \brief This operation attempts to call a member function which provides whether or not
 /// the component is in a valid state for data access and updates.
-template <typename T, bool DefaultValue>
+template <typename T = void, bool DefaultValue = false>
 struct get_is_invalid
 {
     TIMEMORY_DEFAULT_OBJECT(get_is_invalid)
@@ -692,6 +692,20 @@ private:
     static auto sfinae(const Up&, ...) -> bool
     {
         return DefaultValue;
+    }
+};
+//
+template <>
+struct get_is_invalid<void, false>
+{
+    TIMEMORY_DEFAULT_OBJECT(get_is_invalid)
+
+    template <typename Up>
+    TIMEMORY_INLINE auto operator()(Up&& obj) const
+    {
+        using Tp = decay_t<Up>;
+        static_assert(!std::is_void<Tp>::value, "Infinite recursion");
+        return get_is_invalid<Tp, false>{}(std::forward<Up>(obj));
     }
 };
 //

@@ -41,6 +41,7 @@
 #include "timemory/storage/types.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/demangle.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <string>
 #include <vector>
@@ -313,7 +314,7 @@ get<Type, true>::operator()(result_type& ret)
                     continue;
                 }
                 // skip if invalid
-                if(operation::get_is_invalid<Type, false>{}(itr->data()))
+                if(operation::get_is_invalid<>{}(itr->data()))
                     continue;
                 if(itr->depth() > _min)
                 {
@@ -327,11 +328,14 @@ get<Type, true>::operator()(result_type& ret)
                     auto _pid       = itr->pid();
                     while(_parent && _parent->depth() > _min)
                     {
-                        if(operation::get_is_invalid<Type, false>{}(_parent->data()))
+                        // ensure parent is always updated regardless of branch taken
+                        scope::destructor _dtor{ [&_parent]() {
+                            _parent = graph_type::parent(_parent);
+                        } };
+                        if(operation::get_is_invalid<>{}(_parent->data()))
                             continue;
                         _hierarchy.push_back(_parent->id());
                         _rolling += _parent->id();
-                        _parent = graph_type::parent(_parent);
                     }
                     if(_hierarchy.size() > 1)
                         std::reverse(_hierarchy.begin(), _hierarchy.end());
