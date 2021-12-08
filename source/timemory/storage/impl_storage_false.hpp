@@ -30,7 +30,6 @@
 #include "timemory/operations/types/finalize/get.hpp"
 #include "timemory/operations/types/finalize/merge.hpp"
 #include "timemory/operations/types/finalize/mpi_get.hpp"
-#include "timemory/operations/types/finalize/print.hpp"
 #include "timemory/operations/types/finalize/upc_get.hpp"
 #include "timemory/storage/base_storage.hpp"
 #include "timemory/storage/types.hpp"
