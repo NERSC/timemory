@@ -642,7 +642,8 @@ endif()
 # mark_as_advanced(TIMEMORY_SETTINGS_PREFIX)
 if(DEFINED TIMEMORY_SETTINGS_PREFIX AND NOT "${TIMEMORY_SETTINGS_PREFIX}" STREQUAL "")
     add_cmake_defines(TIMEMORY_SETTINGS_PREFIX VALUE QUOTE DEFAULT)
-    add_feature(TIMEMORY_SETTINGS_PREFIX "timemory settings will be prefixed with \"${TIMEMORY_SETTINGS_PREFIX}\"")
+    add_feature(TIMEMORY_SETTINGS_PREFIX
+                "timemory settings will be prefixed with \"${TIMEMORY_SETTINGS_PREFIX}\"")
 endif()
 
 # cereal options
