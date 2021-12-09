@@ -56,7 +56,7 @@ struct dummy;
 namespace node
 {
 #if defined(TIMEMORY_WINDOWS)
-using pid_t = int;
+using pid_t = process::id_t;
 #endif
 
 using tid_t    = int64_t;

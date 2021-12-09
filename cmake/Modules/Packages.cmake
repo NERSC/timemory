@@ -1091,7 +1091,7 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
         timemory-libunwind
         INTERFACE
             $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/libunwind/install/lib/libunwind${CMAKE_SHARED_LIBRARY_SUFFIX}>
-            $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}/timemory/libunwind/libunwind${CMAKE_SHARED_LIBRARY_SUFFIX}>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/timemory/libunwind/libunwind${CMAKE_SHARED_LIBRARY_SUFFIX}>
         )
     timemory_target_compile_definitions(timemory-libunwind INTERFACE
                                         TIMEMORY_USE_LIBUNWIND UNW_LOCAL_ONLY)

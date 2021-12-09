@@ -26,6 +26,7 @@
 #pragma once
 
 #include "timemory/macros/attributes.hpp"
+#include "timemory/macros/os.hpp"
 
 #include <cstdint>
 #include <cstdio>
@@ -55,7 +56,7 @@
 #if defined(TIMEMORY_WINDOWS)
 namespace tim
 {
-using pid_t = int;
+using pid_t = DWORD;
 }
 #endif
 
