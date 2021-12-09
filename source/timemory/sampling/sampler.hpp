@@ -37,7 +37,7 @@
 // C++ includes
 #include <algorithm>
 #include <array>
-#include <bits/stdint-intn.h>
+#include <atomic>
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -439,7 +439,12 @@ private:
 
     static persistent_data& get_persistent_data()
     {
-        static persistent_data _instance;
+        static std::atomic<int64_t> _ntot{ 0 };
+        static auto                 _main = persistent_data{};
+        static thread_local auto    _n    = _ntot++;
+        if(_n == 0)
+            return _main;
+        static thread_local auto _instance = _main;
         return _instance;
     }
 

@@ -27,7 +27,7 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/macros/os.hpp"
 
-#include <bits/stdint-intn.h>
+#include <atomic>
 #include <cerrno>
 #include <chrono>
 #include <condition_variable>
@@ -65,6 +65,7 @@ struct allocator
     allocator& operator=(allocator&&) noexcept = default;
 
     const auto& get_data() const { return m_data; }
+    bool        ready() const { return m_ready; }
     void        join();
 
     static void execute(allocator*, Tp*);
@@ -73,7 +74,7 @@ private:
     /// this function makes sure
     static void block_signals();
 
-    bool               m_ready   = false;
+    std::atomic<bool>  m_ready{ false };
     int                m_verbose = 0;
     int64_t            m_tid     = threading::get_id();
     data_type          m_data    = {};
@@ -162,7 +163,8 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
             for(auto& itr : _buff)
                 _alloc->m_data.emplace_back(std::move(itr));
         });
-        _alloc->m_ready = true;
+
+        _alloc->m_ready.store(true);
 
         while(!_completed)
         {
@@ -212,6 +214,8 @@ struct allocator<void>
     allocator(allocator&&) noexcept = default;
     allocator& operator=(const allocator&) = delete;
     allocator& operator=(allocator&&) noexcept = default;
+
+    static constexpr bool ready() { return true; }
 };
 
 }  // namespace sampling
