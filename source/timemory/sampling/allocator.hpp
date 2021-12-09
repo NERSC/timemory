@@ -74,12 +74,12 @@ private:
     /// this function makes sure
     static void block_signals();
 
-    std::atomic<bool>  m_ready{ false };
-    int                m_verbose = 0;
-    int64_t            m_tid     = threading::get_id();
-    data_type          m_data    = {};
-    std::thread        m_thread;
-    std::exception_ptr m_thread_exception = {};
+    std::atomic<bool>      m_ready{ false };
+    int                    m_verbose = 0;
+    int64_t                m_tid     = threading::get_id();
+    std::vector<data_type> m_data    = {};
+    std::thread            m_thread;
+    std::exception_ptr     m_thread_exception = {};
 };
 
 template <typename Tp>
@@ -159,9 +159,7 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
                     _lk.lock();
                 std::swap(_buff, _data);
             }
-            _alloc->m_data.reserve(_alloc->m_data.size() + _buff.size());
-            for(auto& itr : _buff)
-                _alloc->m_data.emplace_back(std::move(itr));
+            _alloc->m_data.emplace_back(std::move(_buff));
         });
 
         _alloc->m_ready.store(true);
@@ -183,11 +181,8 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
             _buff = _obj->swap_data(_buff);
             ++_swap_count;
             _full_buffer = false;
-            _alloc->m_data.reserve(_alloc->m_data.size() + _buff.size());
-            for(auto& itr : _buff)
-                _alloc->m_data.emplace_back(std::move(itr));
+            _alloc->m_data.emplace_back(std::move(_buff));
         }
-
     } catch(...)
     {
         // Set the exception pointer in case of an exception
