@@ -36,6 +36,7 @@
 #include <functional>
 #include <set>
 #include <string>
+#include <tuple>
 
 namespace tim
 {
@@ -99,18 +100,20 @@ class signal_settings
 public:
     using signal_set_t      = std::set<sys_signal>;
     using signal_function_t = std::function<void(int)>;
+    using descript_tuple_t  = std::tuple<std::string, int, std::string>;
 
 public:
-    static bool&       allow();
-    static bool        is_active();
-    static void        set_active(bool val);
-    static void        enable(const sys_signal&);
-    static void        disable(const sys_signal&);
-    static std::string str(const sys_signal&);
-    static std::string str(bool report_disabled = false);
-    static void        check_environment();
-    static void        set_exit_action(signal_function_t _f);
-    static void        exit_action(int errcode);
+    static bool&            allow();
+    static bool             is_active();
+    static void             set_active(bool val);
+    static void             enable(const sys_signal&);
+    static void             disable(const sys_signal&);
+    static std::string      str(const sys_signal&);
+    static std::string      str(bool report_disabled = false);
+    static void             check_environment();
+    static void             set_exit_action(signal_function_t _f);
+    static void             exit_action(int errcode);
+    static descript_tuple_t get_info(const sys_signal&);
 
     static signal_set_t get_enabled();
     static signal_set_t get_disabled();

@@ -349,13 +349,17 @@ public:
     /// frequency that the sampler samples the relevant measurements
     static void set_rate(double frate) { set_frequency(1.0 / frate); }
 
-    /// \fn int64_t get_delay(int64_t)
+    /// \fn double get_delay(int64_t)
     /// \brief Get the delay of the sampler
-    static int64_t get_delay(int64_t units = units::usec);
+    static double get_delay(int64_t units = units::sec);
 
-    /// \fn int64_t get_frequency(int64_t)
+    /// \fn double get_rate(int64_t)
+    /// \brief Get the rate (interval) of the sampler
+    static double get_rate(int64_t units = units::sec);
+
+    /// \fn double get_frequency(int64_t)
     /// \brief Get the frequency of the sampler
-    static int64_t get_frequency(int64_t units = units::usec);
+    static double get_frequency(int64_t units = units::sec);
 
     /// \fn int get_itimer(int)
     /// \brief Returns the itimer value associated with the given signal
@@ -1048,27 +1052,34 @@ sampler<CompT<Types...>, N, SigIds...>::set_frequency(double ffreq)
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
-inline int64_t
+inline double
 sampler<CompT<Types...>, N, SigIds...>::get_delay(int64_t units)
 {
-    double _us = (get_persistent_data().m_custom_itimerval.it_value.tv_sec * 1000000) +
-                 get_persistent_data().m_custom_itimerval.it_value.tv_usec;
-    _us *= units::usec;
-    _us /= units;
-    return std::max<int64_t>(_us, 1);
+    auto&  _data = get_persistent_data();
+    double _ns   = (_data.m_custom_itimerval.it_value.tv_sec * units::sec) +
+                 (_data.m_custom_itimerval.it_value.tv_usec * units::usec);
+    return _ns / static_cast<double>(units);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
-inline int64_t
+inline double
+sampler<CompT<Types...>, N, SigIds...>::get_rate(int64_t units)
+{
+    auto&  _data = get_persistent_data();
+    double _ns   = (_data.m_custom_itimerval.it_interval.tv_sec * units::sec) +
+                 (_data.m_custom_itimerval.it_interval.tv_usec * units::usec);
+    return _ns / static_cast<double>(units);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+inline double
 sampler<CompT<Types...>, N, SigIds...>::get_frequency(int64_t units)
 {
-    double _us = (get_persistent_data().m_custom_itimerval.it_interval.tv_sec * 1000000) +
-                 get_persistent_data().m_custom_itimerval.it_interval.tv_usec;
-    _us *= units::usec;
-    _us /= units;
-    return std::max<int64_t>(_us, 1);
+    return 1.0 / get_rate(units);
 }
 //
 //--------------------------------------------------------------------------------------//

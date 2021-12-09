@@ -143,18 +143,9 @@ signal_settings::check_environment()
 
 //======================================================================================//
 
-inline std::string
-signal_settings::str(const sys_signal& _type)
+inline signal_settings::descript_tuple_t
+signal_settings::get_info(const sys_signal& _type)
 {
-    using descript_tuple_t = std::tuple<std::string, int, std::string>;
-
-    std::stringstream ss;
-    auto              _descript = [&](const descript_tuple_t& _data) {
-        ss << " Signal: " << std::setw(10) << std::get<0>(_data)
-           << " (error code: " << std::setw(3) << std::get<1>(_data) << ") "
-           << std::setw(40) << std::get<2>(_data);
-    };
-
     // some of these signals are not handled but added in case they are
     // enabled in the future
     static std::vector<descript_tuple_t> descript_data = {
@@ -193,15 +184,29 @@ signal_settings::str(const sys_signal& _type)
         descript_tuple_t("SIGUSR2", SIGUSR2, "User defined signal 2")
     };
 
-    int key = (int) _type;
+    int _key = (int) _type;
     for(const auto& itr : descript_data)
     {
-        if(std::get<1>(itr) == key)
-        {
-            _descript(itr);
-            break;
-        }
+        if(std::get<1>(itr) == _key)
+            return itr;
     }
+
+    return descript_tuple_t{ "", _key, "" };
+}
+
+inline std::string
+signal_settings::str(const sys_signal& _type)
+{
+    std::stringstream ss;
+    auto              _descript = [&](const descript_tuple_t& _data) {
+        ss << " Signal: " << std::setw(10) << std::get<0>(_data)
+           << " (error code: " << std::setw(3) << std::get<1>(_data) << ") "
+           << std::setw(40) << std::get<2>(_data);
+    };
+
+    auto _v = get_info(_type);
+    if(!std::get<0>(_v).empty())
+        _descript(_v);
 
     return ss.str();
 }
