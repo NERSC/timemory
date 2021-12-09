@@ -1043,17 +1043,16 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
                 OUTPUT_QUIET)
         endif()
     endif()
-    file(GLOB_RECURSE libunwind_headers
-         "${PROJECT_BINARY_DIR}/external/libunwind/install/include/*.h")
-    foreach(_HEADER ${libunwind_headers})
-        if(NOT TIMEMORY_INSTALL_HEADER_FILES)
-            continue()
-        endif()
-        install(
-            FILES ${_HEADER}
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory/libunwind
-            OPTIONAL)
-    endforeach()
+    if(TIMEMORY_INSTALL_HEADERS)
+        file(GLOB libunwind_headers
+             "${PROJECT_BINARY_DIR}/external/libunwind/install/include/*.h")
+        foreach(_HEADER ${libunwind_headers})
+            install(
+                FILES ${_HEADER}
+                DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory/libunwind
+                OPTIONAL)
+        endforeach()
+    endif()
     file(GLOB libunwind_libs "${PROJECT_BINARY_DIR}/external/libunwind/install/lib/*")
     foreach(_LIB ${libunwind_libs})
         if(IS_DIRECTORY ${_LIB})
@@ -1535,7 +1534,7 @@ if(TIMEMORY_USE_PERFETTO)
     # generate the interface target
     target_compile_definitions(timemory-perfetto INTERFACE TIMEMORY_USE_PERFETTO)
     target_link_libraries(timemory-perfetto INTERFACE timemory-perfetto-static)
-    if(TIMEMORY_INSTALL_HEADER_FILES)
+    if(TIMEMORY_INSTALL_HEADERS)
         install(
             FILES ${PROJECT_BINARY_DIR}/external/perfetto/sdk/perfetto.h
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
