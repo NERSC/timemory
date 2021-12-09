@@ -165,6 +165,8 @@ public:
             papi::init();
             papi::register_thread();
             state().is_working = papi::working();
+            // prevent recursive re-entry via get_events<void>()
+            state().is_initialized = true;
             if(!state().is_working)
             {
                 std::cerr << "Warning! PAPI failed to initialized!\n";
@@ -176,10 +178,7 @@ public:
                 tim::trait::apply<tim::trait::runtime_enabled>::set<
                     tpls::papi, papi_array_t, papi_common, papi_vector, papi_array8_t,
                     papi_array16_t, papi_array32_t>(false);
-            }
-            else
-            {
-                state().is_initialized = true;
+                state().is_initialized = false;
             }
         }
         return state().is_initialized && state().is_working;
