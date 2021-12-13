@@ -154,11 +154,16 @@ if("CUDA" IN_LIST LANGUAGES)
         endif()
 
         if(NOT WIN32)
-            get_filename_component(_COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+            if(NOT CMAKE_CUDA_HOST_COMPILER)
+              get_filename_component(_COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
+              target_compile_options(
+                  ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda-compiler
+                  INTERFACE
+                      $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--compiler-bindir=${_COMPILER_DIR}>>)
+            endif()
             target_compile_options(
                 ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda-compiler
                 INTERFACE
-                    $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--compiler-bindir=${_COMPILER_DIR}>>
                     $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:-lineinfo>>)
         endif()
     endif()
