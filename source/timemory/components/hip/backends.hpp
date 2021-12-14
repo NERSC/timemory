@@ -466,7 +466,8 @@ memset(Tp* dst, int value, size_t n)
 #if defined(TIMEMORY_USE_HIP)
     return hipMemset(dst, value, n * sizeof(Tp));
 #else
-    return std::memset(dst, value, n * sizeof(Tp));
+    std::memset(dst, value, n * sizeof(Tp));
+    return success_v;
 #endif
 }
 
@@ -481,7 +482,8 @@ memset(Tp* dst, int value, size_t n, stream_t stream)
     return hipMemsetAsync(dst, value, n * sizeof(Tp), stream);
 #else
     consume_parameters(stream);
-    return std::memset(dst, value, n * sizeof(Tp));
+    std::memset(dst, value, n * sizeof(Tp));
+    return success_v;
 #endif
 }
 
