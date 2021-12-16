@@ -139,8 +139,8 @@ ring_buffer::init(size_t _size)
         destroy();
 
     // Map twice the buffer size.
-    if((m_ptr = mmap(nullptr, 2 * m_size, PROT_NONE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0)) ==
-       MAP_FAILED)
+    if((m_ptr = mmap(nullptr, 2 * m_size, PROT_NONE, MAP_ANONYMOUS | MAP_PRIVATE, -1,
+                     0)) == MAP_FAILED)
         destroy();
 
     // Map the temporary file into the first half of the above mapped space.
