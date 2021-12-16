@@ -101,7 +101,7 @@ struct cupti_pcsampling
 
     auto get_laps() const { return value.totalSamples; }
 
-    std::vector<uint32_t>           get() const;
+    std::vector<int64_t>            get() const;
     static std::vector<std::string> label_array();
 
     static void cleanup() { cupti::pcstall::allocate_arrays(0); }

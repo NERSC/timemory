@@ -33,6 +33,7 @@
 #include "timemory/components/gotcha/backends.hpp"
 #include "timemory/components/gotcha/types.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/macros/compiler.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/function_traits.hpp"
 #include "timemory/mpl/types.hpp"
@@ -608,9 +609,11 @@ public:
 
     //----------------------------------------------------------------------------------//
 
+#if !defined(TIMEMORY_NVCC_COMPILER)
     template <size_t N, typename Ret, typename... Args>
     struct instrument<N, Ret, std::tuple<Args...>> : instrument<N, Ret, Args...>
     {};
+#endif
 
     //----------------------------------------------------------------------------------//
 

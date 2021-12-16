@@ -1011,6 +1011,12 @@ PYBIND11_MODULE(libpytimemory, timemory)
     };
     man.def_static("get_metadata", _get_metadata, "Get the metadata dictionary");
     //----------------------------------------------------------------------------------//
+    man.def_static(
+        "set_write_metadata",
+        [](int _v) { tim::manager::master_instance()->set_write_metadata(_v); },
+        "Configure whether to output metadata (i.e. metadata.json and functions.json)"
+        " :: -1 == NEVER, 0 == YES if other output, 1 == ALWAYS");
+    //----------------------------------------------------------------------------------//
 
     //==================================================================================//
     //

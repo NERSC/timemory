@@ -26,6 +26,9 @@
 
 #include "timemory/macros/os.hpp"
 
+#define TIMEMORY_STR_HELPER(x) #x
+#define TIMEMORY_STR(x) TIMEMORY_STR_HELPER(x)
+
 //======================================================================================//
 //
 //      Compiler
@@ -72,6 +75,28 @@
 //  cuda compilation mode
 #if defined(__CUDACC__) && !defined(TIMEMORY_CUDACC)
 #    define TIMEMORY_CUDACC 1
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+//  cuda architecture
+#if !defined(TIMEMORY_CUDA_ARCH)
+#    if defined(__CUDA_ARCH__)
+#        define TIMEMORY_CUDA_ARCH __CUDA_ARCH__
+#    else
+#        define TIMEMORY_CUDA_ARCH 0
+#    endif
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+//  cuda support for 16-bit floating point
+#if defined(TIMEMORY_CUDACC) && (TIMEMORY_CUDACC > 0) && (TIMEMORY_CUDA_ARCH < 600) &&   \
+    (TIMEMORY_CUDA_ARCH > 0)
+#    if defined(TIMEMORY_USE_CUDA_HALF)
+#        pragma message "Half precision not supported on CUDA arch: " TIMEMORY_STR(      \
+            TIMEMORY_CUDA_ARCH)
+#    endif
 #endif
 
 //--------------------------------------------------------------------------------------//

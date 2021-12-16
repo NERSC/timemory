@@ -1393,6 +1393,14 @@ private:
     template<typename InputStream, bool backup, bool pushOnTake>
     class NumberStream;
 
+    // this alias is a work-around for an NVCC bug in CUDA 11.5
+    template<typename InputStream>
+    using NumberStreamFF = NumberStream<InputStream, false, false>;
+
+    // this alias is a work-around for an NVCC bug in CUDA 11.5
+    template<typename InputStream>
+    using NumberStreamTF = NumberStream<InputStream, true, false>;
+
     template<typename InputStream>
     class NumberStream<InputStream, false, false> {
     public:
@@ -1416,8 +1424,8 @@ private:
     };
 
     template<typename InputStream>
-    class NumberStream<InputStream, true, false> : public NumberStream<InputStream, false, false> {
-        typedef NumberStream<InputStream, false, false> Base;
+    class NumberStream<InputStream, true, false> : public NumberStreamFF<InputStream> {
+        typedef NumberStreamFF<InputStream> Base;
     public:
         NumberStream(GenericReader& reader, InputStream& s) : Base(reader, s), stackStream(reader.stack_) {}
 
@@ -1442,8 +1450,8 @@ private:
     };
 
     template<typename InputStream>
-    class NumberStream<InputStream, true, true> : public NumberStream<InputStream, true, false> {
-        typedef NumberStream<InputStream, true, false> Base;
+    class NumberStream<InputStream, true, true> : public NumberStreamTF<InputStream> {
+        typedef NumberStreamTF<InputStream> Base;
     public:
         NumberStream(GenericReader& reader, InputStream& is) : Base(reader, is) {}
 
