@@ -64,7 +64,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-class manager
+class TIMEMORY_VISIBILITY("default") manager
 {
     template <typename... Args>
     using uomap_t = std::unordered_map<Args...>;

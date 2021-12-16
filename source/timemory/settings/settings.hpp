@@ -68,7 +68,7 @@ class manager;
 //
 //--------------------------------------------------------------------------------------//
 //
-struct settings
+struct TIMEMORY_VISIBILITY("default") settings
 {
     friend void timemory_init(int, char**, const std::string&, const std::string&);
     friend void timemory_finalize();
@@ -92,11 +92,11 @@ struct settings
     template <typename Tag = TIMEMORY_API>
     static std::time_t* get_launch_time(Tag = {});
     template <typename Tag>
-    static TIMEMORY_HOT pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
+    static TIMEMORY_HOT pointer_t shared_instance();
     template <typename Tag>
-    static TIMEMORY_HOT settings* instance() TIMEMORY_VISIBILITY("default");
-    static TIMEMORY_HOT pointer_t shared_instance() TIMEMORY_VISIBILITY("default");
-    static TIMEMORY_HOT settings* instance() TIMEMORY_VISIBILITY("default");
+    static TIMEMORY_HOT settings* instance();
+    static TIMEMORY_HOT pointer_t shared_instance();
+    static TIMEMORY_HOT settings* instance();
 
     settings();
     ~settings() = default;
@@ -247,8 +247,8 @@ struct settings
     TIMEMORY_SETTINGS_REFERENCE_DECL(bool, timeline_profile)
     TIMEMORY_SETTINGS_REFERENCE_DECL(process::id_t, target_pid)
 
-    static strvector_t& command_line() TIMEMORY_VISIBILITY("default");
-    static strvector_t& environment() TIMEMORY_VISIBILITY("default");
+    static strvector_t& command_line();
+    static strvector_t& environment();
     strvector_t&        get_command_line() { return m_command_line; }
     strvector_t&        get_environment() { return m_environment; }
 
@@ -262,29 +262,25 @@ public:
     TIMEMORY_STATIC_ACCESSOR(int32_t, default_process_suffix, process::get_id())
 #endif
 
-    static strvector_t get_global_environment() TIMEMORY_VISIBILITY("default");
-    static string_t    tolower(string_t str) TIMEMORY_VISIBILITY("default");
-    static string_t    toupper(string_t str) TIMEMORY_VISIBILITY("default");
-    static string_t    get_global_input_prefix() TIMEMORY_VISIBILITY("default");
-    static string_t    get_global_output_prefix(bool _make_dir = false)
-        TIMEMORY_VISIBILITY("default");
-    static void store_command_line(int argc, char** argv) TIMEMORY_VISIBILITY("default");
-    static string_t compose_output_filename(string_t _tag, string_t _ext,
-                                            bool    _use_suffix = use_output_suffix(),
-                                            int32_t _suffix   = default_process_suffix(),
-                                            bool    _make_dir = false,
-                                            std::string _explicit = {})
-        TIMEMORY_VISIBILITY("default");
-    static string_t compose_input_filename(string_t _tag, string_t _ext,
-                                           bool        _use_suffix = use_output_suffix(),
-                                           int32_t     _suffix = default_process_suffix(),
-                                           std::string _explicit = {})
-        TIMEMORY_VISIBILITY("default");
+    static strvector_t get_global_environment();
+    static string_t    tolower(string_t str);
+    static string_t    toupper(string_t str);
+    static string_t    get_global_input_prefix();
+    static string_t    get_global_output_prefix(bool _make_dir = false);
+    static void        store_command_line(int argc, char** argv);
+    static string_t    compose_output_filename(string_t _tag, string_t _ext,
+                                               bool    _use_suffix = use_output_suffix(),
+                                               int32_t _suffix = default_process_suffix(),
+                                               bool    _make_dir     = false,
+                                               std::string _explicit = {});
+    static string_t    compose_input_filename(string_t _tag, string_t _ext,
+                                              bool        _use_suffix = use_output_suffix(),
+                                              int32_t     _suffix = default_process_suffix(),
+                                              std::string _explicit = {});
 
-    static void parse(settings* = instance<TIMEMORY_API>())
-        TIMEMORY_VISIBILITY("default");
+    static void parse(settings* = instance<TIMEMORY_API>());
 
-    static void parse(const std::shared_ptr<settings>&) TIMEMORY_VISIBILITY("default");
+    static void parse(const std::shared_ptr<settings>&);
 
     static std::string format(std::string _fpath, const std::string& _tag)
         TIMEMORY_VISIBILITY("hidden");
@@ -312,12 +308,10 @@ public:
 
 public:
     template <size_t Idx = 0>
-    static int64_t indent_width(int64_t _w = settings::width())
-        TIMEMORY_VISIBILITY("default");
+    static int64_t indent_width(int64_t _w = settings::width());
 
     template <typename Tp, size_t Idx = 0>
-    static int64_t indent_width(int64_t _w = indent_width<Idx>())
-        TIMEMORY_VISIBILITY("default");
+    static int64_t indent_width(int64_t _w = indent_width<Idx>());
 
 public:
     auto           ordering() const { return m_order; }

@@ -52,7 +52,7 @@ namespace tim
 template <typename Type,
           typename PointerT = std::unique_ptr<Type, std::default_delete<Type>>,
           typename TagT     = TIMEMORY_API>
-class singleton;
+class TIMEMORY_VISIBLE singleton;
 //
 template <>
 class singleton<void, void, void>
