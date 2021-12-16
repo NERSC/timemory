@@ -30,6 +30,7 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
+#include "timemory/macros/attributes.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/quirks.hpp"
@@ -57,7 +58,7 @@ namespace component
 template <typename Tp,
           typename ValueType = conditional_t<concepts::is_empty<trait::data_t<Tp>>::value,
                                              int64_t, trait::data_t<Tp>>>
-struct base;
+struct TIMEMORY_VISIBLE base;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -84,19 +85,17 @@ operator-(Tp lhs, const Tp& rhs)
 //
 //--------------------------------------------------------------------------------------//
 //
-struct empty_base;
+struct TIMEMORY_VISIBLE empty_base;
 //
-struct empty_storage;
+struct TIMEMORY_VISIBLE empty_storage;
 //
-struct dynamic_base;
+struct TIMEMORY_VISIBLE dynamic_base;
 //
 template <typename Tp, typename Value>
-struct base;
-//
-//--------------------------------------------------------------------------------------//
+struct TIMEMORY_VISIBLE base;
 //
 template <typename Tp>
-struct base<Tp, void>;
+struct TIMEMORY_VISIBLE base<Tp, void>;
 //
 //--------------------------------------------------------------------------------------//
 //

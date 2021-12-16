@@ -26,8 +26,8 @@
 
 #include "timemory/components/metadata.hpp"
 #include "timemory/components/properties.hpp"
-#include "timemory/dll.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/macros/attributes.hpp"
 
 #include <string>
 #include <unordered_set>
@@ -56,7 +56,7 @@
         {                                                                                \
         namespace component                                                              \
         {                                                                                \
-        struct NAME;                                                                     \
+        struct TIMEMORY_VISIBLE NAME;                                                    \
         }                                                                                \
         namespace trait                                                                  \
         {                                                                                \
@@ -165,7 +165,7 @@
         namespace component                                                              \
         {                                                                                \
         template <__VA_ARGS__>                                                           \
-        struct NAME;                                                                     \
+        struct TIMEMORY_VISIBLE NAME;                                                    \
         }                                                                                \
         }
 #endif
@@ -183,7 +183,7 @@
         namespace component                                                              \
         {                                                                                \
         template <TEMPLATE_PARAM>                                                        \
-        struct NAME;                                                                     \
+        struct TIMEMORY_VISIBLE NAME;                                                    \
         }                                                                                \
         namespace trait                                                                  \
         {                                                                                \
@@ -226,7 +226,7 @@
         namespace component                                                              \
         {                                                                                \
         template <>                                                                      \
-        struct properties<TYPE> : static_properties<TYPE>                                \
+        struct TIMEMORY_VISIBLE properties<TYPE> : static_properties<TYPE>               \
         {                                                                                \
             using type                        = TYPE;                                    \
             using value_type                  = TIMEMORY_COMPONENT;                      \
@@ -291,7 +291,7 @@
         namespace component                                                              \
         {                                                                                \
         template <>                                                                      \
-        struct metadata<TYPE>                                                            \
+        struct TIMEMORY_VISIBLE metadata<TYPE>                                           \
         {                                                                                \
             using type       = TYPE;                                                     \
             using value_type = TIMEMORY_COMPONENT;                                       \
