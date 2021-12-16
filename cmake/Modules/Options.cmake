@@ -130,7 +130,16 @@ timemory_test_find_package(libunwind _USE_LIBUNWIND)
 set(_REQUIRE_LIBUNWIND OFF)
 set(_HATCHET ${_UNIX_OS})
 
-# skip check_language if suppose to fail
+# once the cuda language is enabled, the CMAKE_CUDA_HOST_COMPILER variable is read-only
+# and change to it are undefined
+timemory_get_enabled_languages(TIMEMORY_ENABLED_LANGUAGES)
+if(NOT "CUDA" IN_LIST TIMEMORY_ENABLED_LANGUAGES
+   AND "$ENV{CUDAHOSTCXX}" STREQUAL ""
+   AND NOT DEFINED CMAKE_CUDA_HOST_COMPILER)
+    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER})
+endif()
+
+# skip check_language if supposed to fail
 if(DEFINED TIMEMORY_USE_CUDA
    AND TIMEMORY_USE_CUDA
    AND TIMEMORY_REQUIRE_PACKAGES)
