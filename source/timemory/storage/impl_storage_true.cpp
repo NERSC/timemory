@@ -771,6 +771,8 @@ storage<Type, true>::get_shared_manager()
 
         auto _instance_id = m_instance_id;
         bool _is_master   = m_is_master;
+        auto _settings    = m_settings;
+        auto _this_ptr    = this;
         auto _sync        = [&]() {
             if(m_graph_data_instance)
                 this->data().sync_sea_level();
@@ -785,19 +787,20 @@ storage<Type, true>::get_shared_manager()
                 manager::instance()->remove_synchronization(demangle<Type>(),
                                                             _instance_id);
         };
-        func_t _finalize = [&]() {
+        func_t _finalize = [_settings, _is_master, _this_ptr]() {
             auto _instance = this_type::get_singleton();
             if(_instance)
             {
-                auto _debug_v = m_settings->get_debug();
-                auto _verb_v  = m_settings->get_verbose();
+                auto _debug_v = _settings->get_debug();
+                auto _verb_v  = _settings->get_verbose();
                 if(_debug_v || _verb_v > 1)
                 {
                     PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                "calling singleton::reset(this)");
                 }
-                _instance->reset(this);
-                if((m_is_master || common_singleton::is_main_thread()) && _instance)
+                _instance->reset(_this_ptr);
+                _instance = this_type::get_singleton();
+                if((_is_master || common_singleton::is_main_thread()) && _instance)
                 {
                     if(_debug_v || _verb_v > 1)
                     {
@@ -811,7 +814,7 @@ storage<Type, true>::get_shared_manager()
             {
                 DEBUG_PRINT_HERE("[%s]> %p", demangle<Type>().c_str(), (void*) _instance);
             }
-            if(m_is_master)
+            if(_is_master)
                 trait::runtime_enabled<Type>::set(false);
         };
 
