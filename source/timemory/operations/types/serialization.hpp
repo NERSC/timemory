@@ -112,6 +112,14 @@ private:
 namespace internal
 {
 //
+TIMEMORY_INLINE std::string
+                to_lower(std::string _inp)
+{
+    for(auto& itr : _inp)
+        itr = std::tolower(itr);
+    return _inp;
+}
+//
 template <typename Tp>
 struct serialization_base
 {
@@ -129,13 +137,6 @@ struct serialization_base
     TIMEMORY_DEFAULT_OBJECT(serialization_base)
 
 public:
-    static std::string to_lower(std::string _inp)
-    {
-        for(auto& itr : _inp)
-            itr = std::tolower(itr);
-        return _inp;
-    }
-
     static std::string get_identifier(const type& _obj = type{})
     {
         std::string idstr = (component::properties<type>::specialized())
@@ -427,31 +428,52 @@ public:
                                   const distrib_type&               data, ...) const;
 
 public:
-    // PrettyJSONOutputArchive overloads -- get instantiated in extern template
-    TIMEMORY_COLD serialization(const Tp& obj, cereal::PrettyJSONOutputArchive& ar,
-                                const unsigned int version, ...);
+    // PrettyJSONOutputArchive overloads -- do not get instantiated in extern template
+    template <typename ArchiveT,
+              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
+                          int> = 0>
+    TIMEMORY_COLD serialization(const Tp& obj, ArchiveT& ar, const unsigned int version,
+                                ...);
 
-    TIMEMORY_COLD void operator()(const Tp& obj, cereal::PrettyJSONOutputArchive& ar,
-                                  const unsigned int version, ...) const;
-
-    TIMEMORY_COLD void operator()(cereal::PrettyJSONOutputArchive& ar, metadata,
+    template <typename ArchiveT,
+              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
+                          int> = 0>
+    TIMEMORY_COLD void operator()(const Tp& obj, ArchiveT& ar, const unsigned int version,
                                   ...) const;
 
-    TIMEMORY_COLD void operator()(cereal::PrettyJSONOutputArchive& ar,
-                                  const basic_tree_vector_type&    data, ...) const;
+    template <typename ArchiveT,
+              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
+                          int> = 0>
+    TIMEMORY_COLD void operator()(ArchiveT& ar, metadata, ...) const;
 
-    TIMEMORY_COLD void operator()(cereal::PrettyJSONOutputArchive&           ar,
+    template <typename ArchiveT,
+              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
+                          int> = 0>
+    TIMEMORY_COLD void operator()(ArchiveT& ar, const basic_tree_vector_type& data,
+                                  ...) const;
+
+    template <typename ArchiveT,
+              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
+                          int> = 0>
+    TIMEMORY_COLD void operator()(ArchiveT&                                  ar,
                                   const std::vector<basic_tree_vector_type>& data,
                                   ...) const;
 
-    TIMEMORY_COLD void operator()(cereal::PrettyJSONOutputArchive& ar,
-                                  const basic_tree_map_type&       data, ...) const;
+    template <typename ArchiveT,
+              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
+                          int> = 0>
+    TIMEMORY_COLD void operator()(ArchiveT& ar, const basic_tree_map_type& data,
+                                  ...) const;
 
-    TIMEMORY_COLD void operator()(cereal::PrettyJSONOutputArchive& ar,
-                                  const result_type&               data, ...) const;
+    template <typename ArchiveT,
+              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
+                          int> = 0>
+    TIMEMORY_COLD void operator()(ArchiveT& ar, const result_type& data, ...) const;
 
-    TIMEMORY_COLD void operator()(cereal::PrettyJSONOutputArchive& ar,
-                                  const distrib_type&              data, ...) const;
+    template <typename ArchiveT,
+              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
+                          int> = 0>
+    TIMEMORY_COLD void operator()(ArchiveT& ar, const distrib_type& data, ...) const;
 
 public:
     // JSONInputArchive overloads -- get instantiated in extern template
