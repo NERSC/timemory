@@ -1488,4 +1488,14 @@ function(PRINT_FEATURES)
     print_disabled_interfaces()
 endfunction()
 
+# ----------------------------------------------------------------------------------------#
+# function timemory_get_enabled_languages() Gets the enabled languages property
+#
+function(timemory_get_enabled_languages _VAR)
+    get_property(_ENABLED_LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+    set(${_VAR}
+        ${_ENABLED_LANGUAGES}
+        PARENT_SCOPE)
+endfunction()
+
 cmake_policy(POP)

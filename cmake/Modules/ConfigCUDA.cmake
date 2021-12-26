@@ -68,6 +68,7 @@ if("CUDA" IN_LIST LANGUAGES)
 
     target_compile_definitions(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
                                INTERFACE ${PROJECT_USE_CUDA_OPTION})
+
     target_include_directories(
         ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
         INTERFACE ${CUDA_INCLUDE_DIRS} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
@@ -80,11 +81,14 @@ if("CUDA" IN_LIST LANGUAGES)
                    INTERFACE_CUDA_SEPARABLE_COMPILATION ON)
 
     set(CUDA_AUTO_ARCH "auto")
+
     set(TIMEMORY_CUDA_ARCH
         "${CUDA_AUTO_ARCH}"
         CACHE STRING "CUDA architecture (options: ${TIMEMORY_CUDA_ARCH_LIST})")
+
     add_feature(TIMEMORY_CUDA_ARCH
                 "CUDA architecture (options: ${TIMEMORY_CUDA_ARCH_LIST})")
+
     set_property(CACHE TIMEMORY_CUDA_ARCH PROPERTY STRINGS ${TIMEMORY_CUDA_ARCH_LIST})
 
     set(_CUDA_ARCHES ${TIMEMORY_CUDA_ARCH})
@@ -154,12 +158,25 @@ if("CUDA" IN_LIST LANGUAGES)
         endif()
 
         if(NOT WIN32)
-            get_filename_component(_COMPILER_DIR "${CMAKE_CXX_COMPILER}" DIRECTORY)
             target_compile_options(
                 ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda-compiler
                 INTERFACE
-                    $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:--compiler-bindir=${_COMPILER_DIR}>>
                     $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:-lineinfo>>)
+        endif()
+
+        # do not specify the --compiler-bindir in portable mode
+        if(NOT WIN32 AND NOT TIMEMORY_BUILD_PORTABLE)
+            # this complicated generator expression basically states: if compile language
+            # is CUDA and CUDA compiler ID is NVIDIA and CMAKE_CUDA_HOST_COMPILER is
+            # empty, then add the compiler flag --compiler-bindir=${CMAKE_CXX_COMPILER}.
+            # According to NVCC docs, despite the flags suggesting it wants a directory,
+            # you can specify the compiler executable to ensure that the correct compiler
+            # is selected
+            target_compile_options(
+                ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda-compiler
+                INTERFACE
+                    $<$<COMPILE_LANGUAGE:CUDA>:$<$<CUDA_COMPILER_ID:NVIDIA>:$<IF:$<STREQUAL:CMAKE_CUDA_HOST_COMPILER,"">,--compiler-bindir=${CMAKE_CXX_COMPILER},>>>
+                )
         endif()
     endif()
 
