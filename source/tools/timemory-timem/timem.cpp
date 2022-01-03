@@ -613,24 +613,24 @@ main(int argc, char** argv)
         /// relevant measurements (components that read from child process status
         /// files)
         ///
-        sampler_t::set_delay(sample_delay());
+        get_sampler()->set_delay(sample_delay());
 
         /// \variable TIMEM_SAMPLE_FREQ
         /// \brief Environment variable, expressed in 1/seconds, that sets the
         /// frequency that the timem executable samples the relevant measurements
         /// (components that read from child process status files)
         ///
-        sampler_t::set_frequency(1.0 / sample_freq());
+        get_sampler()->set_frequency(1.0 / sample_freq());
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
                                "configuring signal types");
 
-        sampler_t::configure(signal_types(), verbose());
+        get_sampler()->configure(signal_types(), verbose());
 
 #if defined(TIMEMORY_USE_MPI)
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "pausing");
         // tim::mpi::barrier(comm_world_v);
-        sampler_t::pause();
+        get_sampler()->pause();
 #endif
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "starting sampler");
@@ -645,7 +645,7 @@ main(int argc, char** argv)
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "target pid = %i",
                                (int) worker_pid());
-        auto status = sampler_t::wait(worker_pid(), verbose(), debug());
+        auto status = get_sampler()->wait(worker_pid(), verbose(), debug());
 
         if((debug() && verbose() > 1) || verbose() > 2)
             std::cerr << "[BEFORE STOP][" << pid << "]> " << *get_measure() << std::endl;
@@ -654,7 +654,7 @@ main(int argc, char** argv)
         get_sampler()->stop();
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "ignoring signals");
-        sampler_t::ignore(signal_types());
+        get_sampler()->ignore(signal_types());
 
         CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "barrier");
         tim::mpi::barrier(comm_world_v);
