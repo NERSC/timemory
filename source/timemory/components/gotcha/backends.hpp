@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/backends/gotcha.hpp"
+#include "timemory/operations/types/set_data.hpp"
 #include "timemory/utility/mangler.hpp"
 #include "timemory/variadic/types.hpp"
 
@@ -45,6 +46,7 @@ namespace tim
 {
 namespace component
 {
+struct gotcha_data;
 //
 //======================================================================================//
 ///
@@ -58,23 +60,55 @@ struct gotcha_invoker
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
+    TIMEMORY_DEFAULT_OBJECT(gotcha_invoker)
+
     template <typename FuncT, typename... Args>
-    static decltype(auto) invoke(Tp& _obj, FuncT&& _func, Args&&... _args)
+    static TIMEMORY_INLINE decltype(auto) invoke(Tp& _obj, gotcha_data&& _data,
+                                                 FuncT&& _func, Args&&... _args)
     {
-        return invoke_sfinae(_obj, std::forward<FuncT>(_func),
-                             std::forward<Args>(_args)...);
+        return gotcha_invoker{}(_obj, std::forward<gotcha_data>(_data),
+                                std::forward<FuncT>(_func), std::forward<Args>(_args)...);
+    }
+
+    template <typename FuncT, typename... Args>
+    TIMEMORY_INLINE decltype(auto) operator()(Tp& _obj, gotcha_data&& _data,
+                                              FuncT&& _func, Args&&... _args) const
+    {
+        // if object has set_data(gotcha_data) member function
+        operation::set_data<Tp>{}(_obj, std::forward<gotcha_data>(_data));
+        // if object has set_data(<function-pointer>) member function
+        operation::set_data<Tp>{}(_obj, std::forward<FuncT>(_func));
+        //
+        return invoke_sfinae(_obj, std::forward<gotcha_data>(_data),
+                             std::forward<FuncT>(_func), std::forward<Args>(_args)...);
     }
 
 private:
     //----------------------------------------------------------------------------------//
-    //  Call:
+    //      Ret Type::operator{}(gotcha_data, Args...)
     //
+    template <typename DataT, typename FuncT, typename... Args>
+    auto sfinae(Tp& _obj, int, int, int, DataT&& _data, FuncT&&, Args&&... _args) const
+        -> decltype(_obj(std::forward<DataT>(_data), std::forward<Args>(_args)...))
+    {
+        return _obj(std::forward<DataT>(_data), std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //      Ret Type::operator{}(<function-pointer>, Args...)
+    //
+    template <typename DataT, typename FuncT, typename... Args>
+    auto sfinae(Tp& _obj, int, int, long, DataT&&, FuncT&& _func, Args&&... _args) const
+        -> decltype(_obj(std::forward<FuncT>(_func), std::forward<Args>(_args)...))
+    {
+        return _obj(std::forward<FuncT>(_func), std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     //      Ret Type::operator{}(Args...)
     //
-    //  instead of gotcha_wrappee
-    //
-    template <typename FuncT, typename... Args>
-    static auto invoke_sfinae_impl(Tp& _obj, int, FuncT&&, Args&&... _args)
+    template <typename DataT, typename FuncT, typename... Args>
+    auto sfinae(Tp& _obj, int, long, long, DataT&&, FuncT&&, Args&&... _args) const
         -> decltype(_obj(std::forward<Args>(_args)...))
     {
         return _obj(std::forward<Args>(_args)...);
@@ -83,23 +117,23 @@ private:
     //----------------------------------------------------------------------------------//
     //  Call the original gotcha_wrappee
     //
-    template <typename FuncT, typename... Args>
-    static auto invoke_sfinae_impl(Tp&, long, FuncT&& _func, Args&&... _args)
+    template <typename DataT, typename FuncT, typename... Args>
+    auto sfinae(Tp&, long, long, long, DataT&&, FuncT&& _func, Args&&... _args) const
         -> decltype(std::forward<FuncT>(_func)(std::forward<Args>(_args)...))
     {
         return std::forward<FuncT>(_func)(std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
-    //  Wrapper that calls one of two above
+    //  Wrapper that calls one of above
     //
-    template <typename FuncT, typename... Args>
-    static auto invoke_sfinae(Tp& _obj, FuncT&& _func, Args&&... _args)
-        -> decltype(invoke_sfinae_impl(_obj, 0, std::forward<FuncT>(_func),
-                                       std::forward<Args>(_args)...))
+    template <typename DataT, typename FuncT, typename... Args>
+    auto invoke_sfinae(Tp& _obj, DataT&& _data, FuncT&& _func, Args&&... _args) const
+        -> decltype(sfinae(_obj, 0, 0, 0, std::forward<DataT>(_data),
+                           std::forward<FuncT>(_func), std::forward<Args>(_args)...))
     {
-        return invoke_sfinae_impl(_obj, 0, std::forward<FuncT>(_func),
-                                  std::forward<Args>(_args)...);
+        return sfinae(_obj, 0, 0, 0, std::forward<DataT>(_data),
+                      std::forward<FuncT>(_func), std::forward<Args>(_args)...);
     }
 };
 //
