@@ -90,7 +90,7 @@ struct empty_base
 /// used but generally recommended for ease of implementation.
 ///
 template <typename Tp, typename Value>
-struct base
+struct TIMEMORY_VISIBLE base
 : public trait::dynamic_base<Tp>::type
 , private base_state
 , private base_data_t<Tp, Value>
@@ -346,7 +346,7 @@ public:
 //======================================================================================//
 //
 template <typename Tp>
-struct base<Tp, void>
+struct TIMEMORY_VISIBLE base<Tp, void>
 : public trait::dynamic_base<Tp>::type
 , private base_state
 , public concepts::component
