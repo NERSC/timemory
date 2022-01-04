@@ -32,6 +32,7 @@
 
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/dmp.hpp"
+#include "timemory/backends/hip.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/components/timing/ert_timer.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
@@ -40,6 +41,7 @@
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/types.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/policy.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
 #include "timemory/utility/filepath.hpp"

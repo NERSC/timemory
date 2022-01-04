@@ -132,9 +132,13 @@ inline int
 device_count()
 {
 #if defined(TIMEMORY_USE_HIP)
-    int dc = 0;
-    if(hipGetDeviceCount(&dc) != success_v)
+    int  dc  = 0;
+    auto err = hipGetDeviceCount(&dc);
+    if(err != success_v)
+    {
+        fprintf(stderr, "No hip devices found (%i): %s\n", dc, get_error_string(err));
         return 0;
+    }
     return dc;
 #else
     return 0;
