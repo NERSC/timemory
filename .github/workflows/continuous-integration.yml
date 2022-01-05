@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ master, develop ]
 
+env:
+  CTEST_PARALLEL_LEVEL: 2
+
 jobs:
   linux-ci:
     runs-on: ubuntu-18.04

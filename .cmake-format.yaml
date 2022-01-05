@@ -34,6 +34,7 @@ parse:
         - DISCOVER_TESTS
         - ADD_TESTS
         - MPI
+        - RUN_SERIAL
       kwargs:
         NPROCS: '*'
         TIMEOUT: '*'
@@ -45,17 +46,6 @@ parse:
         COMMAND: '*'
         OPTIONS: '*'
         ENVIRONMENT: '*'
-    create_executable:
-      flags:
-        - INSTALL
-        - EXCLUDE_FROM_ALL
-      kwargs:
-        TARGET_NAME: '*'
-        HEADERS: '*'
-        SOURCES: '*'
-        PROPERTIES: '*'
-        LINK_LIBRARIES: '*'
-        INSTALL_DESTINATION: '*'
     build_library:
       flags:
         - PIC

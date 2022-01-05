@@ -103,10 +103,11 @@ install:
         conda update -y -n base conda
         conda install -y -c conda-forge -c defaults matplotlib numpy pillow cython six pandas pydot multiprocess
       }
-      $env:TIMEMORY_FILE_OUTPUT = "OFF"
-      $env:TIMEMORY_AUTO_OUTPUT = "ON"
       mkdir "C:\Users\appveyor\CTestTemp"
       $env:TEMP = "C:\Users\appveyor\CTestTemp"
+      $env:CTEST_PARALLEL_LEVEL = "2"
+      $env:TIMEMORY_FILE_OUTPUT = "OFF"
+      $env:TIMEMORY_AUTO_OUTPUT = "ON"
 
 build_script:
   - mkdir build-timemory
