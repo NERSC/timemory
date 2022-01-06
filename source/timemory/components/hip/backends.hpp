@@ -528,11 +528,11 @@ tim::hip::device_query()
             // Console log
             TIMEMORY_HIP_RUNTIME_API_CALL(hipDriverGetVersion(&driverVersion));
             TIMEMORY_HIP_RUNTIME_API_CALL(hipRuntimeGetVersion(&runtimeVersion));
-            printf("  HIP Driver Version / Runtime Version          %d.%d / "
+            printf("  HIP Driver Version / Runtime Version:          %d.%d / "
                    "%d.%d\n",
                    driverVersion / 1000, (driverVersion % 100) / 10,
                    runtimeVersion / 1000, (runtimeVersion % 100) / 10);
-            printf("  HIP Capability Major/Minor version number:    %d.%d\n",
+            printf("  HIP Capability Major/Minor version number:     %d.%d\n",
                    deviceProp.major, deviceProp.minor);
         }
 
@@ -555,11 +555,11 @@ tim::hip::device_query()
         TIMEMORY_HIP_RUNTIME_API_CALL(hipDriverGetVersion(&driverVersion));
         TIMEMORY_HIP_RUNTIME_API_CALL(hipRuntimeGetVersion(&runtimeVersion));
 
-        printf("  HIP Driver Version / Runtime Version          %d.%d / %d.%d\n",
+        printf("  HIP Driver Version / Runtime Version:          %d.%d / %d.%d\n",
                driverVersion / 1000, (driverVersion % 100) / 10, runtimeVersion / 1000,
                (runtimeVersion % 100) / 10);
 
-        printf("  HIP Capability Major/Minor version number:    %d.%d\n",
+        printf("  HIP Capability Major/Minor version number:     %d.%d\n",
                deviceProp.major, deviceProp.minor);
 
         char msg[256];

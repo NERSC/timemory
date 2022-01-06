@@ -53,10 +53,14 @@ struct ert_timer
     static std::string get_description() { return "wall-clock timer for ERT"; }
     static int64_t     get_unit() { return units::sec; }
     static std::string get_display_unit() { return units::time_repr(units::sec); }
+    static auto        get_width() { return width; }
+    static auto        get_precision() { return precision; }
+    static auto        get_format_flags() { return format_flags; }
 
-    static auto get_width() { return width; }
-    static auto get_precision() { return precision; }
-    static auto get_format_flags() { return format_flags; }
+    static auto label() { return get_label(); }
+    static auto description() { return get_description(); }
+    static auto unit() { return get_unit(); }
+    static auto display_unit() { return get_display_unit(); }
 
     static value_type record() noexcept
     {
@@ -82,6 +86,8 @@ struct ert_timer
         ar(cereal::make_nvp("laps", laps));
         ar(cereal::make_nvp("value", value));
         ar(cereal::make_nvp("accum", value));
+        ar(cereal::make_nvp("repr_data", get()));
+        ar(cereal::make_nvp("repr_display", get_display_unit()));
     }
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)

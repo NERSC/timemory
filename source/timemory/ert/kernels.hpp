@@ -259,10 +259,10 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
             }
 
             // wait master thread notifies to proceed
-            // if(fbarrier)
-            //    fbarrier->notify_wait();
             if(fbarrier)
-                fbarrier->spin_wait();
+                fbarrier->cv_wait();
+            // if(fbarrier)
+            //    fbarrier->spin_wait();
 
             // get instance of object measuring something during the calculation
             CounterT ct = _counter.get_counter();
@@ -310,10 +310,10 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
             }
 
             // wait master thread notifies to proceed
-            // if(lbarrier)
-            //    lbarrier->notify_wait();
             if(lbarrier)
-                lbarrier->spin_wait();
+                lbarrier->cv_wait();
+            // if(lbarrier)
+            //    lbarrier->spin_wait();
 
             // stop the timer or anything else being recorded
             ct.stop();
