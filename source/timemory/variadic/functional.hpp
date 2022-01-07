@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/components/base/types.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/available.hpp"
@@ -37,10 +38,6 @@
 
 namespace tim
 {
-namespace component
-{
-struct base_state;
-}
 //
 namespace invoke
 {

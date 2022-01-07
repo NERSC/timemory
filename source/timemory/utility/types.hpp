@@ -486,31 +486,25 @@ struct config : public data_type
         return *this;
     }
 
-    TIMEMORY_NODISCARD bool is_flat() const { return this->test(flat::value); }
-    TIMEMORY_NODISCARD bool is_timeline() const { return this->test(timeline::value); }
+    bool is_flat() const { return this->test(flat::value); }
+    bool is_timeline() const { return this->test(timeline::value); }
     // "tree" is default behavior so it returns true if nothing is set but gives
     // priority to the flat setting
-    TIMEMORY_NODISCARD bool is_tree() const
+    bool is_tree() const
     {
         return this->none() || (this->test(tree::value) && !this->test(flat::value));
     }
-    TIMEMORY_NODISCARD bool is_flat_timeline() const
-    {
-        return (is_flat() && is_timeline());
-    }
-    TIMEMORY_NODISCARD bool is_tree_timeline() const
-    {
-        return (is_tree() && is_timeline());
-    }
+    bool is_flat_timeline() const { return (is_flat() && is_timeline()); }
+    bool is_tree_timeline() const { return (is_tree() && is_timeline()); }
 
     template <bool ForceFlatT>
-    TIMEMORY_NODISCARD bool is_flat() const
+    bool is_flat() const
     {
         return (ForceFlatT) ? true : this->test(flat::value);
     }
 
     template <bool ForceTreeT, bool ForceTimeT>
-    TIMEMORY_NODISCARD bool is_tree() const
+    bool is_tree() const
     {
         return (ForceTreeT)
                    ? true

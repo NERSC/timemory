@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/components/base/types.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
@@ -32,11 +33,6 @@
 
 namespace tim
 {
-//
-namespace component
-{
-struct base_state;
-}
 //
 namespace operation
 {

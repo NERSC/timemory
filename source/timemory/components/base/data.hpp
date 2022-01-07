@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/components/base/types.hpp"
 #include "timemory/macros/attributes.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
@@ -36,9 +37,6 @@ namespace tim
 {
 namespace component
 {
-//
-template <typename Tp, size_t Sz>
-struct base_data;
 //
 template <typename Tp>
 struct base_data<Tp, 0>
