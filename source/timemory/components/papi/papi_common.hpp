@@ -314,7 +314,7 @@ public:
                 papi::start(_event_set);
                 is_configured<Tp>() = papi::working();
             }
-            if(!is_configured<Tp>())
+            if(!_events.empty() && !is_configured<Tp>())
             {
                 PRINT_HERE("Warning! Configuring %i papi events failed",
                            (int) _events.size());
