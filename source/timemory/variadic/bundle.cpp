@@ -428,7 +428,7 @@ bundle<Tag, BundleT, TupleT>::push(mpl::piecewise_ignore<Tp...>, scope::config _
 //
 template <typename Tag, typename BundleT, typename TupleT>
 typename bundle<Tag, BundleT, TupleT>::this_type&
-bundle<Tag, BundleT, TupleT>::pop()
+bundle<Tag, BundleT, TupleT>::pop(int64_t _tid)
 {
     if(!m_enabled())
         return get_this_type();
@@ -436,7 +436,7 @@ bundle<Tag, BundleT, TupleT>::pop()
     if(m_is_pushed())
     {
         // set the current node to the parent node
-        invoke::pop<Tag>(m_data);
+        invoke::pop<Tag>(m_data, _tid);
         // avoid pushing/popping when already pushed/popped
         m_is_pushed(false);
     }
@@ -448,15 +448,15 @@ bundle<Tag, BundleT, TupleT>::pop()
 //
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename... Tp>
-typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::pop(
-    mpl::piecewise_select<Tp...>)
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::pop(mpl::piecewise_select<Tp...>, int64_t _tid)
 {
     if(!m_enabled())
         return get_this_type();
 
     using pw_type = convert_t<mpl::implemented_t<Tp...>, mpl::piecewise_select<>>;
     // set the current node to the parent node
-    invoke::invoke<operation::pop_node, Tag>(pw_type{}, m_data);
+    invoke::invoke<operation::pop_node, Tag>(pw_type{}, m_data, _tid);
     return get_this_type();
 }
 
@@ -465,15 +465,15 @@ typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::
 //
 template <typename Tag, typename BundleT, typename TupleT>
 template <typename... Tp>
-typename bundle<Tag, BundleT, TupleT>::this_type& bundle<Tag, BundleT, TupleT>::pop(
-    mpl::piecewise_ignore<Tp...>)
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::pop(mpl::piecewise_ignore<Tp...>, int64_t _tid)
 {
     if(!m_enabled())
         return get_this_type();
 
     using pw_type = mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>;
     // set the current node to the parent node
-    invoke_piecewise<operation::pop_node>(pw_type{});
+    invoke_piecewise<operation::pop_node>(pw_type{}, _tid);
     return get_this_type();
 }
 
@@ -659,7 +659,7 @@ bundle<Tag, BundleT, TupleT>::stop(Args&&... args)
                  !quirk_config<quirk::no_store>::value)
     {
         if(m_store() && !bundle_type::m_explicit_pop())
-            pop();
+            pop(tid());
     }
     return get_this_type();
 }

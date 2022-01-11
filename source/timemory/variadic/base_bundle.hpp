@@ -113,19 +113,22 @@ protected:
 
 public:
     // public member function section
+    bool         store() const { return m_store(); }
     hash_value_t hash() const { return m_hash; }
     int64_t      laps() const { return m_laps; }
-    bool         store() const { return m_store(); }
+    int64_t      tid() const { return m_tid; }
     std::string  key() const { return std::string{ get_hash_identifier(m_hash) }; }
 
     bool                 get_store() const { return m_store(); }
     hash_value_t         get_hash() const { return m_hash; }
     int64_t              get_laps() const { return m_laps; }
+    int64_t              get_tid() const { return m_tid; }
     const scope::config& get_scope() const { return m_scope; }
 
     void store(bool v) { m_store(v); }
     void set_store(bool v) { m_store(v); }
     void set_laps(int64_t v) { m_laps = v; }
+    void set_tid(int64_t v) { m_tid = v; }
 
     common_base_bundle& operator+=(const common_base_bundle& rhs)
     {
@@ -141,8 +144,9 @@ public:
 
 protected:
     scope::config                      m_scope  = scope::get_default();
-    hash_value_t                       m_hash   = 0;
+    int64_t                            m_tid    = threading::get_id();
     int64_t                            m_laps   = 0;
+    hash_value_t                       m_hash   = 0;
     utility::bit_flags<6>              m_config = {};
     std::shared_ptr<base::ring_buffer> m_buffer = { nullptr };
 
@@ -300,6 +304,7 @@ protected:
     using common_base_bundle::m_hash;
     using common_base_bundle::m_laps;
     using common_base_bundle::m_scope;
+    using common_base_bundle::m_tid;
 
     bool init_buffer()
     {
@@ -704,6 +709,7 @@ protected:
     using base_bundle_type::m_hash;
     using base_bundle_type::m_laps;
     using base_bundle_type::m_scope;
+    using base_bundle_type::m_tid;
 };
 
 template <typename ApiT, typename... Types>
@@ -754,6 +760,7 @@ protected:
     using base_bundle_type::m_hash;
     using base_bundle_type::m_laps;
     using base_bundle_type::m_scope;
+    using base_bundle_type::m_tid;
 };
 //
 //======================================================================================//

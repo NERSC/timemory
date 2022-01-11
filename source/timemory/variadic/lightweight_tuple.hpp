@@ -170,7 +170,7 @@ public:
     this_type& push(int64_t _tid = threading::get_id());
 
     /// generic pop out of storage
-    this_type& pop();
+    this_type& pop(int64_t _tid = threading::get_id());
 
     /// selective push
     template <typename... Tp>
@@ -192,11 +192,11 @@ public:
 
     /// selective pop
     template <typename... Tp>
-    this_type& pop(mpl::piecewise_select<Tp...>);
+    this_type& pop(mpl::piecewise_select<Tp...>, int64_t _tid = threading::get_id());
 
     /// selective pop
     template <typename... Tp>
-    this_type& pop(mpl::piecewise_ignore<Tp...>);
+    this_type& pop(mpl::piecewise_ignore<Tp...>, int64_t _tid = threading::get_id());
 
     /// start all applicable components
     template <typename... Args>

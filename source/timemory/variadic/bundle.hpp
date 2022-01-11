@@ -389,7 +389,7 @@ public:
     this_type& push(int64_t _tid = threading::get_id());
 
     /// tells each component to pop itself off of the call-stack hierarchy
-    this_type& pop();
+    this_type& pop(int64_t _tid = threading::get_id());
 
     /// selective push
     template <typename... Tp>
@@ -411,11 +411,11 @@ public:
 
     /// selective pop
     template <typename... Tp>
-    this_type& pop(mpl::piecewise_select<Tp...>);
+    this_type& pop(mpl::piecewise_select<Tp...>, int64_t _tid = threading::get_id());
 
     /// selective pop
     template <typename... Tp>
-    this_type& pop(mpl::piecewise_ignore<Tp...>);
+    this_type& pop(mpl::piecewise_ignore<Tp...>, int64_t _tid = threading::get_id());
 
     /// requests each component record a measurment
     template <typename... Args>
@@ -474,6 +474,7 @@ public:
     using bundle_type::prefix;
     using bundle_type::size;
     using bundle_type::store;
+    using bundle_type::tid;
 
     /// query the number of (compile-time) fixed components
     static constexpr uint64_t fixed_count();

@@ -800,6 +800,45 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename T>
+struct get_storage;
+//
+/// \struct tim::operation::set_storage
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which provides a pointer to
+/// the data storage structure for a component which should be updated for
+/// aggregation/logging.
+template <typename T>
+struct set_storage
+{
+    friend struct get_storage<T>;
+    static constexpr size_t max_threads = 4096;
+    using type                          = T;
+    using storage_array_t               = std::array<storage<type>*, max_threads>;
+
+    TIMEMORY_DEFAULT_OBJECT(set_storage)
+
+    TIMEMORY_INLINE auto operator()(storage<type>* _storage, size_t _idx) const
+    {
+        get().at(_idx) = static_cast<storage<type>*>(_storage);
+    }
+
+    TIMEMORY_INLINE auto operator()(type& _obj, size_t _idx) const
+    {
+        get().at(_idx) = static_cast<storage<type>*>(_obj.get_storage());
+    }
+
+private:
+    static storage_array_t& get()
+    {
+        static storage_array_t _v = { nullptr };
+        return _v;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \struct tim::operation::get_storage
 /// \tparam T Component type
 ///
@@ -817,6 +856,13 @@ struct get_storage
     {
         return static_cast<storage<type>*>(obj.get_storage());
     }
+
+    TIMEMORY_INLINE auto operator()(size_t _idx) const
+    {
+        return operation::set_storage<T>::get().at(_idx);
+    }
+
+    TIMEMORY_INLINE auto operator()(type&, size_t _idx) const { return (*this)(_idx); }
 };
 //
 //--------------------------------------------------------------------------------------//

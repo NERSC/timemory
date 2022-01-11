@@ -220,12 +220,12 @@ lightweight_tuple<Types...>::push(mpl::piecewise_ignore<Tp...>, scope::config _s
 //
 template <typename... Types>
 lightweight_tuple<Types...>&
-lightweight_tuple<Types...>::pop()
+lightweight_tuple<Types...>::pop(int64_t _tid)
 {
     if(m_is_pushed())
     {
         // set the current node to the parent node
-        invoke::pop(m_data);
+        invoke::pop(m_data, _tid);
         // avoid pushing/popping when already pushed/popped
         m_is_pushed(false);
     }
@@ -237,12 +237,12 @@ lightweight_tuple<Types...>::pop()
 //
 template <typename... Types>
 template <typename... Tp>
-lightweight_tuple<Types...>& lightweight_tuple<Types...>::pop(
-    mpl::piecewise_select<Tp...>)
+lightweight_tuple<Types...>&
+lightweight_tuple<Types...>::pop(mpl::piecewise_select<Tp...>, int64_t _tid)
 {
     using pw_type = mpl::implemented_t<Tp...>;
     // set the current node to the parent node
-    invoke_piecewise<operation::pop_node>(pw_type{});
+    invoke_piecewise<operation::pop_node>(pw_type{}, _tid);
     return get_this_type();
 }
 
@@ -251,12 +251,12 @@ lightweight_tuple<Types...>& lightweight_tuple<Types...>::pop(
 //
 template <typename... Types>
 template <typename... Tp>
-lightweight_tuple<Types...>& lightweight_tuple<Types...>::pop(
-    mpl::piecewise_ignore<Tp...>)
+lightweight_tuple<Types...>&
+lightweight_tuple<Types...>::pop(mpl::piecewise_ignore<Tp...>, int64_t _tid)
 {
     using pw_type = mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>;
     // set the current node to the parent node
-    invoke_piecewise<operation::pop_node>(pw_type{});
+    invoke_piecewise<operation::pop_node>(pw_type{}, _tid);
     return get_this_type();
 }
 
