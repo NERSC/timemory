@@ -26,17 +26,18 @@
 
 #include "timemory/backends/threading.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/sampling/sampler.hpp"
 
 #include <atomic>
 #include <cerrno>
 #include <chrono>
-#include <condition_variable>
 #include <csignal>
 #include <cstdio>
 #include <exception>
 #include <iostream>
 #include <mutex>
 #include <pthread.h>
+#include <semaphore.h>
 #include <thread>
 #include <vector>
 
@@ -44,6 +45,8 @@ namespace tim
 {
 namespace sampling
 {
+using semaphore_t = sem_t;
+
 /// \struct tim::sampling::allocator
 /// \tparam Tp The tim::sampling::sampler template type
 ///
@@ -66,18 +69,22 @@ struct allocator
 
     const auto& get_data() const { return m_data; }
     bool        ready() const { return m_ready; }
+    bool        is_alive() const { return m_alive; }
     void        join();
+    void        restart(Tp* _obj);
 
     static void execute(allocator*, Tp*);
 
 private:
-    /// this function makes sure
+    /// this function makes sure that allocator isn't interrupted by signals
     static void block_signals();
 
     std::atomic<bool>      m_ready{ false };
+    std::atomic<bool>      m_alive{ false };
     int                    m_verbose = 0;
     int64_t                m_tid     = threading::get_id();
     std::vector<data_type> m_data    = {};
+    semaphore_t            m_sem;
     std::thread            m_thread;
     std::exception_ptr     m_thread_exception = {};
 };
@@ -95,6 +102,8 @@ allocator<Tp>::~allocator()
 {
     if(m_thread.joinable())
         m_thread.join();
+
+    sem_destroy(&m_sem);
 }
 
 template <typename Tp>
@@ -109,11 +118,28 @@ allocator<Tp>::join()
 
 template <typename Tp>
 void
+allocator<Tp>::restart(Tp* _obj)
+{
+    if(!_obj)
+        return;
+    _obj->m_exit();
+    if(m_thread.joinable())
+        m_thread.join();
+    m_ready.store(false);
+    m_alive.store(false);
+    m_thread = std::thread{ &execute, this, _obj };
+    while(!m_ready)
+        std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
+}
+
+template <typename Tp>
+void
 allocator<Tp>::block_signals()
 {
 #if defined(TIMEMORY_UNIX)
     sigset_t _v;
     sigemptyset(&_v);
+    sigaddset(&_v, SIGALRM);
     sigaddset(&_v, SIGVTALRM);
     sigaddset(&_v, SIGPROF);
     auto _err = pthread_sigmask(SIG_BLOCK, &_v, nullptr);
@@ -132,34 +158,51 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
 {
     block_signals();
 
-    size_t                  _swap_count  = 0;
-    bool                    _full_buffer = false;
-    bool                    _completed   = false;
-    size_t                  _buffer_size = _obj->get_buffer_size();
-    std::condition_variable _buffer_cv{};
+#define TIMEMORY_SEMAPHORE_CHECK(VAL)                                                    \
+    if(VAL != 0)                                                                         \
+    {                                                                                    \
+        perror(#VAL);                                                                    \
+        throw std::runtime_error(#VAL);                                                  \
+    }
 
+    bool   _completed   = false;
+    size_t _swap_count  = 0;
+    size_t _buffer_size = _obj->get_buffer_size();
+    sem_t& _sem         = _alloc->m_sem;
+    TIMEMORY_SEMAPHORE_CHECK(sem_init(&_sem, 0, 0));
+
+    _alloc->m_alive.store(true);
     try
     {
-        _obj->set_notify([&]() {
-            _full_buffer = true;
-            _buffer_cv.notify_all();
+        _obj->set_notify([&]() { TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem)); });
+
+        _obj->set_wait([&]() {
+            int _val = 0;
+            do
+            {
+                TIMEMORY_SEMAPHORE_CHECK(sem_getvalue(&_sem, &_val));
+            } while(_val > 0);
+            TIMEMORY_SEMAPHORE_CHECK(sem_wait(&_sem));
         });
 
         _obj->set_exit([&]() {
             _completed = true;
-            _buffer_cv.notify_all();
+            int _val   = 0;
+            do
+            {
+                TIMEMORY_SEMAPHORE_CHECK(sem_getvalue(&_sem, &_val));
+            } while(_val > 0);
+            TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
         });
 
-        _obj->set_swap_data([&](data_type& _data) {
-            data_type _buff{};
-            _buff.reserve(_buffer_size);
+        _obj->set_swap_data([_alloc, _buffer_size](data_type& _data) {
+            if(!_data.empty())
             {
-                std::unique_lock<std::mutex> _lk{ _obj->m_lock, std::defer_lock };
-                if(!_lk.owns_lock())
-                    _lk.lock();
+                data_type _buff{};
+                _buff.reserve(_buffer_size);
                 std::swap(_buff, _data);
+                _alloc->m_data.emplace_back(std::move(_buff));
             }
-            _alloc->m_data.emplace_back(std::move(_buff));
         });
 
         _alloc->m_ready.store(true);
@@ -170,18 +213,15 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
             _buffer_size = _obj->get_buffer_size();
             _buff.reserve(_buffer_size);
 
-            std::unique_lock<std::mutex> _lk{ _obj->m_lock };
-            _buffer_cv.wait(_lk, [&]() { return _completed || _full_buffer; });
+            TIMEMORY_SEMAPHORE_CHECK(sem_wait(&_sem));
+            std::swap(_buff, _obj->m_data);
+            TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
 
-            if(_completed)
-                break;
-
-            if(_lk.owns_lock())
-                _lk.unlock();
-            _buff = _obj->swap_data(_buff);
-            ++_swap_count;
-            _full_buffer = false;
-            _alloc->m_data.emplace_back(std::move(_buff));
+            if(!_buff.empty())
+            {
+                ++_swap_count;
+                _alloc->m_data.emplace_back(std::move(_buff));
+            }
         }
     } catch(...)
     {
@@ -189,12 +229,19 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
         _alloc->m_thread_exception = std::current_exception();
     }
 
+    _obj->set_notify([]() {});
+    _obj->set_wait([]() {});
+    _obj->set_exit([]() {});
+    _alloc->m_alive.store(false);
+
     if(_alloc->m_verbose > 0)
     {
         std::cerr << "[" << _alloc->m_tid << "] Sampler allocator performed "
                   << _swap_count << " swaps and has " << _alloc->m_data.size()
                   << " entries\n";
     }
+
+#undef TIMEMORY_SEMAPHORE_CHECK
 }
 
 template <>
@@ -211,6 +258,11 @@ struct allocator<void>
     allocator& operator=(allocator&&) noexcept = default;
 
     static constexpr bool ready() { return true; }
+    static constexpr bool is_alive() { return false; }
+
+    template <typename Tp>
+    void restart(Tp*)
+    {}
 };
 
 }  // namespace sampling

@@ -52,11 +52,11 @@
 #include <vector>
 
 // C includes
-#include <errno.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cerrno>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -67,10 +67,6 @@
 
 #if defined(TIMEMORY_UNIX)
 #    include <unistd.h>
-extern "C"
-{
-    extern char** environ;
-}
 #endif
 
 #if !defined(TIMEMORY_SAMPLER_DEPTH_DEFAULT)
@@ -307,6 +303,8 @@ public:
     template <typename Tp = fixed_sig_t<SigIds...>, enable_if_t<!Tp::value> = 0>
     void stop();
 
+    void stop(std::set<int>);
+
 public:
     bool is_good(int v) const { return m_good.count(v) > 0; }
     bool is_bad(int v) const { return m_bad.count(v) > 0; }
@@ -475,6 +473,12 @@ public:
     }
 
     template <typename FuncT>
+    void set_wait(FuncT&& _v)
+    {
+        m_wait = std::forward<FuncT>(_v);
+    }
+
+    template <typename FuncT>
     void set_exit(FuncT&& _v)
     {
         m_exit = std::forward<FuncT>(_v);
@@ -484,17 +488,6 @@ public:
     void set_swap_data(FuncT&& _v)
     {
         m_swap_data = std::forward<FuncT>(_v);
-    }
-
-    data_type& swap_data(data_type& _data)
-    {
-        {
-            std::unique_lock<std::mutex> _lk{ m_lock, std::defer_lock };
-            if(!_lk.owns_lock())
-                _lk.lock();
-            std::swap(m_data, _data);
-        }
-        return _data;
     }
 
     void swap_data() { m_swap_data(m_data); }
@@ -508,9 +501,9 @@ protected:
     signal_set_t                    m_bad         = {};
     array_t                         m_data        = {};
     std::function<void()>           m_notify      = []() {};
+    std::function<void()>           m_wait        = []() {};
     std::function<void()>           m_exit        = []() {};
     std::function<void(data_type&)> m_swap_data   = [](data_type&) {};
-    std::mutex                      m_lock{};
     allocator_t                     m_alloc;
     std::string                     m_label = {};
 
@@ -667,27 +660,12 @@ template <typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::sample(int signum)
 {
-    auto                         _n = (m_idx++) % m_buffer_size;
-    std::unique_lock<std::mutex> _lk{ m_lock, std::defer_lock };
-    if(!_lk.owns_lock())
+    if(m_data.size() == m_buffer_size)
     {
-        int           n    = 0;
-        constexpr int nmax = 10;
-        while(!_lk.try_lock() && ++n < nmax)
-        {
-            std::this_thread::sleep_for(std::chrono::microseconds{ 10 });
-        }
+        m_notify();
+        m_wait();
     }
 
-    if(!_lk.owns_lock())
-    {
-        m_idx--;
-        m_notify();
-        return;
-    }
-
-    if(_n + 1 >= m_buffer_size)
-        m_notify();
     m_data.emplace_back(bundle_type{});
     m_last = &m_data.back();
     if(m_backtrace)
@@ -716,7 +694,7 @@ sampler<CompT<Types...>, N, SigIds...>::start()
     base_type::set_started();
     for(auto& itr : m_data)
         itr.start();
-    if(cnt == 0)
+    if(cnt.second == 0)
         configure({ SigIds... });
 }
 //
@@ -731,8 +709,8 @@ sampler<CompT<Types...>, N, SigIds...>::stop()
     base_type::set_stopped();
     for(auto& itr : m_data)
         itr.stop();
-    if(cnt == 0)
-        ignore({ SigIds... });
+    if(cnt.second == 0)
+        stop({});
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -742,6 +720,9 @@ template <typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::start()
 {
+    auto cnt = tracker_type::start();
+    if(cnt.second == 0 && !m_alloc.is_alive())
+        m_alloc.restart(this);
     base_type::set_started();
     for(auto& itr : m_data)
         itr.start();
@@ -754,9 +735,51 @@ template <typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::stop()
 {
+    auto cnt = tracker_type::stop();
     base_type::set_stopped();
     for(auto& itr : m_data)
         itr.stop();
+    if(cnt.second == 0)
+        stop({});
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+inline void
+sampler<CompT<Types...>, N, SigIds...>::stop(std::set<int> _signals)
+{
+    if(_signals.empty())
+    {
+        // if specified by set_signals(...)
+        for(auto itr : m_timer_data.m_signals)
+            _signals.emplace(itr);
+        // if specified by template parameters
+        TIMEMORY_FOLD_EXPRESSION(_signals.emplace(SigIds));
+    }
+
+    for(auto itr : _signals)
+    {
+        auto&       _original_it = m_timer_data.m_original_itimerval[itr];
+        itimerval_t _curr;
+        auto        _itimer = get_itimer(itr);
+        if(_itimer < 0)
+        {
+            TIMEMORY_EXCEPTION(
+                TIMEMORY_JOIN(" ", "Error! Alarm cannot be set for signal", itr,
+                              "because the signal does not map to a known itimer "
+                              "value\n"));
+        }
+        check_itimer(getitimer(_itimer, &_curr));
+        // stop the alarm
+        if(_curr.it_interval.tv_usec > 0 || _curr.it_interval.tv_sec > 0)
+            check_itimer(setitimer(_itimer, &_original_it, &_curr));
+
+        m_timer_data.m_signals.erase(itr);
+    }
+
+    // if active field based on whether there are signals
+    m_timer_data.m_active = !m_timer_data.m_signals.empty();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -904,7 +927,7 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
         for(auto itr : m_timer_data.m_signals)
             _signals.emplace(itr);
         // if specified by template parameters
-        TIMEMORY_FOLD_EXPRESSION(_signals.insert(SigIds));
+        TIMEMORY_FOLD_EXPRESSION(_signals.emplace(SigIds));
     }
 
     if(!_signals.empty())
@@ -971,34 +994,11 @@ sampler<CompT<Types...>, N, SigIds...>::ignore(std::set<int> _signals)
         for(auto itr : m_timer_data.m_signals)
             _signals.emplace(itr);
         // if specified by template parameters
-        TIMEMORY_FOLD_EXPRESSION(_signals.insert(SigIds));
+        TIMEMORY_FOLD_EXPRESSION(_signals.emplace(SigIds));
     }
 
     for(const auto& itr : _signals)
         signal(itr, SIG_IGN);
-
-    for(auto itr : _signals)
-    {
-        auto&       _original_it = m_timer_data.m_original_itimerval[itr];
-        itimerval_t _curr;
-        auto        _itimer = get_itimer(itr);
-        if(_itimer < 0)
-        {
-            TIMEMORY_EXCEPTION(
-                TIMEMORY_JOIN(" ", "Error! Alarm cannot be set for signal", itr,
-                              "because the signal does not map to a known itimer "
-                              "value\n"));
-        }
-        check_itimer(getitimer(_itimer, &_curr));
-        // stop the alarm
-        if(_curr.it_interval.tv_usec > 0 || _curr.it_interval.tv_sec > 0)
-            check_itimer(setitimer(_itimer, &_original_it, &_curr));
-
-        m_timer_data.m_signals.erase(itr);
-    }
-
-    // if active field based on whether there are signals
-    m_timer_data.m_active = !m_timer_data.m_signals.empty();
 }
 //
 //--------------------------------------------------------------------------------------//
