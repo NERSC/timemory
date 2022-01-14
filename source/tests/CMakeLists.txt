@@ -19,6 +19,12 @@ mark_as_advanced(TIMEMORY_SOCKET_TESTS)
 # include the current directory
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+# for use when environment settings + discover tests causes some issues on Windows
+set(_DISCOVER_TESTS_WITH_ENVIRON DISCOVER_TESTS)
+if(WIN32)
+    set(_DISCOVER_TESTS_WITH_ENVIRON)
+endif()
+
 set(CMAKE_UNITY_BUILD OFF)
 if(NOT DEFINED CTEST_TEST_TIMEOUT OR "${CTEST_TEST_TIMEOUT}" STREQUAL "")
     set(CTEST_TEST_TIMEOUT 180)
@@ -288,7 +294,7 @@ add_timemory_google_test(
     LINK_LIBRARIES common-test-libs ${_LIBRARY})
 
 add_timemory_google_test(
-    component_bundle_tests DISCOVER_TESTS MPI
+    component_bundle_tests ${_DISCOVER_TESTS_WITH_ENVIRON} MPI
     NPROCS 2
     SOURCES component_bundle_tests.cpp
     LINK_LIBRARIES common-test-libs ${_LIBRARY}
