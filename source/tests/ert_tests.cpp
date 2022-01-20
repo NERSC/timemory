@@ -183,7 +183,7 @@ TEST_F(ert_tests, run)
         }
         else  // num_gpus >= 1
         {
-#    if defined(TIMEMORY_USE_CUDA_HALF)
+#    if defined(TIMEMORY_USE_GPU_HALF)
             // execute the half-precision ERT calculations
             for(auto nthread : cpu_num_threads)
                 for(auto nstream : gpu_num_streams)

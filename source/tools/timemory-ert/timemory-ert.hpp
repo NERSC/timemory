@@ -33,8 +33,9 @@
 #include <cstdint>
 #include <set>
 
-#if !defined(TIMEMORY_USE_CUDA_HALF)
+#if !defined(TIMEMORY_USE_GPU_HALF)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tim::gpu::fp16_t, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, tim::gpu::bf16_t, false_type)
 #endif
 
 #if !defined(TIMEMORY_USE_GPU)

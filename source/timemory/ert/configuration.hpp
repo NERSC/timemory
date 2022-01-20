@@ -367,9 +367,9 @@ public:
         static_assert(VEC > 0, "Calculated vector size is zero");
 
         // functions
-        auto store_func = [](Tp& a, const Tp& b) { a = b; };
-        auto add_func   = [](Tp& a, const Tp& b, const Tp& c) { a = b + c; };
-        auto fma_func   = [](Tp& a, const Tp& b, const Tp& c) { a = a * b + c; };
+        auto store_func = [](auto& a, const auto& b) { a = b; };
+        auto add_func   = [](auto& a, const Tp& b, const Tp& c) { a = b + c; };
+        auto fma_func   = [](auto& a, const Tp& b, const Tp& c) { a = a * b + c; };
 
         // set bytes per element
         _counter.bytes_per_element = sizeof(Tp);
@@ -407,8 +407,8 @@ private:
     static bool execute_impl(counter_type& _counter, const std::string& _label)
     {
         // functions
-        auto store_func = [](Tp& a, const Tp& b) { a = b; };
-        auto add_func   = [](Tp& a, const Tp& b, const Tp& c) { a = b + c; };
+        auto store_func = [](auto& a, const auto& b) { a = b; };
+        auto add_func   = [](auto& a, const Tp& b, const Tp& c) { a = b + c; };
 
         // set bytes per element
         _counter.bytes_per_element = sizeof(Tp);
@@ -427,8 +427,8 @@ private:
     static bool execute_impl(counter_type& _counter, const std::string& _label)
     {
         // functions
-        auto store_func = [](Tp& a, const Tp& b) { a = b; };
-        auto fma_func   = [](Tp& a, const Tp& b, const Tp& c) { a = a * b + c; };
+        auto store_func = [](auto& a, const auto& b) { a = b; };
+        auto fma_func   = [](auto& a, const Tp& b, const Tp& c) { a = a * b + c; };
 
         // set bytes per element
         _counter.bytes_per_element = sizeof(Tp);
@@ -529,14 +529,11 @@ public:
     static void execute(counter_type& _counter)
     {
         // functions
-        auto store_func = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b) { a = b; };
-        auto add_func   = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
+        auto store_func = [] TIMEMORY_DEVICE_LAMBDA(auto& a, const auto& b) { a = b; };
+        auto add_func   = [] TIMEMORY_DEVICE_LAMBDA(auto& a, const Tp& b, const Tp& c) {
             a = b + c;
         };
-        // auto mult_func = [] TIMEMORY_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
-        //    a = b * c;
-        //};
-        auto fma_func = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
+        auto fma_func = [] TIMEMORY_DEVICE_LAMBDA(auto& a, const Tp& b, const Tp& c) {
             a = a * b + c;
         };
 
@@ -551,15 +548,10 @@ public:
         ops_main<1>(_counter, add_func, store_func);
 
         // set the label
-        // _counter.label = "vector_mult";
-        // run the kernels
-        // ops_main<4, 16, 64, 128, 256, 512>(_counter, mult_func, store_func);
-
-        // set the label
         _counter.label = "vector_fma";
         // run the kernels
         if(!ops_main<TIMEMORY_USER_ERT_FLOPS>(_counter, fma_func, store_func))
-            ops_main<4, 16, 64, 128, 256, 512>(_counter, fma_func, store_func);
+            ops_main<4, 16, 32, 64, 128, 256, 512>(_counter, fma_func, store_func);
     }
 
     //----------------------------------------------------------------------------------//
@@ -582,7 +574,7 @@ public:
                                                       const std::string& _label)
     {
         // functions
-        auto store_func = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b) { a = b; };
+        auto store_func = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const auto& b) { a = b; };
         auto add_func   = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
             a = b + c;
         };
@@ -605,7 +597,7 @@ public:
                                                        const std::string& _label)
     {
         // functions
-        auto store_func = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b) { a = b; };
+        auto store_func = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const auto& b) { a = b; };
         auto fma_func   = [] TIMEMORY_DEVICE_LAMBDA(Tp & a, const Tp& b, const Tp& c) {
             a = a * b + c;
         };

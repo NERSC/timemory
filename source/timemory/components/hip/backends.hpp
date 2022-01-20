@@ -33,6 +33,7 @@
 #include "timemory/backends/hip.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/macros/compiler.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
@@ -48,6 +49,10 @@
 #if defined(TIMEMORY_USE_HIP)
 #    include <hip/hip_runtime.h>
 #    include <hip/hip_runtime_api.h>
+#    if defined(TIMEMORY_USE_HIP_HALF)
+#        include <hip/hip_bfloat16.h>
+#        include <hip/hip_fp16.h>
+#    endif
 #endif
 
 //======================================================================================//
@@ -61,7 +66,13 @@ const char*
 get_error_string(error_t err);
 
 // half-precision floating point
-using fp16_t = cuda::fp16_t;
+#if defined(TIMEMORY_USE_HIP_HALF)
+using fp16_t = half2;
+using bf16_t = hip_bfloat16;
+#else
+using fp16_t = __fp16;
+using bf16_t = int16_t;
+#endif
 
 //--------------------------------------------------------------------------------------//
 //

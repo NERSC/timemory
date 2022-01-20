@@ -83,9 +83,11 @@ TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
 TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
     class counter<device::gpu, double, component::ert_timer>)
 //
-#if defined(TIMEMORY_USE_CUDA_HALF)
+#if defined(TIMEMORY_USE_GPU_HALF)
 TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
-    class counter<device::gpu, cuda::fp16_t, component::ert_timer>)
+    class counter<device::gpu, gpu::fp16_t, component::ert_timer>)
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
+    class counter<device::gpu, gpu::bf16_t, component::ert_timer>)
 #endif
 //
 TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
@@ -98,12 +100,18 @@ TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
 TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
     struct executor<device::gpu, double, component::ert_timer>)
 //
-#if defined(TIMEMORY_USE_CUDA_HALF)
+#if defined(TIMEMORY_USE_GPU_HALF)
 TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
-    struct configuration<device::gpu, cuda::fp16_t, component::ert_timer>)
+    struct configuration<device::gpu, gpu::fp16_t, component::ert_timer>)
 //
 TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
-    struct executor<device::gpu, cuda::fp16_t, component::ert_timer>)
+    struct executor<device::gpu, gpu::fp16_t, component::ert_timer>)
+//
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
+    struct configuration<device::gpu, gpu::bf16_t, component::ert_timer>)
+//
+TIMEMORY_DECLARE_ERT_EXTERN_TEMPLATE_GPU(
+    struct executor<device::gpu, gpu::bf16_t, component::ert_timer>)
 #endif
 //
 }  // namespace ert

@@ -533,7 +533,11 @@ if(${PROJECT_NAME}_MAIN_PROJECT)
 endif()
 
 if(TIMEMORY_USE_CUDA OR TIMEMORY_BUILD_DOCS)
-    add_option(TIMEMORY_USE_CUDA_HALF "Enable half/half2 if CUDA_ARCH >= 60" OFF)
+    add_option(TIMEMORY_USE_CUDA_HALF "Enable half-precision floating-point support if CUDA_ARCH >= 60" OFF)
+endif()
+
+if(TIMEMORY_USE_HIP OR TIMEMORY_BUILD_DOCS)
+    add_option(TIMEMORY_USE_HIP_HALF "Enable half-precision floating-point support" OFF)
 endif()
 
 set(_DYNINST OFF)

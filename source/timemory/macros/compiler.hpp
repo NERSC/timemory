@@ -101,6 +101,14 @@
 
 //--------------------------------------------------------------------------------------//
 
+#if !defined(TIMEMORY_USE_GPU_HALF)
+#    if defined(TIMEMORY_USE_CUDA_HALF) || defined(TIMEMORY_USE_HIP_HALF)
+#        define TIMEMORY_USE_GPU_HALF 1
+#    endif
+#endif
+
+//--------------------------------------------------------------------------------------//
+
 //  hcc or hip-clang compiler
 #if(defined(__HCC__) || (defined(__clang__) && defined(__HIP__))) &&                     \
     !defined(TIMEMORY_HIP_COMPILER)

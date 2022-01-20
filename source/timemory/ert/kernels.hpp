@@ -94,7 +94,8 @@ ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& st
 
 template <size_t Nrep, typename DeviceT, typename Intp, typename Tp, typename OpsFuncT,
           typename StoreFuncT, device::enable_if_gpu_t<DeviceT> = 0,
-          enable_if_t<!std::is_same<Tp, gpu::fp16_t>::value> = 0>
+          enable_if_t<!std::is_same<Tp, gpu::fp16_t>::value &&
+                      !std::is_same<Tp, gpu::bf16_t>::value> = 0>
 TIMEMORY_GLOBAL_FUNCTION void
 ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& store_func)
 {
@@ -110,6 +111,38 @@ ops_kernel(Intp ntrials, Intp nsize, Tp* A, OpsFuncT&& ops_func, StoreFuncT&& st
         {
             Tp beta = static_cast<Tp>(0.8);
             mpl::apply<void>::unroll<NUM_REP + MOD_REP, DeviceT>(ops_func, beta, A[i],
+                                                                 alpha);
+            store_func(A[i], beta);
+        }
+        alpha *= static_cast<Tp>(1.0 - 1.0e-8);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//      GPU -- multiple trial
+//
+//--------------------------------------------------------------------------------------//
+
+template <size_t Nrep, typename DeviceT, typename Intp, typename Tp, typename OpsFuncT,
+          typename StoreFuncT, typename Up = float, device::enable_if_gpu_t<DeviceT> = 0,
+          enable_if_t<std::is_same<Tp, gpu::bf16_t>::value> = 0>
+TIMEMORY_GLOBAL_FUNCTION void
+ops_kernel(Intp ntrials, Intp nsize, Up* A, OpsFuncT&& ops_func, StoreFuncT&& store_func)
+{
+    // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
+    constexpr size_t NUM_REP = Nrep / 2;
+    constexpr size_t MOD_REP = Nrep % 2;
+    auto             range   = device::grid_strided_range<DeviceT, 0, Intp>(nsize);
+
+
+    Tp alpha = static_cast<Tp>(0.5);
+    for(Intp j = 0; j < ntrials; ++j)
+    {
+        for(auto i = range.begin(); i < range.end(); i += range.stride())
+        {
+            Up beta = static_cast<Up>(0.8);
+            mpl::apply<void>::unroll<NUM_REP + MOD_REP, DeviceT>(ops_func, beta, Tp{ A[i] },
                                                                  alpha);
             store_func(A[i], beta);
         }

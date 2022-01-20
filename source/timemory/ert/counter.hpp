@@ -128,7 +128,8 @@ public:
     template <typename Up = Tp, typename Dev = DeviceT,
               typename std::enable_if<(std::is_same<Dev, device::cpu>::value ||
                                        (std::is_same<Dev, device::gpu>::value &&
-                                        !std::is_same<Up, gpu::fp16_t>::value)),
+                                        !std::is_same<Up, gpu::fp16_t>::value &&
+                                        !std::is_same<Up, gpu::bf16_t>::value)),
                                       int>::type = 0>
     Up* get_buffer()
     {
@@ -173,9 +174,26 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    ///  allocate a buffer for the ERT calculation
+    ///     uses this function if device is GPU and type is half2
+    ///
+    template <typename Up = Tp, typename Dev = DeviceT,
+              typename std::enable_if<(std::is_same<Up, gpu::bf16_t>::value &&
+                                       std::is_same<Dev, device::gpu>::value),
+                                      int>::type = 0>
+    float* get_buffer()
+    {
+        return get_buffer<float, DeviceT>();
+    }
+
+    //----------------------------------------------------------------------------------//
     //  destroy associated buffer
     //
-    void destroy_buffer(Tp* buffer) { free_aligned<Tp, DeviceT>(buffer); }
+    template <typename Up = Tp>
+    void destroy_buffer(Up* buffer)
+    {
+        free_aligned<Up, DeviceT>(buffer);
+    }
 
     //----------------------------------------------------------------------------------//
     // execute the callback that may customize the thread before returning the object

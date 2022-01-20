@@ -948,7 +948,8 @@ endif()
 if(TIMEMORY_USE_HIP AND hip_FOUND)
     target_link_libraries(timemory-headers INTERFACE timemory-hip)
 
-    target_compile_definitions(timemory-hip INTERFACE TIMEMORY_USE_HIP TIMEMORY_USE_GPU)
+    target_compile_definitions(timemory-hip INTERFACE TIMEMORY_USE_HIP TIMEMORY_USE_GPU
+                                    $<IF:$<BOOL:${TIMEMORY_USE_HIP_HALF}>,TIMEMORY_USE_HIP_HALF,>)
     target_compile_definitions(timemory-hip-device INTERFACE TIMEMORY_USE_HIP
                                                              TIMEMORY_USE_GPU)
 

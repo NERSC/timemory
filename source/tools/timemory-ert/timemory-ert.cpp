@@ -93,8 +93,8 @@ main(int argc, char** argv)
     auto    gpu_num_threads = std::set<uint64_t>{};
     auto    gpu_num_streams = std::set<uint64_t>{ 1 };
     auto    gpu_block_sizes = std::set<uint64_t>{ 32, 128, 256, 512, 1024 };
-#if defined(TIMEMORY_USE_CUDA_HALF)
-    auto gpu_ftypes = std::set<std::string>{ "fp16", "fp32", "fp64" };
+#if defined(TIMEMORY_USE_GPU_HALF)
+    auto gpu_ftypes = std::set<std::string>{ "bf16", "fp16", "fp32", "fp64" };
 #else
     auto gpu_ftypes = std::set<std::string>{ "fp32", "fp64" };
 #endif
