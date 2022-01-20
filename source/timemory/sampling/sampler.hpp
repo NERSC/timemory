@@ -836,12 +836,12 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
     // prevent re-entry from different signals
     static thread_local semaphore_t _sem = []() {
         semaphore_t _v{};
-        CONDITIONAL_PRINT_HERE(settings::debug(), "Initializing %s...\n", "semaphore");
+        CONDITIONAL_PRINT_HERE(settings::debug(), "Initializing %s...", "semaphore");
         TIMEMORY_SEMAPHORE_CHECK(sem_init(&_v, 0, 1));
         return _v;
     }();
     static thread_local auto _sem_dtor = scope::destructor{ []() {
-        CONDITIONAL_PRINT_HERE(settings::debug(), "Destroying %s...\n", "semaphore");
+        CONDITIONAL_PRINT_HERE(settings::debug(), "Destroying %s...", "semaphore");
         TIMEMORY_SEMAPHORE_CHECK(sem_destroy(&_sem));
     } };
 
@@ -852,8 +852,8 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
 
         if(_err == EAGAIN)
         {
-            CONDITIONAL_PRINT_HERE(settings::debug() || true,
-                                   "Ignoring signal %i (raised while sampling)...\n",
+            CONDITIONAL_PRINT_HERE(settings::debug(),
+                                   "Ignoring signal %i (raised while sampling)...",
                                    signum);
             return;
         }
@@ -908,12 +908,12 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t*, void*)
     // prevent re-entry from different signals
     static thread_local semaphore_t _sem = []() {
         semaphore_t _v{};
-        CONDITIONAL_PRINT_HERE(settings::debug(), "Initializing %s...\n", "semaphore");
+        CONDITIONAL_PRINT_HERE(settings::debug(), "Initializing %s...", "semaphore");
         TIMEMORY_SEMAPHORE_CHECK(sem_init(&_v, 0, 1));
         return _v;
     }();
     static thread_local auto _sem_dtor = scope::destructor{ []() {
-        CONDITIONAL_PRINT_HERE(settings::debug(), "Destroying %s...\n", "semaphore");
+        CONDITIONAL_PRINT_HERE(settings::debug(), "Destroying %s...", "semaphore");
         TIMEMORY_SEMAPHORE_CHECK(sem_destroy(&_sem));
     } };
 
@@ -924,8 +924,8 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t*, void*)
 
         if(_err == EAGAIN)
         {
-            CONDITIONAL_PRINT_HERE(settings::debug() || true,
-                                   "Ignoring signal %i (raised while sampling)...\n",
+            CONDITIONAL_PRINT_HERE(settings::debug(),
+                                   "Ignoring signal %i (raised while sampling)...",
                                    signum);
             return;
         }
