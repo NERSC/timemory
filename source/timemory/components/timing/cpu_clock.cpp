@@ -22,4 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/timing/extern.hpp"
+#include "timemory/components/extern/common.hpp"
+#include "timemory/components/macros.hpp"
+#include "timemory/components/timing/components.hpp"
+
+TIMEMORY_INSTANTIATE_EXTERN_COMPONENT(cpu_clock, true, int64_t)
