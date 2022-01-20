@@ -38,8 +38,27 @@
 #include <mutex>
 #include <pthread.h>
 #include <semaphore.h>
+#include <sstream>
 #include <thread>
 #include <vector>
+
+#define TIMEMORY_SEMAPHORE_CHECK(VAL)                                                    \
+    if(VAL != 0)                                                                         \
+    {                                                                                    \
+        perror(#VAL);                                                                    \
+        throw std::runtime_error(#VAL);                                                  \
+    }
+
+#define TIMEMORY_SEMAPHORE_TRYWAIT(SEM, EC)                                              \
+    EC = sem_trywait(&SEM);                                                              \
+    if(EC != 0)                                                                          \
+        EC = errno;                                                                      \
+    while(EC == EINTR)                                                                   \
+    {                                                                                    \
+        EC = sem_trywait(&SEM);                                                          \
+        if(EC != 0)                                                                      \
+            EC = errno;                                                                  \
+    }
 
 namespace tim
 {
@@ -158,13 +177,6 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
 {
     block_signals();
 
-#define TIMEMORY_SEMAPHORE_CHECK(VAL)                                                    \
-    if(VAL != 0)                                                                         \
-    {                                                                                    \
-        perror(#VAL);                                                                    \
-        throw std::runtime_error(#VAL);                                                  \
-    }
-
     bool   _completed   = false;
     size_t _swap_count  = 0;
     size_t _buffer_size = _obj->get_buffer_size();
@@ -176,26 +188,28 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
     {
         _obj->set_notify([&]() { TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem)); });
 
-        _obj->set_wait([&]() {
+        _obj->set_wait([&_sem]() {
             int _val = 0;
             do
             {
+                std::this_thread::sleep_for(std::chrono::microseconds{ 10 });
                 TIMEMORY_SEMAPHORE_CHECK(sem_getvalue(&_sem, &_val));
             } while(_val > 0);
             TIMEMORY_SEMAPHORE_CHECK(sem_wait(&_sem));
         });
 
-        _obj->set_exit([&]() {
+        _obj->set_exit([&_sem, &_completed]() {
             _completed = true;
             int _val   = 0;
             do
             {
+                std::this_thread::sleep_for(std::chrono::microseconds{ 10 });
                 TIMEMORY_SEMAPHORE_CHECK(sem_getvalue(&_sem, &_val));
             } while(_val > 0);
             TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
         });
 
-        _obj->set_swap_data([_alloc, _buffer_size](data_type& _data) {
+        _obj->set_swap_data([_alloc, &_buffer_size](data_type& _data) {
             if(!_data.empty())
             {
                 data_type _buff{};
@@ -210,17 +224,24 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
         while(!_completed)
         {
             data_type _buff{};
-            _buffer_size = _obj->get_buffer_size();
+            _buffer_size = std::max<size_t>(_buffer_size, _obj->m_buffer_size);
             _buff.reserve(_buffer_size);
 
             TIMEMORY_SEMAPHORE_CHECK(sem_wait(&_sem));
-            std::swap(_buff, _obj->m_data);
-            TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
-
-            if(!_buff.empty())
+            if(!_obj->m_data.empty())
             {
-                ++_swap_count;
-                _alloc->m_data.emplace_back(std::move(_buff));
+                std::swap(_buff, _obj->m_data);
+                TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
+
+                if(!_buff.empty())
+                {
+                    ++_swap_count;
+                    _alloc->m_data.emplace_back(std::move(_buff));
+                }
+            }
+            else
+            {
+                TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
             }
         }
     } catch(...)
@@ -240,8 +261,6 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
                   << _swap_count << " swaps and has " << _alloc->m_data.size()
                   << " entries\n";
     }
-
-#undef TIMEMORY_SEMAPHORE_CHECK
 }
 
 template <>

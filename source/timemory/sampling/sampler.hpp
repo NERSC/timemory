@@ -34,6 +34,7 @@
 #include "timemory/units.hpp"
 #include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/demangle.hpp"
+#include "timemory/utility/macros.hpp"
 #include "timemory/variadic/macros.hpp"
 
 // C++ includes
@@ -103,6 +104,10 @@ struct is_component<sampling::sampler<CompT, N>> : true_type
 
 template <typename Tp>
 struct check_signals : std::true_type
+{};
+
+template <typename Tp>
+struct prevent_reentry : std::true_type
 {};
 
 template <typename Tp>
@@ -828,6 +833,39 @@ template <template <typename...> class CompT, size_t N, typename... Types, int..
 void
 sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
 {
+    // prevent re-entry from different signals
+    static thread_local semaphore_t _sem = []() {
+        semaphore_t _v{};
+        CONDITIONAL_PRINT_HERE(settings::debug(), "Initializing %s...\n", "semaphore");
+        TIMEMORY_SEMAPHORE_CHECK(sem_init(&_v, 0, 1));
+        return _v;
+    }();
+    static thread_local auto _sem_dtor = scope::destructor{ []() {
+        CONDITIONAL_PRINT_HERE(settings::debug(), "Destroying %s...\n", "semaphore");
+        TIMEMORY_SEMAPHORE_CHECK(sem_destroy(&_sem));
+    } };
+
+    IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
+    {
+        int _err = 0;
+        TIMEMORY_SEMAPHORE_TRYWAIT(_sem, _err);
+
+        if(_err == EAGAIN)
+        {
+            CONDITIONAL_PRINT_HERE(settings::debug() || true,
+                                   "Ignoring signal %i (raised while sampling)...\n",
+                                   signum);
+            return;
+        }
+        else if(_err != 0)
+        {
+            std::stringstream _msg{};
+            _msg << "sem_trywait(&_sem) returned error code: " << _err;
+            perror(_msg.str().c_str());
+            throw std::runtime_error(_msg.str().c_str());
+        }
+    }
+
     if(settings::debug())
     {
         printf("[pid=%i][tid=%i][%s]> sampling...\n", (int) process::get_id(),
@@ -854,6 +892,11 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
         }
         else { itr->sample(signum); }
     }
+
+    IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
+    {
+        TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -862,6 +905,39 @@ template <template <typename...> class CompT, size_t N, typename... Types, int..
 void
 sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t*, void*)
 {
+    // prevent re-entry from different signals
+    static thread_local semaphore_t _sem = []() {
+        semaphore_t _v{};
+        CONDITIONAL_PRINT_HERE(settings::debug(), "Initializing %s...\n", "semaphore");
+        TIMEMORY_SEMAPHORE_CHECK(sem_init(&_v, 0, 1));
+        return _v;
+    }();
+    static thread_local auto _sem_dtor = scope::destructor{ []() {
+        CONDITIONAL_PRINT_HERE(settings::debug(), "Destroying %s...\n", "semaphore");
+        TIMEMORY_SEMAPHORE_CHECK(sem_destroy(&_sem));
+    } };
+
+    IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
+    {
+        int _err = 0;
+        TIMEMORY_SEMAPHORE_TRYWAIT(_sem, _err);
+
+        if(_err == EAGAIN)
+        {
+            CONDITIONAL_PRINT_HERE(settings::debug() || true,
+                                   "Ignoring signal %i (raised while sampling)...\n",
+                                   signum);
+            return;
+        }
+        else if(_err != 0)
+        {
+            std::stringstream _msg{};
+            _msg << "sem_trywait(&_sem) returned error code: " << _err;
+            perror(_msg.str().c_str());
+            throw std::runtime_error(_msg.str().c_str());
+        }
+    }
+
     if(settings::debug())
     {
         printf("[pid=%i][tid=%i][%s]> sampling...\n", (int) process::get_id(),
@@ -889,6 +965,11 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t*, void*)
             }
         }
         else { itr->sample(signum); }
+    }
+
+    IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
+    {
+        TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
     }
 }
 //
