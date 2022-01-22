@@ -66,6 +66,62 @@ namespace sampling
 {
 using semaphore_t = sem_t;
 
+enum class sigmask_scope : short
+{
+    thread  = 0,
+    process = 1
+};
+
+inline sigset_t
+block_signals(const std::set<int>& _signals, sigmask_scope _scope)
+{
+    sigset_t _old;
+    sigset_t _new;
+
+    sigemptyset(&_new);
+    for(auto itr : _signals)
+        sigaddset(&_new, itr);
+
+    auto _err = (_scope == sigmask_scope::thread)
+                    ? pthread_sigmask(SIG_BLOCK, &_new, &_old)
+                    : sigprocmask(SIG_BLOCK, &_new, &_old);
+
+    if(_err != 0)
+    {
+        std::string _msg =
+            (_scope == sigmask_scope::thread) ? "pthread_sigmask" : "sigprocmask";
+        perror(_msg.c_str());
+        throw std::runtime_error(_msg);
+    }
+
+    return _old;
+}
+
+inline sigset_t
+unblock_signals(const std::set<int>& _signals, sigmask_scope _scope)
+{
+    sigset_t _old;
+    sigset_t _new;
+
+    sigemptyset(&_new);
+    for(auto itr : _signals)
+        sigaddset(&_new, itr);
+
+    auto _err = (_scope == sigmask_scope::thread)
+                    ? pthread_sigmask(SIG_UNBLOCK, &_new, &_old)
+                    : sigprocmask(SIG_UNBLOCK, &_new, &_old);
+
+    if(_err != 0)
+    {
+        std::string _msg =
+            (_scope == sigmask_scope::thread) ? "pthread_sigmask" : "sigprocmask";
+        perror(_msg.c_str());
+        throw std::runtime_error(_msg);
+    }
+
+    return _old;
+}
+
 /// \struct tim::sampling::allocator
 /// \tparam Tp The tim::sampling::sampler template type
 ///
@@ -155,20 +211,7 @@ template <typename Tp>
 void
 allocator<Tp>::block_signals()
 {
-#if defined(TIMEMORY_UNIX)
-    sigset_t _v;
-    sigemptyset(&_v);
-    sigaddset(&_v, SIGALRM);
-    sigaddset(&_v, SIGVTALRM);
-    sigaddset(&_v, SIGPROF);
-    auto _err = pthread_sigmask(SIG_BLOCK, &_v, nullptr);
-    if(_err != 0)
-    {
-        errno = _err;
-        perror("pthread_sigmask");
-        throw std::runtime_error("pthread_sigmask");
-    }
-#endif
+    sampling::block_signals({ SIGALRM, SIGVTALRM, SIGPROF }, sigmask_scope::thread);
 }
 
 template <typename Tp>
@@ -228,16 +271,13 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
             _buff.reserve(_buffer_size);
 
             TIMEMORY_SEMAPHORE_CHECK(sem_wait(&_sem));
-            if(!_obj->m_data.empty())
+            if(!_obj->m_data.empty() || _obj->m_data.capacity() == 0)
             {
                 std::swap(_buff, _obj->m_data);
                 TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
-
+                ++_swap_count;
                 if(!_buff.empty())
-                {
-                    ++_swap_count;
                     _alloc->m_data.emplace_back(std::move(_buff));
-                }
             }
             else
             {

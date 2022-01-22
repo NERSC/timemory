@@ -31,6 +31,7 @@
 #include "timemory/operations/types/sample.hpp"
 #include "timemory/sampling/allocator.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/settings/settings.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/demangle.hpp"
@@ -277,8 +278,18 @@ struct sampler<CompT<Types...>, N, SigIds...>
     static void execute(int signum);
     static void execute(int signum, siginfo_t*, void*);
 
-    static auto  get_latest_samples();
-    static auto& get_samplers() { return get_persistent_data().m_instances; }
+    static auto get_latest_samples();
+    static auto get_samplers()
+    {
+        auto_lock_t            _lk{ type_mutex<this_type>() };
+        std::deque<this_type*> _v{};
+        for(auto itr : get_persistent_data().m_thread_instances)
+        {
+            for(auto vitr : itr.second)
+                _v.emplace_back(vitr);
+        }
+        return _v;
+    }
     static auto& get_samplers(int64_t _v)
     {
         return get_persistent_data().m_thread_instances[_v];
@@ -290,13 +301,17 @@ public:
     sampler(std::string _label, int64_t _tid, signal_set_t _good,
             signal_set_t _bad = signal_set_t{});
 
+    sampler(std::string _label, int64_t _tid, signal_set_t _good, int _verbose,
+            signal_set_t _bad = signal_set_t{});
+
     ~sampler();
 
-    template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
-    void sample(int);
+    template <typename... Args, typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
+    void sample(Args&&...);
 
-    template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
-    void sample(int);
+    template <typename... Args, typename Tp = fixed_size_t<N>,
+              enable_if_t<!Tp::value> = 0>
+    void sample(Args&&...);
 
     template <typename Tp = fixed_sig_t<SigIds...>, enable_if_t<Tp::value> = 0>
     void start();
@@ -352,8 +367,22 @@ public:
     /// \param[in] _verb Logging Verbosity
     ///
     /// \brief Set up the sampler
-    void configure(std::set<int> _signals = {}, int _verbose = 1);
-    void configure(int _signal, int _verbose = 1) { configure({ _signal }, _verbose); }
+    void configure(std::set<int> _signals = {}, int _verbose = 0, bool _unblock = true);
+
+    template <typename Tp>
+    void configure(Tp _signal, int _verbose = 0, bool _unblock = true,
+                   enable_if_t<!std::is_same<std::decay_t<Tp>, bool>::value &&
+                               std::is_integral<Tp>::value> = 0)
+    {
+        configure({ _signal }, _verbose, _unblock);
+    }
+
+    template <typename Tp>
+    void configure(Tp _unblock, std::set<int> _signals = {}, int _verbose = 0,
+                   enable_if_t<std::is_same<std::decay_t<Tp>, bool>::value> = 0)
+    {
+        configure(_signals, _verbose, _unblock);
+    }
 
     /// \fn void ignore(std::set<int> _signals)
     /// \param[in] _signals Set of signals
@@ -419,9 +448,13 @@ public:
     /// \brief Set the sigaction flags, e.g. SA_RESTART | SA_SIGINFO
     void set_flags(int _flags) { m_timer_data.m_flags = _flags; }
 
+    /// \fn void set_verbose(int)
+    /// \brief Configure the verbosity
+    void set_verbose(int _v) { m_verbose = _v; }
+
     /// \fn void set_signals(std::set<int>)
     /// \brief Signals to catch
-    void set_signals(std::set<int> _signals) { m_timer_data.m_signals = _signals; }
+    void set_signals(const std::set<int>& _signals) { m_timer_data.m_signals = _signals; }
 
     /// \fn void add_signal(int)
     /// \brief Append to set of signals
@@ -444,14 +477,26 @@ public:
     /// \fn void set_rate(double, std::set<int>)
     /// \brief Value, expressed in number of interupts per second, that configures the
     /// frequency that the sampler samples the relevant measurements
-    void set_rate(double frate, std::set<int> _signals = {})
+    void set_rate(double frate, const std::set<int>& _signals = {})
     {
         set_frequency(1.0 / frate, _signals);
     }
 
+    /// \fn size_t get_id() const
+    /// \brief Get the unique global identifier
+    size_t get_id() const { return m_idx; }
+
     /// \fn std::set<int> get_signals() const
-    /// \brief Get the delay of the sampler
+    /// \brief Get signals handled by the sampler
     std::set<int> get_signals() const { return m_timer_data.m_signals; }
+
+    /// \fn bool get_active(int signum) const
+    /// \brief Get whether the specified signal has an active handler
+    bool get_active(int signum) const { return m_timer_data.m_active.at(signum); }
+
+    /// \fn int get_verbse() const
+    /// \brief Get the verbosity
+    int get_verbose() const { return m_verbose; }
 
     /// \fn double get_delay(int64_t) const
     /// \brief Get the delay of the sampler
@@ -499,7 +544,8 @@ public:
 
 protected:
     bool                            m_backtrace   = false;
-    size_t                          m_idx         = 0;
+    int                             m_verbose     = tim::settings::verbose();
+    size_t                          m_idx         = get_counter()++;
     size_t                          m_buffer_size = trait::buffer_size<this_type>::value;
     bundle_type*                    m_last        = nullptr;
     signal_set_t                    m_good        = {};
@@ -515,13 +561,13 @@ protected:
 private:
     struct timer_data
     {
-        bool                       m_active = false;
-        int                        m_flags  = SA_RESTART | SA_SIGINFO;
-        double                     m_delay  = 0.001;
-        double                     m_freq   = 1.0 / 2.0;
+        int                        m_flags = SA_RESTART | SA_SIGINFO;
+        double                     m_delay = 0.001;
+        double                     m_freq  = 1.0 / 2.0;
         sigaction_t                m_custom_sigaction;
         sigaction_t                m_original_sigaction;
         std::set<int>              m_signals            = {};
+        std::map<int, bool>        m_active             = {};
         std::map<int, double>      m_signal_delay       = {};
         std::map<int, double>      m_signal_freq        = {};
         std::map<int, itimerval_t> m_custom_itimerval   = {};
@@ -530,10 +576,14 @@ private:
 
     struct persistent_data : timer_data
     {
-        using instance_array_t                                 = std::deque<this_type*>;
-        instance_array_t                    m_instances        = {};
-        std::map<int64_t, instance_array_t> m_thread_instances = {};
+        std::map<int64_t, std::deque<this_type*>> m_thread_instances = {};
     };
+
+    static std::atomic<int64_t>& get_counter()
+    {
+        static std::atomic<int64_t> _ntot{ 0 };
+        return _ntot;
+    }
 
     static persistent_data& get_persistent_data()
     {
@@ -593,10 +643,23 @@ sampler<CompT<Types...>, N, SigIds...>::get_latest_samples()
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+sampler<CompT<Types...>, N, SigIds...>::sampler(std::string _label, signal_set_t _good,
+                                                signal_set_t _bad)
+: m_good{ std::move(_good) }
+, m_bad{ std::move(_bad) }
+, m_alloc{ this }
+, m_label{ std::move(_label) }
+{
+    _init_sampler(threading::get_id());
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 sampler<CompT<Types...>, N, SigIds...>::sampler(std::string _label, int64_t _tid,
                                                 signal_set_t _good, signal_set_t _bad)
-: m_good(std::move(_good))
-, m_bad(std::move(_bad))
+: m_good{ std::move(_good) }
+, m_bad{ std::move(_bad) }
 , m_alloc{ this }
 , m_label{ std::move(_label) }
 {
@@ -606,14 +669,16 @@ sampler<CompT<Types...>, N, SigIds...>::sampler(std::string _label, int64_t _tid
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
-sampler<CompT<Types...>, N, SigIds...>::sampler(std::string _label, signal_set_t _good,
+sampler<CompT<Types...>, N, SigIds...>::sampler(std::string _label, int64_t _tid,
+                                                signal_set_t _good, int _verbose,
                                                 signal_set_t _bad)
-: m_good(std::move(_good))
-, m_bad(std::move(_bad))
+: m_verbose{ _verbose }
+, m_good{ std::move(_good) }
+, m_bad{ std::move(_bad) }
 , m_alloc{ this }
 , m_label{ std::move(_label) }
 {
-    _init_sampler(threading::get_id());
+    _init_sampler(_tid);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -628,19 +693,25 @@ sampler<CompT<Types...>, N, SigIds...>::~sampler()
     auto _erase_samplers = [](auto& _samplers, this_type* _ptr) {
         auto itr = std::find(_samplers.begin(), _samplers.end(), _ptr);
         if(itr != _samplers.end())
+        {
             _samplers.erase(itr);
+            return true;
+        }
+        return false;
     };
-    _erase_samplers(get_samplers(), this);
-    for(auto& itr : get_persistent_data().m_thread_instances)
-        _erase_samplers(itr.second, this);
+    if(!_erase_samplers(get_samplers(threading::get_id()), this))
+    {
+        for(auto& itr : get_persistent_data().m_thread_instances)
+            _erase_samplers(itr.second, this);
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
-template <typename Tp, enable_if_t<Tp::value>>
+template <typename... Args, typename Tp, enable_if_t<Tp::value>>
 void
-sampler<CompT<Types...>, N, SigIds...>::sample(int signum)
+sampler<CompT<Types...>, N, SigIds...>::sample(Args&&... _args)
 {
     m_last = &(m_data.at((m_idx++) % N));
     if(m_backtrace)
@@ -649,21 +720,25 @@ sampler<CompT<Types...>, N, SigIds...>::sample(int signum)
         constexpr auto _depth  = trait::backtrace_depth<this_type>::value;
         constexpr auto _offset = trait::backtrace_offset<this_type>::value;
         IF_CONSTEXPR(trait::backtrace_use_libunwind<this_type>::value)
-        m_last->sample(get_unw_backtrace<_depth, _offset>());
-        else m_last->sample(get_backtrace<_depth, _offset>());
+        {
+            m_last->sample(get_unw_backtrace<_depth, _offset>(),
+                           std::forward<Args>(_args)...);
+        }
+        else m_last->sample(get_backtrace<_depth, _offset>(),
+                            std::forward<Args>(_args)...);
     }
     else
     {
-        m_last->sample(signum);
+        m_last->sample(std::forward<Args>(_args)...);
     }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
-template <typename Tp, enable_if_t<!Tp::value>>
+template <typename... Args, typename Tp, enable_if_t<!Tp::value>>
 void
-sampler<CompT<Types...>, N, SigIds...>::sample(int signum)
+sampler<CompT<Types...>, N, SigIds...>::sample(Args&&... _args)
 {
     if(m_data.size() == m_buffer_size)
     {
@@ -679,12 +754,16 @@ sampler<CompT<Types...>, N, SigIds...>::sample(int signum)
         constexpr auto _depth  = trait::backtrace_depth<this_type>::value;
         constexpr auto _offset = trait::backtrace_offset<this_type>::value;
         IF_CONSTEXPR(trait::backtrace_use_libunwind<this_type>::value)
-        m_last->sample(get_unw_backtrace<_depth, _offset>());
-        else m_last->sample(get_backtrace<_depth, _offset>());
+        {
+            m_last->sample(get_unw_backtrace<_depth, _offset>(),
+                           std::forward<Args>(_args)...);
+        }
+        else m_last->sample(get_backtrace<_depth, _offset>(),
+                            std::forward<Args>(_args)...);
     }
     else
     {
-        m_last->sample(signum);
+        m_last->sample(std::forward<Args>(_args)...);
     }
 }
 //
@@ -695,6 +774,7 @@ template <typename Tp, enable_if_t<Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::start()
 {
+    CONDITIONAL_PRINT_HERE(m_verbose > 0, "starting (index: %zu)", m_idx);
     auto cnt = tracker_type::start();
     base_type::set_started();
     for(auto& itr : m_data)
@@ -710,6 +790,7 @@ template <typename Tp, enable_if_t<Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::stop()
 {
+    CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping (index: %zu)", m_idx);
     auto cnt = tracker_type::stop();
     base_type::set_stopped();
     for(auto& itr : m_data)
@@ -725,9 +806,13 @@ template <typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::start()
 {
+    CONDITIONAL_PRINT_HERE(m_verbose > 0, "starting (index: %zu)", m_idx);
     auto cnt = tracker_type::start();
     if(cnt.second == 0 && !m_alloc.is_alive())
+    {
+        CONDITIONAL_PRINT_HERE(m_verbose > 0, "restarting allocator (index: %zu)", m_idx);
         m_alloc.restart(this);
+    }
     base_type::set_started();
     for(auto& itr : m_data)
         itr.start();
@@ -740,6 +825,7 @@ template <typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::stop()
 {
+    CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping (index: %zu)", m_idx);
     auto cnt = tracker_type::stop();
     base_type::set_stopped();
     for(auto& itr : m_data)
@@ -763,8 +849,13 @@ sampler<CompT<Types...>, N, SigIds...>::stop(std::set<int> _signals)
         TIMEMORY_FOLD_EXPRESSION(_signals.emplace(SigIds));
     }
 
+    CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping %zu signals (index: %zu)",
+                           _signals.size(), m_idx);
+
     for(auto itr : _signals)
     {
+        CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping signal %i (index: %zu)", itr,
+                               m_idx);
         auto&       _original_it = m_timer_data.m_original_itimerval[itr];
         itimerval_t _curr;
         auto        _itimer = get_itimer(itr);
@@ -780,11 +871,8 @@ sampler<CompT<Types...>, N, SigIds...>::stop(std::set<int> _signals)
         if(_curr.it_interval.tv_usec > 0 || _curr.it_interval.tv_sec > 0)
             check_itimer(setitimer(_itimer, &_original_it, &_curr));
 
-        m_timer_data.m_signals.erase(itr);
+        m_timer_data.m_active[itr] = false;
     }
-
-    // if active field based on whether there are signals
-    m_timer_data.m_active = !m_timer_data.m_signals.empty();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -866,14 +954,13 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
         }
     }
 
-    if(settings::debug())
-    {
-        printf("[pid=%i][tid=%i][%s]> sampling...\n", (int) process::get_id(),
-               (int) threading::get_id(), demangle<this_type>().c_str());
-    }
-
     for(auto& itr : get_samplers(threading::get_id()))
     {
+        if(!itr)
+            continue;
+
+        CONDITIONAL_PRINT_HERE(itr->m_verbose > 1, "sampling (index: %zu)", itr->m_idx);
+
         IF_CONSTEXPR(trait::check_signals<this_type>::value)
         {
             if(itr->is_good(signum))
@@ -903,7 +990,7 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 void
-sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t*, void*)
+sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t* _info, void* _data)
 {
     // prevent re-entry from different signals
     static thread_local semaphore_t _sem = []() {
@@ -938,21 +1025,18 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t*, void*)
         }
     }
 
-    if(settings::debug())
-    {
-        printf("[pid=%i][tid=%i][%s]> sampling...\n", (int) process::get_id(),
-               (int) threading::get_id(), demangle<this_type>().c_str());
-    }
-
     for(auto& itr : get_samplers(threading::get_id()))
     {
         if(!itr)
             continue;
+
+        CONDITIONAL_PRINT_HERE(itr->m_verbose > 1, "sampling (index: %zu)", itr->m_idx);
+
         IF_CONSTEXPR(trait::check_signals<this_type>::value)
         {
             if(itr->is_good(signum))
             {
-                itr->sample(signum);
+                itr->sample(signum, _info, _data);
             }
             else if(itr->is_bad(signum))
             {
@@ -964,7 +1048,7 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t*, void*)
                 raise(signum);
             }
         }
-        else { itr->sample(signum); }
+        else { itr->sample(signum, _info, _data); }
     }
 
     IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
@@ -977,16 +1061,17 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t*, void*)
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 void
-sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _verbose)
+sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _verbose,
+                                                  bool _unblock)
 {
-    // already active
-    if(m_timer_data.m_active)
-        return;
+    _verbose = std::max<int>(_verbose, m_verbose);
+
+    CONDITIONAL_PRINT_HERE(_verbose > 1, "configuring sampler (index: %zu)", m_idx);
 
     size_t wait_count = 0;
     {
         auto_lock_t _lk{ type_mutex<this_type>() };
-        for(auto& itr : get_samplers())
+        for(auto& itr : get_samplers(threading::get_id()))
             wait_count += itr->count();
     }
 
@@ -1013,6 +1098,9 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
 
     if(!_signals.empty())
     {
+        CONDITIONAL_PRINT_HERE(_verbose > 1,
+                               "configuring %zu signal handlers (index: %zu)",
+                               _signals.size(), m_idx);
         auto& _custom_sa = m_timer_data.m_custom_sigaction;
 
         memset(&_custom_sa, 0, sizeof(_custom_sa));
@@ -1021,9 +1109,24 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
         _custom_sa.sa_sigaction = &this_type::execute;
         _custom_sa.sa_flags     = m_timer_data.m_flags;
 
+        // block signals on thread while configuring
+        sampling::block_signals(_signals, sigmask_scope::thread);
+
         // start the interval timer
         for(const auto& itr : _signals)
         {
+            // already active
+            if(m_timer_data.m_active[itr])
+            {
+                CONDITIONAL_PRINT_HERE(
+                    _verbose > 1, "handler for signal %i is already active (index: %zu)",
+                    itr, m_idx);
+                continue;
+            }
+            CONDITIONAL_PRINT_HERE(_verbose > 1,
+                                   "configuring handler for signal %i (index: %zu)", itr,
+                                   m_idx);
+
             // get the associated itimer type
             auto _itimer = get_itimer(itr);
             if(_itimer < 0)
@@ -1056,11 +1159,17 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
             check_itimer(setitimer(_itimer, &(m_timer_data.m_custom_itimerval.at(itr)),
                                    &(m_timer_data.m_original_itimerval[itr])),
                          true);
+
+            m_timer_data.m_active[itr] = true;
         }
     }
 
-    // if active field based on whether there are signals
-    m_timer_data.m_active = !m_timer_data.m_signals.empty();
+    CONDITIONAL_PRINT_HERE(_verbose > 1,
+                           "signal handler configuration complete (index: %zu)", m_idx);
+
+    // unblock signals on thread after configuring
+    if(!_signals.empty() && _unblock)
+        sampling::unblock_signals(_signals, sigmask_scope::thread);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -1078,8 +1187,7 @@ sampler<CompT<Types...>, N, SigIds...>::ignore(std::set<int> _signals)
         TIMEMORY_FOLD_EXPRESSION(_signals.emplace(SigIds));
     }
 
-    for(const auto& itr : _signals)
-        signal(itr, SIG_IGN);
+    sampling::block_signals(_signals, sigmask_scope::process);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -1090,13 +1198,17 @@ int
 sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
                                              bool _debug, Func&& _callback)
 {
-    if(_verbose > 2 || _debug)
+    _verbose = std::max<int>(_verbose, m_verbose);
+    if(_debug)
+        _verbose = 100;
+
+    if(_verbose > 2)
         fprintf(stderr, "[%i]> waiting for pid %i...\n", process::get_id(), wait_pid);
 
     //----------------------------------------------------------------------------------//
     //
     auto print_info = [=](pid_t _pid, int _status, int _errv, int _retv) {
-        if(_debug || _verbose > 2)
+        if(_verbose > 2)
         {
             fprintf(stderr, "[%i]> return code: %i, error value: %i, status: %i\n", _pid,
                     _retv, _errv, _status);
@@ -1107,7 +1219,7 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
     //----------------------------------------------------------------------------------//
     //
     auto diagnose_status = [=](pid_t _pid, int status) {
-        if(_verbose > 2 || _debug)
+        if(_verbose > 2)
             fprintf(stderr, "[%i]> diagnosing status %i...\n", _pid, status);
 
         if(WIFEXITED(status) && WEXITSTATUS(status) == EXIT_SUCCESS)
@@ -1126,7 +1238,7 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
         {
             int sig = WSTOPSIG(status);
             // stopped with signal 'sig'
-            if(_debug || _verbose > 3)
+            if(_verbose > 3)
             {
                 fprintf(stderr, "[%i]> program stopped with signal %i. Exit code: %i\n",
                         _pid, sig, ret);
@@ -1134,7 +1246,7 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
         }
         else if(WCOREDUMP(status))
         {
-            if(_debug || _verbose > 3)
+            if(_verbose > 3)
             {
                 fprintf(stderr,
                         "[%i]> program terminated and produced a core dump. Exit "
@@ -1145,7 +1257,7 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
         else if(WIFSIGNALED(status))
         {
             ret = WTERMSIG(status);
-            if(_debug || _verbose > 3)
+            if(_verbose > 3)
             {
                 fprintf(stderr,
                         "[%i]> program terminated because it received a signal "
@@ -1155,11 +1267,11 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
         }
         else if(WIFEXITED(status) && WEXITSTATUS(status))
         {
-            if(ret == 127 && (_debug || _verbose > 3))
+            if(ret == 127 && (_verbose > 3))
             {
                 fprintf(stderr, "[%i]> execv failed\n", _pid);
             }
-            else if(_debug || _verbose > 3)
+            else if(_verbose > 3)
             {
                 fprintf(stderr,
                         "[%i]> program terminated with a non-zero status. Exit "
@@ -1169,7 +1281,7 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
         }
         else
         {
-            if(_debug || _verbose > 3)
+            if(_verbose > 3)
                 fprintf(stderr, "[%i]> program terminated abnormally.\n", _pid);
             ret = EXIT_FAILURE;
         }
@@ -1257,7 +1369,7 @@ sampler<CompT<Types...>, N, SigIds...>::set_delay(double fdelay, std::set<int> _
     m_timer_data.m_delay = std::max<double>(fdelay, m_timer_data.m_delay);
     if(_signals.empty())
         _signals = m_timer_data.m_signals;
-    for(auto& itr : _signals)
+    for(const auto& itr : _signals)
     {
         sampling::set_delay(m_timer_data.m_custom_itimerval[itr], fdelay,
                             std::string{ "[" } + std::to_string(itr) + "]");
@@ -1274,7 +1386,7 @@ sampler<CompT<Types...>, N, SigIds...>::set_frequency(double        ffreq,
     m_timer_data.m_freq = std::max<double>(ffreq, m_timer_data.m_freq);
     if(_signals.empty())
         _signals = m_timer_data.m_signals;
-    for(auto& itr : _signals)
+    for(const auto& itr : _signals)
     {
         sampling::set_frequency(m_timer_data.m_custom_itimerval[itr], ffreq,
                                 std::string{ "[" } + std::to_string(itr) + "]");
@@ -1384,8 +1496,6 @@ sampler<CompT<Types...>, N, SigIds...>::_init_sampler(int64_t _tid)
     TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
     m_data.fill(bundle_type{ m_label });
     m_last = &m_data.front();
-    auto_lock_t _lk{ type_mutex<this_type>() };
-    get_samplers().emplace_back(this);
     get_samplers(_tid).emplace_back(this);
 }
 //
@@ -1397,9 +1507,8 @@ void
 sampler<CompT<Types...>, N, SigIds...>::_init_sampler(int64_t _tid)
 {
     TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
-    m_data.reserve(m_buffer_size);
-    auto_lock_t _lk{ type_mutex<this_type>() };
-    get_samplers().emplace_back(this);
+    m_notify();
+    m_wait();
     get_samplers(_tid).emplace_back(this);
 }
 //
