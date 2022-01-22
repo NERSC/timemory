@@ -63,9 +63,13 @@ public:
 public:
     template <typename Self, template <typename> class Sp, typename Vp, typename Up = Tp,
               enable_if_t<stats_enabled<Up, Vp>::value, int> = 0>
-    TIMEMORY_COLD print_statistics(const type&, utility::stream& _os, const Self&,
-                                   const Sp<Vp>& _stats, uint64_t)
+    TIMEMORY_NOINLINE TIMEMORY_COLD print_statistics(const type&, utility::stream& _os,
+                                                     const Self&, const Sp<Vp>&    _stats,
+                                                     uint64_t)
     {
+        if(!trait::report_statistics<type>::value || !trait::report<type>::stats())
+            return;
+
         if(trait::report<type>::min())
             utility::write_entry(_os, "MIN", _stats.get_min());
         if(trait::report<type>::max())
@@ -78,20 +82,23 @@ public:
 
     template <typename Self, typename Vp, typename Up = Tp,
               enable_if_t<!stats_enabled<Up, Vp>::value, int> = 0>
-    TIMEMORY_COLD print_statistics(const type&, utility::stream&, const Self&, const Vp&,
-                                   uint64_t)
+    print_statistics(const type&, utility::stream&, const Self&, const Vp&, uint64_t)
     {}
 
     template <typename Self>
-    TIMEMORY_COLD print_statistics(const type&, utility::stream&, const Self&,
-                                   const statistics<std::tuple<>>&, uint64_t)
+    print_statistics(const type&, utility::stream&, const Self&,
+                     const statistics<std::tuple<>>&, uint64_t)
     {}
 
 public:
     template <template <typename> class Sp, typename Vp, typename Up = Tp,
               enable_if_t<stats_enabled<Up, Vp>::value, int> = 0>
-    static TIMEMORY_COLD void get_header(utility::stream& _os, const Sp<Vp>&)
+    static TIMEMORY_NOINLINE TIMEMORY_COLD void get_header(utility::stream& _os,
+                                                           const Sp<Vp>&)
     {
+        if(!trait::report_statistics<type>::value || !trait::report<type>::stats())
+            return;
+
         auto _flags = Tp::get_format_flags();
         auto _width = Tp::get_width();
         auto _prec  = Tp::get_precision();
