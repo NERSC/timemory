@@ -852,7 +852,13 @@ struct get_storage
 
     TIMEMORY_DEFAULT_OBJECT(get_storage)
 
-    TIMEMORY_INLINE auto operator()(type& obj) const
+    TIMEMORY_INLINE auto operator()() const
+    {
+        type _obj{};
+        return (*this)(_obj);
+    }
+
+    TIMEMORY_INLINE auto operator()(const type& obj) const
     {
         return static_cast<storage<type>*>(obj.get_storage());
     }
