@@ -989,60 +989,89 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         REPO_URL https://github.com/jrmadsen/libunwind.git
         REPO_BRANCH master)
+
+    # finds an executable and fails if not found
+    macro(timemory_libunwind_find_exe VAR MSG)
+        find_program(${VAR} NAMES ${ARGN})
+        if(NOT ${VAR})
+            message(FATAL_ERROR "Building libunwind submodule requires ${MSG}")
+        endif()
+    endmacro()
+
+    # copy from source directory to binary directory
     execute_process(
         COMMAND
             ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/external/libunwind
             ${PROJECT_BINARY_DIR}/external/libunwind)
-    configure_file(${PROJECT_SOURCE_DIR}/external/libunwind/CMakeLists.txt
-                   ${PROJECT_BINARY_DIR}/external/libunwind/CMakeLists.txt COPYONLY)
-    if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/configure)
-        find_program(AUTORECONF_EXE NAMES autoreconf)
-        if(NOT AUTORECONF_EXE)
-            timemory_message(FATAL_ERROR
-                             "Building libunwind submodule requires autoreconf")
-        else()
-            message(STATUS "[timemory] Generating libunwind configure...")
-            execute_process(
-                COMMAND ${AUTORECONF_EXE} -i
-                WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
-                OUTPUT_VARIABLE OUT
-                ERROR_VARIABLE ERR
-                RESULT_VARIABLE RET)
-            if(NOT RET EQUAL 0)
-                timemory_message(FATAL_ERROR
-                                 "'${AUTORECONF_EXE} -i' failed:\n${OUT}\n${ERR}")
-            endif()
-        endif()
-    endif()
-    if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/Makefile)
-        message(STATUS "[timemory] Configuring libunwind...")
+
+    function(timemory_libunwind_execute_process)
         execute_process(
-            COMMAND
-                ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER}
-                CFLAGS=-fPIC\ -O2\ -g\ -Wno-unused-result\ -Wno-unused-but-set-variable
-                CXX=${CMAKE_CXX_COMPILER}
-                CXXFLAGS=-fPIC\ -O2\ -g\ -Wno-unused-result\ -Wno-unused-but-set-variable
-                ./configure --enable-shared=yes --enable-static=no
-                --prefix=${PROJECT_BINARY_DIR}/external/libunwind/install
+            COMMAND ${ARGN}
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
-            OUTPUT_QUIET)
-        find_program(MAKE_EXE NAMES make gmake)
-        if(NOT MAKE_EXE)
-            timemory_message(FATAL_ERROR
-                             "Building libunwind submodule requires make / gmake")
-        else()
-            message(STATUS "[timemory] Building libunwind...")
-            execute_process(
-                COMMAND ${MAKE_EXE}
-                WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
-                OUTPUT_QUIET)
-            message(STATUS "[timemory] Installing libunwind...")
-            execute_process(
-                COMMAND ${MAKE_EXE} install
-                WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind
-                OUTPUT_QUIET)
+            OUTPUT_VARIABLE OUT
+            ERROR_VARIABLE ERR
+            RESULT_VARIABLE RET)
+        if(NOT RET EQUAL 0)
+            string(REPLACE ";" " " _CMD "${ARGN}")
+            message(FATAL_ERROR "'${_CMD}' failed:\nOUTPUT:\n${OUT}\nERROR:\n${ERR}")
         endif()
+    endfunction()
+
+    function(timemory_libunwind_autoreconf)
+        timemory_libunwind_find_exe(AUTORECONF_EXE "autoreconf" autoreconf)
+        message(STATUS "[timemory] Generating libunwind configure...")
+        timemory_libunwind_execute_process(${AUTORECONF_EXE} -i)
+    endfunction()
+
+    function(timemory_libunwind_configure)
+        message(STATUS "[timemory] Configuring libunwind...")
+        timemory_libunwind_execute_process(
+            ${CMAKE_COMMAND}
+            -E
+            env
+            CC=${CMAKE_C_COMPILER}
+            CFLAGS=-fPIC\ -O2\ -g\ -Wno-unused-result\ -Wno-unused-but-set-variable\ -Wno-cpp
+            CXX=${CMAKE_CXX_COMPILER}
+            CXXFLAGS=-fPIC\ -O2\ -g\ -Wno-unused-result\ -Wno-unused-but-set-variable\ -Wno-cpp
+            ./configure
+            --enable-shared=yes
+            --enable-static=no
+            --prefix=${PROJECT_BINARY_DIR}/external/libunwind/install)
+        # remove installation if new build
+        timemory_libunwind_find_exe(MAKE_EXE "make / gmake" make gmake)
+        timemory_libunwind_execute_process(${MAKE_EXE} clean)
+    endfunction()
+
+    function(timemory_libunwind_build)
+        timemory_libunwind_find_exe(MAKE_EXE "make / gmake" make gmake)
+        message(STATUS "[timemory] Building libunwind...")
+        timemory_libunwind_execute_process(${MAKE_EXE})
+        # remove installation if new build
+        file(REMOVE_RECURSE ${PROJECT_BINARY_DIR}/external/libunwind/src/install)
+    endfunction()
+
+    function(timemory_libunwind_install)
+        timemory_libunwind_find_exe(MAKE_EXE "make / gmake" make gmake)
+        message(STATUS "[timemory] Installing libunwind...")
+        timemory_libunwind_execute_process(${MAKE_EXE} install)
+    endfunction()
+
+    if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/configure)
+        timemory_libunwind_autoreconf()
+        timemory_libunwind_configure()
+        timemory_libunwind_build()
+    elseif(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/Makefile)
+        timemory_libunwind_configure()
+        timemory_libunwind_build()
+    elseif(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/src/.libs)
+        timemory_libunwind_configure()
+        timemory_libunwind_build()
     endif()
+
+    if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/src/install)
+        timemory_libunwind_install()
+    endif()
+
     if(TIMEMORY_INSTALL_HEADERS)
         file(GLOB libunwind_headers
              "${PROJECT_BINARY_DIR}/external/libunwind/install/include/*.h")
