@@ -990,6 +990,8 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
         REPO_URL https://github.com/jrmadsen/libunwind.git
         REPO_BRANCH master)
 
+    set(TIMEMORY_LIBUNWIND_BUILD_COMMAND)
+
     # finds an executable and fails if not found
     macro(timemory_libunwind_find_exe VAR MSG)
         find_program(${VAR} NAMES ${ARGN})
@@ -998,11 +1000,21 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
         endif()
     endmacro()
 
+    timemory_libunwind_find_exe(AUTORECONF_EXE "autoreconf" autoreconf)
+    timemory_libunwind_find_exe(MAKE_EXE "make / gmake" make gmake)
+
     # copy from source directory to binary directory
     execute_process(
         COMMAND
             ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/external/libunwind
             ${PROJECT_BINARY_DIR}/external/libunwind)
+
+    # glob the files copied over
+    file(GLOB_RECURSE timemory_libunwind_pre_build_files
+         "${PROJECT_SOURCE_DIR}/external/libunwind/*")
+    string(REPLACE "${PROJECT_SOURCE_DIR}" "${PROJECT_BINARY_DIR}"
+                   timemory_libunwind_pre_build_files
+                   "${timemory_libunwind_pre_build_files}")
 
     function(timemory_libunwind_execute_process)
         execute_process(
@@ -1018,7 +1030,6 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
     endfunction()
 
     function(timemory_libunwind_autoreconf)
-        timemory_libunwind_find_exe(AUTORECONF_EXE "autoreconf" autoreconf)
         message(STATUS "[timemory] Generating libunwind configure...")
         timemory_libunwind_execute_process(${AUTORECONF_EXE} -i)
     endfunction()
@@ -1038,12 +1049,10 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
             --enable-static=no
             --prefix=${PROJECT_BINARY_DIR}/external/libunwind/install)
         # remove installation if new build
-        timemory_libunwind_find_exe(MAKE_EXE "make / gmake" make gmake)
         timemory_libunwind_execute_process(${MAKE_EXE} clean)
     endfunction()
 
     function(timemory_libunwind_build)
-        timemory_libunwind_find_exe(MAKE_EXE "make / gmake" make gmake)
         message(STATUS "[timemory] Building libunwind...")
         timemory_libunwind_execute_process(${MAKE_EXE})
         # remove installation if new build
@@ -1051,7 +1060,6 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
     endfunction()
 
     function(timemory_libunwind_install)
-        timemory_libunwind_find_exe(MAKE_EXE "make / gmake" make gmake)
         message(STATUS "[timemory] Installing libunwind...")
         timemory_libunwind_execute_process(${MAKE_EXE} install)
     endfunction()
@@ -1068,9 +1076,39 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
         timemory_libunwind_build()
     endif()
 
-    if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/src/install)
+    if(NOT EXISTS ${PROJECT_BINARY_DIR}/external/libunwind/install)
         timemory_libunwind_install()
     endif()
+
+    file(GLOB_RECURSE timemory_libunwind_post_build_files
+         "${PROJECT_BINARY_DIR}/external/libunwind/*")
+
+    set(TIMEMORY_LIBUNWIND_BUILD_BYPRODUCTS ${timemory_libunwind_post_build_files})
+    list(REMOVE_ITEM TIMEMORY_LIBUNWIND_BUILD_BYPRODUCTS
+         ${timemory_libunwind_pre_build_files})
+
+    add_custom_target(
+        build-timemory-libunwind
+        COMMAND ${AUTORECONF_EXE} -i
+        COMMAND
+            ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER}
+            CFLAGS=-fPIC\ -O2\ -g\ -Wno-unused-result\ -Wno-unused-but-set-variable\ -Wno-cpp
+            CXX=${CMAKE_CXX_COMPILER}
+            CXXFLAGS=-fPIC\ -O2\ -g\ -Wno-unused-result\ -Wno-unused-but-set-variable\ -Wno-cpp
+            ./configure --enable-shared=yes --enable-static=no
+            --prefix=${PROJECT_BINARY_DIR}/external/libunwind/install
+        COMMAND ${MAKE_EXE}
+        COMMAND ${MAKE_EXE} install
+        COMMENT "Building libunwind..."
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind)
+
+    add_custom_target(
+        clean-timemory-libunwind
+        COMMAND ${CMAKE_COMMAND} -E rm -f ${TIMEMORY_LIBUNWIND_BUILD_BYPRODUCTS}
+        COMMENT "Cleaning libunwind..."
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/libunwind)
+
+    add_dependencies(build-timemory-libunwind clean-timemory-libunwind)
 
     if(TIMEMORY_INSTALL_HEADERS)
         file(GLOB libunwind_headers
