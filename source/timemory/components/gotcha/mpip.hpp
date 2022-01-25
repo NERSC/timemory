@@ -63,8 +63,8 @@ namespace component
 //
 template <typename Toolset, typename Tag>
 TIMEMORY_VISIBILITY("default")
-TIMEMORY_NOINLINE void configure_mpip(std::set<std::string> permit = {},
-                                      std::set<std::string> reject = {});
+TIMEMORY_NOINLINE void configure_mpip(const std::set<std::string>& permit = {},
+                                      const std::set<std::string>& reject = {});
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -226,14 +226,16 @@ tim::component::deactivate_mpip(uint64_t id)
     (!defined(TIMEMORY_USE_MPI) && !defined(TIMEMORY_USE_MPI_HEADERS))
 //
 template <typename Toolset, typename Tag>
-void tim::component::configure_mpip(std::set<std::string>, std::set<std::string>)
+void
+tim::component::configure_mpip(const std::set<std::string>&, const std::set<std::string>&)
 {}
 //
 #else
 //
 template <typename Toolset, typename Tag>
 void
-tim::component::configure_mpip(std::set<std::string> permit, std::set<std::string> reject)
+tim::component::configure_mpip(const std::set<std::string>& permit,
+                               const std::set<std::string>& reject)
 {
     static constexpr size_t mpip_wrapper_count = NUM_TIMEMORY_MPIP_WRAPPERS;
     static bool             is_initialized     = false;
@@ -493,10 +495,11 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
         };
 
         // provide environment variable for suppressing wrappers
-        mpip_gotcha_t::get_reject_list() = [&reject]() {
-            auto _reject = std::move(reject);
+        mpip_gotcha_t::get_reject_list() = [reject]() {
+            auto _reject = reject;
             // check environment
-            auto reject_list = tim::get_env<std::string>("TIMEMORY_MPIP_REJECT_LIST", "");
+            auto reject_list = tim::get_env<std::string>(
+                TIMEMORY_SETTINGS_PREFIX "MPIP_REJECT_LIST", "");
             // add environment setting
             for(const auto& itr : tim::delimit(reject_list))
                 _reject.insert(itr);
@@ -504,10 +507,11 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
         };
 
         // provide environment variable for selecting wrappers
-        mpip_gotcha_t::get_permit_list() = [&permit]() {
-            auto _permit = std::move(permit);
+        mpip_gotcha_t::get_permit_list() = [permit]() {
+            auto _permit = permit;
             // check environment
-            auto permit_list = tim::get_env<std::string>("TIMEMORY_MPIP_PERMIT_LIST", "");
+            auto permit_list = tim::get_env<std::string>(
+                TIMEMORY_SETTINGS_PREFIX "MPIP_PERMIT_LIST", "");
             // add environment setting
             for(const auto& itr : tim::delimit(permit_list))
                 _permit.insert(itr);
