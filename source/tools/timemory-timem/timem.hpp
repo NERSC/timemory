@@ -38,6 +38,10 @@
 // disables unnecessary instantiations
 #define TIMEMORY_COMPILER_INSTRUMENTATION
 
+// tweaks settings
+#define TIMEMORY_SETTINGS_PREFIX "TIMEM_"
+#define TIMEMORY_SETTINGS_CONFIG_NAME "timem"
+
 #include "timemory/api/macros.hpp"
 
 // create an API for the compiler instrumentation whose singletons will not be shared
@@ -46,7 +50,6 @@
 
 // define the API for all instantiations before including any more timemory headers
 // #define TIMEMORY_API ::tim::project::timem
-#define TIMEMORY_SETTINGS_PREFIX "TIMEM_"
 
 #include "timemory/macros.hpp"
 #include "timemory/mpl/types.hpp"

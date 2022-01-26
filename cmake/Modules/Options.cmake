@@ -638,12 +638,19 @@ if(NOT BUILD_SHARED_LIBS
         CACHE BOOL "Build the kokkos-tools libraries" FORCE)
 endif()
 
-# set(TIMEMORY_SETTINGS_PREFIX "" CACHE STRING "Settings prefix")
-# mark_as_advanced(TIMEMORY_SETTINGS_PREFIX)
 if(DEFINED TIMEMORY_SETTINGS_PREFIX AND NOT "${TIMEMORY_SETTINGS_PREFIX}" STREQUAL "")
     add_cmake_defines(TIMEMORY_SETTINGS_PREFIX VALUE QUOTE DEFAULT)
     add_feature(TIMEMORY_SETTINGS_PREFIX
                 "timemory settings will be prefixed with \"${TIMEMORY_SETTINGS_PREFIX}\"")
+endif()
+
+if(DEFINED TIMEMORY_SETTINGS_CONFIG_NAME AND NOT "${TIMEMORY_SETTINGS_CONFIG_NAME}"
+                                             STREQUAL "")
+    add_cmake_defines(TIMEMORY_SETTINGS_CONFIG_NAME VALUE QUOTE DEFAULT)
+    add_feature(
+        TIMEMORY_SETTINGS_CONFIG_NAME
+        "timemory settings config will use \"${TIMEMORY_SETTINGS_CONFIG_NAME}\" instead of \"timemory\""
+        )
 endif()
 
 # cereal options

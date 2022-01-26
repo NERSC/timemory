@@ -58,6 +58,10 @@
 #    define TIMEMORY_SETTINGS_PREFIX "TIMEMORY_"
 #endif
 //
+#if !defined(TIMEMORY_SETTINGS_CONFIG_NAME)
+#    define TIMEMORY_SETTINGS_CONFIG_NAME "timemory"
+#endif
+//
 #if !defined(TIMEMORY_SETTINGS_KEY)
 #    define TIMEMORY_SETTINGS_KEY(...) TIMEMORY_SETTINGS_PREFIX __VA_ARGS__
 #endif

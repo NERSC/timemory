@@ -562,16 +562,14 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize_core()
 {
-    // PRINT_HERE("%s", "");
     auto homedir = get_env<string_t>("HOME");
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, config_file, TIMEMORY_SETTINGS_KEY("CONFIG_FILE"),
-        "Configuration file for timemory",
-        TIMEMORY_JOIN(';', TIMEMORY_JOIN('/', homedir, ".timemory.cfg"),
-                      TIMEMORY_JOIN('/', homedir, ".timemory.json"),
-                      TIMEMORY_JOIN('/', homedir, ".config", "timemory.cfg"),
-                      TIMEMORY_JOIN('/', homedir, ".config", "timemory.json")),
+        "Configuration file for " TIMEMORY_SETTINGS_CONFIG_NAME,
+        TIMEMORY_JOIN(
+            ';', TIMEMORY_JOIN('/', homedir, "." TIMEMORY_SETTINGS_CONFIG_NAME ".cfg"),
+            TIMEMORY_JOIN('/', homedir, "." TIMEMORY_SETTINGS_CONFIG_NAME ".json")),
         TIMEMORY_ESC(strset_t{ "native", "core" }),
         strvector_t({ "-C", "--timemory-config" }));
 
@@ -634,7 +632,7 @@ settings::initialize_components()
         string_t, global_components, TIMEMORY_SETTINGS_KEY("GLOBAL_COMPONENTS"),
         "A specification of components which is used by multiple variadic bundlers and "
         "user_bundles as the fall-back set of components if their specific variable is "
-        "not set. E.g. user_mpip_bundle will use this if TIMEMORY_MPIP_COMPONENTS is not "
+        "not set. E.g. user_mpip_bundle will use this if MPIP_COMPONENTS is not "
         "specified",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
         strvector_t({ "--timemory-global-components" }));
@@ -690,7 +688,7 @@ settings::initialize_components()
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, components, TIMEMORY_SETTINGS_KEY("COMPONENTS"),
         "A specification of components which is used by the library interface. This "
-        "falls back to TIMEMORY_GLOBAL_COMPONENTS.",
+        "falls back to GLOBAL_COMPONENTS.",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
         strvector_t({ "--timemory-components" }));
 
@@ -748,7 +746,7 @@ settings::initialize_io()
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, time_output, TIMEMORY_SETTINGS_KEY("TIME_OUTPUT"),
-        "Output data to subfolder w/ a timestamp (see also: TIMEMORY_TIME_FORMAT)", false,
+        "Output data to subfolder w/ a timestamp (see also: TIME_FORMAT)", false,
         TIMEMORY_ESC(strset_t{ "native", "io" }),
         strvector_t({ "--timemory-time-output" }), -1, 1);
 
@@ -761,7 +759,7 @@ settings::initialize_io()
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, diff_output, TIMEMORY_SETTINGS_KEY("DIFF_OUTPUT"),
         "Generate a difference output vs. a pre-existing output (see also: "
-        "TIMEMORY_INPUT_PATH and TIMEMORY_INPUT_PREFIX)",
+        "INPUT_PATH and INPUT_PREFIX)",
         false, TIMEMORY_ESC(strset_t{ "native", "io" }),
         strvector_t({ "--timemory-diff-output" }), -1, 1);
 
@@ -794,7 +792,7 @@ settings::initialize_io()
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, input_path, TIMEMORY_SETTINGS_KEY("INPUT_PATH"),
         "Explicitly specify the input folder for difference "
-        "comparisons (see also: TIMEMORY_DIFF_OUTPUT)",
+        "comparisons (see also: DIFF_OUTPUT)",
         "", TIMEMORY_ESC(strset_t{ "native", "io" }),
         strvector_t({ "--timemory-input-path" }),
         1);  // folder
@@ -802,8 +800,7 @@ settings::initialize_io()
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, input_prefix, TIMEMORY_SETTINGS_KEY("INPUT_PREFIX"),
         "Explicitly specify the prefix for input files used in difference "
-        "comparisons "
-        "(see also: TIMEMORY_DIFF_OUTPUT)",
+        "comparisons (see also: DIFF_OUTPUT)",
         "", TIMEMORY_ESC(strset_t{ "native", "io" }),
         strvector_t({ "--timemory-input-prefix" }),
         1);  // file prefix
@@ -811,7 +808,7 @@ settings::initialize_io()
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, input_extensions, TIMEMORY_SETTINGS_KEY("INPUT_EXTENSIONS"),
         "File extensions used when searching for input files used in difference "
-        "comparisons (see also: TIMEMORY_DIFF_OUTPUT)",
+        "comparisons (see also: DIFF_OUTPUT)",
         "json,xml", TIMEMORY_ESC(strset_t{ "native", "io" }),
         strvector_t({ "--timemory-input-extensions" }));  // extensions
 }
@@ -825,7 +822,7 @@ settings::initialize_format()
     // PRINT_HERE("%s", "");
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, time_format, TIMEMORY_SETTINGS_KEY("TIME_FORMAT"),
-        "Customize the folder generation when TIMEMORY_TIME_OUTPUT is enabled (see also: "
+        "Customize the folder generation when TIME_OUTPUT is enabled (see also: "
         "strftime)",
         "%F_%I.%M_%p", TIMEMORY_ESC(strset_t{ "native", "io", "format" }),
         strvector_t({ "--timemory-time-format" }), 1);
@@ -958,14 +955,14 @@ settings::initialize_parallel()
 
     TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(
         bool, mpi_thread, TIMEMORY_SETTINGS_KEY("MPI_THREAD"),
-        "Call MPI_Init_thread instead of MPI_Init (see also: TIMEMORY_MPI_INIT)",
+        "Call MPI_Init_thread instead of MPI_Init (see also: MPI_INIT)",
         mpi::use_mpi_thread(), TIMEMORY_ESC(strset_t{ "native", "parallelism", "mpi" }),
         strvector_t({ "--timemory-mpi-thread" }), -1, 1);
 
     TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(
         string_t, mpi_thread_type, TIMEMORY_SETTINGS_KEY("MPI_THREAD_TYPE"),
         "MPI_Init_thread mode: 'single', 'serialized', 'funneled', or 'multiple' (see "
-        "also: TIMEMORY_MPI_INIT and TIMEMORY_MPI_THREAD)",
+        "also: MPI_INIT and MPI_THREAD)",
         mpi::use_mpi_thread_type(),
         TIMEMORY_ESC(strset_t{ "native", "parallelism", "mpi" }),
         strvector_t({ "--timemory-mpi-thread-type" }), 1, 1,
@@ -1031,8 +1028,8 @@ settings::initialize_tpls()
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         bool, papi_attach, TIMEMORY_SETTINGS_KEY("PAPI_ATTACH"),
-        "Configure PAPI to attach to another process (see also: TIMEMORY_TARGET_PID)",
-        false, TIMEMORY_ESC(strset_t{ "native", "tpl", "papi" }));
+        "Configure PAPI to attach to another process (see also: TARGET_PID)", false,
+        TIMEMORY_ESC(strset_t{ "native", "tpl", "papi" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         int, papi_overflow, TIMEMORY_SETTINGS_KEY("PAPI_OVERFLOW"),
@@ -1083,40 +1080,42 @@ settings::initialize_tpls()
         strvector_t({ "--timemory-cupti-device" }), 1);
 
     insert<int>(
-        "TIMEMORY_CUPTI_PCSAMPLING_PERIOD", "cupti_pcsampling_period",
+        TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_PERIOD"), "cupti_pcsampling_period",
         "The period for PC sampling. Must be >= 5 and <= 31", 8,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
         strvector_t{ "--timemory-cupti-pcsampling-period" });
 
     insert<bool>(
-        "TIMEMORY_CUPTI_PCSAMPLING_PER_LINE", "cupti_pcsampling_per_line",
+        TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_PER_LINE"), "cupti_pcsampling_per_line",
         "Report the PC samples per-line or collapse into one entry for entire function",
         false,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
         strvector_t{ "--timemory-cupti-pcsampling-per-line" });
 
     insert<bool>(
-        "TIMEMORY_CUPTI_PCSAMPLING_REGION_TOTALS", "cupti_pcsampling_region_totals",
+        TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_REGION_TOTALS"),
+        "cupti_pcsampling_region_totals",
         "When enabled, region markers will report total samples from all child functions",
         true,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
         strvector_t{ "--timemory-cupti-pcsampling-region-totals" });
 
     insert<bool>(
-        "TIMEMORY_CUPTI_PCSAMPLING_SERIALIZED", "cupti_pcsampling_serialized",
-        "Serialize all the kernel functions", false,
+        TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_SERIALIZED"),
+        "cupti_pcsampling_serialized", "Serialize all the kernel functions", false,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
         strvector_t{ "--timemory-cupti-pcsampling-serialize" });
 
     insert<size_t>(
-        "TIMEMORY_CUPTI_PCSAMPLING_NUM_COLLECT", "cupti_pcsampling_num_collect",
-        "Number of PCs to be collected", size_t{ 100 },
+        TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_NUM_COLLECT"),
+        "cupti_pcsampling_num_collect", "Number of PCs to be collected", size_t{ 100 },
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
         strvector_t{ "--timemory-cupti-pcsampling-num-collect" });
 
     insert<std::string>(
-        "TIMEMORY_CUPTI_PCSAMPLING_STALL_REASONS", "cupti_pcsampling_stall_reasons",
-        "The PC sampling stall reasons to count", std::string{},
+        TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_STALL_REASONS"),
+        "cupti_pcsampling_stall_reasons", "The PC sampling stall reasons to count",
+        std::string{},
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
         strvector_t{ "--timemory-cupti-pcsampling-stall-reasons" });
 
@@ -1184,7 +1183,7 @@ settings::initialize_roofline()
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         bool, roofline_type_labels_cpu, TIMEMORY_SETTINGS_KEY("ROOFLINE_TYPE_LABELS_CPU"),
         "Configure labels, etc. for the roofline components for CPU (see also: "
-        "TIMEMORY_ROOFLINE_TYPE_LABELS)",
+        "ROOFLINE_TYPE_LABELS)",
         static_cast<tsettings<bool>*>(
             m_data[TIMEMORY_SETTINGS_KEY("ROOFLINE_TYPE_LABELS")].get())
             ->get(),
@@ -1193,7 +1192,7 @@ settings::initialize_roofline()
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         bool, roofline_type_labels_gpu, TIMEMORY_SETTINGS_KEY("ROOFLINE_TYPE_LABELS_GPU"),
         "Configure labels, etc. for the roofline components for GPU (see also: "
-        "TIMEMORY_ROOFLINE_TYPE_LABELS)",
+        "ROOFLINE_TYPE_LABELS)",
         static_cast<tsettings<bool>*>(
             m_data[TIMEMORY_SETTINGS_KEY("ROOFLINE_TYPE_LABELS")].get())
             ->get(),
@@ -1368,19 +1367,19 @@ settings::initialize_dart()
     // PRINT_HERE("%s", "");
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, dart_type, TIMEMORY_SETTINGS_KEY("DART_TYPE"),
-        "Only echo this measurement type (see also: TIMEMORY_DART_OUTPUT)", "",
+        "Only echo this measurement type (see also: DART_OUTPUT)", "",
         TIMEMORY_ESC(strset_t{ "native", "io", "dart" }),
         strvector_t({ "--timemory-dart-type" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         uint64_t, dart_count, TIMEMORY_SETTINGS_KEY("DART_COUNT"),
-        "Only echo this number of dart tags (see also: TIMEMORY_DART_OUTPUT)", 1,
+        "Only echo this number of dart tags (see also: DART_OUTPUT)", 1,
         TIMEMORY_ESC(strset_t{ "native", "io", "dart" }),
         strvector_t({ "--timemory-dart-count" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, dart_label, TIMEMORY_SETTINGS_KEY("DART_LABEL"),
-        "Echo the category instead of the label (see also: TIMEMORY_DART_OUTPUT)", true,
+        "Echo the category instead of the label (see also: DART_OUTPUT)", true,
         TIMEMORY_ESC(strset_t{ "native", "io", "dart" }),
         strvector_t({ "--timemory-dart-label" }), -1, 1);
 }
@@ -1447,7 +1446,10 @@ settings::read(std::istream& ifs, std::string inp)
 {
     if(m_read_configs.find(inp) != m_read_configs.end())
     {
-        PRINT_HERE("Warning! Re-reading config file: %s", inp.c_str());
+        if(get_env<int>(TIMEMORY_SETTINGS_KEY("VERBOSE"), 0) > 0)
+        {
+            PRINT_HERE("Warning! Re-reading config file: %s", inp.c_str());
+        }
     }
     m_read_configs.emplace(inp);
 
@@ -1664,11 +1666,10 @@ settings::init_config(bool _search_default)
     if(get_debug() || get_verbose() > 3)
         PRINT_HERE("%s", "");
 
-    static const auto _dcfgs = std::set<std::string>{
-        get_env<string_t>("HOME") + std::string("/.timemory.cfg"),
-        get_env<string_t>("HOME") + std::string("/.timemory.json"),
-        get_env<string_t>("HOME") + std::string("/.config/timemory.cfg"),
-        get_env<string_t>("HOME") + std::string("/.config/timemory.json")
+    static const auto _homedir = get_env<string_t>("HOME");
+    static const auto _dcfgs   = std::set<std::string>{
+        _homedir + std::string("/." TIMEMORY_SETTINGS_CONFIG_NAME ".cfg"),
+        _homedir + std::string("/." TIMEMORY_SETTINGS_CONFIG_NAME ".json")
     };
 
     auto _cfg   = get_config_file();

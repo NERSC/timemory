@@ -150,11 +150,14 @@ if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_USE_CTP)
     if(compile-time-perf_FOUND)
         enable_compile_time_perf(
             timemory-compile-time
+            ${TIMEMORY_CTP_OPTIONS}
             LINK
             ANALYZER_OPTIONS
             -s
             "${PROJECT_BINARY_DIR}/"
+            "${CMAKE_BINARY_DIR}/"
             "${PROJECT_SOURCE_DIR}/"
+            "${CMAKE_SOURCE_DIR}/"
             -f
             "lang-all"
             "so"
