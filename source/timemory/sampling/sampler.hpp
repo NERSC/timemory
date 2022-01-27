@@ -54,6 +54,7 @@
 #include <vector>
 
 // C includes
+#include <cassert>
 #include <cerrno>
 #include <csignal>
 #include <cstdio>
@@ -274,6 +275,11 @@ struct sampler<CompT<Types...>, N, SigIds...>
     using tracker_type = policy::instance_tracker<this_type, true>;
 
     friend struct allocator<this_type>;
+
+    static_assert(!fixed_size_t<N>::value || trait::buffer_size<this_type>::value > 0,
+                  "Error! Dynamic sampler has a default buffer size of zero");
+
+    static constexpr bool is_dynamic() { return !fixed_size_t<N>::value; }
 
     static void execute(int signum);
     static void execute(int signum, siginfo_t*, void*);
@@ -740,12 +746,14 @@ template <typename... Args, typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::sample(Args&&... _args)
 {
-    if(m_data.size() == m_buffer_size)
+    assert(m_buffer_size > 0);
+    if(m_data.size() == m_buffer_size || m_data.capacity() < m_buffer_size)
     {
         m_notify();
         m_wait();
     }
 
+    assert(m_data.capacity() >= m_buffer_size);
     m_data.emplace_back(bundle_type{});
     m_last = &m_data.back();
     if(m_backtrace)
@@ -1105,9 +1113,11 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
 
         memset(&_custom_sa, 0, sizeof(_custom_sa));
 
-        _custom_sa.sa_handler   = &this_type::execute;
-        _custom_sa.sa_sigaction = &this_type::execute;
-        _custom_sa.sa_flags     = m_timer_data.m_flags;
+        if(m_timer_data.m_flags & (1 << SA_SIGINFO))
+            _custom_sa.sa_sigaction = &this_type::execute;
+        else
+            _custom_sa.sa_handler = &this_type::execute;
+        _custom_sa.sa_flags = m_timer_data.m_flags;
 
         // block signals on thread while configuring
         sampling::block_signals(_signals, sigmask_scope::thread);
