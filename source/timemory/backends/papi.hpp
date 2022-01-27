@@ -161,16 +161,16 @@ working()
 //--------------------------------------------------------------------------------------//
 
 inline bool
-check(int retval, const std::string& mesg, bool quiet = false)
+check(int retval, const char* mesg, bool quiet = false)
 {
     bool success = (retval == PAPI_OK);
     if(!success && !quiet)
     {
 #if defined(TIMEMORY_USE_PAPI)
-        auto              error_str   = PAPI_strerror(retval);
+        auto*             error_str   = PAPI_strerror(retval);
         static const auto BUFFER_SIZE = 1024;
         static char       buf[BUFFER_SIZE];
-        sprintf(buf, "%s : PAPI_error %d: %s\n", mesg.c_str(), retval, error_str);
+        sprintf(buf, "%s : PAPI_error %d: %s\n", mesg, retval, error_str);
         if(settings::papi_fail_on_error())
         {
             TIMEMORY_EXCEPTION(buf);
@@ -265,7 +265,7 @@ get_event_code(const std::string& event_code_str)
     int               retval = PAPI_event_name_to_code(event_code_char, &event_code);
     std::stringstream ss;
     ss << "Warning!! Failure converting " << event_code_str << " to enum value";
-    working() = check(retval, ss.str());
+    working() = check(retval, ss.str().c_str());
     return (retval == PAPI_OK) ? event_code : PAPI_NOT_INITED;
 #else
     consume_parameters(event_code_str);
@@ -284,7 +284,7 @@ get_event_code_name(int event_code)
     int                   retval = PAPI_event_code_to_name(event_code, event_code_char);
     std::stringstream     ss;
     ss << "Warning!! Failure converting event code " << event_code << " to a name";
-    working() = check(retval, ss.str());
+    working() = check(retval, ss.str().c_str());
     return (retval == PAPI_OK) ? std::string(event_code_char) : "";
 #else
     consume_parameters(event_code);
@@ -399,7 +399,7 @@ inline void
 init_library()
 {
 #if defined(TIMEMORY_USE_PAPI)
-    if(!PAPI_is_initialized() && papi_main_tid_assigned)
+    if((PAPI_is_initialized() == 0) && papi_main_tid_assigned)
     {
         int retval = PAPI_library_init(PAPI_VER_CURRENT);
         if(retval != PAPI_VER_CURRENT && retval > 0)
@@ -417,7 +417,7 @@ init()
 {
     // initialize the PAPI library
 #if defined(TIMEMORY_USE_PAPI)
-    if(!PAPI_is_initialized())
+    if(PAPI_is_initialized() == 0)
     {
         details::init_library();
         details::init_multiplexing();
@@ -436,7 +436,7 @@ shutdown()
 {
     // finish using PAPI and free all related resources
 #if defined(TIMEMORY_USE_PAPI)
-    if(PAPI_is_initialized())
+    if(PAPI_is_initialized() != 0)
     {
         unregister_thread();
         if(get_tid() == get_main_tid())
@@ -500,14 +500,14 @@ enable_multiplexing(int event_set, int component = 0)
         std::stringstream ss;
         ss << "Warning!! Failure to assign event set component. event set: " << event_set
            << ", component: " << component;
-        working_assign = check(retval, ss.str());
+        working_assign = check(retval, ss.str().c_str());
     }
     if(working_assign)
     {
         auto              retval = PAPI_set_multiplex(event_set);
         std::stringstream ss;
         ss << "Warning!! Failure to enable multiplex on EventSet " << event_set;
-        check(retval, ss.str());
+        check(retval, ss.str().c_str());
     }
 #else
     consume_parameters(event_set, component);
