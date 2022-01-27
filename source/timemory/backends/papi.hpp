@@ -181,7 +181,7 @@ check(int retval, const char* mesg, bool quiet = false)
                 fprintf(stderr, "%s", buf);
         }
 #else
-        fprintf(stderr, "%s (error code = %i)\n", mesg.c_str(), retval);
+        fprintf(stderr, "%s (error code = %i)\n", mesg, retval);
 #endif
     }
     return (success && working());
