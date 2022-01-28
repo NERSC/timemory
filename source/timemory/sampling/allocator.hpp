@@ -49,16 +49,26 @@
         throw std::runtime_error(#VAL);                                                  \
     }
 
-#define TIMEMORY_SEMAPHORE_TRYWAIT(SEM, EC)                                              \
-    EC = sem_trywait(&SEM);                                                              \
+#define TIMEMORY_SEMAPHORE_CHECK_MSG(VAL, ...)                                           \
+    if(VAL != 0)                                                                         \
+    {                                                                                    \
+        perror(__VA_ARGS__);                                                             \
+        throw std::runtime_error(__VA_ARGS__);                                           \
+    }
+
+#define TIMEMORY_SEMAPHORE_HANDLE_EINTR(FUNC, EC, ...)                                   \
+    EC = FUNC(__VA_ARGS__);                                                              \
     if(EC != 0)                                                                          \
         EC = errno;                                                                      \
     while(EC == EINTR)                                                                   \
     {                                                                                    \
-        EC = sem_trywait(&SEM);                                                          \
+        EC = FUNC(__VA_ARGS__);                                                          \
         if(EC != 0)                                                                      \
             EC = errno;                                                                  \
     }
+
+#define TIMEMORY_SEMAPHORE_TRYWAIT(SEM, EC)                                              \
+    TIMEMORY_SEMAPHORE_HANDLE_EINTR(sem_trywait, EC, &SEM)
 
 namespace tim
 {

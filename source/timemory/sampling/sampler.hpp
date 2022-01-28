@@ -932,13 +932,19 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
     // prevent re-entry from different signals
     static thread_local semaphore_t _sem = []() {
         semaphore_t _v{};
-        CONDITIONAL_PRINT_HERE(settings::debug(), "Initializing %s...", "semaphore");
-        TIMEMORY_SEMAPHORE_CHECK(sem_init(&_v, 0, 1));
+        CONDITIONAL_PRINT_HERE(settings::debug(), "initializing %s", "semaphore");
+        int _err = 0;
+        TIMEMORY_SEMAPHORE_HANDLE_EINTR(sem_init, _err, &_v, 0, 1)
+        TIMEMORY_SEMAPHORE_CHECK_MSG(_err, "sem_init(&_v, 0, 1)")
+        CONDITIONAL_PRINT_HERE(settings::debug(), "%s initialized", "semaphore");
         return _v;
     }();
     static thread_local auto _sem_dtor = scope::destructor{ []() {
-        CONDITIONAL_PRINT_HERE(settings::debug(), "Destroying %s...", "semaphore");
-        TIMEMORY_SEMAPHORE_CHECK(sem_destroy(&_sem));
+        CONDITIONAL_PRINT_HERE(settings::debug(), "destroying %s", "semaphore");
+        int                  _err      = 0;
+        TIMEMORY_SEMAPHORE_HANDLE_EINTR(sem_destroy, _err, &_sem)
+        TIMEMORY_SEMAPHORE_CHECK_MSG(_err, "sem_destroy(&_sem)")
+        CONDITIONAL_PRINT_HERE(settings::debug(), "%s destroyed", "semaphore");
     } };
 
     IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
@@ -949,8 +955,7 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
         if(_err == EAGAIN)
         {
             CONDITIONAL_PRINT_HERE(settings::debug(),
-                                   "Ignoring signal %i (raised while sampling)...",
-                                   signum);
+                                   "Ignoring signal %i (raised while sampling)", signum);
             return;
         }
         else if(_err != 0)
@@ -967,7 +972,8 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
         if(!itr)
             continue;
 
-        CONDITIONAL_PRINT_HERE(itr->m_verbose > 1, "sampling (index: %zu)", itr->m_idx);
+        CONDITIONAL_PRINT_HERE(itr->m_verbose > 1, "sampling signal %i (index: %zu)",
+                               signum, itr->m_idx);
 
         IF_CONSTEXPR(trait::check_signals<this_type>::value)
         {
@@ -1003,13 +1009,19 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t* _info, vo
     // prevent re-entry from different signals
     static thread_local semaphore_t _sem = []() {
         semaphore_t _v{};
-        CONDITIONAL_PRINT_HERE(settings::debug(), "Initializing %s...", "semaphore");
-        TIMEMORY_SEMAPHORE_CHECK(sem_init(&_v, 0, 1));
+        CONDITIONAL_PRINT_HERE(settings::debug(), "initializing %s", "semaphore");
+        int _err = 0;
+        TIMEMORY_SEMAPHORE_HANDLE_EINTR(sem_init, _err, &_v, 0, 1)
+        TIMEMORY_SEMAPHORE_CHECK_MSG(_err, "sem_init(&_v, 0, 1)")
+        CONDITIONAL_PRINT_HERE(settings::debug(), "%s initialized", "semaphore");
         return _v;
     }();
     static thread_local auto _sem_dtor = scope::destructor{ []() {
-        CONDITIONAL_PRINT_HERE(settings::debug(), "Destroying %s...", "semaphore");
-        TIMEMORY_SEMAPHORE_CHECK(sem_destroy(&_sem));
+        CONDITIONAL_PRINT_HERE(settings::debug(), "destroying %s", "semaphore");
+        int                  _err      = 0;
+        TIMEMORY_SEMAPHORE_HANDLE_EINTR(sem_destroy, _err, &_sem)
+        TIMEMORY_SEMAPHORE_CHECK_MSG(_err, "sem_destroy(&_sem)")
+        CONDITIONAL_PRINT_HERE(settings::debug(), "%s destroyed", "semaphore");
     } };
 
     IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
@@ -1020,8 +1032,7 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t* _info, vo
         if(_err == EAGAIN)
         {
             CONDITIONAL_PRINT_HERE(settings::debug(),
-                                   "Ignoring signal %i (raised while sampling)...",
-                                   signum);
+                                   "Ignoring signal %i (raised while sampling)", signum);
             return;
         }
         else if(_err != 0)
@@ -1038,7 +1049,8 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t* _info, vo
         if(!itr)
             continue;
 
-        CONDITIONAL_PRINT_HERE(itr->m_verbose > 1, "sampling (index: %zu)", itr->m_idx);
+        CONDITIONAL_PRINT_HERE(itr->m_verbose > 1, "sampling signal %i (index: %zu)",
+                               signum, itr->m_idx);
 
         IF_CONSTEXPR(trait::check_signals<this_type>::value)
         {
@@ -1507,6 +1519,8 @@ sampler<CompT<Types...>, N, SigIds...>::_init_sampler(int64_t _tid)
     m_data.fill(bundle_type{ m_label });
     m_last = &m_data.front();
     get_samplers(_tid).emplace_back(this);
+    if(settings::debug())
+        m_verbose += 16;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -1520,6 +1534,8 @@ sampler<CompT<Types...>, N, SigIds...>::_init_sampler(int64_t _tid)
     m_notify();
     m_wait();
     get_samplers(_tid).emplace_back(this);
+    if(settings::debug())
+        m_verbose += 16;
 }
 //
 //--------------------------------------------------------------------------------------//
