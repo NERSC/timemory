@@ -771,11 +771,10 @@ settings::insert(Sp&& _env, const std::string& _name, const std::string& _desc, 
     auto _sid = std::string{ std::forward<Sp>(_env) };
     if(get_initialized())  // don't set env before timemory_init
         set_env(_sid, _init, 0);
-    m_order.push_back(_sid);
-    return m_data.insert(
-        { string_view_t{ m_order.back() },
-          std::make_shared<tsettings<Tp, Vp>>(_init, _name, _sid, _desc,
-                                              std::forward<Args>(_args)...) });
+    auto& _back = m_order.emplace_back(_sid);
+    return m_data.emplace(string_view_t{ _back },
+                          std::make_shared<tsettings<Tp, Vp>>(
+                              _init, _name, _sid, _desc, std::forward<Args>(_args)...));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -795,8 +794,8 @@ settings::insert(tsetting_pointer_t<Tp, Vp> _ptr, Sp&& _env)
         {
             if(get_initialized())  // don't set env before timemory_init
                 set_env(_sid, _ptr->as_string(), 0);
-            m_order.push_back(_sid);
-            return m_data.insert({ string_view_t{ m_order.back() }, _ptr });
+            auto& _back = m_order.emplace_back(_sid);
+            return m_data.emplace(string_view_t{ _back }, _ptr);
         }
     }
 
