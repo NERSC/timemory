@@ -230,6 +230,9 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
 {
     block_signals();
 
+    threading::set_thread_name(
+        std::string{ "samp.alloc." + std::to_string(_alloc->m_tid) }.c_str());
+
     bool   _completed   = false;
     size_t _swap_count  = 0;
     size_t _buffer_size = _obj->get_buffer_size();

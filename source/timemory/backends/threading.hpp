@@ -38,6 +38,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstring>
 #include <functional>
 #include <map>
 #include <set>
@@ -45,9 +46,12 @@
 #include <thread>
 #include <utility>
 
+#if defined(TIMEMORY_UNIX)
+#    include <pthread.h>
+#endif
+
 #if defined(TIMEMORY_LINUX)
 #    include <fstream>
-#    include <pthread.h>
 #    include <sys/syscall.h>
 #    include <unistd.h>
 #endif
@@ -178,6 +182,44 @@ get_sys_tid()
     return GetCurrentThreadId();
 #else
     return static_cast<uint32_t>(get_id());
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline void
+set_thread_name(const char* _name)
+{
+#if defined(TIMEMORY_UNIX)
+    auto _length_error = [_name]() {
+        fprintf(stderr,
+                "[threading::set_thread_name] the length of '%s' + null-terminator (%i) "
+                "exceeds the max allowed limit (usually 16)\n",
+                _name, (int) (strlen(_name) + 1));
+    };
+
+    constexpr size_t _size = 16;
+    size_t           _n    = std::min<size_t>(_size - 1, strlen(_name));
+    char             _buff[_size];
+    memset(_buff, '\0', _size * sizeof(char));
+    memcpy(_buff, _name, _n * sizeof(char));
+#endif
+
+#if defined(TIMEMORY_LINUX)
+    auto _err = pthread_setname_np(pthread_self(), _buff);
+    if(_err == ERANGE)
+        _length_error();
+#elif defined(TIMEMORY_MACOS)
+    auto _err = pthread_setname_np(_buff);
+    if(_err == ERANGE)
+        _length_error();
+#elif defined(TIMEMORY_WINDOWS)
+    auto     _n     = strlen(_name);
+    wchar_t* _wname = new wchar_t[_n + 1];
+    for(size_t i = 0; i < _n; ++i)
+        _wname[i] = _name[i];
+    _wname[_n] = '\0';
+    SetThreadDescription(GetCurrentThread(), _wname);
 #endif
 }
 //
