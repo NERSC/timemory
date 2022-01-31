@@ -206,21 +206,15 @@ struct check_record_type
 template <typename Up, typename Vp>
 struct stats_enabled
 {
-    using EmptyT = std::tuple<>;
-
     static constexpr bool value =
         (trait::record_statistics<Up>::value && !concepts::is_null_type<Vp>::value);
 };
 //
-//--------------------------------------------------------------------------------------//
-//
-template <typename U, typename StatsT>
-struct enabled_statistics
+template <typename Up, typename Vp>
+struct stats_enabled<Up, statistics<Vp>>
 {
-    using EmptyT = std::tuple<>;
-
     static constexpr bool value =
-        (trait::record_statistics<U>::value && !std::is_same<StatsT, EmptyT>::value);
+        (trait::record_statistics<Up>::value && !concepts::is_null_type<Vp>::value);
 };
 //
 //--------------------------------------------------------------------------------------//

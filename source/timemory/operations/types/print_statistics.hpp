@@ -61,6 +61,14 @@ public:
     using widths_t = std::vector<int64_t>;
 
 public:
+    TIMEMORY_DEFAULT_OBJECT(print_statistics)
+
+    template <typename Vp>
+    constexpr bool operator()(const Vp&)
+    {
+        return stats_enabled<decay_t<Tp>, decay_t<Vp>>::value;
+    }
+
     template <typename Self, template <typename> class Sp, typename Vp, typename Up = Tp,
               enable_if_t<stats_enabled<Up, Vp>::value, int> = 0>
     TIMEMORY_NOINLINE TIMEMORY_COLD print_statistics(const type&, utility::stream& _os,
