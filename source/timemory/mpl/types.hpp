@@ -174,6 +174,12 @@ template <typename T>
 struct uses_percent_units;
 
 template <typename T>
+struct uses_power_units;
+
+template <typename T>
+struct uses_temperature_units;
+
+template <typename T>
 struct requires_json;
 
 template <typename T>
@@ -225,7 +231,19 @@ template <typename T>
 struct file_sampler;
 
 template <typename T>
+struct format_precision;
+
+template <typename T>
+struct format_width;
+
+template <typename T>
+struct format_flags;
+
+template <typename T>
 struct units;
+
+template <typename T>
+struct assignable_units;
 
 template <typename T>
 struct echo_enabled;

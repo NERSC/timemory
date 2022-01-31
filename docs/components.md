@@ -379,6 +379,11 @@ The general design is that each user-bundle:
 
 .. doxygenstruct:: tim::component::nvtx_marker
    :members:
+
+.. doxygenstruct:: tim::component::hip_event
+
+.. doxygenstruct:: tim::component::roctx_marker
+   :members:
 ```
 
 ## Data Tracking Components
@@ -408,6 +413,18 @@ The general design is that each user-bundle:
 
 ```eval_rst
 .. doxygenstruct:: tim::component::base
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::component::base_state
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::component::base_data
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::component::base_format
+   :members:
+   :undoc-members:
+.. doxygenstruct:: tim::component::base_units
    :members:
    :undoc-members:
 .. doxygenstruct:: tim::component::empty_base

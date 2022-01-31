@@ -316,6 +316,22 @@ struct uses_percent_units : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// \struct tim::trait::uses_power_units
+/// \brief trait that designates the value represents a power value
+///
+template <typename T>
+struct uses_power_units : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::uses_temperature_units
+/// \brief trait that designates the value represents a temperature
+///
+template <typename T>
+struct uses_temperature_units : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::requires_json
 /// \brief trait that designates a type should always print a JSON output
 ///
@@ -483,6 +499,79 @@ struct file_sampler : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// \struct tim::trait::format_precision
+/// \brief trait that specifies the default precision when printing
+///
+template <typename T>
+struct format_precision
+{
+    static constexpr short value = trait::uses_percent_units<T>::value ? 1 : 3;
+
+    auto operator()() const { return (*this)(0); }
+
+private:
+    template <typename U = T, short V = U::precision>
+    auto operator()(int) const
+    {
+        return V;
+    }
+    template <typename U = T>
+    auto operator()(long) const
+    {
+        return value;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::format_width
+/// \brief trait that specifies the default width when printing
+///
+template <typename T>
+struct format_width
+{
+    static constexpr short value = trait::uses_percent_units<T>::value ? 6 : 8;
+
+    auto operator()() const { return (*this)(0); }
+
+private:
+    template <typename U = T, short V = U::width>
+    auto operator()(int) const
+    {
+        return V;
+    }
+    template <typename U = T>
+    auto operator()(long) const
+    {
+        return value;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::format_flags
+/// \brief trait that specifies the default formatting flags when printing
+///
+template <typename T>
+struct format_flags
+{
+    static constexpr std::ios_base::fmtflags value =
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+
+    auto operator()() const { return (*this)(0); }
+
+private:
+    template <typename U = T, std::ios_base::fmtflags V = U::format_flags>
+    auto operator()(int) const
+    {
+        return V;
+    }
+    template <typename U = T>
+    auto operator()(long) const
+    {
+        return value;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::units
 /// \brief trait that specifies the units
 ///
@@ -492,6 +581,14 @@ struct units
     using type         = int64_t;
     using display_type = std::string;
 };
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::assignable_units
+/// \brief trait that specifies the units should be assignable
+///
+template <typename T>
+struct assignable_units : false_type
+{};
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::echo_enabled

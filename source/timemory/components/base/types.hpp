@@ -69,11 +69,6 @@ operator-(Tp lhs, const Tp& rhs)
 
 namespace component
 {
-// generic static polymorphic base class
-template <typename Tp,
-          typename ValueType = std::conditional_t<
-              concepts::is_empty<trait::data_t<Tp>>::value, int64_t, trait::data_t<Tp>>>
-struct TIMEMORY_VISIBLE base;
 //
 struct TIMEMORY_VISIBLE empty_base;
 //
@@ -83,8 +78,20 @@ struct TIMEMORY_VISIBLE dynamic_base;
 //
 struct TIMEMORY_VISIBLE base_state;
 //
+template <typename Tp>
+struct TIMEMORY_VISIBLE base_format;
+//
 template <typename Tp, size_t Sz>
 struct TIMEMORY_VISIBLE base_data;
+//
+template <typename Tp, typename ValueT>
+struct TIMEMORY_VISIBLE base_units;
+//
+// generic static polymorphic base class
+template <typename Tp,
+          typename ValueType = std::conditional_t<
+              concepts::is_empty<trait::data_t<Tp>>::value, int64_t, trait::data_t<Tp>>>
+struct TIMEMORY_VISIBLE base;
 //
 template <typename Tp>
 struct base<Tp, void>;

@@ -37,10 +37,9 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
-#include <ratio>
 #include <string>
 #include <tuple>
-#include <vector>
+#include <unordered_set>
 
 #if defined(TIMEMORY_UNIX)
 #    include <unistd.h>
@@ -103,6 +102,14 @@ static constexpr int64_t GiB = 1024 * MiB;
 static constexpr int64_t TiB = 1024 * GiB;
 static constexpr int64_t PiB = 1024 * TiB;
 
+static constexpr int64_t nanowatt  = 1;
+static constexpr int64_t microwatt = 1000 * nanowatt;
+static constexpr int64_t milliwatt = 1000 * microwatt;
+static constexpr int64_t watt      = 1000 * milliwatt;
+static constexpr int64_t kilowatt  = 1000 * watt;
+static constexpr int64_t megawatt  = 1000 * kilowatt;
+static constexpr int64_t gigawatt  = 1000 * megawatt;
+
 #if defined(TIMEMORY_LINUX)
 
 inline int64_t
@@ -144,18 +151,17 @@ const int64_t clocks_per_sec = CLOCKS_PER_SEC;
 inline std::string
 time_repr(int64_t _unit)
 {
-    std::string _sunit;
     switch(_unit)
     {
-        case nsec: _sunit = "nsec"; break;
-        case usec: _sunit = "usec"; break;
-        case msec: _sunit = "msec"; break;
-        case csec: _sunit = "csec"; break;
-        case dsec: _sunit = "dsec"; break;
-        case sec: _sunit = "sec"; break;
-        default: _sunit = "UNK"; break;
+        case nsec: return "nsec"; break;
+        case usec: return "usec"; break;
+        case msec: return "msec"; break;
+        case csec: return "csec"; break;
+        case dsec: return "dsec"; break;
+        case sec: return "sec"; break;
+        default: return "UNK"; break;
     }
-    return _sunit;
+    return std::string{};
 }
 
 //--------------------------------------------------------------------------------------//
@@ -163,23 +169,41 @@ time_repr(int64_t _unit)
 inline std::string
 mem_repr(int64_t _unit)
 {
-    std::string _sunit;
     switch(_unit)
     {
-        case byte: _sunit = "B"; break;
-        case kilobyte: _sunit = "KB"; break;
-        case megabyte: _sunit = "MB"; break;
-        case gigabyte: _sunit = "GB"; break;
-        case terabyte: _sunit = "TB"; break;
-        case petabyte: _sunit = "PB"; break;
-        case kibibyte: _sunit = "KiB"; break;
-        case mebibyte: _sunit = "MiB"; break;
-        case gibibyte: _sunit = "GiB"; break;
-        case tebibyte: _sunit = "TiB"; break;
-        case pebibyte: _sunit = "PiB"; break;
-        default: _sunit = "UNK"; break;
+        case byte: return "B"; break;
+        case kilobyte: return "KB"; break;
+        case megabyte: return "MB"; break;
+        case gigabyte: return "GB"; break;
+        case terabyte: return "TB"; break;
+        case petabyte: return "PB"; break;
+        case kibibyte: return "KiB"; break;
+        case mebibyte: return "MiB"; break;
+        case gibibyte: return "GiB"; break;
+        case tebibyte: return "TiB"; break;
+        case pebibyte: return "PiB"; break;
+        default: return "UNK"; break;
     }
-    return _sunit;
+    return std::string{};
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline std::string
+power_repr(int64_t _unit)
+{
+    switch(_unit)
+    {
+        case nanowatt: return "nanowatts"; break;
+        case microwatt: return "microwatts"; break;
+        case milliwatt: return "milliwatts"; break;
+        case watt: return "watts"; break;
+        case kilowatt: return "kilowatts"; break;
+        case megawatt: return "megawatts"; break;
+        case gigawatt: return "gigawatts"; break;
+        default: return "UNK"; break;
+    }
+    return std::string{};
 }
 
 //--------------------------------------------------------------------------------------//
@@ -269,8 +293,86 @@ get_timing_unit(std::string _unit)
 
 //--------------------------------------------------------------------------------------//
 
+inline std::tuple<std::string, int64_t>
+get_power_unit(std::string _unit)
+{
+    using string_t    = std::string;
+    using return_type = std::tuple<string_t, int64_t>;
+    using inner_t     = std::tuple<string_t, string_t, int64_t>;
+
+    if(_unit.length() == 0)
+        return return_type{ "watts", tim::units::watt };
+
+    for(auto& itr : _unit)
+        itr = tolower(itr);
+
+    for(const auto& itr : { inner_t{ "nanowatts", "nW", tim::units::nanowatt },
+                            inner_t{ "microwatts", "uW", tim::units::microwatt },
+                            inner_t{ "milliwatts", "mW", tim::units::milliwatt },
+                            inner_t{ "watts", "W", tim::units::watt },
+                            inner_t{ "kilowatts", "KW", tim::units::kilowatt },
+                            inner_t{ "megawatts", "MW", tim::units::megawatt },
+                            inner_t{ "gigawatts", "GW", tim::units::gigawatt } })
+    {
+        if(_unit == std::get<0>(itr) || _unit + "s" == std::get<0>(itr) ||
+           _unit == std::get<1>(itr))
+        {
+            return return_type{ std::get<0>(itr), std::get<2>(itr) };
+        }
+    }
+
+    std::cerr << "Warning!! No power unit matching \"" << _unit << "\". Using default..."
+              << std::endl;
+
+    return return_type{ "sec", tim::units::sec };
+}
+
+//--------------------------------------------------------------------------------------//
+
+namespace temperature
+{
+enum unit_system : int8_t
+{
+    Celsius = 0,
+    Fahrenheit,
+    Kelvin
+};
+
+template <typename Tp>
+Tp
+convert(Tp _v, unit_system _from, unit_system _to)
+{
+    switch(_from)
+    {
+        case Celsius:
+        {
+            switch(_to)
+            {
+                case Celsius: return _v;
+                case Fahrenheit: return static_cast<Tp>((_v * 1.8) + 32);
+                case Kelvin: return (_v - 273);
+            }
+        }
+        case Fahrenheit:
+        {
+            switch(_to)
+            {
+                case Celsius: return static_cast<Tp>((_v - 32) / 1.8);
+                case Fahrenheit: return _v;
+                case Kelvin: return (_v - 273);
+            }
+        }
+        case Kelvin:
+        {
+            switch(_to)
+            {
+                case Celsius: return (_v + 273);
+                case Fahrenheit: return static_cast<Tp>(((_v + 273) * 1.8) + 32);
+                case Kelvin: return _v;
+            }
+        }
+    }
+}
+}  // namespace temperature
 }  // namespace units
-
-//======================================================================================//
-
 }  // namespace tim
