@@ -939,13 +939,6 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
         CONDITIONAL_PRINT_HERE(settings::debug(), "%s initialized", "semaphore");
         return _v;
     }();
-    static thread_local auto _sem_dtor = scope::destructor{ []() {
-        CONDITIONAL_PRINT_HERE(settings::debug(), "destroying %s", "semaphore");
-        int                  _err      = 0;
-        TIMEMORY_SEMAPHORE_HANDLE_EINTR(sem_destroy, _err, &_sem)
-        TIMEMORY_SEMAPHORE_CHECK_MSG(_err, "sem_destroy(&_sem)")
-        CONDITIONAL_PRINT_HERE(settings::debug(), "%s destroyed", "semaphore");
-    } };
 
     IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
     {
