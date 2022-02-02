@@ -370,8 +370,8 @@ generate(py::module& _pymod)
             if(!tim::filepath::open(_ofs, _fname))
                 throw std::runtime_error("Error opening " + _fname + " for output");
             if(tim::settings::verbose() > 0)
-                printf("[%s]|%i> Outputting '%s'...\n", "settings", tim::dmp::rank(),
-                       _fname.c_str());
+                fprintf(stderr, "[%s]|%i> Outputting '%s'...\n", "settings",
+                        tim::dmp::rank(), _fname.c_str());
             _ofs << _ss.str() << "\n";
         }
         return py::module::import("json").attr("loads")(_ss.str());

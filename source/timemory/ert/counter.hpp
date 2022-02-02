@@ -419,7 +419,8 @@ serialize(std::string fname, exec_data<Counter>& obj)
     if(dmp_rank == 0)
     {
         fname = settings::compose_output_filename(fname, ".json");
-        printf("[%i]> Outputting '%s'...\n", dmp_rank, fname.c_str());
+        if(settings::verbose() >= 0)
+            fprintf(stderr, "[%i]> Outputting '%s'...\n", dmp_rank, fname.c_str());
         std::ofstream ofs{};
         if(filepath::open(ofs, fname))
         {

@@ -97,8 +97,9 @@ base::print::print_text(const std::string& outfname, stream_type stream)  // NOL
         std::ofstream fout{};
         if(filepath::open(fout, outfname))
         {
-            printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
-                   outfname.c_str());
+            if(!m_settings || m_settings->get_verbose() >= 0)
+                fprintf(stderr, "[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
+                        outfname.c_str());
             write(fout, stream);
             manager::instance()->add_text_output(label, outfname);
         }
@@ -444,8 +445,9 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results)
             if(fext.empty())
                 fext = "unknown";
             manager::instance()->add_file_output(fext, label, outfname);
-            printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
-                   outfname.c_str());
+            if(!m_settings || m_settings->get_verbose() >= 0)
+                fprintf(stderr, "[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
+                        outfname.c_str());
 
             // ensure write final block during destruction before the file is closed
             auto oa = policy_type::get(ofs);
@@ -481,8 +483,9 @@ print<Tp, true>::print_tree(const std::string& outfname, result_tree& rt)
         if(fext.empty())
             fext = "unknown";
         manager::instance()->add_file_output(fext, label, outfname);
-        printf("[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
-               outfname.c_str());
+        if(!m_settings || m_settings->get_verbose() >= 0)
+            fprintf(stderr, "[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
+                    outfname.c_str());
         std::ofstream ofs{};
         if(filepath::open(ofs, outfname))
         {

@@ -109,8 +109,9 @@ flamegraph<Type>::flamegraph(storage_type* _data, std::string _label,  // NOLINT
         if(filepath::open(ofs, outfname))
         {
             manager::instance()->add_json_output(_label, outfname);
-            printf("[%s]|%i> Outputting '%s'...\n", _label.c_str(), node_rank,
-                   outfname.c_str());
+            if(settings::verbose() >= 0)
+                fprintf(stderr, "[%s]|%i> Outputting '%s'...\n", _label.c_str(),
+                        node_rank, outfname.c_str());
 
             // ensure write final block during destruction before the file is closed
             auto oa = policy_type::get(ofs);

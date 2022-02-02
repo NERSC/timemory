@@ -86,7 +86,7 @@ struct ctest_notes_deleter : public std::default_delete<std::set<std::string>>
         {
             if(settings::debug() || settings::verbose() > 1)
             {
-                std::cout << "[ctest_notes]> Outputting '" << fname << "'..."
+                std::cerr << "[ctest_notes]> Outputting '" << fname << "'..."
                           << std::endl;
             }
             ofs << ss.str() << std::endl;

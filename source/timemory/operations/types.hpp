@@ -1476,7 +1476,8 @@ struct print<Tp, true> : public base::print
         }
         else
         {
-            printf("\n");
+            if(!m_settings || m_settings->get_verbose() >= 0)
+                fprintf(stderr, "\n");
         }
 
         if(dart_output())
@@ -1504,7 +1505,8 @@ struct print<Tp, true> : public base::print
             }
             else
             {
-                printf("\n");
+                if(!m_settings || m_settings->get_verbose() >= 0)
+                    fprintf(stderr, "\n");
             }
         }
 

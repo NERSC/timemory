@@ -156,7 +156,9 @@ perfetto_trace::global_finalize()
     std::string _fname    = tim::settings::compose_output_filename(
         TIMEMORY_JOIN('_', _label, _category), "pftrace", dmp::is_initialized(), _rank);
     // output to a unique filename per rank if DMP is initialized
-    printf("[%s]|%i> Outputting '%s'...\n", _label.c_str(), (int) _rank, _fname.c_str());
+    if(settings::verbose() >= 0)
+        fprintf(stderr, "[%s]|%i> Outputting '%s'...\n", _label.c_str(), (int) _rank,
+                _fname.c_str());
     manager::instance()->add_file_output("binary", _label, _fname);
 
     // Write the result into a file.
