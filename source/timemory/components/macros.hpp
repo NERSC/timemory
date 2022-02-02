@@ -386,47 +386,21 @@
 
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_EXTERN_STORAGE_ALIASES)
-#    define TIMEMORY_EXTERN_STORAGE_ALIASES                                              \
+#if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
+#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE)                                        \
         namespace tim                                                                    \
         {                                                                                \
-        namespace alias                                                                  \
+        extern template class impl::storage<TYPE,                                        \
+                                            trait::uses_value_storage<TYPE>::value>;     \
+        extern template class storage<TYPE, typename TYPE::value_type>;                  \
+        extern template storage_initializer storage_initializer::get<TYPE>();            \
+        namespace node                                                                   \
         {                                                                                \
-        template <typename T>                                                            \
-        using storage_t = storage<T, typename T::value_type>;                            \
-        template <typename T>                                                            \
-        using storage_impl_t = impl::storage<T, trait::uses_value_storage<T>::value>;    \
-        template <typename T>                                                            \
-        using storage_deleter_t = impl::storage_deleter<storage_impl_t<T>>;              \
-        template <typename T>                                                            \
-        using storage_pointer_t =                                                        \
-            std::unique_ptr<alias::storage_impl_t<T>, alias::storage_deleter_t<T>>;      \
+        extern template struct data<TYPE>;                                               \
+        extern template struct graph<TYPE>;                                              \
+        extern template struct result<TYPE>;                                             \
+        extern template struct tree<TYPE>;                                               \
         }                                                                                \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_DECLARE_EXTERN_STORAGE)
-#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE)                                            \
-        TIMEMORY_EXTERN_STORAGE_ALIASES                                                      \
-        namespace tim                                                                        \
-        {                                                                                    \
-        extern template class impl::storage<TYPE,                                            \
-                                            trait::uses_value_storage<TYPE>::value>;         \
-        extern template class storage<TYPE, typename TYPE::value_type>;                      \
-        extern template class singleton<alias::storage_impl_t<TYPE>,                         \
-                                        alias::storage_pointer_t<TYPE>, TIMEMORY_API>;       \
-        extern template storage_singleton<alias::storage_t<TYPE>>*                           \
-                                            get_storage_singleton<alias::storage_t<TYPE>>(); \
-        extern template storage_initializer storage_initializer::get<TYPE>();                \
-        namespace node                                                                       \
-        {                                                                                    \
-        extern template struct data<TYPE>;                                                   \
-        extern template struct graph<TYPE>;                                                  \
-        extern template struct result<TYPE>;                                                 \
-        extern template struct tree<TYPE>;                                                   \
-        }                                                                                    \
         }
 #endif
 //
@@ -434,15 +408,10 @@
 //
 #if !defined(TIMEMORY_INSTANTIATE_EXTERN_STORAGE)
 #    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE)                                    \
-        TIMEMORY_EXTERN_STORAGE_ALIASES                                                  \
         namespace tim                                                                    \
         {                                                                                \
         template class impl::storage<TYPE, trait::uses_value_storage<TYPE>::value>;      \
         template class storage<TYPE, typename TYPE::value_type>;                         \
-        template class singleton<alias::storage_impl_t<TYPE>,                            \
-                                 alias::storage_pointer_t<TYPE>, TIMEMORY_API>;          \
-        template storage_singleton<alias::storage_t<TYPE>>*                              \
-                                     get_storage_singleton<alias::storage_t<TYPE>>();    \
         template storage_initializer storage_initializer::get<TYPE>();                   \
         namespace node                                                                   \
         {                                                                                \
