@@ -28,7 +28,7 @@
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"  // for type-traits
 
-#if !defined(TIMEMORY_COMPONENT_SOURCE) && !defined(TIMEMORY_USE_TIMESTAMP_EXTERN)
+#if !defined(TIMEMORY_TIMESTAMP_SOURCE) && !defined(TIMEMORY_USE_TIMESTAMP_EXTERN)
 #    if !defined(TIMEMORY_COMPONENT_TIMESTAMP_HEADER_ONLY_MODE)
 #        define TIMEMORY_COMPONENT_TIMESTAMP_HEADER_ONLY_MODE 1
 #    endif
