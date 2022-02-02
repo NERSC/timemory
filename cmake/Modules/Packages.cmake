@@ -577,7 +577,7 @@ endif()
 timemory_target_compile_definitions(timemory-no-mpi-init INTERFACE TIMEMORY_MPI_INIT=0)
 
 if(TIMEMORY_USE_MPI AND MPI_FOUND)
-    target_compile_definitions(timemory-mpi INTERFACE TIMEMORY_USE_MPI)
+    timemory_target_compile_definitions(timemory-mpi INTERFACE TIMEMORY_USE_MPI)
 
     foreach(_LANG CXX)
         if(TARGET MPI::MPI_${_LANG})
@@ -806,12 +806,12 @@ if(TIMEMORY_USE_CUDA)
 
     include(ConfigCUDA)
 
-    target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_GPU)
+    timemory_target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_GPU)
 
     if(TIMEMORY_USE_NVTX)
         find_package(NVTX ${TIMEMORY_FIND_QUIETLY})
         if(NVTX_FOUND)
-            target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_NVTX)
+            timemory_target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_NVTX)
             target_include_directories(timemory-cuda SYSTEM
                                        INTERFACE ${NVTX_INCLUDE_DIRS})
             if(NVTX_LIBRARIES)
@@ -948,9 +948,9 @@ endif()
 if(TIMEMORY_USE_HIP AND hip_FOUND)
     target_link_libraries(timemory-headers INTERFACE timemory-hip)
 
-    target_compile_definitions(timemory-hip INTERFACE TIMEMORY_USE_HIP TIMEMORY_USE_GPU)
-    target_compile_definitions(timemory-hip-device INTERFACE TIMEMORY_USE_HIP
-                                                             TIMEMORY_USE_GPU)
+    timemory_target_compile_definitions(timemory-hip INTERFACE TIMEMORY_USE_HIP TIMEMORY_USE_GPU)
+    timemory_target_compile_definitions(timemory-hip-device INTERFACE TIMEMORY_USE_HIP
+                                        TIMEMORY_USE_GPU)
 
     find_library(
         ROCM_roctx64_LIBRARY
@@ -1599,7 +1599,7 @@ if(TIMEMORY_USE_PERFETTO)
     timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
 
     # generate the interface target
-    target_compile_definitions(timemory-perfetto INTERFACE TIMEMORY_USE_PERFETTO)
+    timemory_target_compile_definitions(timemory-perfetto INTERFACE TIMEMORY_USE_PERFETTO)
     target_link_libraries(timemory-perfetto INTERFACE timemory-perfetto-static)
     if(TIMEMORY_INSTALL_HEADERS)
         install(
