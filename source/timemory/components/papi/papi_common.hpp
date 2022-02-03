@@ -351,5 +351,5 @@ papi_common::finalize()
 }  // namespace tim
 
 #if defined(TIMEMORY_PAPI_HEADER_ONLY_MODE) && TIMEMORY_PAPI_HEADER_ONLY_MODE > 0
-#    include "timemory/components/papi/papi_common.hpp"
+#    include "timemory/components/papi/papi_common.cpp"
 #endif

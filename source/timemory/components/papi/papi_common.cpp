@@ -112,4 +112,5 @@ papi_common::finalize_papi()
 
 }  // namespace component
 }  // namespace tim
-#endif
+
+#endif  // TIMEMORY_COMPONENTS_PAPI_PAPI_COMMON_H_
