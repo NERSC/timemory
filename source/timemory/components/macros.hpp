@@ -234,8 +234,9 @@
             static constexpr bool       specialized() { return true; }                   \
             static const char*          enum_string()                                    \
             {                                                                            \
-                static const char* _enum = #ENUM;                                        \
-                return static_cast<const char*>(&_enum[9]);                              \
+                static const char*  _enum   = #ENUM;                                     \
+                static const size_t _offset = std::string{ _enum }.find('_') + 1;        \
+                return static_cast<const char*>(&_enum[_offset]);                        \
             }                                                                            \
             static const char*    id() { return ID; }                                    \
             static const idset_t& ids()                                                  \
