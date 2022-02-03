@@ -47,6 +47,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <iomanip>
 #include <numeric>
 #include <sstream>
 #include <stdexcept>
@@ -129,8 +130,9 @@ template <typename Tp>
 class exec_data
 {
 public:
-    using value_type     = std::tuple<std::string, uint64_t, uint64_t, uint64_t, uint64_t,
-                                  uint64_t, Tp, std::string, std::string, exec_params>;
+    using value_type =
+        std::tuple<std::string, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, Tp,
+                   std::string, int32_t, int32_t, std::string, exec_params>;
     using labels_type    = std::array<string_t, std::tuple_size<value_type>::value>;
     using value_array    = std::vector<value_type>;
     using size_type      = typename value_array::size_type;
@@ -151,21 +153,19 @@ public:
 public:
     //----------------------------------------------------------------------------------//
     //
-    void set_labels(const labels_type& _labels) { m_labels = _labels; }
-    TIMEMORY_NODISCARD labels_type    get_labels() const { return m_labels; }
-    size_type                         size() { return m_values.size(); }
-    iterator                          begin() { return m_values.begin(); }
-    TIMEMORY_NODISCARD const_iterator begin() const { return m_values.begin(); }
-    iterator                          end() { return m_values.end(); }
-    TIMEMORY_NODISCARD const_iterator end() const { return m_values.end(); }
+    void           set_labels(const labels_type& _labels) { m_labels = _labels; }
+    labels_type    get_labels() const { return m_labels; }
+    size_type      size() { return m_values.size(); }
+    iterator       begin() { return m_values.begin(); }
+    const_iterator begin() const { return m_values.begin(); }
+    iterator       end() { return m_values.end(); }
+    const_iterator end() const { return m_values.end(); }
 
 public:
     //----------------------------------------------------------------------------------//
     //
     exec_data& operator+=(const value_type& entry)
     {
-        // static std::mutex            _mutex;
-        // std::unique_lock<std::mutex> _lock(_mutex);
         m_values.resize(m_values.size() + 1);
         m_values.back() = entry;
         // m_values.push_back(entry);
@@ -176,9 +176,6 @@ public:
     //
     exec_data& operator+=(const exec_data& rhs)
     {
-        // static std::mutex            _mutex;
-        // std::unique_lock<std::mutex> _lock(_mutex);
-
         for(const auto& itr : rhs.m_values)
             m_values.push_back(itr);
         return *this;
@@ -189,11 +186,12 @@ public:
     //
     friend std::ostream& operator<<(std::ostream& os, const exec_data& obj)
     {
-        std::stringstream ss;
+        std::stringstream ss{};
         for(const auto& itr : obj.m_values)
         {
             ss << std::setw(24) << std::get<0>(itr) << " (device: " << std::get<7>(itr)
-               << ", dtype = " << std::get<8>(itr) << "): ";
+               << ", cpuid: " << std::get<8>(itr) << ", gpuid: " << std::get<9>(itr)
+               << ", dtype = " << std::get<10>(itr) << "): ";
             obj.write<1>(ss, itr, ", ", 10);
             obj.write<2>(ss, itr, ", ", 6);
             obj.write<3>(ss, itr, ", ", 12);
@@ -248,8 +246,8 @@ public:
 
 private:
     labels_type m_labels = { { "label", "working-set", "trials", "total-bytes",
-                               "total-ops", "ops-per-set", "counter", "device", "dtype",
-                               "exec-params" } };
+                               "total-ops", "ops-per-set", "counter", "device", "cpu_id",
+                               "gpu_id", "dtype", "exec-params" } };
     value_array m_values = {};
 
 private:

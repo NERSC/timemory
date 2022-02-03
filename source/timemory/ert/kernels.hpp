@@ -135,15 +135,14 @@ ops_kernel(Intp ntrials, Intp nsize, Up* A, OpsFuncT&& ops_func, StoreFuncT&& st
     constexpr size_t MOD_REP = Nrep % 2;
     auto             range   = device::grid_strided_range<DeviceT, 0, Intp>(nsize);
 
-
     Tp alpha = static_cast<Tp>(0.5);
     for(Intp j = 0; j < ntrials; ++j)
     {
         for(auto i = range.begin(); i < range.end(); i += range.stride())
         {
             Up beta = static_cast<Up>(0.8);
-            mpl::apply<void>::unroll<NUM_REP + MOD_REP, DeviceT>(ops_func, beta, Tp{ A[i] },
-                                                                 alpha);
+            mpl::apply<void>::unroll<NUM_REP + MOD_REP, DeviceT>(ops_func, beta,
+                                                                 Tp{ A[i] }, alpha);
             store_func(A[i], beta);
         }
         alpha *= static_cast<Tp>(1.0 - 1.0e-8);
@@ -195,7 +194,8 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
     if(_counter.skip(Nops))
         return false;
 
-    using stream_list_t   = std::vector<gpu::stream_t>;
+    using stream_t        = typename DeviceT::stream_t;
+    using stream_list_t   = std::vector<stream_t>;
     using thread_list_t   = std::vector<std::thread>;
     using device_params_t = device::params<DeviceT>;
     using Intp            = int32_t;
@@ -229,21 +229,28 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
             gpu::stream_create(itr);
     }
 
+    using opmutex_t = std::mutex;
+    using oplock_t  = std::unique_lock<opmutex_t>;
+
+    opmutex_t _opmutex{};
     auto _opfunc = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
-        threading::affinity::set();
-        using opmutex_t = std::mutex;
-        using oplock_t  = std::unique_lock<opmutex_t>;
-        static opmutex_t opmutex;
+        auto _cpuid = threading::affinity::set();
+        if(settings::debug())
+            fprintf(stderr, "[ert] Thread %lu assigned cpu_id %li (%li)\n", tid, _cpuid,
+                    threading::affinity::get());
         {
-            oplock_t _lock(opmutex);
+            oplock_t _lock{ _opmutex };
             // execute the callback
             _counter.configure(tid);
         }
+        auto& _local_counter = _counter;
+        // create own exec_data instance
+        //_local_counter.reset();
         // allocate buffer
-        auto     buf = _counter.get_buffer();
-        uint64_t n   = _counter.params.working_set_min;
+        auto     buf = _local_counter.get_buffer();
+        uint64_t n   = _local_counter.params.working_set_min;
         // cache this
-        const uint64_t nstreams = std::max<uint64_t>(_counter.params.nstreams, 1);
+        const uint64_t nstreams = std::max<uint64_t>(_local_counter.params.nstreams, 1);
         // create the launch parameters (ignored on CPU)
         //
         // if grid_size is zero (default), the launch command will calculate a grid-size
@@ -251,22 +258,23 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
         //
         //      grid_size = ((data_size + block_size - 1) / block_size)
         //
-        device_params_t dev_params(_counter.params.grid_size, _counter.params.block_size,
-                                   _counter.params.shmem_size, DeviceT::default_stream);
+        device_params_t dev_params(
+            _local_counter.params.grid_size, _local_counter.params.block_size,
+            _local_counter.params.shmem_size, DeviceT::default_stream);
         //
-        if(n > _counter.nsize)
+        if(n > _local_counter.nsize)
         {
             fprintf(stderr,
                     "[%s@'%s':%i]> Warning! ERT not running any trials because working "
                     "set min > nsize: %llu > %llu\n",
                     TIMEMORY_ERROR_FUNCTION_MACRO, __FILE__, __LINE__, (ull) n,
-                    (ull) _counter.nsize);
+                    (ull) _local_counter.nsize);
         }
 
-        while(n <= _counter.nsize)
+        while(n <= _local_counter.nsize)
         {
             // working set - nsize
-            uint64_t ntrials = _counter.nsize / n;
+            uint64_t ntrials = _local_counter.nsize / n;
             if(ntrials < 1)
                 ntrials = 1;
 
@@ -275,10 +283,10 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
                 printf("[tim::ert::ops_main<%llu>]> number of trials: %llu, n = %llu, "
                        "nsize "
                        "= %llu\n",
-                       (ull) Nops, (ull) ntrials, (ull) n, (ull) _counter.nsize);
+                       (ull) Nops, (ull) ntrials, (ull) n, (ull) _local_counter.nsize);
             }
 
-            auto _itr_params = _counter.params;
+            auto _itr_params = _local_counter.params;
 
             if(is_gpu)
             {
@@ -298,7 +306,7 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
             //    fbarrier->spin_wait();
 
             // get instance of object measuring something during the calculation
-            CounterT ct = _counter.get_counter();
+            CounterT ct = _local_counter.get_counter();
             // start the timer or anything else being recorded
             ct.start();
 
@@ -352,12 +360,9 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
             ct.stop();
 
             // store the result
-            if(tid == 0)
             {
-                // ensure there is not a data race if more than one thread somehow
-                // has a tid of 0
-                oplock_t _lock(opmutex);
-                _counter.record(ct, n, ntrials, Nops, _itr_params);
+                oplock_t _lock{ _opmutex };
+                _local_counter.record(ct, n, ntrials, Nops, _itr_params);
             }
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
@@ -366,12 +371,16 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
         if(is_gpu)
             gpu::device_sync();
 
-        _counter.destroy_buffer(buf);
+        _local_counter.destroy_buffer(buf);
+        {
+            oplock_t _lock{ _opmutex };
+            //_counter += _local_counter;
+        }
     };
 
     // guard against multiple threads trying to call ERT for some reason
     static std::mutex            _mtx;
-    std::unique_lock<std::mutex> _lock(_mtx);
+    std::unique_lock<std::mutex> _lock{ _mtx };
 
     dmp::barrier();  // synchronize MPI processes
 
@@ -380,31 +389,19 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
 
     if(_counter.params.nthreads > 1)
     {
+        threading::affinity::get_counter().store(0);
         // create synchronization barriers for the threads
-        thread_barrier fbarrier{ _counter.params.nthreads };
-        thread_barrier lbarrier{ _counter.params.nthreads };
+        thread_barrier _fbarrier{ _counter.params.nthreads };
+        thread_barrier _lbarrier{ _counter.params.nthreads };
 
         // list of threads
-        thread_list_t threads{};
+        thread_list_t _threads{};
         // create the threads
         for(uint64_t i = 0; i < _counter.params.nthreads; ++i)
-            threads.emplace_back(_opfunc, i, &fbarrier, &lbarrier);
-
-        /*
-        uint64_t n = _counter.params.working_set_min;
-        while(n <= _counter.nsize)
-        {
-            // wait until all threads have also called notify_wait() then release
-            // barrier to start
-            fbarrier.notify_wait();
-            // wait until all threads have also called notify_wait() then release
-            // barrier to finish
-            lbarrier.notify_wait();
-            n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
-        }*/
+            _threads.emplace_back(_opfunc, i, &_fbarrier, &_lbarrier);
 
         // wait for threads to finish
-        for(auto& itr : threads)
+        for(auto& itr : _threads)
             itr.join();
     }
     else

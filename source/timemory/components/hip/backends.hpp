@@ -49,10 +49,6 @@
 #if defined(TIMEMORY_USE_HIP)
 #    include <hip/hip_runtime.h>
 #    include <hip/hip_runtime_api.h>
-#    if defined(TIMEMORY_USE_HIP_HALF)
-#        include <hip/hip_bfloat16.h>
-#        include <hip/hip_fp16.h>
-#    endif
 #endif
 
 //======================================================================================//
@@ -64,15 +60,6 @@ namespace hip
 //
 const char*
 get_error_string(error_t err);
-
-// half-precision floating point
-#if defined(TIMEMORY_USE_HIP_HALF)
-using fp16_t = half2;
-using bf16_t = hip_bfloat16;
-#else
-using fp16_t = __fp16;
-using bf16_t = int16_t;
-#endif
 
 //--------------------------------------------------------------------------------------//
 //

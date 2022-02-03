@@ -48,8 +48,6 @@
 
 #if defined(TIMEMORY_USE_CUDA)
 #    include <cuda.h>
-#    include <cuda_fp16.h>
-#    include <cuda_fp16.hpp>
 #    include <cuda_profiler_api.h>
 #    include <cuda_runtime_api.h>
 #endif
@@ -63,64 +61,6 @@ namespace cuda
 //
 const char*
 get_error_string(error_t err);
-
-// half-precision floating point
-#if !defined(TIMEMORY_USE_CUDA_HALF)
-
-// make a different type
-struct half2
-{
-    half2()             = default;
-    ~half2()            = default;
-    half2(const half2&) = default;
-    half2(half2&&)      = default;
-    half2& operator=(const half2&) = default;
-    half2& operator=(half2&&) = default;
-
-    template <typename... Args>
-    half2(float val, Args&&...)
-    : value{ val }
-    {}
-
-    template <typename Tp>
-    half2& operator+=(const Tp&)
-    {
-        return *this;
-    }
-    template <typename Tp>
-    half2& operator-=(const Tp&)
-    {
-        return *this;
-    }
-    template <typename Tp>
-    half2& operator*=(const Tp&)
-    {
-        return *this;
-    }
-    template <typename Tp>
-    half2& operator/=(const Tp&)
-    {
-        return *this;
-    }
-
-    friend half2 operator+(half2 lhs, const half2& rhs) { return lhs += rhs; }
-    friend half2 operator-(half2 lhs, const half2& rhs) { return lhs -= rhs; }
-    friend half2 operator*(half2 lhs, const half2& rhs) { return lhs *= rhs; }
-    friend half2 operator/(half2 lhs, const half2& rhs) { return lhs /= rhs; }
-
-    float&       operator[](int) { return value; }
-    const float& operator[](int) const { return value; }
-
-private:
-    using value_type = float;
-    value_type value = 0.0f;
-};
-
-using fp16_t = half2;
-
-#else
-using fp16_t = half2;
-#endif
 
 //--------------------------------------------------------------------------------------//
 //

@@ -247,27 +247,33 @@ struct affinity
         return _instance;
     }
 
+    static auto& get_counter()
+    {
+        static std::atomic<int64_t> _v{ 0 };
+        return _v;
+    }
+
     static functor_t& get_algorithm()
     {
+        static auto&     _counter  = get_counter();
         static functor_t _instance = [](int64_t tid) {
             //
             //  assigns the cpu affinity in a compact sequence
             //
             static functor_t _compact_instance = [](int64_t _tid) -> int64_t {
-                static std::atomic<int64_t> _counter(0);
                 static thread_local int64_t _this_count = _counter++;
                 auto                        proc_itr    = get_affinity_map().find(_tid);
                 if(proc_itr == get_affinity_map().end())
-                    get_affinity_map()[_tid] = _this_count;
+                    get_affinity_map()[_tid] = _this_count % hw_concurrency();
                 return get_affinity_map()[_tid];
             };
             //
             //  assigns the cpu affinity in a scattered sequence
             //
             static functor_t _scatter_instance = [](int64_t _tid) -> int64_t {
-                static std::atomic<int64_t> _counter(0);
                 static thread_local int64_t _this_count = _counter++;
-                auto _val     = (_this_count * hw_physicalcpu()) % hw_concurrency();
+                auto                        _val =
+                    (_this_count * hw_physicalcpu() + _this_count) % hw_concurrency();
                 auto proc_itr = get_affinity_map().find(_tid);
                 if(proc_itr == get_affinity_map().end())
                     get_affinity_map()[_tid] = _val;
@@ -304,16 +310,16 @@ struct affinity
     static int64_t set()
     {
 #if defined(TIMEMORY_LINUX)
-        auto proc_id = get_algorithm()(get_id());
-        if(proc_id >= 0)
-        {
-            cpu_set_t cpuset;
-            pthread_t thread = pthread_self();
-            CPU_ZERO(&cpuset);
-            CPU_SET(proc_id, &cpuset);
-            pthread_setaffinity_np(thread, sizeof(cpu_set_t), &cpuset);
-        }
-        return proc_id;
+        return set(pthread_self());
+#else
+        return -1;
+#endif
+    }
+
+    static int64_t get()
+    {
+#if defined(TIMEMORY_LINUX)
+        return get(pthread_self());
 #else
         return -1;
 #endif
@@ -322,16 +328,46 @@ struct affinity
     static int64_t set(native_handle_t athread)
     {
 #if defined(TIMEMORY_LINUX)
-        auto      proc_id = get_algorithm()(get_id());
-        cpu_set_t cpuset;
-        CPU_ZERO(&cpuset);
-        CPU_SET(proc_id, &cpuset);
-        pthread_setaffinity_np(athread, sizeof(cpu_set_t), &cpuset);
-        return proc_id;
+        auto proc_id = get_algorithm()(get_id());
+        if(proc_id >= 0)
+        {
+            cpu_set_t cpuset;
+            CPU_ZERO(&cpuset);
+            CPU_SET(proc_id, &cpuset);
+            auto _ret = pthread_setaffinity_np(athread, sizeof(cpu_set_t), &cpuset);
+            if(_ret != 0)
+            {
+                perror("pthread_getaffinity_np");
+                return -1;
+            }
+            return proc_id;
+        }
 #else
         consume_parameters(athread);
-        return -1;
 #endif
+        return -1;
+    }
+
+    static int64_t get(native_handle_t athread)
+    {
+#if defined(TIMEMORY_LINUX)
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        auto _ret = pthread_getaffinity_np(athread, sizeof(cpu_set_t), &cpuset);
+        if(_ret != 0)
+        {
+            perror("pthread_getaffinity_np");
+            return -1;
+        }
+        for(int i = 0; i < CPU_SETSIZE; ++i)
+        {
+            if(CPU_ISSET(i, &cpuset))
+                return i;
+        }
+#else
+        consume_parameters(athread);
+#endif
+        return -1;
     }
 };
 //

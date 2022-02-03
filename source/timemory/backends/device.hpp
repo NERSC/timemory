@@ -32,6 +32,7 @@
 #pragma once
 
 #include "timemory/backends/gpu.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/components/hip/backends.hpp"
 #include "timemory/macros/attributes.hpp"
@@ -78,6 +79,7 @@ struct cpu
     }
 
     static std::string name() { return "cpu"; }
+    static int         id() { return threading::affinity::get(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -103,6 +105,7 @@ struct gpu
     }
 
     static std::string name() { return "gpu"; }
+    static int         id() { return ::tim::gpu::get_device(); }
 #else
     using stream_t = int;
     using fp16_t   = float;
@@ -120,6 +123,7 @@ struct gpu
     }
 
     static std::string name() { return "gpu_on_cpu"; }
+    static int         id() { return -1; }
 #endif
 };
 

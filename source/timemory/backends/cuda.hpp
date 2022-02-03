@@ -24,10 +24,26 @@
 
 #pragma once
 
+#include "timemory/defines.h"
+#include "timemory/macros/compiler.hpp"
+
+#if !defined(TIMEMORY_USE_CUDA) || !defined(TIMEMORY_USE_CUDA_HALF)
+#    include "timemory/backends/bfloat16.hpp"
+#    include "timemory/backends/fp16.hpp"
+#endif
+
 #if defined(TIMEMORY_USE_CUDA)
 #    include <cuda.h>
 #    include <cuda_runtime_api.h>
+#    if defined(TIMEMORY_USE_CUDA_HALF)
+#        include <cuda_bf16.h>
+#        include <cuda_bf16.hpp>
+#        include <cuda_fp16.h>
+#        include <cuda_fp16.hpp>
+#    endif
 #endif
+
+#include <cstdint>
 
 namespace tim
 {
@@ -65,6 +81,19 @@ static const int          host_to_host_v     = 0;
 static const int          host_to_device_v   = 1;
 static const int          device_to_host_v   = 2;
 static const int          device_to_device_v = 3;
+#endif
+
+// half-precision floating point
+#if defined(TIMEMORY_USE_CUDA) && defined(TIMEMORY_USE_CUDA_HALF)
+//
+using fp16_t = half2;
+using bf16_t = nv_bfloat16;
+//
+#else
+//
+using fp16_t = numeric::half2;
+using bf16_t = numeric::bfloat16;
+//
 #endif
 //
 }  // namespace cuda

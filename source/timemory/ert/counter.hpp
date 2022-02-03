@@ -81,6 +81,7 @@ public:
     using callback_type = std::function<void(uint64_t, this_type&)>;
     using data_type     = typename ert_data_t::value_type;
     using data_ptr_t    = std::shared_ptr<ert_data_t>;
+    using mutex_ptr_t   = std::shared_ptr<std::mutex>;
     using ull           = unsigned long long;
     using skip_ops_t    = std::unordered_set<size_t>;
 
@@ -235,19 +236,23 @@ public:
 
         auto      _label = tim::demangle<Tp>();
         data_type _data(ss.str(), working_set, trials, total_bytes, total_ops, nops,
-                        _counter, DeviceT::name(), _label, _itrp);
+                        _counter, DeviceT::name(), device::cpu::id(), device::gpu::id(),
+                        _label, _itrp);
 
-#if !defined(TIMEMORY_WINDOWS)
-        // using namespace tim::stl::ostream;
-        // if(settings::verbose() > 1 || settings::debug())
-        //    std::cout << "[RECORD]> " << _data << std::endl;
-#endif
-
-        static std::mutex _mutex;
-        // std::unique_lock<std::mutex> _lock(_mutex);
-        _mutex.lock();
+        mutex->lock();
         *data += _data;
-        _mutex.unlock();
+        mutex->unlock();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    counter& operator+=(const counter& _rhs)
+    {
+        mutex->lock();
+        if(this != &_rhs)
+            *data += *_rhs.data;
+        mutex->unlock();
+        return *this;
     }
 
     //----------------------------------------------------------------------------------//
@@ -305,6 +310,12 @@ public:
 
     bool skip(size_t _Nops) { return (skip_ops.count(_Nops) > 0); }
 
+    void reset()
+    {
+        data  = std::make_shared<ert_data_t>();
+        mutex = std::make_shared<std::mutex>();
+    }
+
 public:
     //----------------------------------------------------------------------------------//
     //  public data members, modify as needed
@@ -315,7 +326,8 @@ public:
     uint64_t    align                       = sizeof(Tp);                      // NOLINT
     uint64_t    nsize                       = 0;                               // NOLINT
     data_ptr_t  data                        = std::make_shared<ert_data_t>();  // NOLINT
-    std::string label                       = "";                              // NOLINT
+    mutex_ptr_t mutex                       = std::make_shared<std::mutex>();  // NOLINT
+    std::string label                       = {};                              // NOLINT
     skip_ops_t  skip_ops                    = skip_ops_t();                    // NOLINT
 
 private:

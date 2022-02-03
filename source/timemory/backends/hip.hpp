@@ -24,9 +24,21 @@
 
 #pragma once
 
+#include "timemory/defines.h"
+#include "timemory/macros/compiler.hpp"
+
+#if !defined(TIMEMORY_USE_HIP) || !defined(TIMEMORY_USE_HIP_HALF)
+#    include "timemory/backends/bfloat16.hpp"
+#    include "timemory/backends/fp16.hpp"
+#endif
+
 #if defined(TIMEMORY_USE_HIP)
 #    include <hip/hip_runtime.h>
 #    include <hip/hip_runtime_api.h>
+#    if defined(TIMEMORY_USE_HIP_HALF)
+#        include <hip/hip_bfloat16.h>
+#        include <hip/hip_fp16.h>
+#    endif
 #endif
 
 namespace tim
@@ -66,6 +78,19 @@ static const int          host_to_host_v     = 0;
 static const int          host_to_device_v   = 1;
 static const int          device_to_host_v   = 2;
 static const int          device_to_device_v = 3;
+#endif
+//
+// half-precision floating point
+#if defined(TIMEMORY_USE_HIP) && defined(TIMEMORY_USE_HIP_HALF)
+//
+using fp16_t = half2;
+using bf16_t = hip_bfloat16;
+//
+#else
+//
+using fp16_t = numeric::half2;
+using bf16_t = numeric::bfloat16;
+//
 #endif
 //
 }  // namespace hip
