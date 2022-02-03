@@ -289,11 +289,11 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-#if !defined(TIMEMORY_NVCC_COMPILER)
+#    if !defined(TIMEMORY_NVCC_COMPILER)
     template <size_t N, typename Ret, typename... Args>
     struct instrument<N, Ret, std::tuple<Args...>> : instrument<N, Ret, Args...>
     {};
-#endif
+#    endif
 
     template <size_t N, typename Ret, typename... Args>
     static void gotcha_factory(const std::string& _func, const std::string& _tool = "",
