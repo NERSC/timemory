@@ -7,23 +7,11 @@ ARG CLANG_VERSION=11
 ARG ENABLE_DISPLAY=0
 
 # Install the software, remove unecessary deps
-RUN cd /tmp && \
-    apt-get update && \
-    apt-get dist-upgrade -y && \
-    apt-get install -y wget gpg software-properties-common && \
-    wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | apt-key add - && \
-    DISTRIB_CODENAME=$(cat /etc/lsb-release | grep DISTRIB_CODENAME | awk -F '=' '{print $NF}') && \
-    apt-add-repository "deb https://apt.kitware.com/ubuntu/ ${DISTRIB_CODENAME} main" && \
-    apt-get update && \
-    apt-get install -y cmake build-essential ninja-build && \
-    apt-get -y autoclean
-
 COPY ./apt.sh /tmp/apt.sh
 RUN cd /tmp && /tmp/apt.sh
 
 ARG COMPILER_SPEC=gcc@8.4.0
 ARG VERSION=develop
-ARG PYTHON_VERSION=3.7
 ARG CUDA_ARCH=70
 ARG CUDA_ARCH_NAME=volta
 
@@ -40,17 +28,16 @@ RUN mkdir /opt/environment \
     &&   echo "  - dyninst" \
     &&   echo "  - caliper~papi" \
     &&   echo "  - gperftools" \
-    &&   echo "  - python@${PYTHON_VERSION}" \
-    &&   echo "  - py-numpy" \
-    &&   echo "  - py-cython" \
-    &&   echo "  - py-pillow" \
-    &&   echo "  - py-matplotlib" \
-    &&   echo "  - py-mpi4py" \
-    &&   echo "  - py-pip" \
     &&   echo "  concretization: together" \
     &&   echo "  config:" \
     &&   echo "    install_tree: /opt/software" \
-    &&   echo "  view: /opt/view") > /opt/environment/spack.yaml
+    &&   echo "  view: /opt/view" \
+    &&   echo "  packages:" \
+    &&   echo "    rdma-core:" \
+    &&   echo "      externals:" \
+    &&   echo "      - spec: rdma-core@17.1" \
+    &&   echo "        prefix: /usr" \
+    &&   echo "      buildable: false") > /opt/environment/spack.yaml
 
 # Install the software, remove unecessary deps
 RUN cd /opt/environment && \
