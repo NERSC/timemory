@@ -276,7 +276,7 @@ struct sampler<CompT<Types...>, N, SigIds...>
 
     friend struct allocator<this_type>;
 
-    static_assert(!fixed_size_t<N>::value || trait::buffer_size<this_type>::value > 0,
+    static_assert(fixed_size<N>::value || trait::buffer_size<this_type>::value > 0,
                   "Error! Dynamic sampler has a default buffer size of zero");
 
     static constexpr bool is_dynamic() { return !fixed_size_t<N>::value; }
