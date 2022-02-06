@@ -24,7 +24,8 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_PAPI_EXTERN)
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_PAPI_EXTERN) &&                \
+    !defined(TIMEMORY_CMAKE)
 #    define TIMEMORY_USE_PAPI_EXTERN
 #endif
 
