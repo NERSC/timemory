@@ -110,7 +110,7 @@ jobs:
       - run:
           name: build
           command: >
-            export CONTINUOUS_INTEGRATION=true
+            export CONTINUOUS_INTEGRATION=true &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&
@@ -155,7 +155,7 @@ jobs:
       - run:
           name: build
           command: >
-            export CONTINUOUS_INTEGRATION=true
+            export CONTINUOUS_INTEGRATION=true &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&
@@ -197,8 +197,9 @@ jobs:
       - run:
           name: build
           command: >
-            export CONTINUOUS_INTEGRATION=true
+            export CONTINUOUS_INTEGRATION=true &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
+            $(spack load --sh cuda) &&
             source activate &&
             conda activate pyctest &&
             export CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}:$(dirname $(dirname $(find /opt/software/ | grep 'cuda-' | grep 'cuda\.h$')))" &&
@@ -236,7 +237,7 @@ jobs:
       - run:
           name: build
           command: >
-            export CONTINUOUS_INTEGRATION=true
+            export CONTINUOUS_INTEGRATION=true &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&
