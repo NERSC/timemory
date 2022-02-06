@@ -239,6 +239,8 @@ public:
     using base_type::display_unit;
     using base_type::get_display_unit;
     using base_type::get_unit;
+    using base_type::set_display_unit;
+    using base_type::set_unit;
     using base_type::unit;
 
     // default set of ctor and assign

@@ -62,6 +62,29 @@ struct base_units
     template <typename Up = Tp, typename UnitT = typename trait::units<Up>::display_type,
               enable_if_t<std::is_same<UnitT, std::string>::value, int> = 0>
     static display_type get_display_unit();
+
+    template <typename Up = Tp, enable_if_t<trait::assignable_units<Up>::value, int> = 0>
+    static void set_unit(value_type);
+
+    template <typename Up                                            = Tp,
+              enable_if_t<!trait::assignable_units<Up>::value, long> = 0>
+    static void set_unit(value_type);
+
+    template <typename Up = Tp, enable_if_t<trait::assignable_units<Up>::value, int> = 0>
+    static void set_display_unit(display_type);
+
+    template <typename Up                                            = Tp,
+              enable_if_t<!trait::assignable_units<Up>::value, long> = 0>
+    static void set_display_unit(display_type);
+
+private:
+    template <typename Up = Tp, typename UnitT = typename trait::units<Up>::type,
+              enable_if_t<std::is_arithmetic<UnitT>::value, int> = 0>
+    static value_type& value_impl();
+
+    template <typename Up = Tp, typename UnitT = typename trait::units<Up>::display_type,
+              enable_if_t<std::is_same<UnitT, std::string>::value, int> = 0>
+    static display_type& display_impl();
 };
 
 //
@@ -71,6 +94,128 @@ template <typename Tp, typename ValueT>
 template <typename Up, typename UnitT, enable_if_t<std::is_arithmetic<UnitT>::value, int>>
 typename base_units<Tp, ValueT>::value_return_type
 base_units<Tp, ValueT>::unit()
+{
+    return value_impl();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename ValueT>
+template <typename Up, typename UnitT,
+          enable_if_t<std::is_same<UnitT, std::string>::value, int>>
+typename base_units<Tp, ValueT>::display_return_type
+base_units<Tp, ValueT>::display_unit()
+{
+    return display_impl();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename ValueT>
+template <typename Up, typename UnitT, enable_if_t<std::is_arithmetic<UnitT>::value, int>>
+typename base_units<Tp, ValueT>::value_type
+base_units<Tp, ValueT>::get_unit()
+{
+    static bool _updated  = false;
+    static auto _settings = settings::shared_instance();
+
+    if(_updated)
+        return Tp::unit();
+    if(!_settings)
+        return Tp::unit();
+    if(_settings->get_initialized())
+        _updated = true;
+
+    IF_CONSTEXPR(trait::uses_timing_units<Tp>::value)
+    {
+        set_unit(std::get<1>(units::get_timing_unit(_settings->get_timing_units())));
+    }
+    IF_CONSTEXPR(trait::uses_memory_units<Tp>::value)
+    {
+        set_unit(std::get<1>(units::get_memory_unit(_settings->get_memory_units())));
+    }
+
+    return Tp::unit();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename ValueT>
+template <typename Up, typename UnitT,
+          enable_if_t<std::is_same<UnitT, std::string>::value, int>>
+typename base_units<Tp, ValueT>::display_type
+base_units<Tp, ValueT>::get_display_unit()
+{
+    static bool _updated  = false;
+    static auto _settings = settings::shared_instance();
+
+    if(_updated)
+        return Tp::display_unit();
+    if(!_settings)
+        return Tp::display_unit();
+    if(_settings->get_initialized())
+        _updated = true;
+
+    IF_CONSTEXPR(trait::uses_timing_units<Tp>::value)
+    {
+        set_display_unit(
+            std::get<0>(units::get_timing_unit(_settings->get_timing_units())));
+    }
+    IF_CONSTEXPR(trait::uses_memory_units<Tp>::value)
+    {
+        set_display_unit(
+            std::get<0>(units::get_memory_unit(_settings->get_memory_units())));
+    }
+
+    return Tp::display_unit();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename ValueT>
+template <typename Up, enable_if_t<trait::assignable_units<Up>::value, int>>
+void
+base_units<Tp, ValueT>::set_unit(value_type _v)
+{
+    Tp::unit() = std::move(_v);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename ValueT>
+template <typename Up, enable_if_t<!trait::assignable_units<Up>::value, long>>
+void
+base_units<Tp, ValueT>::set_unit(value_type _v)
+{
+    value_impl() = std::move(_v);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename ValueT>
+template <typename Up, enable_if_t<trait::assignable_units<Up>::value, int>>
+void
+base_units<Tp, ValueT>::set_display_unit(display_type _v)
+{
+    Tp::display_unit() = std::move(_v);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename ValueT>
+template <typename Up, enable_if_t<!trait::assignable_units<Up>::value, long>>
+void
+base_units<Tp, ValueT>::set_display_unit(display_type _v)
+{
+    display_impl() = std::move(_v);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp, typename ValueT>
+template <typename Up, typename UnitT, enable_if_t<std::is_arithmetic<UnitT>::value, int>>
+typename base_units<Tp, ValueT>::value_type&
+base_units<Tp, ValueT>::value_impl()
 {
     static value_type _v = []() -> value_type {
         IF_CONSTEXPR(trait::uses_timing_units<Tp>::value) { return units::sec; }
@@ -88,8 +233,8 @@ base_units<Tp, ValueT>::unit()
 template <typename Tp, typename ValueT>
 template <typename Up, typename UnitT,
           enable_if_t<std::is_same<UnitT, std::string>::value, int>>
-typename base_units<Tp, ValueT>::display_return_type
-base_units<Tp, ValueT>::display_unit()
+typename base_units<Tp, ValueT>::display_type&
+base_units<Tp, ValueT>::display_impl()
 {
     static display_type _v = {};
     if(_v.empty())
@@ -108,91 +253,6 @@ base_units<Tp, ValueT>::display_unit()
             _v = units::power_repr(unit());
         }
         IF_CONSTEXPR(trait::uses_percent_units<Tp>::value) { _v = "%"; }
-    }
-    return _v;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename ValueT>
-template <typename Up, typename UnitT, enable_if_t<std::is_arithmetic<UnitT>::value, int>>
-typename base_units<Tp, ValueT>::value_type
-base_units<Tp, ValueT>::get_unit()
-{
-    using unit_hash_t = std::hash<tim::string_view_t>;
-
-    static auto _settings = settings::shared_instance();
-    auto&&      _v        = Tp::unit();
-
-    if(!_settings)
-        return _v;
-    if(_settings->get_initialized())
-        return _v;
-
-    IF_CONSTEXPR(trait::uses_timing_units<Tp>::value)
-    {
-        static size_t _last_v = 0;
-        size_t        _hash_v = unit_hash_t{}(_settings->get_timing_units());
-        if(_last_v != _hash_v)
-        {
-            auto&& _curr_v = _settings->get_timing_units();
-            _last_v        = unit_hash_t{}(_curr_v);
-            _v             = std::get<1>(units::get_timing_unit(_curr_v));
-        }
-    }
-    IF_CONSTEXPR(trait::uses_memory_units<Tp>::value)
-    {
-        static size_t _last_v = 0;
-        size_t        _hash_v = unit_hash_t{}(_settings->get_memory_units());
-        if(_last_v != _hash_v)
-        {
-            auto&& _curr_v = _settings->get_memory_units();
-            _last_v        = unit_hash_t{}(_curr_v);
-            _v             = std::get<1>(units::get_memory_unit(_curr_v));
-        }
-    }
-    return _v;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename ValueT>
-template <typename Up, typename UnitT,
-          enable_if_t<std::is_same<UnitT, std::string>::value, int>>
-typename base_units<Tp, ValueT>::display_type
-base_units<Tp, ValueT>::get_display_unit()
-{
-    using unit_hash_t = std::hash<tim::string_view_t>;
-
-    static auto _settings = settings::shared_instance();
-    auto&&      _v        = Tp::display_unit();
-
-    if(!_settings)
-        return _v;
-    if(_settings->get_initialized())
-        return _v;
-
-    IF_CONSTEXPR(trait::uses_timing_units<Tp>::value)
-    {
-        static size_t _last_v = 0;
-        size_t        _hash_v = unit_hash_t{}(_settings->get_timing_units());
-        if(_last_v != _hash_v)
-        {
-            auto&& _curr_v = _settings->get_timing_units();
-            _last_v        = unit_hash_t{}(_curr_v);
-            _v             = std::get<0>(units::get_timing_unit(_curr_v));
-        }
-    }
-    IF_CONSTEXPR(trait::uses_memory_units<Tp>::value)
-    {
-        static size_t _last_v = 0;
-        size_t        _hash_v = unit_hash_t{}(_settings->get_memory_units());
-        if(_last_v != _hash_v)
-        {
-            auto&& _curr_v = _settings->get_memory_units();
-            _last_v        = unit_hash_t{}(_curr_v);
-            _v             = std::get<0>(units::get_memory_unit(_curr_v));
-        }
     }
     return _v;
 }

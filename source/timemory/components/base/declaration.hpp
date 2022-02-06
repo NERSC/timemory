@@ -312,6 +312,8 @@ public:
     using units_type::display_unit;
     using units_type::get_display_unit;
     using units_type::get_unit;
+    using units_type::set_display_unit;
+    using units_type::set_unit;
     using units_type::unit;
 
     static std::string label();
