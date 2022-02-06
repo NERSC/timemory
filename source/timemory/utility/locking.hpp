@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/macros/attributes.hpp"
 
 #include <array>
 #include <mutex>
@@ -54,10 +55,13 @@ using auto_lock_t = std::unique_lock<mutex_t>;
 template <typename Tp, typename ApiT = TIMEMORY_API, size_t N = 4,
           typename MutexT = mutex_t>
 MutexT&
-type_mutex(uint64_t _n = 0)
+type_mutex(uint64_t _n = 0) TIMEMORY_VISIBILITY("default");
+
+template <typename Tp, typename ApiT, size_t N, typename MutexT>
+MutexT&
+type_mutex(uint64_t _n)
 {
     static std::array<MutexT, N> _mutexes{};
     return _mutexes.at(_n % N);
 }
-
 }  // namespace tim
