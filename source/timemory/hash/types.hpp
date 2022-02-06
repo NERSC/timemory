@@ -52,27 +52,27 @@ namespace tim
 template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>,
           typename PairT = std::pair<PtrT, PtrT>>
 PairT&
-get_shared_ptr_pair();
+get_shared_ptr_pair() TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>,
           typename PairT = std::pair<PtrT, PtrT>>
 PtrT
-get_shared_ptr_pair_instance();
+get_shared_ptr_pair_instance() TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>,
           typename PairT = std::pair<PtrT, PtrT>>
 PtrT
-get_shared_ptr_pair_main_instance();
+get_shared_ptr_pair_main_instance() TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>>
 PtrT
-get_shared_ptr_lone_instance();
+get_shared_ptr_lone_instance() TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -161,17 +161,17 @@ struct hasher
 //--------------------------------------------------------------------------------------//
 //
 hash_map_ptr_t&
-get_hash_ids() TIMEMORY_HOT;
+get_hash_ids() TIMEMORY_HOT TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
 hash_alias_ptr_t&
-get_hash_aliases() TIMEMORY_HOT;
+get_hash_aliases() TIMEMORY_HOT TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
 std::shared_ptr<hash_resolver_vec_t>&
-get_hash_resolvers() TIMEMORY_HOT;
+get_hash_resolvers() TIMEMORY_HOT TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
