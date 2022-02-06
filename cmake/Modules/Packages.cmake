@@ -775,6 +775,7 @@ endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     find_library(GCOV_LIBRARY gcov)
+    mark_as_advanced(GCOV_LIBRARY)
 
     add_target_flag_if_avail(timemory-coverage "-fprofile-abs-path" "--coverage")
     add_target_flag(timemory-coverage "-fprofile-arcs" "-ftest-coverage" "-O0" "-g")
@@ -995,6 +996,7 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
     # finds an executable and fails if not found
     macro(timemory_libunwind_find_exe VAR MSG)
         find_program(${VAR} NAMES ${ARGN})
+        mark_as_advanced(${VAR})
         if(NOT ${VAR})
             message(FATAL_ERROR "Building libunwind submodule requires ${MSG}")
         endif()
@@ -1173,10 +1175,6 @@ endif()
 #
 # ----------------------------------------------------------------------------------------#
 
-set(gperftools_PREFER_SHARED
-    ON
-    CACHE BOOL "Prefer goerftools shared libraries")
-mark_as_advanced(gperftools_PERFER_SHARED)
 set(_GPERF_COMPONENTS ${TIMEMORY_gperftools_COMPONENTS})
 if(_GPERF_COMPONENTS)
     list(REMOVE_DUPLICATES _GPERF_COMPONENTS)

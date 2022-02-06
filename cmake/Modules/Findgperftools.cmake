@@ -12,6 +12,11 @@ include(CMakeParseArguments)
 #
 # ----------------------------------------------------------------------------------------#
 
+set(gperftools_PREFER_SHARED
+    ON
+    CACHE BOOL "Prefer goerftools shared libraries")
+mark_as_advanced(gperftools_PREFER_SHARED)
+
 # ----------------------------------------------------------------------------------------#
 # make invocable more than once
 #
