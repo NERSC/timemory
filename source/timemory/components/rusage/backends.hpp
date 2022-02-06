@@ -86,6 +86,19 @@ namespace tim
 
 using rusage_type_t = decltype(RUSAGE_SELF);
 
+#elif defined(TIMEMORY_WINDOWS)
+
+enum RUSAGE_TYPE
+{
+    RUSAGE_SELF,
+    RUSAGE_CHILDREN,
+    RUSAGE_THREAD,
+};
+
+using rusage_type_t = RUSAGE_TYPE;
+
+#endif
+
 inline rusage_type_t&
 get_rusage_type()
 {
@@ -99,15 +112,14 @@ get_rusage_pid()
     return process::get_target_id();
 }
 
-#endif
-
 inline void
 check_rusage_call(int ret, const char* _func)
 {
 #if defined(DEBUG)
-    if(ret > 0)
-        printf("[WARN]> rusage call in '%s' returned a non-zero error code: %i\n", _func,
-               ret);
+    if(ret != 0)
+        fprintf(stderr,
+                "[WARN]> rusage call in '%s' returned a non-zero error code: %i\n", _func,
+                ret);
 #else
     (void) ret;
     (void) _func;
@@ -167,44 +179,26 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
-int64_t
-get_peak_rss();
+int64_t get_peak_rss(rusage_type_t = get_rusage_type());
+int64_t get_stack_rss(rusage_type_t = get_rusage_type());
+int64_t get_data_rss(rusage_type_t = get_rusage_type());
+int64_t get_num_swap(rusage_type_t = get_rusage_type());
+int64_t get_num_io_in(rusage_type_t = get_rusage_type());
+int64_t get_num_io_out(rusage_type_t = get_rusage_type());
+int64_t get_num_minor_page_faults(rusage_type_t = get_rusage_type());
+int64_t get_num_major_page_faults(rusage_type_t = get_rusage_type());
+int64_t get_num_messages_sent(rusage_type_t = get_rusage_type());
+int64_t get_num_messages_received(rusage_type_t = get_rusage_type());
+int64_t get_num_signals(rusage_type_t = get_rusage_type());
+int64_t get_num_voluntary_context_switch(rusage_type_t = get_rusage_type());
+int64_t get_num_priority_context_switch(rusage_type_t = get_rusage_type());
+int64_t get_user_mode_time(rusage_type_t = get_rusage_type());
+int64_t get_kernel_mode_time(rusage_type_t = get_rusage_type());
+
 int64_t
 get_page_rss();
 int64_t
-get_stack_rss();
-int64_t
-get_data_rss();
-int64_t
-get_num_swap();
-int64_t
-get_num_io_in();
-int64_t
-get_num_io_out();
-int64_t
-get_num_minor_page_faults();
-int64_t
-get_num_major_page_faults();
-int64_t
-get_num_messages_sent();
-int64_t
-get_num_messages_received();
-int64_t
-get_num_signals();
-int64_t
-get_num_voluntary_context_switch();
-int64_t
-get_num_priority_context_switch();
-int64_t
-get_bytes_read();
-int64_t
-get_bytes_written();
-int64_t
 get_virt_mem();
-int64_t
-get_user_mode_time();
-int64_t
-get_kernel_mode_time();
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -333,11 +327,11 @@ rusage_cache::get_kernel_mode_time() const
 // determined on this OS.
 //
 inline int64_t
-tim::get_peak_rss()
+tim::get_peak_rss(rusage_type_t _rutype)
 {
 #if defined(TIMEMORY_UNIX)
     struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
 
 // Darwin reports in bytes, Linux reports in kilobytes
 #    if defined(TIMEMORY_MACOS)
@@ -349,6 +343,7 @@ tim::get_peak_rss()
     return static_cast<int64_t>(_units * _usage.ru_maxrss);
 
 #elif defined(TIMEMORY_WINDOWS)
+    (void) _rutype;
     DWORD                   processID = GetCurrentProcessId();
     HANDLE                  hProcess;
     PROCESS_MEMORY_COUNTERS pmc;
@@ -364,6 +359,255 @@ tim::get_peak_rss()
     CloseHandle(hProcess);
     return nsize;
 #else
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_stack_rss(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    const int64_t _units = units::kilobyte * units::clocks_per_sec;
+    return static_cast<int64_t>(_units * _usage.ru_isrss);
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_data_rss(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+#    if defined(TIMEMORY_MACOS)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    const int64_t _units = units::kilobyte * units::clocks_per_sec;
+    return static_cast<int64_t>(_units * _usage.ru_idrss);
+
+#    else  // Linux
+    (void) _rutype;
+
+    std::string fstatm = [&]() {
+        std::stringstream fio;
+        fio << "/proc/" << get_rusage_pid() << "/statm";
+        return fio.str();
+    }();
+    int64_t       drss_size = 0;
+    std::ifstream ifs;
+    ifs.open(fstatm.c_str());
+    if(ifs)
+    {
+        static int64_t dummy = 0;
+        ifs >> dummy >> dummy >> dummy >> dummy >> dummy >> drss_size;
+    }
+    ifs.close();
+    return static_cast<int64_t>(drss_size * units::get_page_size());
+#    endif
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_num_swap(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    return static_cast<int64_t>(_usage.ru_nswap);
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_num_io_in(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    return static_cast<int64_t>(_usage.ru_inblock);
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_num_io_out(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    return static_cast<int64_t>(_usage.ru_oublock);
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_num_minor_page_faults(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    return static_cast<int64_t>(_usage.ru_minflt);
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_num_major_page_faults(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    return static_cast<int64_t>(_usage.ru_majflt);
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_num_messages_sent(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    return static_cast<int64_t>(_usage.ru_msgsnd);
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_num_messages_received(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    return static_cast<int64_t>(_usage.ru_msgrcv);
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_num_signals(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    return static_cast<int64_t>(_usage.ru_nsignals);
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_num_voluntary_context_switch(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    return static_cast<int64_t>(_usage.ru_nvcsw);
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_num_priority_context_switch(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    return static_cast<int64_t>(_usage.ru_nivcsw);
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_user_mode_time(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    constexpr int64_t MSEC = 1000000;
+    return static_cast<int64_t>(_usage.ru_utime.tv_sec * MSEC + _usage.ru_utime.tv_usec);
+#else
+    (void) _rutype;
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_kernel_mode_time(rusage_type_t _rutype)
+{
+#if defined(TIMEMORY_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(_rutype, &_usage), __FUNCTION__);
+
+    constexpr int64_t MSEC = 1000000;
+    return static_cast<int64_t>(_usage.ru_stime.tv_sec * MSEC + _usage.ru_stime.tv_usec);
+#else
+    (void) _rutype;
     return static_cast<int64_t>(0);
 #endif
 }
@@ -435,208 +679,6 @@ tim::get_page_rss()
 //======================================================================================//
 
 inline int64_t
-tim::get_stack_rss()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    const int64_t _units = units::kilobyte * units::clocks_per_sec;
-    return static_cast<int64_t>(_units * _usage.ru_isrss);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_data_rss()
-{
-#if defined(TIMEMORY_UNIX)
-#    if defined(TIMEMORY_MACOS)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    const int64_t _units = units::kilobyte * units::clocks_per_sec;
-    return static_cast<int64_t>(_units * _usage.ru_idrss);
-
-#    else  // Linux
-
-    std::string fstatm = [&]() {
-        std::stringstream fio;
-        fio << "/proc/" << get_rusage_pid() << "/statm";
-        return fio.str();
-    }();
-    int64_t       drss_size = 0;
-    std::ifstream ifs;
-    ifs.open(fstatm.c_str());
-    if(ifs)
-    {
-        static int64_t dummy = 0;
-        ifs >> dummy >> dummy >> dummy >> dummy >> dummy >> drss_size;
-    }
-    ifs.close();
-    return static_cast<int64_t>(drss_size * units::get_page_size());
-#    endif
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_num_swap()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    return static_cast<int64_t>(_usage.ru_nswap);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_num_io_in()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    return static_cast<int64_t>(_usage.ru_inblock);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_num_io_out()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    return static_cast<int64_t>(_usage.ru_oublock);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_num_minor_page_faults()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    return static_cast<int64_t>(_usage.ru_minflt);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_num_major_page_faults()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    return static_cast<int64_t>(_usage.ru_majflt);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_num_messages_sent()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    return static_cast<int64_t>(_usage.ru_msgsnd);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_num_messages_received()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    return static_cast<int64_t>(_usage.ru_msgrcv);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_num_signals()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    return static_cast<int64_t>(_usage.ru_nsignals);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_num_voluntary_context_switch()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    return static_cast<int64_t>(_usage.ru_nvcsw);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_num_priority_context_switch()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    return static_cast<int64_t>(_usage.ru_nivcsw);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
 tim::get_virt_mem()
 {
 #if defined(TIMEMORY_UNIX)
@@ -682,38 +724,6 @@ tim::get_virt_mem()
 #    endif
 #elif defined(TIMEMORY_WINDOWS)
     return static_cast<int64_t>(0);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_user_mode_time()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    constexpr int64_t MSEC = 1000000;
-    return static_cast<int64_t>(_usage.ru_utime.tv_sec * MSEC + _usage.ru_utime.tv_usec);
-#else
-    return static_cast<int64_t>(0);
-#endif
-}
-
-//======================================================================================//
-
-inline int64_t
-tim::get_kernel_mode_time()
-{
-#if defined(TIMEMORY_UNIX)
-    struct rusage _usage;
-    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
-
-    constexpr int64_t MSEC = 1000000;
-    return static_cast<int64_t>(_usage.ru_stime.tv_sec * MSEC + _usage.ru_stime.tv_usec);
 #else
     return static_cast<int64_t>(0);
 #endif
