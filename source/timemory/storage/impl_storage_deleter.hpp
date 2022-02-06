@@ -60,7 +60,6 @@ struct storage_deleter : public std::default_delete<StorageT>
 
         if(ptr && master && ptr != master)
         {
-            ptr->StorageT::stack_clear();
             master->StorageT::merge(ptr);
         }
         else

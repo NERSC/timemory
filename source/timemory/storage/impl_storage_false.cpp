@@ -91,7 +91,7 @@ template <typename Type>
 void
 storage<Type, false>::stack_clear()
 {
-    if(!m_stack.empty() && m_settings->get_stack_clearing())
+    if(!m_stack.empty() && m_settings && m_settings->get_stack_clearing())
     {
         std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
@@ -187,7 +187,7 @@ storage<Type, false>::merge()
     if(m_children.size() == 0)
         return;
 
-    if(m_settings->get_stack_clearing())
+    if(m_settings && m_settings->get_stack_clearing())
     {
         for(auto& itr : m_children)
             merge(itr);

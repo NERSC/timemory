@@ -81,7 +81,8 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
     bool _testing_debug = _debug;
 #endif
 
-    rhs.stack_clear();
+    if(_settings && _settings->get_stack_clearing())
+        rhs.stack_clear();
 
     auto _copy_hash_ids = [&lhs, &rhs, _debug]() {
         // copy over mapping of hashes to strings
@@ -568,7 +569,8 @@ merge<Type, true>::operator()(GraphT& _g, ItrT _root, ItrT _rhs)
 template <typename Type>
 merge<Type, false>::merge(storage_type& lhs, storage_type& rhs)
 {
-    rhs.stack_clear();
+    if(rhs.m_settings && rhs.m_settings->get_stack_clearing())
+        rhs.stack_clear();
 
     // create lock
     auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);

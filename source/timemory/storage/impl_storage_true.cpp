@@ -196,12 +196,12 @@ template <typename Type>
 void
 storage<Type, true>::stack_clear()
 {
-    if(!m_stack.empty() && m_settings->get_stack_clearing())
+    if(!m_stack.empty() && m_settings && m_settings->get_stack_clearing())
     {
         std::unordered_set<Type*> _stack = m_stack;
         for(auto& itr : _stack)
         {
-            operation::generic_operator<Type, operation::start<Type>, TIMEMORY_API>{
+            operation::generic_operator<Type, operation::stop<Type>, TIMEMORY_API>{
                 *itr
             };
             operation::generic_operator<Type, operation::pop_node<Type>, TIMEMORY_API>{
