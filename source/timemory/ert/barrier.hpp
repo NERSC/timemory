@@ -55,13 +55,20 @@ public:
     using condvar_t = std::condition_variable;
     using atomic_t  = std::atomic<size_type>;
     using lock_t    = std::unique_lock<mutex_t>;
+    using promise_t = std::promise<void>;
+    using future_t  = std::shared_future<void>;
 
 public:
-    explicit thread_barrier(size_t nthreads)
-    : m_master(std::this_thread::get_id())
-    , m_num_threads(nthreads)
-    , m_notify(0)
-    , m_future(m_promise.get_future().share())
+    enum class mode : short
+    {
+        notify = 0,
+        spin,
+        cv
+    };
+
+    explicit thread_barrier(size_t _nthreads)
+    : m_num_threads{ static_cast<size_type>(_nthreads) }
+    , m_future{ m_promise.get_future().share() }
     {}
 
     thread_barrier(const thread_barrier&) = delete;
@@ -72,20 +79,40 @@ public:
 
     size_type size() const { return m_num_threads; }
 
+    // check if this is the thread the created barrier
+    bool is_master() const { return std::this_thread::get_id() == m_master; }
+
+    // the generic wait method
+    auto wait(mode _mode = mode::notify)
+    {
+        if(is_master())
+            return invoke_error();
+
+        switch(_mode)
+        {
+            case mode::notify: return notify_wait();
+            case mode::spin: return spin_wait();
+            case mode::cv: return cv_wait();
+        }
+    }
+
+    auto get_count(mode _mode = mode::notify)
+    {
+        switch(_mode)
+        {
+            case mode::notify: return m_notify.load();
+            case mode::spin: return m_counter;
+            case mode::cv: return m_counter;
+        }
+        return size();
+    }
+
+private:
     // call from worker thread -- spin wait (fast)
     void spin_wait()
     {
-        if(is_master())
         {
-#if defined(TIMEMORY_INTERNAL_TESTING)
-            TIMEMORY_EXCEPTION("master thread calling worker wait function\n");
-#else
-            return;
-#endif
-        }
-
-        {
-            lock_t lk(m_mutex);
+            lock_t _lk{ m_mutex };
             ++m_counter;
             ++m_waiting;
         }
@@ -93,12 +120,13 @@ public:
         while(m_counter < m_num_threads)
         {
             while(spin_lock.test_and_set(std::memory_order_acquire))  // acquire lock
-                ;                                                     // spin
+            {
+            }  // spin
             spin_lock.clear(std::memory_order_release);
         }
 
         {
-            lock_t lk(m_mutex);
+            lock_t _lk{ m_mutex };
             --m_waiting;
             if(m_waiting == 0)
                 m_counter = 0;  // reset barrier
@@ -108,19 +136,10 @@ public:
     // call from worker thread -- condition variable wait (slower)
     void cv_wait()
     {
-        if(is_master())
-        {
-#if defined(TIMEMORY_INTERNAL_TESTING)
-            TIMEMORY_EXCEPTION("master thread calling worker wait function\n");
-#else
-            return;
-#endif
-        }
-
-        lock_t lk(m_mutex);
+        lock_t _lk{ m_mutex };
         ++m_counter;
         ++m_waiting;
-        m_cv.wait(lk, [&] { return m_counter >= m_num_threads; });
+        m_cv.wait(_lk, [&] { return m_counter >= m_num_threads; });
         m_cv.notify_one();
         --m_waiting;
         if(m_waiting == 0)
@@ -131,36 +150,33 @@ public:
     // master sets the promise once the
     void notify_wait()
     {
-        if(is_master())
+        // make copy of future
+        auto      _fut = m_future;
+        size_type _id  = ++m_notify;
+
+        if(_id == m_num_threads)
         {
-            lock_t lk(m_mutex);
-            while(m_notify.load() < m_num_threads)
-                m_cv.wait(lk);
-            m_promise.set_value();
-            while(m_notify.load() > 0)
-            {
-            }
-            std::promise<void>       _ptmp;
-            std::shared_future<void> _ftmp = _ptmp.get_future().share();
-            std::swap(m_promise, _ptmp);
-            std::swap(m_future, _ftmp);
+            // swap out the member promise future for next notify_wait() call
+            promise_t _promise{};
+            future_t  _future = _promise.get_future().share();
+            std::swap(_promise, m_promise);
+            std::swap(_future, m_future);
+            // reset the notify value
+            m_notify.store(0);
+            // release all the waiting threads
+            _promise.set_value();
         }
-        else
-        {
-            {
-                lock_t lk(m_mutex);
-                ++m_notify;
-                m_cv.notify_one();
-            }
-            m_future.wait();
-            --m_notify;
-        }
+
+        _fut.wait();
     }
 
-    // check if this is the thread the created barrier
-    bool is_master() const { return std::this_thread::get_id() == m_master; }
+    void invoke_error()
+    {
+#if defined(TIMEMORY_INTERNAL_TESTING)
+        TIMEMORY_EXCEPTION("master thread calling worker wait function\n");
+#endif
+    }
 
-private:
     // the constructing thread will be set to master
     std::thread::id  m_master      = std::this_thread::get_id();
     size_type        m_num_threads = 0;  // number of threads that will wait on barrier
@@ -169,9 +185,9 @@ private:
     std::atomic_flag spin_lock     = ATOMIC_FLAG_INIT;  // for spin lock
     mutex_t          m_mutex;
     condvar_t        m_cv;
-    std::atomic<size_type>   m_notify;
-    std::promise<void>       m_promise;
-    std::shared_future<void> m_future;
+    std::atomic<size_type> m_notify{ 0 };
+    promise_t              m_promise;
+    future_t               m_future;
 };
 
 }  // namespace ert

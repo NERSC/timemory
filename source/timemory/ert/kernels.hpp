@@ -37,6 +37,8 @@
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/ert/counter.hpp"
 #include "timemory/ert/data.hpp"
+#include "timemory/ert/types.hpp"
+#include "timemory/macros/attributes.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
@@ -155,6 +157,13 @@ template <size_t Nops, size_t... Nextra, typename DeviceT, typename Tp, typename
           enable_if_t<sizeof...(Nextra) == 0, int> = 0>
 bool
 ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
+         StoreFuncT&& store_func) TIMEMORY_VISIBILITY("default");
+
+template <size_t Nops, size_t... Nextra, typename DeviceT, typename Tp, typename CounterT,
+          typename OpsFuncT, typename StoreFuncT,
+          enable_if_t<sizeof...(Nextra) == 0, int>>
+bool
+ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
          StoreFuncT&& store_func)
 {
     if(_counter.skip(Nops))
@@ -194,13 +203,14 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
             gpu::stream_create(itr);
     }
 
+    std::mutex _opmutex{};
+
     auto _opfunc = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
+        threading::set_thread_name(
+            TIMEMORY_JOIN('.', "ert", DeviceT::name(), tid).c_str());
         threading::affinity::set();
-        using opmutex_t = std::mutex;
-        using oplock_t  = std::unique_lock<opmutex_t>;
-        static opmutex_t opmutex;
         {
-            oplock_t _lock(opmutex);
+            std::unique_lock<std::mutex> _lk{ _opmutex };
             // execute the callback
             _counter.configure(tid);
         }
@@ -256,11 +266,14 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
                     gpu::device_sync();
             }
 
-            // wait master thread notifies to proceed
-            // if(fbarrier)
-            //    fbarrier->notify_wait();
+            // wait for all threads
             if(fbarrier)
-                fbarrier->spin_wait();
+            {
+                fbarrier->wait();
+                if(fbarrier->get_count() > 0)
+                    throw std::runtime_error("Error! first barrier failed! " +
+                                             std::to_string(fbarrier->get_count()));
+            }
 
             // get instance of object measuring something during the calculation
             CounterT ct = _counter.get_counter();
@@ -307,11 +320,14 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
                     gpu::device_sync();
             }
 
-            // wait master thread notifies to proceed
-            // if(lbarrier)
-            //    lbarrier->notify_wait();
+            // wait for all threads
             if(lbarrier)
-                lbarrier->spin_wait();
+            {
+                lbarrier->wait();
+                if(lbarrier->get_count() > 0)
+                    throw std::runtime_error("Error! last barrier failed! " +
+                                             std::to_string(lbarrier->get_count()));
+            }
 
             // stop the timer or anything else being recorded
             ct.stop();
@@ -321,7 +337,7 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
             {
                 // ensure there is not a data race if more than one thread somehow
                 // has a tid of 0
-                oplock_t _lock(opmutex);
+                std::unique_lock<std::mutex> _lk{ _opmutex };
                 _counter.record(ct, n, ntrials, Nops, _itr_params);
             }
 
@@ -336,7 +352,7 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
 
     // guard against multiple threads trying to call ERT for some reason
     static std::mutex            _mtx;
-    std::unique_lock<std::mutex> _lock(_mtx);
+    std::unique_lock<std::mutex> _lk{ _mtx };
 
     dmp::barrier();  // synchronize MPI processes
 
@@ -354,19 +370,6 @@ ops_main(counter<DeviceT, Tp, CounterT>& _counter, OpsFuncT&& ops_func,
         // create the threads
         for(uint64_t i = 0; i < _counter.params.nthreads; ++i)
             threads.emplace_back(_opfunc, i, &fbarrier, &lbarrier);
-
-        /*
-        uint64_t n = _counter.params.working_set_min;
-        while(n <= _counter.nsize)
-        {
-            // wait until all threads have also called notify_wait() then release
-            // barrier to start
-            fbarrier.notify_wait();
-            // wait until all threads have also called notify_wait() then release
-            // barrier to finish
-            lbarrier.notify_wait();
-            n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
-        }*/
 
         // wait for threads to finish
         for(auto& itr : threads)

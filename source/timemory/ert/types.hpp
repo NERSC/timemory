@@ -49,6 +49,7 @@
 #endif
 
 #include "timemory/backends/cpu.hpp"
+#include "timemory/macros/attributes.hpp"
 
 // clang-format off
 namespace tim { namespace component { struct ert_timer; } }
@@ -68,7 +69,7 @@ template <typename DeviceT, typename Tp, typename CounterT = component::ert_time
 class counter;
 
 template <typename DeviceT, typename Tp, typename CounterT>
-struct configuration;
+struct TIMEMORY_VISIBLE configuration;
 
 template <typename DeviceT, typename Tp, typename CounterT>
 struct executor;

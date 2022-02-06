@@ -164,8 +164,6 @@ public:
     //
     exec_data& operator+=(const value_type& entry)
     {
-        // static std::mutex            _mutex;
-        // std::unique_lock<std::mutex> _lock(_mutex);
         m_values.resize(m_values.size() + 1);
         m_values.back() = entry;
         // m_values.push_back(entry);
@@ -176,9 +174,6 @@ public:
     //
     exec_data& operator+=(const exec_data& rhs)
     {
-        // static std::mutex            _mutex;
-        // std::unique_lock<std::mutex> _lock(_mutex);
-
         for(const auto& itr : rhs.m_values)
             m_values.push_back(itr);
         return *this;
