@@ -151,7 +151,7 @@ class flat_tests : public ::testing::Test
 protected:
     static void SetUpTestSuite()
     {
-        tim::set_env("TIMEMORY_FLAT_PROFILE", "ON", 1);
+        tim::set_env(TIMEMORY_SETTINGS_PREFIX "FLAT_PROFILE", "ON", 1);
         tim::settings::verbose()     = 0;
         tim::settings::debug()       = false;
         tim::settings::json_output() = true;
@@ -178,11 +178,11 @@ protected:
 TEST_F(flat_tests, parse)
 {
     tim::settings::flat_profile() = false;
-    tim::set_env("TIMEMORY_FLAT_PROFILE", "ON", 1);
+    tim::set_env(TIMEMORY_SETTINGS_PREFIX "FLAT_PROFILE", "ON", 1);
     tim::settings::parse();
     std::cout << "\nflat_profile() = " << std::boolalpha << tim::settings::flat_profile()
               << std::endl;
-    auto ret = tim::get_env<bool>("TIMEMORY_FLAT_PROFILE", false);
+    auto ret = tim::get_env<bool>(TIMEMORY_SETTINGS_PREFIX "FLAT_PROFILE", false);
     std::cout << "environment = " << std::boolalpha << ret << '\n' << std::endl;
     EXPECT_TRUE(ret);
     EXPECT_TRUE(tim::settings::flat_profile());
@@ -194,7 +194,7 @@ TEST_F(flat_tests, parse)
 TEST_F(flat_tests, get_default)
 {
     tim::settings::flat_profile() = false;
-    tim::set_env("TIMEMORY_FLAT_PROFILE", "ON", 1);
+    tim::set_env(TIMEMORY_SETTINGS_PREFIX "FLAT_PROFILE", "ON", 1);
     tim::settings::parse();
     auto _scope = tim::scope::config{};
     std::cout << "\nscope: " << _scope << '\n' << std::endl;

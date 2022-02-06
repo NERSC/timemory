@@ -80,8 +80,8 @@ protected:
     static void SetUpTestSuite()
     {
         puts("[SetupTestSuite] setup starting");
-        tim::set_env("TIMEMORY_VERBOSE", "1", 1);
-        tim::set_env("TIMEMORY_COLLAPSE_THREADS", "OFF", 0);
+        tim::set_env(TIMEMORY_SETTINGS_PREFIX "VERBOSE", "1", 1);
+        tim::set_env(TIMEMORY_SETTINGS_PREFIX "COLLAPSE_THREADS", "OFF", 0);
         tim::settings::debug()       = false;
         tim::settings::json_output() = true;
         tim::settings::mpi_thread()  = false;

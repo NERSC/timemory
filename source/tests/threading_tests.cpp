@@ -352,6 +352,7 @@ TEST_F(threading_tests, async)
                     printf("[%s][tid=%i]> executing iteration %li...\n",
                            details::get_test_name().c_str(),
                            (int) tim::threading::get_id(), i);
+                    _b.set_tid(tim::threading::get_id());
                     _b.start();
                     sum += details::fibonacci(_n);
                     _b.stop();

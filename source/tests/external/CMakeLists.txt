@@ -2,6 +2,8 @@ if(NOT TIMEMORY_BUILD_GOOGLE_TEST)
     return()
 endif()
 
+set(CMAKE_CXX_VISIBILITY_PRESET "default")
+
 set(_EXCLUDE)
 if(NOT TIMEMORY_BUILD_TESTING
    OR NOT timemory_MAIN_PROJECT
