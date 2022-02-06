@@ -633,7 +633,7 @@ bundle<Tag, BundleT, TupleT>::start(Args&&... args)
                  !quirk_config<quirk::no_store>::value)
     {
         if(m_store() && !bundle_type::m_explicit_push())
-            push();
+            push(tid());
     }
 
     // start components
