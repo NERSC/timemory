@@ -66,7 +66,7 @@ papi_common::initialize_papi()
 {
     if(!state().is_initialized && !state().is_working)
     {
-        if(settings::debug() || settings::verbose() > 2)
+        if(!settings::papi_quiet() && (settings::debug() || settings::verbose() > 2))
         {
             PRINT_HERE("Initializing papi (initialized: %s, is working: %s)",
                        state().is_initialized ? "y" : "n",
@@ -79,7 +79,7 @@ papi_common::initialize_papi()
         state().is_initialized = true;
         if(!state().is_working)
         {
-            if(!settings::papi_quiet())
+            if(!settings::papi_quiet() && !get_events<void>().empty())
             {
                 std::cerr << "Warning! PAPI failed to initialized!\n";
                 std::cerr << "The following PAPI events will not be reported: \n";
