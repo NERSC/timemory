@@ -64,5 +64,10 @@ if(_LIB_TAG AND _LIB_TYPE)
 endif()
 
 if(TIMEMORY_USE_NCCL AND TIMEMORY_BUILD_NCCLP_LIBRARY)
+    checkout_git_submodule(
+        RELATIVE_PATH source/tests/external/nccl-tests
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://github.com/jrmadsen/nccl-tests.git
+        REPO_BRANCH timemory)
     add_subdirectory(nccl-tests)
 endif()
