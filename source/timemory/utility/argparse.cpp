@@ -239,8 +239,8 @@ argument_parser::print_help(const std::string& _extra)
         std::stringstream _newline;
         _newline << "\n" << std::setw(m_width + 5) << "";
 
-        std::stringstream _indent;
-        _indent << std::setw(m_width + 5) << "";
+        std::stringstream _indent_opt;
+        _indent_opt << std::setw(m_width + 5) << "";
 
         auto _replace = [](std::string& _desc, const std::string& _key,
                            const std::string& _str) {
@@ -260,7 +260,7 @@ argument_parser::print_help(const std::string& _extra)
             if(a.m_required)
                 desc += " (Required)";
 
-            _replace(desc, "%{INDENT}%", _indent.str());
+            _replace(desc, "%{INDENT}%", _indent_opt.str());
             _replace(desc, "%{NEWLINE}%", _newline.str());
 
             std::cerr << " " << std::setw(m_width) << desc;
@@ -275,7 +275,7 @@ argument_parser::print_help(const std::string& _extra)
             if(a.m_required)
                 desc += " (Required)";
 
-            _replace(desc, "%{INDENT}%", _indent.str());
+            _replace(desc, "%{INDENT}%", _indent_opt.str());
             _replace(desc, "%{NEWLINE}%", _newline.str());
 
             auto              _desc = delimit(desc, " \n");

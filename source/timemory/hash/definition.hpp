@@ -215,7 +215,6 @@ hash_identifier_error(const hash_map_ptr_t&   _hash_map,
         std::stringstream ss;
         ss << "Error! node with hash " << _hash_id
            << " does not have an associated string!\n";
-        static std::set<hash_value_t> _reported{};
         if(_reported.count(_hash_id) == 0)
         {
             _reported.emplace(_hash_id);
