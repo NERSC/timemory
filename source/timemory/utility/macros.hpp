@@ -166,13 +166,15 @@ using pid_t = DWORD;
 #if !defined(TIMEMORY_TRUNCATED_FILE_STRING)
 #    define TIMEMORY_TRUNCATED_FILE_STRING(FILE)                                         \
         []() {                                                                           \
-            std::string _f{ FILE };                                                      \
-            auto        _pos = _f.find("/timemory/");                                    \
-            if(_pos != std::string::npos)                                                \
+            std::string TIMEMORY_VAR_NAME_COMBINE(_f, __LINE__){ FILE };                 \
+            auto        TIMEMORY_VAR_NAME_COMBINE(_pos, __LINE__) =                      \
+                TIMEMORY_VAR_NAME_COMBINE(_f, __LINE__).find("/timemory/");              \
+            if(TIMEMORY_VAR_NAME_COMBINE(_pos, __LINE__) != std::string::npos)           \
             {                                                                            \
-                return _f.substr(_pos + 1);                                              \
+                return TIMEMORY_VAR_NAME_COMBINE(_f, __LINE__)                           \
+                    .substr(TIMEMORY_VAR_NAME_COMBINE(_pos, __LINE__) + 1);              \
             }                                                                            \
-            return _f;                                                                   \
+            return TIMEMORY_VAR_NAME_COMBINE(_f, __LINE__);                              \
         }()
 #endif
 
@@ -265,8 +267,8 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 #    define TIMEMORY_CONDITIONAL_BACKTRACE(CONDITION, DEPTH)                             \
         if(CONDITION)                                                                    \
         {                                                                                \
-            timemory_print_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING,            \
-                                          TIMEMORY_FILE_LINE_FUNC_STRING);               \
+            timemory_print_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING,          \
+                                            TIMEMORY_FILE_LINE_FUNC_STRING);             \
         }
 #endif
 

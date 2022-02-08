@@ -145,7 +145,7 @@ EXCLUDE_SYMBOLS        = "tim::*internal*" \
                          "tim::*impl*" \
                          "tim::*helpers*" \
                          "std::*" \
-                         "_TIM_*" \
+                         "TIMEMORY_*" \
                          "base<*" \
                          "handler<*" \
                          "true_type" \
@@ -1349,7 +1349,7 @@ DOT_CLEANUP            = YES
 # "tim::*impl*"
 # "tim::*helpers*"
 # "std::*"
-# "_TIM_*"
+# "TIMEMORY_*"
 # "base<*"
 # "storage"
 # "multiply"

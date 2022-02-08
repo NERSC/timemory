@@ -371,7 +371,7 @@
         {                                                                                \
         using namespace ::tim::component;                                                \
         namespace component = ::tim::component;                                          \
-        auto _TIM_STORAGE_INIT(__COUNTER__) =                                            \
+        auto TIMEMORY_STORAGE_INIT_VARIABLE(__COUNTER__) =                               \
             ::tim::storage_initializer::get<__VA_ARGS__>();                              \
         }                                                                                \
         }                                                                                \
@@ -425,8 +425,9 @@
         namespace                                                                        \
         {                                                                                \
         using namespace ::tim::component;                                                \
-        namespace component                 = ::tim::component;                          \
-        auto _TIM_STORAGE_INIT(__COUNTER__) = ::tim::storage_initializer::get<TYPE>();   \
+        namespace component = ::tim::component;                                          \
+        auto TIMEMORY_STORAGE_INIT_VARIABLE(__COUNTER__) =                               \
+            ::tim::storage_initializer::get<TYPE>();                                     \
         }
 #endif
 

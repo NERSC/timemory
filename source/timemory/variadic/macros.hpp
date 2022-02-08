@@ -73,16 +73,16 @@ using string = tim::mpl::apply<std::string>;
 //--------------------------------------------------------------------------------------//
 
 #    if defined(__FILE_NAME__)
-#        define _TIM_FILESTR __FILE_NAME__
+#        define TIMEMORY_FILESTR __FILE_NAME__
 #    else
-#        define _TIM_FILESTR                                                             \
+#        define TIMEMORY_FILESTR                                                         \
             std::string(__FILE__).substr(                                                \
                 std::string(__FILE__).find_last_of(TIMEMORY_OS_PATH_DELIMITER) + 1)
 #    endif
 
 //--------------------------------------------------------------------------------------//
 
-#    define _TIM_FILELINE ::tim::string::join(':', _TIM_FILESTR, _TIM_LINESTR)
+#    define TIMEMORY_FILELINE ::tim::string::join(':', TIMEMORY_FILESTR, TIMEMORY_LINESTR)
 
 //--------------------------------------------------------------------------------------//
 
@@ -94,11 +94,11 @@ using string = tim::mpl::apply<std::string>;
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_BASIC_LABEL(...) ::tim::string::join("", _TIM_FUNC, __VA_ARGS__)
+#    define TIMEMORY_BASIC_LABEL(...) ::tim::string::join("", TIMEMORY_FUNC, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_FULL_LABEL ::tim::string::join('/', _TIM_FUNC, _TIM_FILELINE)
+#    define TIMEMORY_FULL_LABEL ::tim::string::join('/', TIMEMORY_FUNC, TIMEMORY_FILELINE)
 
 //--------------------------------------------------------------------------------------//
 
@@ -119,23 +119,23 @@ using string = tim::mpl::apply<std::string>;
 //======================================================================================//
 
 #    define TIMEMORY_BLANK_MARKER(TYPE, ...)                                             \
-        _TIM_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                    \
+        TIMEMORY_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                \
         TIMEMORY_AUTO_TYPE(TYPE)                                                         \
-        _TIM_VARIABLE(__LINE__)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
+        TIMEMORY_VARIABLE(__LINE__)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_MARKER(TYPE, ...)                                             \
-        _TIM_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                    \
+        TIMEMORY_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                \
         TIMEMORY_AUTO_TYPE(TYPE)                                                         \
-        _TIM_VARIABLE(__LINE__)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
+        TIMEMORY_VARIABLE(__LINE__)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_MARKER(TYPE, ...)                                                   \
-        _TIM_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                     \
+        TIMEMORY_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                 \
         TIMEMORY_AUTO_TYPE(TYPE)                                                         \
-        _TIM_VARIABLE(__LINE__)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
+        TIMEMORY_VARIABLE(__LINE__)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //======================================================================================//
 //
@@ -144,8 +144,8 @@ using string = tim::mpl::apply<std::string>;
 //======================================================================================//
 
 #    define TIMEMORY_CONDITIONAL_BLANK_MARKER(COND, TYPE, ...)                           \
-        _TIM_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                    \
-        std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)> _TIM_VARIABLE(__LINE__) =              \
+        TIMEMORY_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                \
+        std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)> TIMEMORY_VARIABLE(__LINE__) =          \
             std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)>(                                   \
                 ((COND))                                                                 \
                     ? new TIMEMORY_AUTO_TYPE(TYPE)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))   \
@@ -154,8 +154,8 @@ using string = tim::mpl::apply<std::string>;
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CONDITIONAL_BASIC_MARKER(COND, TYPE, ...)                           \
-        _TIM_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                    \
-        std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)> _TIM_VARIABLE(__LINE__) =              \
+        TIMEMORY_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                \
+        std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)> TIMEMORY_VARIABLE(__LINE__) =          \
             std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)>(                                   \
                 ((COND))                                                                 \
                     ? new TIMEMORY_AUTO_TYPE(TYPE)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))   \
@@ -164,8 +164,8 @@ using string = tim::mpl::apply<std::string>;
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CONDITIONAL_MARKER(COND, TYPE, ...)                                 \
-        _TIM_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                     \
-        std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)> _TIM_VARIABLE(__LINE__) =              \
+        TIMEMORY_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                 \
+        std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)> TIMEMORY_VARIABLE(__LINE__) =          \
             std::unique_ptr<TIMEMORY_AUTO_TYPE(TYPE)>(                                   \
                 ((COND))                                                                 \
                     ? new TIMEMORY_AUTO_TYPE(TYPE)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))   \
@@ -197,70 +197,70 @@ using string = tim::mpl::apply<std::string>;
 //======================================================================================//
 
 #    define TIMEMORY_BLANK_CALIPER(ID, TYPE, ...)                                        \
-        _TIM_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                    \
-        TYPE _TIM_VARIABLE(ID)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
+        TIMEMORY_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                \
+        TYPE TIMEMORY_VARIABLE(ID)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_CALIPER(ID, TYPE, ...)                                        \
-        _TIM_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                    \
-        TYPE _TIM_VARIABLE(ID)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
+        TIMEMORY_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                \
+        TYPE TIMEMORY_VARIABLE(ID)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CALIPER(ID, TYPE, ...)                                              \
-        _TIM_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                     \
-        TYPE _TIM_VARIABLE(ID)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
+        TIMEMORY_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                 \
+        TYPE TIMEMORY_VARIABLE(ID)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_STATIC_BLANK_CALIPER(ID, TYPE, ...)                                 \
-        _TIM_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                    \
-        static TYPE _TIM_VARIABLE(ID)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
+        TIMEMORY_STATIC_SRC_LOCATION(blank, __VA_ARGS__);                                \
+        static TYPE TIMEMORY_VARIABLE(ID)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_STATIC_BASIC_CALIPER(ID, TYPE, ...)                                 \
-        _TIM_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                    \
-        static TYPE _TIM_VARIABLE(ID)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
+        TIMEMORY_STATIC_SRC_LOCATION(basic, __VA_ARGS__);                                \
+        static TYPE TIMEMORY_VARIABLE(ID)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_STATIC_CALIPER(ID, TYPE, ...)                                       \
-        _TIM_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                     \
-        static TYPE _TIM_VARIABLE(ID)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
+        TIMEMORY_STATIC_SRC_LOCATION(full, __VA_ARGS__);                                 \
+        static TYPE TIMEMORY_VARIABLE(ID)(TIMEMORY_CAPTURE_ARGS(__VA_ARGS__))
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_CALIPER_REFERENCE(ID) std::ref(_TIM_VARIABLE(ID)).get()
+#    define TIMEMORY_CALIPER_REFERENCE(ID) std::ref(TIMEMORY_VARIABLE(ID)).get()
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_CALIPER_APPLY(ID, FUNC, ...) _TIM_VARIABLE(ID).FUNC(__VA_ARGS__)
+#    define TIMEMORY_CALIPER_APPLY(ID, FUNC, ...) TIMEMORY_VARIABLE(ID).FUNC(__VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CALIPER_TYPE_APPLY(ID, TYPE, FUNC, ...)                             \
-        _TIM_VARIABLE(ID).type_apply<TYPE>(FUNC, __VA_ARGS__)
+        TIMEMORY_VARIABLE(ID).type_apply<TYPE>(FUNC, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_CALIPER_APPLY0(ID, FUNC) _TIM_VARIABLE(ID).FUNC()
+#    define TIMEMORY_CALIPER_APPLY0(ID, FUNC) TIMEMORY_VARIABLE(ID).FUNC()
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CALIPER_TYPE_APPLY0(ID, TYPE, FUNC)                                 \
-        _TIM_VARIABLE(ID).type_apply<TYPE>(FUNC)
+        TIMEMORY_VARIABLE(ID).type_apply<TYPE>(FUNC)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CALIPER_LAMBDA(ID, LAMBDA, ...)                                     \
-        LAMBDA(_TIM_VARIABLE(ID), __VA_ARGS__)
+        LAMBDA(TIMEMORY_VARIABLE(ID), __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_CALIPER_TYPE_LAMBDA(ID, TYPE, LAMBDA, ...)                          \
-        LAMBDA(_TIM_VARIABLE(ID).get<TYPE>(), __VA_ARGS__)
+        LAMBDA(TIMEMORY_VARIABLE(ID).get<TYPE>(), __VA_ARGS__)
 
 //======================================================================================//
 //
