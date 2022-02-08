@@ -26,7 +26,7 @@ available_tools = {
     "dyninst": "TIMEMORY_BUILD_DYNINST_TOOLS",
     "mpip": "TIMEMORY_BUILD_MPIP_LIBRARY",
     "ompt": "TIMEMORY_BUILD_OMPT_LIBRARY",
-    "ncclp": "TIMEMORY_BUILD_NCCLP_LIBRARY",
+    "ncclp": ["TIMEMORY_BUILD_NCCLP_LIBRARY", "TIMEMORY_USE_NCCL"],
     "mallocp": "TIMEMORY_BUILD_MALLOCP_LIBRARY",
     "compiler": "TIMEMORY_BUILD_COMPILER_INSTRUMENTATION",
     "ert": "TIMEMORY_BUILD_ERT",
@@ -594,7 +594,11 @@ def run_pyctest():
         args.tools.append("avail")
 
     for key, opt in available_tools.items():
-        build_opts[opt] = "ON" if (key in args.tools) else "OFF"
+        if isinstance(opt, list):
+            for itr in opt:
+                build_opts[itr] = "ON" if (key in args.tools) else "OFF"
+        else:
+            build_opts[opt] = "ON" if (key in args.tools) else "OFF"
 
     if "dyninst" in args.tools:
         build_opts["TIMEMORY_USE_DYNINST"] = "ON"
