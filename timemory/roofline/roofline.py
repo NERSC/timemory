@@ -847,7 +847,7 @@ class plot_parameters:
         self.xmin = 0.01
         self.xmax = 1000
         self.ymin = 1
-        self.ymax = 10 ** y_digits
+        self.ymax = 10**y_digits
 
         if _inst_roofline:
             self.xlabel = "Instruction Intensity [Warp Inst. Per Transaction]"

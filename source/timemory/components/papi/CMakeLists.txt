@@ -1,4 +1,3 @@
-
 set(NAME papi)
 set(DEPS timemory::timemory-papi)
 
