@@ -225,6 +225,46 @@ set_thread_name(const char* _name)
 //
 //--------------------------------------------------------------------------------------//
 //
+inline std::string
+get_thread_name()
+{
+#if defined(TIMEMORY_UNIX)
+    constexpr size_t _buff_len = 32;
+    char             _buff[_buff_len];
+    memset(_buff, '\0', _buff_len * sizeof(char));
+    auto _err = pthread_getname_np(pthread_self(), _buff, _buff_len);
+    if(_err == ERANGE)
+    {
+        fprintf(stderr,
+                "[threading::get_thread_name] buffer for pthread_getname_np was not "
+                "large enough: %zu\n",
+                _buff_len);
+    }
+    return std::string{ _buff };
+#elif defined(TIMEMORY_WINDOWS)
+    wchar_t*    data  = nullptr;
+    std::string _name = {};
+    HRESULT     hr    = GetThreadDescription(GetCurrentThread(), &data);
+    if(SUCCEEDED(hr))
+    {
+        constexpr size_t _buff_len = 64;
+        char             _buff[_buff_len];
+        _name.resize(_buff_len);
+        for(size_t i = 0; i < _buff_len; ++i)
+        {
+            _name[i] = data[i];
+            if(data[i] == '\0')
+                break;
+        }
+        LocalFree(data);
+        _name.shrink_to_fit();
+    }
+    return _name;
+#endif
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 struct affinity
 {
     using functor_t = std::function<int64_t(int64_t)>;
