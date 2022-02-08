@@ -976,12 +976,10 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
             }
             else if(itr->is_bad(signum))
             {
-                char msg[1024];
-                sprintf(msg, "[timemory]> sampler instance caught bad signal: %i ...",
-                        signum);
-                perror(msg);
-                signal(signum, SIG_DFL);
-                raise(signum);
+                CONDITIONAL_PRINT_HERE(
+                    itr->m_verbose >= 0,
+                    "sampler instance received unexpected signal %i (index: %zu)", signum,
+                    itr->m_idx);
             }
         }
         else { itr->sample(signum); }
@@ -1053,12 +1051,10 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t* _info, vo
             }
             else if(itr->is_bad(signum))
             {
-                char msg[1024];
-                sprintf(msg, "[timemory]> sampler instance caught bad signal: %i ...",
-                        signum);
-                perror(msg);
-                signal(signum, SIG_DFL);
-                raise(signum);
+                CONDITIONAL_PRINT_HERE(
+                    itr->m_verbose >= 0,
+                    "sampler instance received unexpected signal %i (index: %zu)", signum,
+                    itr->m_idx);
             }
         }
         else { itr->sample(signum, _info, _data); }
