@@ -53,11 +53,13 @@
 
 namespace tim
 {
+inline namespace backtrace
+{
 #if defined(TIMEMORY_UNIX)
 //
 template <size_t Depth, size_t Offset = 1>
 TIMEMORY_NOINLINE inline auto
-get_backtrace()
+get_native_backtrace()
 {
     static_assert(Depth > 0, "Error !(Depth > 0)");
     static_assert(Offset >= 0, "Error !(Offset >= 0)");
@@ -153,7 +155,7 @@ get_unw_backtrace()
 //
 template <size_t Depth, size_t Offset = 1, typename Func>
 TIMEMORY_NOINLINE inline auto
-get_backtrace(Func&& func)
+get_native_backtrace(Func&& func)
 {
     static_assert(Depth > 0, "Error !(Depth > 0)");
     static_assert(Offset >= 0, "Error !(Offset >= 0)");
@@ -162,7 +164,7 @@ get_backtrace(Func&& func)
     // destination
     std::array<type, Depth> btrace{};
 
-    auto&& _data = ::tim::get_backtrace<Depth, Offset + 1>();
+    auto&& _data = ::tim::get_native_backtrace<Depth, Offset + 1>();
     auto   _n    = _data.size();
     for(decltype(_n) i = 0; i < _n; ++i)
         btrace[i] = func(_data[i]);
@@ -191,10 +193,10 @@ get_unw_backtrace(Func&& func)
 //
 template <size_t Depth, size_t Offset = 1>
 TIMEMORY_NOINLINE inline auto
-get_demangled_backtrace()
+get_demangled_native_backtrace()
 {
     auto demangle_bt = [](const char cstr[512]) { return demangle_backtrace(cstr); };
-    return get_backtrace<Depth, Offset + 1>(demangle_bt);
+    return get_native_backtrace<Depth, Offset + 1>(demangle_bt);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -211,14 +213,14 @@ get_demangled_unw_backtrace()
 //
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE inline std::ostream&
-print_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                const std::string& _info = "", const std::string& _indent = "    ")
+print_native_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
+                       const std::string& _info = "", const std::string& _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
     if(!_info.empty())
         os << " " << _info;
     os << ":\n" << std::flush;
-    auto bt = tim::get_backtrace<Depth, Offset>();
+    auto bt = ::tim::get_native_backtrace<Depth, Offset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
     for(const auto& itr : bt)
@@ -234,15 +236,15 @@ print_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
 //
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE inline std::ostream&
-print_demangled_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                          const std::string& _info   = "",
-                          const std::string& _indent = "    ")
+print_demangled_native_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
+                                 const std::string& _info   = "",
+                                 const std::string& _indent = "    ")
 {
     os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
     if(!_info.empty())
         os << " " << _info;
     os << ":\n" << std::flush;
-    auto bt = tim::get_demangled_backtrace<Depth, Offset>();
+    auto bt = ::tim::get_demangled_native_backtrace<Depth, Offset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
     for(const auto& itr : bt)
@@ -265,7 +267,7 @@ print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
     if(!_info.empty())
         os << " " << _info;
     os << ":\n" << std::flush;
-    auto bt = tim::get_unw_backtrace<Depth, Offset, WFuncOffset>();
+    auto bt = ::tim::get_unw_backtrace<Depth, Offset, WFuncOffset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
     for(const auto& itr : bt)
@@ -289,7 +291,7 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix 
     if(!_info.empty())
         os << " " << _info;
     os << ":\n" << std::flush;
-    auto bt = tim::get_demangled_unw_backtrace<Depth, Offset>();
+    auto bt = ::tim::get_demangled_unw_backtrace<Depth, Offset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
     for(const auto& itr : bt)
@@ -300,6 +302,71 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix 
     os << std::flush;
     return os;
 }
+//
+//--------------------------------------------------------------------------------------//
+//
+// using macros here is not ideal but saves another frame being created
+#    if !defined(TIMEMORY_DISABLE_BACKTRACE_MACROS) || defined(TIMEMORY_SOURCE)
+#        if defined(TIMEMORY_USE_LIBUNWIND)
+#            if !defined(get_backtrace)
+#                define get_backtrace get_unw_backtrace
+#            endif
+#            if !defined(get_demangled_backtrace)
+#                define get_demangled_backtrace get_demangled_unw_backtrace
+#            endif
+#            if !defined(print_backtrace)
+#                define print_backtrace print_unw_backtrace
+#            endif
+#            if !defined(print_demangled_backtrace)
+#                define print_demangled_backtrace print_demangled_unw_backtrace
+#            endif
+#        else
+#            if !defined(get_backtrace)
+#                define get_backtrace get_native_backtrace
+#            endif
+#            if !defined(get_demangled_backtrace)
+#                define get_demangled_backtrace get_demangled_native_backtrace
+#            endif
+#            if !defined(print_backtrace)
+#                define print_backtrace print_native_backtrace
+#            endif
+#            if !defined(print_demangled_backtrace)
+#                define print_demangled_backtrace print_demangled_native_backtrace
+#            endif
+#        endif
+#    endif
+//
+#    if defined(TIMEMORY_USE_LIBUNWIND)
+#        if !defined(timemory_get_backtrace)
+#            define timemory_get_backtrace ::tim::backtrace::get_unw_backtrace
+#        endif
+#        if !defined(timemory_get_demangled_backtrace)
+#            define timemory_get_demangled_backtrace                                     \
+                ::tim::backtrace::get_demangled_unw_backtrace
+#        endif
+#        if !defined(timemory_print_backtrace)
+#            define timemory_print_backtrace ::tim::backtrace::print_unw_backtrace
+#        endif
+#        if !defined(timemory_print_demangled_backtrace)
+#            define timemory_print_demangled_backtrace                                   \
+                ::tim::backtrace::print_demangled_unw_backtrace
+#        endif
+#    else
+#        if !defined(timemory_get_backtrace)
+#            define timemory_get_backtrace ::tim::backtrace::get_native_backtrace
+#        endif
+#        if !defined(timemory_get_demangled_backtrace)
+#            define timemory_get_demangled_backtrace                                     \
+                ::tim::backtrace::get_demangled_native_backtrace
+#        endif
+#        if !defined(timemory_print_backtrace)
+#            define timemory_print_backtrace ::tim::backtrace::print_native_backtrace
+#        endif
+#        if !defined(timemory_print_demangled_backtrace)
+#            define timemory_print_demangled_backtrace                                   \
+                ::tim::backtrace::print_demangled_native_backtrace
+#        endif
+#    endif
 //
 #else
 //
@@ -343,4 +410,5 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string = {},
 //
 #endif
 //
+}  // namespace backtrace
 }  // namespace tim

@@ -161,7 +161,7 @@ generate(
                 std::cerr << "Error getting enumeration set from "
                           << _argstr.cast<std::string>() << " : " << e.what()
                           << ". Expected python list" << std::endl;
-                tim::print_demangled_backtrace<32>();
+                timemory_print_demangled_backtrace<32>();
             }
 
             if(_args.size() == 0)
@@ -197,7 +197,7 @@ generate(
         } catch(py::cast_error& e)
         {
             std::cerr << "Error configuring bundle! " << e.what() << std::endl;
-            tim::print_demangled_backtrace<32>();
+            timemory_print_demangled_backtrace<32>();
         }
     };
 

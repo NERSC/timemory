@@ -79,10 +79,10 @@ try_demangle()
 //--------------------------------------------------------------------------------------//
 
 std::string
-demangle_backtrace(const char* cstr);
+demangle_native_backtrace(const char* cstr);
 
 std::string
-demangle_backtrace(const std::string& str);
+demangle_native_backtrace(const std::string& str);
 
 #if defined(TIMEMORY_UNIX)
 //
@@ -91,6 +91,22 @@ demangle_unw_backtrace(const char* cstr);
 
 std::string
 demangle_unw_backtrace(const std::string& str);
+//
+template <typename Tp>
+std::string
+demangle_backtrace(Tp&& _v)
+{
+    return demangle_unw_backtrace(demangle_native_backtrace(std::forward<Tp>(_v)));
+}
+//
+#else
+//
+template <typename Tp>
+std::string
+demangle_backtrace(Tp&& _v)
+{
+    return demangle_native_backtrace(std::forward<Tp>(_v));
+}
 //
 #endif
 

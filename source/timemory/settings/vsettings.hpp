@@ -229,7 +229,7 @@ vsettings::report_change(Tp _old, const Tp& _new)
             << ") changed: " << _old << " --> " << _new << "\n";
         if(get_debug() > 1)
         {
-            print_demangled_backtrace<6, 3>(oss);
+            timemory_print_demangled_backtrace<6, 3>(oss);
         }
         std::cerr << oss.str() << std::flush;
     }

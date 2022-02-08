@@ -730,7 +730,7 @@ sampler<CompT<Types...>, N, SigIds...>::sample(Args&&... _args)
             m_last->sample(get_unw_backtrace<_depth, _offset>(),
                            std::forward<Args>(_args)...);
         }
-        else m_last->sample(get_backtrace<_depth, _offset>(),
+        else m_last->sample(get_native_backtrace<_depth, _offset>(),
                             std::forward<Args>(_args)...);
     }
     else
@@ -766,7 +766,7 @@ sampler<CompT<Types...>, N, SigIds...>::sample(Args&&... _args)
             m_last->sample(get_unw_backtrace<_depth, _offset>(),
                            std::forward<Args>(_args)...);
         }
-        else m_last->sample(get_backtrace<_depth, _offset>(),
+        else m_last->sample(get_native_backtrace<_depth, _offset>(),
                             std::forward<Args>(_args)...);
     }
     else

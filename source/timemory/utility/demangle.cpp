@@ -130,7 +130,7 @@ TIMEMORY_UTILITY_INLINE std::string
 //
 TIMEMORY_UTILITY_INLINE
 std::string
-demangle_backtrace(const char* cstr)
+demangle_native_backtrace(const char* cstr)
 {
     auto _trim = [](std::string& _sub, size_t& _len) {
         size_t _pos = 0;
@@ -204,9 +204,9 @@ demangle_backtrace(const char* cstr)
 //
 TIMEMORY_UTILITY_INLINE
 std::string
-demangle_backtrace(const std::string& str)
+demangle_native_backtrace(const std::string& str)
 {
-    return demangle_backtrace(str.c_str());
+    return demangle_native_backtrace(str.c_str());
 }
 //
 TIMEMORY_UTILITY_INLINE

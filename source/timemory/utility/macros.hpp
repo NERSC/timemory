@@ -265,7 +265,7 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 #    define TIMEMORY_CONDITIONAL_BACKTRACE(CONDITION, DEPTH)                             \
         if(CONDITION)                                                                    \
         {                                                                                \
-            ::tim::print_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING,            \
+            timemory_print_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING,            \
                                           TIMEMORY_FILE_LINE_FUNC_STRING);               \
         }
 #endif
@@ -274,8 +274,8 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 #    define TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(CONDITION, DEPTH)                   \
         if(CONDITION)                                                                    \
         {                                                                                \
-            ::tim::print_demangled_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING,  \
-                                                    TIMEMORY_FILE_LINE_FUNC_STRING);     \
+            timemory_print_demangled_backtrace<DEPTH>(                                   \
+                std::cerr, TIMEMORY_PID_TID_STRING, TIMEMORY_FILE_LINE_FUNC_STRING);     \
         }
 #endif
 
@@ -297,7 +297,7 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 #    define TIMEMORY_CONDITIONAL_BACKTRACE(CONDITION, DEPTH)                             \
         if(CONDITION)                                                                    \
         {                                                                                \
-            ::tim::print_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING);           \
+            timemory_print_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING);         \
         }
 #endif
 
@@ -305,7 +305,8 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 #    define TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(CONDITION, DEPTH)                   \
         if(CONDITION)                                                                    \
         {                                                                                \
-            ::tim::print_demangled_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING); \
+            timemory_print_demangled_backtrace<DEPTH>(std::cerr,                         \
+                                                      TIMEMORY_PID_TID_STRING);          \
         }
 #endif
 

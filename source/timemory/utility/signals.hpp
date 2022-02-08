@@ -173,7 +173,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
     message << "Error code : " << sig;
     if(sinfo)
         message << " @ " << sinfo->si_addr;
-    message << " : " << signal_settings::str(_sig);
+    message << " : " << signal_settings::str(_sig) << ". ";
 
     if(sig == SIGSEGV)
     {
@@ -229,7 +229,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
             (int) threading::get_id());
 
     size_t ntot = 0;
-    auto   bt   = tim::get_backtrace<32>();
+    auto   bt   = timemory_get_backtrace<64>();
     for(const auto& itr : bt)
     {
         if(strlen(itr) == 0)

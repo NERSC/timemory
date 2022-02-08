@@ -604,7 +604,7 @@ PYBIND11_MODULE(libpytimemory, timemory)
             } catch(std::exception& e)
             {
 #if defined(TIMEMORY_UNIX)
-                auto             bt    = tim::get_demangled_backtrace<32>();
+                auto             bt    = timemory_get_demangled_backtrace<32>();
                 std::set<size_t> valid = {};
                 size_t           idx   = 0;
                 for(const auto& itr : bt)
