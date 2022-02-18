@@ -23,3 +23,6 @@
 // SOFTWARE.
 
 #include "timemory/components/gperftools/extern.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(gperftools_heap_profiler, false, void)
+TIMEMORY_EXTERN_COMPONENT(gperftools_cpu_profiler, false, void)

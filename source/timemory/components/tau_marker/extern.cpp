@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/tau_marker/extern.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(tau_marker, false, void)

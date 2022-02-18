@@ -33,5 +33,5 @@
 #include "timemory/components/hip/components.hpp"
 #include "timemory/components/macros.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(hip_event, true, float)
-TIMEMORY_EXTERN_COMPONENT(roctx_marker, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(hip_event, true, float)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(roctx_marker, false, void)

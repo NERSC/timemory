@@ -25,6 +25,12 @@
 #include "timemory/components/roofline/extern.hpp"
 
 #if defined(TIMEMORY_USE_PAPI)
+TIMEMORY_EXTERN_COMPONENT(cpu_roofline_sp_flops, true,
+                          std::pair<std::vector<long long>, double>)
+TIMEMORY_EXTERN_COMPONENT(cpu_roofline_dp_flops, true,
+                          std::pair<std::vector<long long>, double>)
+TIMEMORY_EXTERN_COMPONENT(cpu_roofline_flops, true,
+                          std::pair<std::vector<long long>, double>)
 template struct tim::component::cpu_roofline<float>;
 template struct tim::component::cpu_roofline<double>;
 template struct tim::component::cpu_roofline<float, double>;

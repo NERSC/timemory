@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/rusage/extern/peak_rss.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(peak_rss, true, int64_t)

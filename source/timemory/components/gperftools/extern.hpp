@@ -33,5 +33,5 @@
 #include "timemory/components/gperftools/components.hpp"
 #include "timemory/components/macros.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(gperftools_heap_profiler, false, void)
-TIMEMORY_EXTERN_COMPONENT(gperftools_cpu_profiler, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(gperftools_heap_profiler, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(gperftools_cpu_profiler, false, void)

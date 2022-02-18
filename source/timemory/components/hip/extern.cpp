@@ -23,3 +23,6 @@
 // SOFTWARE.
 
 #include "timemory/components/hip/extern.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(hip_event, true, float)
+TIMEMORY_EXTERN_COMPONENT(roctx_marker, false, void)

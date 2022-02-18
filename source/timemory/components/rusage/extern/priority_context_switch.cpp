@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/rusage/extern/priority_context_switch.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(priority_context_switch, true, int64_t)

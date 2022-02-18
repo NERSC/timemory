@@ -23,3 +23,11 @@
 // SOFTWARE.
 
 #include "timemory/components/papi/extern.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(papi_vector, true, std::vector<long long>)
+TIMEMORY_EXTERN_COMPONENT(papi_array_t, true,
+                          std::array<long long, TIMEMORY_PAPI_ARRAY_SIZE>)
+
+// TIMEMORY_EXTERN_COMPONENT(papi_array8_t, true, std::array<long long, 8>)
+// TIMEMORY_EXTERN_COMPONENT(papi_array16_t, true, std::array<long long, 16>)
+// TIMEMORY_EXTERN_COMPONENT(papi_array32_t, true, std::array<long long, 32>)

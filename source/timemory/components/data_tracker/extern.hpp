@@ -35,6 +35,6 @@
 #include "timemory/components/extern/common.hpp"
 #include "timemory/components/macros.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(data_tracker_integer, true, intmax_t)
-TIMEMORY_EXTERN_COMPONENT(data_tracker_unsigned, true, size_t)
-TIMEMORY_EXTERN_COMPONENT(data_tracker_floating, true, double)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(data_tracker_integer, true, intmax_t)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(data_tracker_unsigned, true, size_t)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(data_tracker_floating, true, double)

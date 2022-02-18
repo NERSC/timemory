@@ -33,4 +33,4 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/components/ompt/components.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(ompt_native_handle, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(ompt_native_handle, false, void)

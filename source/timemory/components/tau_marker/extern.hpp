@@ -33,4 +33,4 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/components/tau_marker/components.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(tau_marker, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(tau_marker, false, void)

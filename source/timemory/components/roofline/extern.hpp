@@ -37,12 +37,12 @@
 #    include "timemory/components/papi/components.hpp"
 #    include "timemory/components/papi/extern.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(cpu_roofline_sp_flops, true,
-                          std::pair<std::vector<long long>, double>)
-TIMEMORY_EXTERN_COMPONENT(cpu_roofline_dp_flops, true,
-                          std::pair<std::vector<long long>, double>)
-TIMEMORY_EXTERN_COMPONENT(cpu_roofline_flops, true,
-                          std::pair<std::vector<long long>, double>)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(cpu_roofline_sp_flops, true,
+                                  std::pair<std::vector<long long>, double>)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(cpu_roofline_dp_flops, true,
+                                  std::pair<std::vector<long long>, double>)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(cpu_roofline_flops, true,
+                                  std::pair<std::vector<long long>, double>)
 extern template struct tim::component::cpu_roofline<float>;
 extern template struct tim::component::cpu_roofline<double>;
 extern template struct tim::component::cpu_roofline<float, double>;

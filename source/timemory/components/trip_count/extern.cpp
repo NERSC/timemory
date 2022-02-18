@@ -23,3 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/components/trip_count/extern.hpp"
+
+#if !defined(TIMEMORY_WINDOWS)
+TIMEMORY_EXTERN_COMPONENT(trip_count, true, int64_t)
+#endif

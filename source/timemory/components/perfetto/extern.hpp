@@ -28,4 +28,4 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/components/perfetto/perfetto.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(perfetto_trace, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(perfetto_trace, false, void)

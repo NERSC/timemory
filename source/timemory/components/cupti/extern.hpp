@@ -38,9 +38,9 @@
 #    include "timemory/backends/cupti.hpp"
 #endif
 
-TIMEMORY_EXTERN_COMPONENT(cupti_activity, true, intmax_t)
-TIMEMORY_EXTERN_COMPONENT(cupti_counters, true, ::tim::cupti::profiler::results_t)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(cupti_activity, true, intmax_t)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(cupti_counters, true, ::tim::cupti::profiler::results_t)
 
 #if defined(TIMEMORY_USE_CUPTI_PCSAMPLING)
-TIMEMORY_EXTERN_COMPONENT(cupti_pcsampling, true, ::tim::cupti::pcsample)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(cupti_pcsampling, true, ::tim::cupti::pcsample)
 #endif

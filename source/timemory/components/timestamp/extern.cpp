@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/timestamp/extern.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(timestamp, true, ::tim::component::timestamp_entry_t)

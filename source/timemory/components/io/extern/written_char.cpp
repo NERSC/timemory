@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/io/extern/written_char.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(written_char, true, std::array<int64_t, 2>)

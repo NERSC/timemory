@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/rusage/extern/current_peak_rss.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(current_peak_rss, true, std::pair<int64_t, int64_t>)

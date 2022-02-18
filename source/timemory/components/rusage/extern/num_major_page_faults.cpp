@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/rusage/extern/num_major_page_faults.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(num_major_page_faults, true, int64_t)
