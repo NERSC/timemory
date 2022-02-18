@@ -18,7 +18,7 @@ parse:
       kwargs:
         VARIABLES: '*'
         CONDITION: '*'
-    create_executable:
+    timemory_create_executable:
       flags:
         - INSTALL
         - EXCLUDE_FROM_ALL
@@ -29,11 +29,12 @@ parse:
         PROPERTIES: '*'
         LINK_LIBRARIES: '*'
         INSTALL_DESTINATION: '*'
-    add_timemory_google_test:
+    timemory_add_google_test:
       flags:
-        - DISCOVER_TESTS
-        - ADD_TESTS
         - MPI
+        - RUN_SERIAL
+        - ADD_TESTS
+        - DISCOVER_TESTS
       kwargs:
         NPROCS: '*'
         TIMEOUT: '*'

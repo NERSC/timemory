@@ -155,6 +155,7 @@ jobs:
       - run:
           name: build
           command: >
+            export CTEST_PARALLEL_LEVEL=2 &&
             export CONTINUOUS_INTEGRATION=true &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&

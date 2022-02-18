@@ -188,7 +188,7 @@ endfunction()
 # ------------------------------------------------------------------------------#
 # macro for creating a library target
 #
-function(CREATE_EXECUTABLE)
+function(TIMEMORY_CREATE_EXECUTABLE)
     # for include dirs, compile flags, definitions, etc. --> use INTERFACE libs and add
     # them to "LINK_LIBRARIES" list of arguments taking multiple values
     set(multival_args HEADERS SOURCES PROPERTIES LINK_LIBRARIES INSTALL_DESTINATION)
@@ -250,7 +250,7 @@ endfunction()
 # Adds a unit test and links against googletest. Additional arguments are linked against
 # the test.
 #
-function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
+function(TIMEMORY_ADD_GOOGLE_TEST TEST_NAME)
     if(NOT TIMEMORY_BUILD_GOOGLE_TEST)
         return()
     endif()
@@ -259,13 +259,18 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
         set(_OPTS EXCLUDE_FROM_ALL)
     endif()
     add_timemory_test_target()
+
     include(GoogleTest)
+
+    # list of arguments taking zero values
+    set(option_args DISCOVER_TESTS ADD_TESTS MPI RUN_SERIAL)
+    # list of arguments taking single value
+    set(single_args NPROCS TIMEOUT TARGET)
     # list of arguments taking multiple values
-    set(multival_args SOURCES DEPENDS PROPERTIES DEFINITIONS LINK_LIBRARIES COMMAND
-                      OPTIONS ENVIRONMENT)
+    set(multiv_args SOURCES DEPENDS PROPERTIES DEFINITIONS LINK_LIBRARIES COMMAND OPTIONS
+                    ENVIRONMENT)
     # parse args
-    cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS;MPI" "NPROCS;TIMEOUT;TARGET"
-                          "${multival_args}" ${ARGN})
+    cmake_parse_arguments(TEST "${option_args}" "${single_args}" "${multiv_args}" ${ARGN})
 
     if(NOT TARGET google-test-debug-options)
         add_library(google-test-debug-options INTERFACE)
@@ -279,12 +284,16 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     endif()
     list(APPEND TEST_LINK_LIBRARIES google-test-debug-options)
 
+    if(TEST_RUN_SERIAL)
+        list(APPEND TEST_PROPERTIES RUN_SERIAL ON)
+    endif()
+
     if(NOT TEST_TARGET)
         set(TEST_TARGET ${TEST_NAME})
     endif()
 
     if(TEST_SOURCES AND NOT TARGET ${TEST_TARGET})
-        create_executable(
+        timemory_create_executable(
             ${_OPTS}
             TARGET_NAME ${TEST_TARGET} OUTPUT_NAME ${TEST_TARGET}
             SOURCES ${TEST_SOURCES}
@@ -315,6 +324,9 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             set(TEST_NPROCS 2)
         endif()
         set(TEST_LAUNCHER ${MPIEXEC_EXECUTABLE} -n ${TEST_NPROCS})
+        if(NOT TEST_RUN_SERIAL)
+            list(APPEND TEST_PROPERTIES RUN_SERIAL ON)
+        endif()
     endif()
 
     if("${TEST_COMMAND}" STREQUAL "")
@@ -351,7 +363,7 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             TEST_LIST ${TEST_NAME}_TESTS ${TEST_OPTIONS} DISCOVERY_TIMEOUT 15
             WORKING_DIRECTORY ${WORKING_DIR}
             PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}"
-            TIMEOUT ${TEST_TIMEOUT})
+            TIMEOUT ${TEST_TIMEOUT} ${TEST_PROPERTIES})
     elseif(TEST_ADD_TESTS)
         gtest_add_tests(
             TARGET ${TEST_TARGET}
@@ -359,14 +371,15 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             WORKING_DIRECTORY ${WORKING_DIR})
         set_tests_properties(
             ${${TEST_NAME}_TESTS} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}" TIMEOUT
-                                             ${TEST_TIMEOUT})
+                                             ${TEST_TIMEOUT} ${TEST_PROPERTIES})
     else()
         add_test(
             NAME ${TEST_NAME}
             COMMAND ${TEST_COMMAND}
             WORKING_DIRECTORY ${WORKING_DIR} ${TEST_OPTIONS})
-        set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}"
-                                                     TIMEOUT ${TEST_TIMEOUT})
+        set_tests_properties(
+            ${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}" TIMEOUT
+                                    ${TEST_TIMEOUT} ${TEST_PROPERTIES})
     endif()
 
     if(TEST_DEPENDS)
