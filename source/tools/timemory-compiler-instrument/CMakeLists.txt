@@ -81,7 +81,7 @@ add_target_cxx_flag_if_avail(timemory-compiler-instrument-compile-options
 set(LIB_TARGET timemory-compiler-instrument-base)
 set(LIB_TYPE STATIC)
 
-build_library(
+timemory_build_library(
     PIC NO_CACHE_LIST ${_EXCLUDE}
     TYPE ${LIB_TYPE}
     TARGET_NAME ${LIB_TARGET}
@@ -154,7 +154,7 @@ foreach(LIB_TYPE ${_LIB_TYPES})
     set(LIB_TARGET timemory-compiler-instrument-${LIB_TYPE})
     string(TOUPPER "${LIB_TYPE}" UC_LIB_TYPE)
 
-    build_library(
+    timemory_build_library(
         PIC NO_CACHE_LIST ${_EXCLUDE}
         TYPE ${UC_LIB_TYPE}
         TARGET_NAME ${LIB_TARGET}

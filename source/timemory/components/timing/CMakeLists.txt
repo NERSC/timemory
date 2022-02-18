@@ -13,7 +13,7 @@ if(CMAKE_UNITY_BUILD_BATCH_SIZE GREATER 6)
          "(${CMAKE_UNITY_BUILD_BATCH_SIZE} / 2) + (${CMAKE_UNITY_BUILD_BATCH_SIZE} % 2)")
 endif()
 
-build_intermediate_library(
+timemory_build_intermediate_library(
     USE_INTERFACE
     NAME ${NAME}
     TARGET ${NAME}-component

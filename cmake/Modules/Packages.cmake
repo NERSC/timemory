@@ -1580,7 +1580,7 @@ if(TIMEMORY_USE_PERFETTO)
     # build the static library
     timemory_save_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
-    build_library(
+    timemory_build_library(
         PIC
         TYPE STATIC
         TARGET_NAME timemory-perfetto-static

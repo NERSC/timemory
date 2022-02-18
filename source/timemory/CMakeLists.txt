@@ -57,7 +57,7 @@ file(
     ${CMAKE_CURRENT_SOURCE_DIR}/hash/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/environment/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.cpp)
 
-build_intermediate_library(
+timemory_build_intermediate_library(
     USE_INTERFACE INSTALL_SOURCE
     NAME core
     TARGET core
@@ -80,7 +80,7 @@ endif()
 add_subdirectory(ert)
 
 # do this here for IDE benefit
-build_intermediate_library(
+timemory_build_intermediate_library(
     USE_INTERFACE
     NAME common
     TARGET common

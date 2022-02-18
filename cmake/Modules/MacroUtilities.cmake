@@ -599,7 +599,7 @@ endfunction()
 # ----------------------------------------------------------------------------------------#
 # macro to build a library of type: shared, static, object
 #
-function(BUILD_LIBRARY)
+function(TIMEMORY_BUILD_LIBRARY)
 
     # options
     set(_options PIC NO_CACHE_LIST EXCLUDE_FROM_ALL)
@@ -1049,7 +1049,7 @@ endfunction()
 # ----------------------------------------------------------------------------------------#
 # macro to build a library of type: shared, static, object
 #
-function(BUILD_INTERMEDIATE_LIBRARY)
+function(TIMEMORY_BUILD_INTERMEDIATE_LIBRARY)
 
     # options
     set(_options USE_INTERFACE USE_CATEGORY INSTALL_SOURCE FORCE_OBJECT FORCE_SHARED
@@ -1156,7 +1156,7 @@ function(BUILD_INTERMEDIATE_LIBRARY)
         # message(STATUS "Building ${TARGET_NAME}") message(STATUS "[-------]
         # ${TARGET_NAME} :: ${DEPENDS}")
 
-        build_library(
+        timemory_build_library(
             NO_CACHE_LIST ${${LINK}_OPTIONS}
             TARGET_NAME ${TARGET_NAME}
             OUTPUT_NAME timemory-${COMP_TARGET}

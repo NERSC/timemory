@@ -146,7 +146,7 @@ if(CMAKE_CUDA_COMPILER)
 endif()
 
 if(_BUILD_SHARED_CXX)
-    build_library(
+    timemory_build_library(
         PIC
         TYPE SHARED
         TARGET_NAME timemory-cxx-shared
@@ -197,7 +197,7 @@ endif()
 
 if(_BUILD_STATIC_CXX)
 
-    build_library(
+    timemory_build_library(
         TYPE STATIC
         TARGET_NAME timemory-cxx-static
         OUTPUT_NAME timemory
@@ -259,7 +259,7 @@ endif()
 if(TIMEMORY_BUILD_C)
 
     if(_BUILD_SHARED_CXX)
-        build_library(
+        timemory_build_library(
             PIC
             TYPE SHARED
             TARGET_NAME timemory-c-shared
@@ -290,7 +290,7 @@ if(TIMEMORY_BUILD_C)
 
     if(_BUILD_STATIC_CXX)
 
-        build_library(
+        timemory_build_library(
             TYPE STATIC
             TARGET_NAME timemory-c-static
             OUTPUT_NAME ctimemory
@@ -327,7 +327,7 @@ endif()
 if(TIMEMORY_BUILD_FORTRAN)
 
     if(_BUILD_SHARED_CXX)
-        build_library(
+        timemory_build_library(
             PIC
             TYPE SHARED
             TARGET_NAME timemory-fortran-shared
@@ -353,7 +353,7 @@ if(TIMEMORY_BUILD_FORTRAN)
 
     if(_BUILD_STATIC_CXX)
 
-        build_library(
+        timemory_build_library(
             TYPE STATIC
             TARGET_NAME timemory-fortran-static
             OUTPUT_NAME ftimemory
