@@ -54,23 +54,23 @@ using gpu_event  = tim::component::hip_event;
 using auto_tuple_t = tim::auto_tuple_t<wall_clock, system_clock, cpu_clock, cpu_util,
                                        gpu_marker, papi_array_t>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
-using cuda_tuple_t = tim::auto_tuple_t<gpu_event, gpu_marker>;
+using gpu_tuple_t  = tim::auto_tuple_t<gpu_event, gpu_marker>;
 using counter_t    = ert_timer;
 using ert_data_t   = tim::ert::exec_data<counter_t>;
 
 //======================================================================================//
 
-#define CUDA_CHECK_LAST_ERROR()                                                          \
+#define GPU_CHECK_LAST_ERROR()                                                           \
     {                                                                                    \
         tim::gpu::stream_sync(0);                                                        \
-        cudaError err = cudaGetLastError();                                              \
-        if(cudaSuccess != err)                                                           \
+        auto err = tim::gpu::get_last_error();                                           \
+        if(tim::gpu::success_v != err)                                                   \
         {                                                                                \
-            fprintf(stderr, "cudaCheckError() failed at %s@'%s':%i : %s\n",              \
-                    __FUNCTION__, __FILE__, __LINE__, cudaGetErrorString(err));          \
+            fprintf(stderr, "gpu::get_last_error() failed at %s@'%s':%i : %s\n",         \
+                    __FUNCTION__, __FILE__, __LINE__, tim::gpu::get_error_string(err));  \
             std::stringstream ss;                                                        \
-            ss << "cudaCheckError() failed at " << __FUNCTION__ << "@'" << __FILE__      \
-               << "':" << __LINE__ << " : " << cudaGetErrorString(err);                  \
+            ss << "gpu::get_last_error() failed at " << __FUNCTION__ << "@'" << __FILE__ \
+               << "':" << __LINE__ << " : " << tim::gpu::get_error_string(err);          \
             throw std::runtime_error(ss.str());                                          \
         }                                                                                \
     }
@@ -132,7 +132,7 @@ warmup()
     int     ngrid = 128;
     int64_t val   = 256;
     warmup<<<ngrid, block>>>(val);
-    // CUDA_CHECK_LAST_ERROR();
+    // GPU_CHECK_LAST_ERROR();
 }
 
 //======================================================================================//
@@ -284,7 +284,7 @@ test_1_saxpy()
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[gpu_malloc]");
         d_x = tim::gpu::malloc<float>(N);
         d_y = tim::gpu::malloc<float>(N);
-        CUDA_CHECK_LAST_ERROR();
+        GPU_CHECK_LAST_ERROR();
     }
 
     {
@@ -307,7 +307,7 @@ test_1_saxpy()
         tim::gpu::memcpy(d_x, x, N, tim::gpu::host_to_device_v);
         tim::gpu::memcpy(d_y, y, N, tim::gpu::host_to_device_v);
         evt->mark_end();
-        CUDA_CHECK_LAST_ERROR();
+        GPU_CHECK_LAST_ERROR();
     }
 
     for(int i = 0; i < 1; ++i)
@@ -322,7 +322,7 @@ test_1_saxpy()
     {
         TIMEMORY_BASIC_MARKER(auto_tuple_t, "[D2H]");
         evt->mark_begin();
-        cudaMemcpy(y, d_y, N * sizeof(float), cudaMemcpyDeviceToHost);
+        tim::gpu::memcpy(y, d_y, N, tim::gpu::device_to_host_v);
         evt->mark_end();
     }
 
@@ -374,17 +374,17 @@ test_2_saxpy_async()
     comp_tuple_t _clock("Runtime");
     _clock.start();
 
-    float*        x;
-    float*        y;
-    float*        d_x;
-    float*        d_y;
-    int           block    = 512;
-    int           ngrid    = (Nsub + block - 1) / block;
-    float         nseconds = 0.0f;
-    float         maxError = 0.0f;
-    float         sumError = 0.0f;
-    gpu_event**   evt      = new gpu_event*[nitr];
-    cudaStream_t* stream   = new cudaStream_t[nitr];
+    float*      x;
+    float*      y;
+    float*      d_x;
+    float*      d_y;
+    int         block    = 512;
+    int         ngrid    = (Nsub + block - 1) / block;
+    float       nseconds = 0.0f;
+    float       maxError = 0.0f;
+    float       sumError = 0.0f;
+    gpu_event** evt      = new gpu_event*[nitr];
+    auto*       stream   = new tim::gpu::stream_t[nitr];
 
     auto _sync = [&]() {
         for(int i = 0; i < nitr; i++)
@@ -629,17 +629,17 @@ test_4_saxpy_async_pinned()
     comp_tuple_t _clock("Runtime");
     _clock.start();
 
-    float*        x;
-    float*        y;
-    float*        d_x;
-    float*        d_y;
-    int           block    = 512;
-    int           ngrid    = (Nsub + block - 1) / block;
-    float         nseconds = 0.0f;
-    float         maxError = 0.0f;
-    float         sumError = 0.0f;
-    gpu_event**   evt      = new gpu_event*[nitr];
-    cudaStream_t* stream   = new cudaStream_t[nitr];
+    float*      x;
+    float*      y;
+    float*      d_x;
+    float*      d_y;
+    int         block    = 512;
+    int         ngrid    = (Nsub + block - 1) / block;
+    float       nseconds = 0.0f;
+    float       maxError = 0.0f;
+    float       sumError = 0.0f;
+    gpu_event** evt      = new gpu_event*[nitr];
+    auto*       stream   = new tim::gpu::stream_t[nitr];
 
     auto _sync = [&]() {
         for(int i = 0; i < nitr; i++)

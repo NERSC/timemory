@@ -42,6 +42,8 @@ option(TIMEMORY_BUILD_DYNAMIC_INSTRUMENT_EXAMPLES "Enable building these example
        ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_COMPILER_INSTRUMENT_EXAMPLES "Enable building these examples"
        ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_GPU_KERNEL_INSTRUMENT_EXAMPLES
+       "Enable building GPU kernel instrumentation examples" ${DEFAULT_CHOICE})
 
 # C language related
 if(TIMEMORY_BUILD_C_EXAMPLES)
@@ -60,7 +62,7 @@ if(TIMEMORY_BUILD_TPL_EXAMPLES)
 endif()
 
 # GPU related
-if(TIMEMORY_BUILD_GPU_EXAMPLES)
+if(TIMEMORY_BUILD_GPU_EXAMPLES OR TIMEMORY_BUILD_GPU_KERNEL_INSTRUMENT_EXAMPLES)
     add_subdirectory(ex-gpu)
 endif()
 
