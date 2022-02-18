@@ -126,13 +126,13 @@ gpu_device_timer::allocate(device::gpu, size_t nthreads)
         m_threads = nthreads;
         m_incr    = gpu::malloc<unsigned int>(m_threads);
         m_data    = gpu::malloc<CLOCK_DTYPE>(m_threads);
-        TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memset(m_incr, 0, m_threads));
-        TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memset(m_data, 0, m_threads));
+        TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memset(m_incr, 0, m_threads));
+        TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memset(m_data, 0, m_threads));
         max_threads() = std::max<size_t>(max_threads(), nthreads);
         gpu::check(gpu::get_last_error());
         m_device_data = gpu::malloc<device_data>(1);
         auto _data    = device_data{ 0, m_incr, m_data };
-        TIMEMORY_HIP_RUNTIME_API_CALL(
+        TIMEMORY_GPU_RUNTIME_API_CALL(
             gpu::memcpy(m_device_data, &_data, 1, gpu::host_to_device_v));
         device::set_handle<<<1, 1>>>(m_device_data);
     }
