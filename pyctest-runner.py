@@ -209,6 +209,12 @@ def configure():
         action="store_true",
     )
     parser.add_argument(
+        "--hip",
+        help="TIMEMORY_USE_HIP=ON",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "--upcxx",
         help="TIMEMORY_USE_UPCXX=ON",
         default=False,
@@ -549,6 +555,7 @@ def run_pyctest():
         "TIMEMORY_USE_CTP": "ON"
         if args.compile_time_perf is not None
         else "OFF",
+        "TIMEMORY_USE_HIP": "ON" if args.hip else "OFF",
         "TIMEMORY_USE_MPI": "ON" if args.mpi else "OFF",
         "TIMEMORY_USE_TAU": "ON" if args.tau else "OFF",
         "TIMEMORY_USE_ARCH": "ON" if args.arch else "OFF",
@@ -1299,10 +1306,43 @@ def run_pyctest():
             },
         )
 
-        if args.cuda:
+        if args.cuda or args.hip:
             pyct.test(
-                construct_name("ex-cuda-event"),
-                ["./ex_cuda_event"],
+                construct_name("ex-gpu-event"),
+                ["./ex_gpu_event"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "120",
+                    "ENVIRONMENT": test_env,
+                },
+            )
+
+            pyct.test(
+                construct_name("ex-gpu-kernel-instrument-v1"),
+                ["./ex_kernel_instrument"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "120",
+                    "ENVIRONMENT": test_env,
+                },
+            )
+
+            pyct.test(
+                construct_name("ex-gpu-kernel-instrument-v2"),
+                ["./ex_kernel_instrument_v2"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "120",
+                    "ENVIRONMENT": test_env,
+                },
+            )
+
+            pyct.test(
+                construct_name("ex-gpu-kernel-instrument-v3"),
+                ["./ex_kernel_instrument_v3"],
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
@@ -1483,7 +1523,8 @@ def run_pyctest():
                 pyct.test(
                     construct_name("ex-python-caliper"),
                     construct_command(
-                        [sys.executable, "./ex_python_caliper", "10"], args
+                        [sys.executable, "./ex_python_caliper", "-n", "10"],
+                        args,
                     ),
                     {
                         "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
