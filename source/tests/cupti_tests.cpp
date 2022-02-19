@@ -125,7 +125,10 @@ KERNEL_A(T* begin, int n)
     for(int i = range.begin(); i < range.end(); i += range.stride())
     {
         if(i < n)
-            *(begin + i) += 2.0f * n;
+        {
+            T& _v = begin[i];
+            _v += (static_cast<T>(2.0) * n);
+        }
     }
 }
 
@@ -138,10 +141,14 @@ KERNEL_B(T* begin, int n)
     auto range = tim::device::grid_strided_range<default_device, 0>(n);
     for(int i = range.begin(); i < range.end(); i += range.stride())
     {
-        if(i < n / 2)
-            *(begin + i) *= 2.0f;
-        else if(i >= n / 2 && i < n)
-            *(begin + i) += 3.0f;
+        if(i < n)
+        {
+            T& _v = begin[i];
+            if(i < n / 2)
+                _v *= static_cast<T>(2.0);
+            else if(i >= n / 2)
+                _v += static_cast<T>(3.0);
+        }
     }
 }
 }  // namespace impl
@@ -285,7 +292,7 @@ TEST_F(cupti_tests, activity)
     cupti_activity::global_finalize();
     num_iter /= 2;
 
-    ASSERT_NEAR(real_diff, expected_diff, expected_tol)
+    EXPECT_NEAR(real_diff, expected_diff, expected_tol)
         << "real_clock: " << rc << ", cupti_activity: " << ca << std::endl;
 }
 
@@ -416,12 +423,12 @@ TEST_F(cupti_tests, kernels)
     printf("A flop = %f\n", A_flop_count_sp);
     printf("B flop = %f\n", B_flop_count_sp);
 
-    ASSERT_NEAR(cupti_map["global_load"], global_load, epsilon);
-    ASSERT_NEAR(cupti_map["global_store"], global_store, epsilon);
-    ASSERT_NEAR(cupti_map["flop_count_sp"], flop_count_sp, epsilon);
-    ASSERT_NEAR(cupti_map["gld_efficiency"], global_load_eff, epsilon);
-    ASSERT_NEAR(cupti_map["gst_efficiency"], global_store_eff, epsilon);
-    // ASSERT_NEAR(cupti_map["warp_execution_efficiency"], warp_eff, epsilon);
+    EXPECT_NEAR(cupti_map["global_load"], global_load, epsilon);
+    EXPECT_NEAR(cupti_map["global_store"], global_store, epsilon);
+    EXPECT_NEAR(cupti_map["flop_count_sp"], flop_count_sp, epsilon);
+    EXPECT_NEAR(cupti_map["gld_efficiency"], global_load_eff, epsilon);
+    EXPECT_NEAR(cupti_map["gst_efficiency"], global_store_eff, epsilon);
+    // EXPECT_NEAR(cupti_map["warp_execution_efficiency"], warp_eff, epsilon);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -514,12 +521,12 @@ TEST_F(cupti_tests, streams)
     printf("A flop = %f\n", A_flop_count_sp);
     printf("B flop = %f\n", B_flop_count_sp);
 
-    ASSERT_NEAR(cupti_map["global_load"], global_load, epsilon);
-    ASSERT_NEAR(cupti_map["global_store"], global_store, epsilon);
-    ASSERT_NEAR(cupti_map["flop_count_sp"], flop_count_sp, epsilon);
-    ASSERT_NEAR(cupti_map["gld_efficiency"], global_load_eff, epsilon);
-    ASSERT_NEAR(cupti_map["gst_efficiency"], global_store_eff, epsilon);
-    // ASSERT_NEAR(cupti_map["warp_execution_efficiency"], warp_eff, epsilon);
+    EXPECT_NEAR(cupti_map["global_load"], global_load, epsilon);
+    EXPECT_NEAR(cupti_map["global_store"], global_store, epsilon);
+    EXPECT_NEAR(cupti_map["flop_count_sp"], flop_count_sp, epsilon);
+    EXPECT_NEAR(cupti_map["gld_efficiency"], global_load_eff, epsilon);
+    EXPECT_NEAR(cupti_map["gst_efficiency"], global_store_eff, epsilon);
+    // EXPECT_NEAR(cupti_map["warp_execution_efficiency"], warp_eff, epsilon);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -636,7 +643,9 @@ TEST_F(cupti_tests, roofline_counters)
 
 //--------------------------------------------------------------------------------------//
 
+#pragma nv_diag_suppress 177
+
 namespace
 {
-static auto library_init = (tim::set_env("TIMEMORY_CUPTI_ACTIVITY_LEVEL", "2", 1), true);
-}
+auto library_init = (tim::set_env("TIMEMORY_CUPTI_ACTIVITY_LEVEL", "2", 1), true);
+}  // namespace

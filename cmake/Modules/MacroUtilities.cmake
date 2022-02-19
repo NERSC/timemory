@@ -267,8 +267,16 @@ function(TIMEMORY_ADD_GOOGLE_TEST TEST_NAME)
     # list of arguments taking single value
     set(single_args NPROCS TIMEOUT TARGET)
     # list of arguments taking multiple values
-    set(multiv_args SOURCES DEPENDS PROPERTIES DEFINITIONS LINK_LIBRARIES COMMAND OPTIONS
-                    ENVIRONMENT)
+    set(multiv_args
+        SOURCES
+        DEPENDS
+        PROPERTIES
+        DEFINITIONS
+        LINK_LIBRARIES
+        COMMAND
+        OPTIONS
+        ENVIRONMENT
+        LABELS)
     # parse args
     cmake_parse_arguments(TEST "${option_args}" "${single_args}" "${multiv_args}" ${ARGN})
 
@@ -324,6 +332,7 @@ function(TIMEMORY_ADD_GOOGLE_TEST TEST_NAME)
             set(TEST_NPROCS 2)
         endif()
         set(TEST_LAUNCHER ${MPIEXEC_EXECUTABLE} -n ${TEST_NPROCS})
+        list(APPEND TEST_LABELS "MPI")
         if(NOT TEST_RUN_SERIAL)
             list(APPEND TEST_PROPERTIES RUN_SERIAL ON)
         endif()
@@ -356,6 +365,8 @@ function(TIMEMORY_ADD_GOOGLE_TEST TEST_NAME)
         list(INSERT TEST_ENVIRONMENT 0 "TIMEMORY_DEBUG=ON" "TIMEMORY_VERBOSE=6")
     endif()
 
+    list(APPEND TEST_LABELS "minimal")
+
     if(TEST_DISCOVER_TESTS)
         string(REPLACE ";" "\\\\\\\\\\\\\\\\\\;" TEST_ENVIRONMENT "${TEST_ENVIRONMENT}")
         gtest_discover_tests(
@@ -363,23 +374,25 @@ function(TIMEMORY_ADD_GOOGLE_TEST TEST_NAME)
             TEST_LIST ${TEST_NAME}_TESTS ${TEST_OPTIONS} DISCOVERY_TIMEOUT 15
             WORKING_DIRECTORY ${WORKING_DIR}
             PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}"
-            TIMEOUT ${TEST_TIMEOUT} ${TEST_PROPERTIES})
+            TIMEOUT ${TEST_TIMEOUT} LABELS "${TEST_LABELS}" ${TEST_PROPERTIES})
     elseif(TEST_ADD_TESTS)
         gtest_add_tests(
             TARGET ${TEST_TARGET}
             TEST_LIST ${TEST_NAME}_TESTS ${TEST_OPTIONS}
             WORKING_DIRECTORY ${WORKING_DIR})
         set_tests_properties(
-            ${${TEST_NAME}_TESTS} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}" TIMEOUT
-                                             ${TEST_TIMEOUT} ${TEST_PROPERTIES})
+            ${${TEST_NAME}_TESTS}
+            PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}" TIMEOUT ${TEST_TIMEOUT} LABELS
+                       "${TEST_LABELS}" ${TEST_PROPERTIES})
     else()
         add_test(
             NAME ${TEST_NAME}
             COMMAND ${TEST_COMMAND}
             WORKING_DIRECTORY ${WORKING_DIR} ${TEST_OPTIONS})
         set_tests_properties(
-            ${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}" TIMEOUT
-                                    ${TEST_TIMEOUT} ${TEST_PROPERTIES})
+            ${TEST_NAME}
+            PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}" TIMEOUT ${TEST_TIMEOUT} LABELS
+                       "${TEST_LABELS}" ${TEST_PROPERTIES})
     endif()
 
     if(TEST_DEPENDS)

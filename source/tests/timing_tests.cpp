@@ -96,16 +96,18 @@ consume(long n)
 class timing_tests : public ::testing::Test
 {
 protected:
-    TIMEMORY_TEST_DEFAULT_SUITE_SETUP
-    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
-
-    void SetUp() override
+    static void configure()
     {
         tim::settings::timing_units() = "sec";
         tim::settings::precision()    = 9;
+        tim::threading::affinity::set();
     }
 
-    void TearDown() override { puts(""); }
+    TIMEMORY_TEST_SUITE_SETUP(configure())
+    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
+
+    TIMEMORY_TEST_DEFAULT_SETUP
+    TIMEMORY_TEST_DEFAULT_TEARDOWN
 };
 
 //--------------------------------------------------------------------------------------//
@@ -160,13 +162,14 @@ TEST_F(timing_tests, wall_timer)
     ct.stop();
     auto wc = ct.get<wall_clock>();
 
-    std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
-              << std::endl;
-    std::cout << ct << std::endl;
-    std::cout << datastr(obj, "manual wall_clock") << datastr(wc, "component wall_clock");
+    std::stringstream ss{};
+    ss << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
+       << ct << "\n"
+       << datastr(obj, "manual wall_clock") << "\n"
+       << datastr(wc, "component wall_clock");
 
-    EXPECT_NEAR(1.0, obj.get(), timer_tolerance);
-    EXPECT_NEAR(obj.get(), ct.get<wall_clock>()->get(), timer_tolerance);
+    EXPECT_NEAR(1.0, obj.get(), timer_tolerance) << ss.str();
+    EXPECT_NEAR(obj.get(), ct.get<wall_clock>()->get(), timer_tolerance) << ss.str();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -178,10 +181,9 @@ TEST_F(timing_tests, monotonic_timer)
     obj.start();
     details::do_sleep(1000);
     obj.stop();
-    std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
-              << std::endl;
-    std::cout << datastr(obj);
-    ASSERT_NEAR(1.0, obj.get(), timer_tolerance);
+    EXPECT_NEAR(1.0, obj.get(), timer_tolerance)
+        << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
+        << datastr(obj);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -193,10 +195,9 @@ TEST_F(timing_tests, monotonic_raw_timer)
     obj.start();
     details::do_sleep(1000);
     obj.stop();
-    std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
-              << std::endl;
-    std::cout << datastr(obj);
-    ASSERT_NEAR(1.0, obj.get(), timer_tolerance);
+    EXPECT_NEAR(1.0, obj.get(), timer_tolerance)
+        << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
+        << datastr(obj);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -209,10 +210,9 @@ TEST_F(timing_tests, system_timer)
     std::thread t(details::do_sleep, 1000);
     t.join();
     obj.stop();
-    std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
-              << std::endl;
-    std::cout << datastr(obj);
-    ASSERT_NEAR(0.0, obj.get(), timer_tolerance);
+    EXPECT_NEAR(0.0, obj.get(), timer_tolerance)
+        << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
+        << datastr(obj);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -225,10 +225,9 @@ TEST_F(timing_tests, user_timer)
     std::thread t(details::do_sleep, 1000);
     t.join();
     obj.stop();
-    std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
-              << std::endl;
-    std::cout << datastr(obj);
-    ASSERT_NEAR(0.0, obj.get(), timer_tolerance);
+    EXPECT_NEAR(0.0, obj.get(), timer_tolerance)
+        << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
+        << datastr(obj);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -241,10 +240,9 @@ TEST_F(timing_tests, cpu_timer)
     for(int i = 0; i < 10; ++i)
         details::consume(100);
     obj.stop();
-    std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
-              << std::endl;
-    std::cout << datastr(obj);
-    ASSERT_NEAR(1.0, obj.get(), timer_tolerance);
+    EXPECT_NEAR(1.0, obj.get(), timer_tolerance)
+        << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
+        << datastr(obj);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -252,6 +250,7 @@ TEST_F(timing_tests, cpu_timer)
 TEST_F(timing_tests, cpu_utilization)
 {
     CHECK_AVAILABLE(cpu_util);
+
     cpu_util obj{};
     obj.start();
     for(int i = 0; i < 10; ++i)
@@ -260,10 +259,9 @@ TEST_F(timing_tests, cpu_utilization)
         details::do_sleep(25);
     }
     obj.stop();
-    std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
-              << std::endl;
-    std::cout << datastr(obj);
-    ASSERT_NEAR(75.0, obj.get(), util_tolerance);
+    EXPECT_NEAR(75.0, obj.get(), util_tolerance)
+        << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
+        << datastr(obj);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -271,15 +269,18 @@ TEST_F(timing_tests, cpu_utilization)
 TEST_F(timing_tests, thread_cpu_timer)
 {
     CHECK_AVAILABLE(thread_cpu_clock);
-    thread_cpu_clock obj{};
-    obj.start();
-    std::thread t(details::fibonacci, 43);
-    t.join();
-    obj.stop();
-    std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
-              << std::endl;
-    std::cout << datastr(obj);
-    ASSERT_NEAR(0.0, obj.get(), timer_tolerance);
+    auto _func = []() {
+        tim::threading::affinity::set();
+        thread_cpu_clock obj{};
+        obj.start();
+        std::thread t(details::fibonacci, 43);
+        t.join();
+        obj.stop();
+        EXPECT_NEAR(0.0, obj.get(), timer_tolerance)
+            << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
+            << datastr(obj);
+    };
+    std::thread{ _func }.join();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -287,25 +288,30 @@ TEST_F(timing_tests, thread_cpu_timer)
 TEST_F(timing_tests, thread_cpu_utilization)
 {
     CHECK_AVAILABLE(thread_cpu_util);
-    auto _consume = []() {
-        for(int i = 0; i < 10; ++i)
-            details::consume(200);
-    };
 
-    thread_cpu_util obj{};
-    obj.start();
-    std::thread t{ _consume };
-    for(int i = 0; i < 10; ++i)
-    {
-        details::consume(100);
-        details::do_sleep(100);
-    }
-    t.join();
-    obj.stop();
-    std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
-              << std::endl;
-    std::cout << datastr(obj);
-    ASSERT_NEAR(50.0, obj.get(), util_tolerance);
+    auto _func = []() {
+        auto _consume = []() {
+            tim::threading::affinity::set();
+            for(int i = 0; i < 10; ++i)
+                details::consume(200);
+        };
+        tim::threading::affinity::set();
+        thread_cpu_util obj{};
+        obj.start();
+        std::thread t{ _consume };
+        for(int i = 0; i < 10; ++i)
+        {
+            details::consume(100);
+            details::do_sleep(100);
+        }
+        t.join();
+        obj.stop();
+
+        EXPECT_NEAR(50.0, obj.get(), util_tolerance)
+            << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
+            << datastr(obj);
+    };
+    std::thread{ _func }.join();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -318,11 +324,10 @@ TEST_F(timing_tests, process_cpu_timer)
     for(int i = 0; i < 10; ++i)
         details::consume(100);
     obj.stop();
-    std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
-              << std::endl;
-    std::cout << datastr(obj);
     // this test seems to fail sporadically
-    ASSERT_NEAR(1.0, obj.get(), 2.5 * timer_tolerance);
+    EXPECT_NEAR(1.0, obj.get(), 2.5 * timer_tolerance)
+        << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
+        << datastr(obj);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -331,6 +336,7 @@ TEST_F(timing_tests, process_cpu_utilization)
 {
     CHECK_AVAILABLE(process_cpu_util);
     auto _consume = []() {
+        tim::threading::affinity::set();
         for(int i = 0; i < 10; ++i)
             details::consume(200);
     };
@@ -345,10 +351,9 @@ TEST_F(timing_tests, process_cpu_utilization)
     }
     t.join();
     obj.stop();
-    std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
-              << std::endl;
-    std::cout << datastr(obj);
-    ASSERT_NEAR(150.0, obj.get(), util_tolerance);
+    EXPECT_NEAR(150.0, obj.get(), util_tolerance)
+        << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
+        << datastr(obj);
 }
 
 //--------------------------------------------------------------------------------------//

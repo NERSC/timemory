@@ -407,7 +407,7 @@ timemory_add_google_test(
 
 timemory_add_google_test(
     timing_tests DISCOVER_TESTS RUN_SERIAL
-    SOURCES timing_tests.cpp PROPERTIES PROCESSOR_AFFINITY ON
+    SOURCES timing_tests.cpp
     LINK_LIBRARIES common-test-libs timemory::timemory-plotting timemory::timemory-core
                    ${_LIBRARY})
 
@@ -468,6 +468,10 @@ if(TIMEMORY_USE_PAPI AND VALID_PARANOID)
             timemory::timemory-arch timemory::timemory-roofline-options test-opt-flags
             ${_LIBRARY})
 
+    # zen cpus *think* PAPI_DP_OPS is valid but it is always zero
+    target_compile_definitions(
+        papi_tests PRIVATE DISABLE_DP=$<IF:$<STREQUAL:${CpuArch_TARGET},zen>,1,0>)
+
 elseif(TIMEMORY_USE_PAPI)
     if(PARANOID_VALUE)
         paranoid_warning_message(${PARANOID_FILE} ${PARANOID_VALUE}
@@ -516,7 +520,7 @@ set_source_files_properties(
 
 if(TIMEMORY_USE_CUDA)
     timemory_add_google_test(
-        cuda_tests DISCOVER_TESTS
+        cuda_tests DISCOVER_TESTS RUN_SERIAL
         SOURCES cuda_tests.cpp
         LINK_LIBRARIES
             common-test-libs timemory::timemory-arch timemory::timemory-core
@@ -679,7 +683,7 @@ endif()
 
 if(TARGET timemory::timemory-ncclp-library AND TARGET nccl_test_interface)
     timemory_add_google_test(
-        nccl_tests
+        nccl_tests DISCOVER_TESTS RUN_SERIAL
         SOURCES nccl_tests.cpp
         LINK_LIBRARIES common-test-libs nccl_test_interface
                        timemory::timemory-ncclp-library

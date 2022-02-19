@@ -120,14 +120,39 @@ get_size()
 
 //--------------------------------------------------------------------------------------//
 
+namespace
+{
+int    _test_argc = 0;
+char** _test_argv = nullptr;
+}  // namespace
+
 class nccl_tests : public ::testing::Test
 {
 protected:
-    TIMEMORY_TEST_DEFAULT_SUITE_SETUP
-    TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
+    static void setup_args()
+    {
+        _test_argc = _argc + 2;
+        _test_argv = new char*[_test_argc];
+        for(int i = 0; i < _argc; ++i)
+            _test_argv[i] = _argv[i];
+        _test_argv[_argc + 0] = strdup("-c");
+        _test_argv[_argc + 1] = strdup("0");
+    }
+
+    static void cleanup_args()
+    {
+        free(_test_argv[_argc + 0]);
+        free(_test_argv[_argc + 1]);
+    }
+
+    TIMEMORY_TEST_SUITE_SETUP(setup_args())
+    TIMEMORY_TEST_SUITE_TEARDOWN(cleanup_args())
 
     virtual void SetUp() override
     {
+        EXPECT_EQ(_argc + 2, _test_argc);
+        ASSERT_TRUE(_test_argv != nullptr);
+
         tim::set_env("TIMEMORY_NCCLP_REJECT_LIST",
                      "ncclGroupStart, ncclGroupEnd, ncclCommCuDevice, ncclCommUserRank",
                      0);
@@ -153,7 +178,7 @@ protected:
 TEST_F(nccl_tests, all_gather)
 {
     auto beg_sz = details::get_size();
-    int  ret    = test_main(allGatherEngine, _argc, _argv);
+    int  ret    = test_main(allGatherEngine, _test_argc, _test_argv);
     auto end_sz = details::get_size();
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(end_sz - beg_sz, 1);
@@ -164,7 +189,7 @@ TEST_F(nccl_tests, all_gather)
 TEST_F(nccl_tests, all_reduce)
 {
     auto beg_sz = details::get_size();
-    int  ret    = test_main(allReduceEngine, _argc, _argv);
+    int  ret    = test_main(allReduceEngine, _test_argc, _test_argv);
     auto end_sz = details::get_size();
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(end_sz - beg_sz, 1);
@@ -175,7 +200,7 @@ TEST_F(nccl_tests, all_reduce)
 TEST_F(nccl_tests, all_to_all)
 {
     auto beg_sz = details::get_size();
-    int  ret    = test_main(alltoAllEngine, _argc, _argv);
+    int  ret    = test_main(alltoAllEngine, _test_argc, _test_argv);
     auto end_sz = details::get_size();
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(end_sz - beg_sz, 2);
@@ -186,7 +211,7 @@ TEST_F(nccl_tests, all_to_all)
 TEST_F(nccl_tests, broadcast)
 {
     auto beg_sz = details::get_size();
-    int  ret    = test_main(broadcastEngine, _argc, _argv);
+    int  ret    = test_main(broadcastEngine, _test_argc, _test_argv);
     auto end_sz = details::get_size();
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(end_sz - beg_sz, 1);
@@ -197,7 +222,7 @@ TEST_F(nccl_tests, broadcast)
 TEST_F(nccl_tests, reduce)
 {
     auto beg_sz = details::get_size();
-    int  ret    = test_main(reduceEngine, _argc, _argv);
+    int  ret    = test_main(reduceEngine, _test_argc, _test_argv);
     auto end_sz = details::get_size();
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(end_sz - beg_sz, 1);
@@ -208,7 +233,7 @@ TEST_F(nccl_tests, reduce)
 TEST_F(nccl_tests, reduce_scatter)
 {
     auto beg_sz = details::get_size();
-    int  ret    = test_main(reduceScatterEngine, _argc, _argv);
+    int  ret    = test_main(reduceScatterEngine, _test_argc, _test_argv);
     auto end_sz = details::get_size();
     EXPECT_EQ(ret, 0);
     EXPECT_EQ(end_sz - beg_sz, 1);
