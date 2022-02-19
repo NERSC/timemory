@@ -22,7 +22,7 @@ unset(${PROJECT_NAME_UC}_INTERFACE_LIBRARIES CACHE)
 # -----------------------------------------------------------------------
 #
 function(TIMEMORY_MESSAGE TYPE)
-    if("${TYPE}" MATCHES "FATAL|ERROR" OR NOT TIMEMORY_QUIET_CONFIG)
+    if("${TYPE}" MATCHES "ERROR|WARNING" OR NOT TIMEMORY_QUIET_CONFIG)
         message(${TYPE} "[timemory] ${ARGN}")
     endif()
 endfunction()
