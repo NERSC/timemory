@@ -5,11 +5,11 @@
 # See Packages.cmake for several examples on how this is done. In general, follow pattern
 # of:
 #
-# add_interface_library(timemory-<SOME_PACKAGE>)
+# timemory_add_interface_library(timemory-<SOME_PACKAGE>)
 #
 # find_package(<SOME_PACKAGE>) if(<SOME_PACKAGE>_FOUND) # populate target flags,
-# definitions, etc. else() inform_empty_interface(timemory-<SOME_PACKAGE> "brief about
-# <SOME_PACKAGE>") endif()
+# definitions, etc. else() timemory_inform_empty_interface(timemory-<SOME_PACKAGE> "brief
+# about <SOME_PACKAGE>") endif()
 #
 
 # include guard

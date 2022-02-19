@@ -12,87 +12,95 @@ enable_testing()
 #
 # ########################################################################################
 
-add_interface_library(timemory-headers
-                      "Provides minimal set of include flags to compile with timemory")
-add_interface_library(
+timemory_add_interface_library(
+    timemory-headers "Provides minimal set of include flags to compile with timemory")
+timemory_add_interface_library(
     timemory-precompiled-headers
     "Provides timemory-headers + precompiles headers if CMAKE_VERSION >= 3.16")
-add_interface_library(timemory-xml "Enables XML serialization support")
-add_interface_library(
+timemory_add_interface_library(timemory-xml "Enables XML serialization support")
+timemory_add_interface_library(
     timemory-extern
     "Enables pre-processor directive to ensure all extern templates are used")
-add_interface_library(
+timemory_add_interface_library(
     timemory-statistics
     "Enables statistics for all components which define TIMEMORY_STATISTICS_TYPE(...)")
-add_interface_library(timemory-disable
-                      "Enables pre-processor directive for disabling timemory completely")
-add_interface_library(
+timemory_add_interface_library(
+    timemory-disable "Enables pre-processor directive for disabling timemory completely")
+timemory_add_interface_library(
     timemory-default-disabled
     "Enables pre-processor directive for disabling timemory by default at runtime")
 
 set(TIMEMORY_REQUIRED_INTERFACES timemory-headers)
 
-add_interface_library(
+timemory_add_interface_library(
     timemory-dmp
     "Enables the default distributed memory parallelism library (e.g. MPI, UPC++)")
-add_interface_library(timemory-mpi "Enables MPI support")
-add_interface_library(timemory-no-mpi-init
-                      "Disables the generation of MPI_Init and MPI_Init_thread symbols")
-add_interface_library(timemory-upcxx "Enables UPC++ support")
-add_interface_library(timemory-threading "Enables multithreading support")
+timemory_add_interface_library(timemory-mpi "Enables MPI support")
+timemory_add_interface_library(
+    timemory-no-mpi-init
+    "Disables the generation of MPI_Init and MPI_Init_thread symbols")
+timemory_add_interface_library(timemory-upcxx "Enables UPC++ support")
+timemory_add_interface_library(timemory-threading "Enables multithreading support")
 
-add_interface_library(timemory-papi "Enables PAPI support")
-add_interface_library(timemory-papi-static
-                      "Enables PAPI support + links to static library")
-add_interface_library(timemory-cuda "Enables CUDA support")
-add_interface_library(timemory-cuda-compiler "Enables some CUDA compiler flags")
-add_interface_library(timemory-cupti
-                      "Enables CUPTI support (requires linking to libcuda)")
-add_interface_library(timemory-cudart "Link to CUDA runtime (shared library)")
-add_interface_library(timemory-cudart-device "Link to CUDA device runtime")
-add_interface_library(timemory-cudart-static "Link to CUDA runtime (static library)")
-add_interface_library(timemory-nccl "Enables CUDA NCCL support")
-add_interface_library(timemory-hip "Enables HIP support")
-add_interface_library(timemory-hip-device "Enables HIP support (device code)")
-add_interface_library(timemory-nvml "Enables NVML support (NVIDIA)")
-add_interface_library(timemory-caliper "Enables Caliper support")
-add_interface_library(timemory-gotcha "Enables Gotcha support")
-add_interface_library(timemory-likwid "Enables LIKWID support")
-add_interface_library(timemory-vtune "Enables VTune support (ittnotify)")
-add_interface_library(timemory-tau "Enables TAU support")
-add_interface_library(timemory-ompt "Enables OpenMP-tools support")
-add_interface_library(timemory-python "Enables python support (embedded interpreter)")
-add_interface_library(timemory-plotting "Enables python plotting support (system call)")
-add_interface_library(timemory-allinea-map "Enables Allinea-MAP support")
-add_interface_library(timemory-craypat "Enables CrayPAT support")
-add_interface_library(timemory-libunwind "Enables libunwind support")
-add_interface_library(timemory-perfetto "Enables perfetto support")
+timemory_add_interface_library(timemory-papi "Enables PAPI support")
+timemory_add_interface_library(timemory-papi-static
+                               "Enables PAPI support + links to static library")
+timemory_add_interface_library(timemory-cuda "Enables CUDA support")
+timemory_add_interface_library(timemory-cuda-compiler "Enables some CUDA compiler flags")
+timemory_add_interface_library(timemory-cupti
+                               "Enables CUPTI support (requires linking to libcuda)")
+timemory_add_interface_library(timemory-cudart "Link to CUDA runtime (shared library)")
+timemory_add_interface_library(timemory-cudart-device "Link to CUDA device runtime")
+timemory_add_interface_library(timemory-cudart-static
+                               "Link to CUDA runtime (static library)")
+timemory_add_interface_library(timemory-nccl "Enables CUDA NCCL support")
+timemory_add_interface_library(timemory-hip "Enables HIP support")
+timemory_add_interface_library(timemory-hip-device "Enables HIP support (device code)")
+timemory_add_interface_library(timemory-nvml "Enables NVML support (NVIDIA)")
+timemory_add_interface_library(timemory-caliper "Enables Caliper support")
+timemory_add_interface_library(timemory-gotcha "Enables Gotcha support")
+timemory_add_interface_library(timemory-likwid "Enables LIKWID support")
+timemory_add_interface_library(timemory-vtune "Enables VTune support (ittnotify)")
+timemory_add_interface_library(timemory-tau "Enables TAU support")
+timemory_add_interface_library(timemory-ompt "Enables OpenMP-tools support")
+timemory_add_interface_library(timemory-python
+                               "Enables python support (embedded interpreter)")
+timemory_add_interface_library(timemory-plotting
+                               "Enables python plotting support (system call)")
+timemory_add_interface_library(timemory-allinea-map "Enables Allinea-MAP support")
+timemory_add_interface_library(timemory-craypat "Enables CrayPAT support")
+timemory_add_interface_library(timemory-libunwind "Enables libunwind support")
+timemory_add_interface_library(timemory-perfetto "Enables perfetto support")
 
-add_interface_library(timemory-coverage "Enables code-coverage flags")
-add_interface_library(timemory-gperftools
-                      "Enables user-selected gperftools component (${_GPERF_COMPONENTS})")
+timemory_add_interface_library(timemory-coverage "Enables code-coverage flags")
+timemory_add_interface_library(
+    timemory-gperftools
+    "Enables user-selected gperftools component (${_GPERF_COMPONENTS})")
 
-add_interface_library(timemory-roofline
-                      "Enables flags and libraries for proper roofline generation")
-add_interface_library(timemory-cpu-roofline
-                      "Enables flags and libraries for proper CPU roofline generation")
-add_interface_library(timemory-gpu-roofline
-                      "Enables flags and libraries for proper GPU roofline generation")
-add_interface_library(timemory-roofline-options "Compiler flags for roofline generation")
+timemory_add_interface_library(
+    timemory-roofline "Enables flags and libraries for proper roofline generation")
+timemory_add_interface_library(
+    timemory-cpu-roofline
+    "Enables flags and libraries for proper CPU roofline generation")
+timemory_add_interface_library(
+    timemory-gpu-roofline
+    "Enables flags and libraries for proper GPU roofline generation")
+timemory_add_interface_library(timemory-roofline-options
+                               "Compiler flags for roofline generation")
 
-add_interface_library(timemory-dyninst
-                      "Provides flags and libraries for Dyninst (dynamic instrumentation")
+timemory_add_interface_library(
+    timemory-dyninst "Provides flags and libraries for Dyninst (dynamic instrumentation")
 
-add_interface_library(timemory-mpip-library
-                      "Provides MPIP library for MPI performance analysis")
-add_interface_library(timemory-ompt-library
-                      "Provides OMPT library for OpenMP performance analysis")
-add_interface_library(timemory-ncclp-library
-                      "Provides NCCLP library for NCCL performance analysis")
-add_interface_library(timemory-mallocp-library
-                      "Provides MALLOCP library for tracking memory allocations")
-add_interface_library(timemory-compiler-instrument
-                      "Provides library for compiler instrumentation")
+timemory_add_interface_library(timemory-mpip-library
+                               "Provides MPIP library for MPI performance analysis")
+timemory_add_interface_library(timemory-ompt-library
+                               "Provides OMPT library for OpenMP performance analysis")
+timemory_add_interface_library(timemory-ncclp-library
+                               "Provides NCCLP library for NCCL performance analysis")
+timemory_add_interface_library(timemory-mallocp-library
+                               "Provides MALLOCP library for tracking memory allocations")
+timemory_add_interface_library(timemory-compiler-instrument
+                               "Provides library for compiler instrumentation")
 
 if(TIMEMORY_USE_MPI)
     target_link_libraries(timemory-mpip-library INTERFACE timemory-mpi timemory-gotcha)
@@ -204,25 +212,26 @@ if(NOT TIMEMORY_USE_PYTHON)
     set(_GPERF_IN_LIBRARY ON)
 endif()
 
-add_interface_library(
+timemory_add_interface_library(
     timemory-extensions
     "Provides a single target for all the timemory extensions which were found")
 target_link_libraries(timemory-extensions INTERFACE ${TIMEMORY_EXTENSION_INTERFACES})
 
-add_interface_library(
+timemory_add_interface_library(
     timemory-external-shared
     "Provides a single target for all the timemory extensions (shared libraries)")
 target_link_libraries(timemory-external-shared
                       INTERFACE ${TIMEMORY_EXTERNAL_SHARED_INTERFACES})
 
-add_interface_library(
+timemory_add_interface_library(
     timemory-external-static
     "Provides a single target for all the timemory extensions (static libraries)")
 target_link_libraries(timemory-external-static
                       INTERFACE ${TIMEMORY_EXTERNAL_STATIC_INTERFACES})
 
-add_interface_library(timemory-analysis-tools
-                      "Internal. Provides sanitizer, gperftools-cpu, coverage, xray")
+timemory_add_interface_library(
+    timemory-analysis-tools
+    "Internal. Provides sanitizer, gperftools-cpu, coverage, xray")
 
 if(TIMEMORY_USE_SANITIZER)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-sanitizer)
@@ -274,7 +283,7 @@ function(GENERATE_COMPOSITE_INTERFACE _TARGET)
     if(_FOUND)
         target_link_libraries(${_TARGET} INTERFACE ${_LINK})
     else()
-        add_disabled_interface(${_TARGET})
+        timemory_add_disabled_interface(${_TARGET})
     endif()
 endfunction()
 
@@ -284,7 +293,7 @@ endfunction()
 #
 # ----------------------------------------------------------------------------------------#
 
-function(find_package_interface)
+function(TIMEMORY_FIND_PACKAGE_INTERFACE)
     set(_option_args)
     set(_single_args NAME INTERFACE DESCRIPTION)
     set(_multiv_args FIND_ARGS INCLUDE_DIRS COMPILE_DEFINITIONS COMPILE_OPTIONS
@@ -294,13 +303,14 @@ function(find_package_interface)
                           ${ARGN})
 
     if("${PACKAGE_NAME}" STREQUAL "")
-        message(FATAL_ERROR "find_package_interface :: missing variable: NAME")
+        message(FATAL_ERROR "timemory_find_package_interface :: missing variable: NAME")
     endif()
 
     if("${PACKAGE_INTERFACE}" STREQUAL "")
         message(
             FATAL_ERROR
-                "find_package_interface (${PACKAGE_NAME}) :: missing variable: INTERFACE")
+                "timemory_find_package_interface(${PACKAGE_NAME}) :: missing variable: INTERFACE"
+            )
     endif()
 
     if(NOT TARGET ${PACKAGE_INTERFACE})
@@ -335,7 +345,7 @@ function(find_package_interface)
             add_target_flag_if_avail(${PACKAGE_INTERFACE} "${_FLAG}")
         endforeach()
     else()
-        inform_empty_interface(${PACKAGE_INTERFACE} "${PACKAGE_DESCRIPTION}")
+        timemory_inform_empty_interface(${PACKAGE_INTERFACE} "${PACKAGE_DESCRIPTION}")
     endif()
 
 endfunction()
@@ -425,8 +435,8 @@ if(NOT CMAKE_VERSION VERSION_LESS 3.17 AND TIMEMORY_USE_CUDA)
 endif()
 
 if(NOT TIMEMORY_PRECOMPILE_HEADERS)
-    inform_empty_interface(timemory-precompiled-headers
-                           "Precompiled-headers for timemory")
+    timemory_inform_empty_interface(timemory-precompiled-headers
+                                    "Precompiled-headers for timemory")
 else()
     if(BUILD_SHARED_LIBS)
         set(_EXTERNAL_INTERFACE timemory::timemory-external-shared)
@@ -634,7 +644,7 @@ if(TIMEMORY_USE_MPI AND MPI_FOUND)
 else()
 
     set(TIMEMORY_USE_MPI OFF)
-    inform_empty_interface(timemory-mpi "MPI")
+    timemory_inform_empty_interface(timemory-mpi "MPI")
 
 endif()
 
@@ -654,7 +664,7 @@ endif()
 
 if(TIMEMORY_USE_UPCXX AND UPCXX_FOUND)
 
-    add_rpath(${UPCXX_LIBRARIES})
+    timemory_add_rpath(${UPCXX_LIBRARIES})
     target_link_libraries(timemory-upcxx INTERFACE ${UPCXX_LIBRARIES})
     target_compile_options(timemory-upcxx
                            INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${UPCXX_OPTIONS}>)
@@ -669,7 +679,7 @@ if(TIMEMORY_USE_UPCXX AND UPCXX_FOUND)
 else()
 
     set(TIMEMORY_USE_UPCXX OFF)
-    inform_empty_interface(timemory-upcxx "UPC++")
+    timemory_inform_empty_interface(timemory-upcxx "UPC++")
 
 endif()
 
@@ -699,8 +709,8 @@ if(TIMEMORY_USE_PYTHON)
     include(ConfigPython)
 else()
     set(TIMEMORY_BUILD_PYTHON OFF)
-    inform_empty_interface(timemory-python "Python embedded interpreter")
-    inform_empty_interface(timemory-plotting "Python plotting from C++")
+    timemory_inform_empty_interface(timemory-python "Python embedded interpreter")
+    timemory_inform_empty_interface(timemory-plotting "Python plotting from C++")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -711,7 +721,7 @@ endif()
 
 # MUST BE AFTER PythonConfig is included!
 if(TIMEMORY_BUILD_GOOGLE_TEST)
-    checkout_git_submodule(
+    timemory_checkout_git_submodule(
         RECURSIVE
         RELATIVE_PATH external/google-test
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -753,7 +763,7 @@ if(TIMEMORY_USE_PAPI)
 endif()
 
 if(TIMEMORY_USE_PAPI AND PAPI_FOUND)
-    add_rpath(${PAPI_LIBRARIES})
+    timemory_add_rpath(${PAPI_LIBRARIES})
     target_link_libraries(timemory-papi INTERFACE ${PAPI_LIBRARIES})
     target_link_libraries(timemory-papi-static INTERFACE ${PAPI_STATIC_LIBRARIES})
     target_include_directories(timemory-papi SYSTEM INTERFACE ${PAPI_INCLUDE_DIRS})
@@ -762,9 +772,9 @@ if(TIMEMORY_USE_PAPI AND PAPI_FOUND)
     timemory_target_compile_definitions(timemory-papi-static INTERFACE TIMEMORY_USE_PAPI)
 else()
     set(TIMEMORY_USE_PAPI OFF)
-    inform_empty_interface(timemory-papi "PAPI (shared libraries)")
-    inform_empty_interface(timemory-papi-static "PAPI (static libraries)")
-    inform_empty_interface(timemory-cpu-roofline "CPU roofline")
+    timemory_inform_empty_interface(timemory-papi "PAPI (shared libraries)")
+    timemory_inform_empty_interface(timemory-papi-static "PAPI (static libraries)")
+    timemory_inform_empty_interface(timemory-cpu-roofline "CPU roofline")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -787,7 +797,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     endif()
 
 else()
-    inform_empty_interface(timemory-coverage "coverage")
+    timemory_inform_empty_interface(timemory-coverage "coverage")
     set(TIMEMORY_USE_COVERAGE OFF)
 endif()
 
@@ -816,7 +826,7 @@ if(TIMEMORY_USE_CUDA)
             target_include_directories(timemory-cuda SYSTEM
                                        INTERFACE ${NVTX_INCLUDE_DIRS})
             if(NVTX_LIBRARIES)
-                add_rpath(${NVTX_LIBRARIES})
+                timemory_add_rpath(${NVTX_LIBRARIES})
                 target_link_libraries(timemory-cuda INTERFACE ${NVTX_LIBRARIES})
             endif()
         else()
@@ -837,11 +847,11 @@ else()
     set(TIMEMORY_USE_CUDA OFF)
     set(TIMEMORY_USE_NVTX OFF)
     set(TIMEMORY_USE_CUPTI OFF)
-    inform_empty_interface(timemory-cuda "CUDA")
-    inform_empty_interface(timemory-cuda-compiler "CUDA compiler options")
-    inform_empty_interface(timemory-cudart "CUDA Runtime (shared)")
-    inform_empty_interface(timemory-cudart-device "CUDA Runtime (device)")
-    inform_empty_interface(timemory-cudart-static "CUDA Runtime (static)")
+    timemory_inform_empty_interface(timemory-cuda "CUDA")
+    timemory_inform_empty_interface(timemory-cuda-compiler "CUDA compiler options")
+    timemory_inform_empty_interface(timemory-cudart "CUDA Runtime (shared)")
+    timemory_inform_empty_interface(timemory-cudart-device "CUDA Runtime (device)")
+    timemory_inform_empty_interface(timemory-cudart-static "CUDA Runtime (static)")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -874,7 +884,7 @@ if(TIMEMORY_USE_CUPTI AND CUPTI_FOUND)
     if(CUPTI_nvperf_host_FOUND AND CUPTI_nvperf_target_FOUND)
         timemory_target_compile_definitions(timemory-cupti INTERFACE
                                             TIMEMORY_USE_CUPTI_NVPERF)
-        add_rpath(${CUPTI_nvperf_host_LIBRARY} ${CUPTI_nvperf_target_LIBRARY})
+        timemory_add_rpath(${CUPTI_nvperf_host_LIBRARY} ${CUPTI_nvperf_target_LIBRARY})
     endif()
 
     if(CUPTI_pcsampling_FOUND)
@@ -885,15 +895,15 @@ if(TIMEMORY_USE_CUPTI AND CUPTI_FOUND)
     if(CUPTI_pcsampling_util_FOUND)
         timemory_target_compile_definitions(timemory-cupti INTERFACE
                                             TIMEMORY_USE_CUPTI_PCSAMPLING_UTIL)
-        add_rpath(${CUPTI_pcsampling_util_LIBRARY})
+        timemory_add_rpath(${CUPTI_pcsampling_util_LIBRARY})
     endif()
 
-    add_rpath(${CUPTI_cupti_LIBRARY})
+    timemory_add_rpath(${CUPTI_cupti_LIBRARY})
 
 else()
     set(TIMEMORY_USE_CUPTI OFF)
-    inform_empty_interface(timemory-cupti "CUPTI")
-    inform_empty_interface(timemory-gpu-roofline "GPU roofline (CUPTI)")
+    timemory_inform_empty_interface(timemory-cupti "CUPTI")
+    timemory_inform_empty_interface(timemory-gpu-roofline "GPU roofline (CUPTI)")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -907,13 +917,13 @@ if(TIMEMORY_USE_NCCL)
 endif()
 
 if(TIMEMORY_USE_NCCL AND NCCL_FOUND)
-    add_rpath(${NCCL_LIBRARIES})
+    timemory_add_rpath(${NCCL_LIBRARIES})
     target_link_libraries(timemory-nccl INTERFACE ${NCCL_LIBRARIES})
     target_include_directories(timemory-nccl SYSTEM INTERFACE ${NCCL_INCLUDE_DIRS})
     timemory_target_compile_definitions(timemory-nccl INTERFACE TIMEMORY_USE_NCCL)
 else()
     set(TIMEMORY_USE_NCCL OFF)
-    inform_empty_interface(timemory-nccl "NCCL")
+    timemory_inform_empty_interface(timemory-nccl "NCCL")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -927,13 +937,13 @@ if(TIMEMORY_USE_NVML)
 endif()
 
 if(TIMEMORY_USE_NVML AND NVML_FOUND)
-    add_rpath(${NVML_LIBRARIES})
+    timemory_add_rpath(${NVML_LIBRARIES})
     target_link_libraries(timemory-nvml INTERFACE ${NVML_LIBRARIES})
     target_include_directories(timemory-nvml SYSTEM INTERFACE ${NVML_INCLUDE_DIRS})
     timemory_target_compile_definitions(timemory-nvml INTERFACE TIMEMORY_USE_NVML)
 else()
     set(TIMEMORY_USE_NVML OFF)
-    inform_empty_interface(timemory-nvml "NVML")
+    timemory_inform_empty_interface(timemory-nvml "NVML")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -972,8 +982,8 @@ if(TIMEMORY_USE_HIP AND hip_FOUND)
     add_user_flags(timemory-hip "HIP")
 else()
     set(TIMEMORY_USE_HIP OFF)
-    inform_empty_interface(timemory-hip "HIP")
-    inform_empty_interface(timemory-hip-device "HIP (device)")
+    timemory_inform_empty_interface(timemory-hip "HIP")
+    timemory_inform_empty_interface(timemory-hip-device "HIP (device)")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -985,7 +995,7 @@ endif()
 if(TIMEMORY_USE_LIBUNWIND AND NOT TIMEMORY_BUILD_LIBUNWIND)
     find_package(libunwind ${TIMEMORY_FIND_QUIETLY} ${TIMEMORY_FIND_REQUIREMENT})
 elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
-    checkout_git_submodule(
+    timemory_checkout_git_submodule(
         RECURSIVE
         RELATIVE_PATH external/libunwind
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -1167,7 +1177,7 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
                                         TIMEMORY_USE_LIBUNWIND UNW_LOCAL_ONLY)
 else()
     set(TIMEMORY_USE_LIBUNWIND OFF)
-    inform_empty_interface(timemory-libunwind "libunwind")
+    timemory_inform_empty_interface(timemory-libunwind "libunwind")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -1236,7 +1246,7 @@ if(TIMEMORY_USE_GPERFTOOLS)
     if(_DEFINITIONS)
         list(REMOVE_DUPLICATES _DEFINITIONS)
     endif()
-    find_package_interface(
+    timemory_find_package_interface(
         NAME gperftools
         INTERFACE timemory-gperftools
         INCLUDE_DIRS ${gperftools_INCLUDE_DIRS}
@@ -1247,12 +1257,12 @@ if(TIMEMORY_USE_GPERFTOOLS)
     target_include_directories(timemory-gperftools SYSTEM
                                INTERFACE ${gperftools_INCLUDE_DIRS})
 
-    add_rpath(${gperftools_LIBRARIES} ${gperftools_ROOT_DIR}/lib
-              ${gperftools_ROOT_DIR}/lib64)
+    timemory_add_rpath(${gperftools_LIBRARIES} ${gperftools_ROOT_DIR}/lib
+                       ${gperftools_ROOT_DIR}/lib64)
 
 else()
     set(TIMEMORY_USE_GPERFTOOLS OFF)
-    inform_empty_interface(timemory-gperftools "gperftools")
+    timemory_inform_empty_interface(timemory-gperftools "gperftools")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -1274,7 +1284,7 @@ endif()
 
 if(TIMEMORY_BUILD_CALIPER)
     set(caliper_FOUND ON)
-    checkout_git_submodule(
+    timemory_checkout_git_submodule(
         RECURSIVE
         RELATIVE_PATH external/caliper
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -1337,7 +1347,7 @@ if(TIMEMORY_USE_CALIPER AND caliper_FOUND)
     endif()
 else()
     set(TIMEMORY_USE_CALIPER OFF)
-    inform_empty_interface(timemory-caliper "caliper")
+    timemory_inform_empty_interface(timemory-caliper "caliper")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -1364,7 +1374,7 @@ if(UNIX AND NOT APPLE)
             ${TIMEMORY_INSTALL_HEADERS}
             CACHE BOOL "Install gotcha headers" FORCE)
         set(gotcha_FOUND ON)
-        checkout_git_submodule(
+        timemory_checkout_git_submodule(
             RECURSIVE
             RELATIVE_PATH external/gotcha
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -1422,7 +1432,7 @@ if(TIMEMORY_USE_GOTCHA AND gotcha_FOUND)
     endif()
 else()
     set(TIMEMORY_USE_GOTCHA OFF)
-    inform_empty_interface(timemory-gotcha "GOTCHA")
+    timemory_inform_empty_interface(timemory-gotcha "GOTCHA")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -1454,12 +1464,12 @@ if(TIMEMORY_USE_LIKWID AND LIKWID_FOUND)
                                             TIMEMORY_USE_LIKWID_NVMON)
         target_compile_definitions(timemory-likwid INTERFACE LIKWID_NVMON)
     endif()
-    add_rpath(${LIKWID_LIBRARIES})
+    timemory_add_rpath(${LIKWID_LIBRARIES})
 else()
     set(TIMEMORY_USE_LIKWID OFF)
     set(TIMEMORY_USE_LIKWID_PERFMON OFF)
     set(TIMEMORY_USE_LIKWID_NVMON OFF)
-    inform_empty_interface(timemory-likwid "LIKWID")
+    timemory_inform_empty_interface(timemory-likwid "LIKWID")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -1485,7 +1495,7 @@ if(TIMEMORY_USE_OMPT)
                 OFF
                 CACHE BOOL "OpenMP target tooling")
         endif()
-        checkout_git_submodule(
+        timemory_checkout_git_submodule(
             RECURSIVE
             RELATIVE_PATH external/llvm-ompt
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -1528,7 +1538,7 @@ elseif(TIMEMORY_USE_OMPT)
 else()
     set(TIMEMORY_BUILD_OMPT OFF)
     set(TIMEMORY_USE_OMPT OFF)
-    inform_empty_interface(timemory-ompt "OpenMP")
+    timemory_inform_empty_interface(timemory-ompt "OpenMP")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -1538,7 +1548,7 @@ endif()
 # ----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_PERFETTO)
-    checkout_git_submodule(
+    timemory_checkout_git_submodule(
         RELATIVE_PATH external/perfetto
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         REPO_URL https://android.googlesource.com/platform/external/perfetto
@@ -1622,10 +1632,10 @@ if(TIMEMORY_USE_VTUNE AND ittnotify_FOUND)
     target_link_libraries(timemory-vtune INTERFACE ${ITTNOTIFY_LIBRARIES})
     target_include_directories(timemory-vtune SYSTEM INTERFACE ${ITTNOTIFY_INCLUDE_DIRS})
     timemory_target_compile_definitions(timemory-vtune INTERFACE TIMEMORY_USE_VTUNE)
-    add_rpath(${ITTNOTIFY_LIBRARIES})
+    timemory_add_rpath(${ITTNOTIFY_LIBRARIES})
 else()
     set(TIMEMORY_USE_VTUNE OFF)
-    inform_empty_interface(timemory-vtune "VTune (ittnotify)")
+    timemory_inform_empty_interface(timemory-vtune "VTune (ittnotify)")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -1642,10 +1652,10 @@ if(TIMEMORY_USE_TAU AND TAU_FOUND)
     target_link_libraries(timemory-tau INTERFACE ${TAU_LIBRARIES})
     target_include_directories(timemory-tau SYSTEM INTERFACE ${TAU_INCLUDE_DIRS})
     timemory_target_compile_definitions(timemory-tau INTERFACE TIMEMORY_USE_TAU)
-    add_rpath(${TAU_LIBRARIES})
+    timemory_add_rpath(${TAU_LIBRARIES})
 else()
     set(TIMEMORY_USE_TAU OFF)
-    inform_empty_interface(timemory-tau "TAU")
+    timemory_inform_empty_interface(timemory-tau "TAU")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -1704,7 +1714,7 @@ if(Dyninst_FOUND AND TARGET Dyninst::Dyninst) # updated Dyninst CMake system was
                                    INTERFACE DYNINST_API_RT="${DYNINST_API_RT}")
     endif()
 
-    add_rpath(${Dyninst_LIBRARIES})
+    timemory_add_rpath(${Dyninst_LIBRARIES})
     target_link_libraries(timemory-dyninst INTERFACE Dyninst::Dyninst)
 
 elseif(Dyninst_FOUND AND Boost_FOUND)
@@ -1751,7 +1761,7 @@ elseif(Dyninst_FOUND AND Boost_FOUND)
         endif()
     endif()
 
-    add_rpath(${DYNINST_LIBRARIES} ${Boost_LIBRARIES})
+    timemory_add_rpath(${DYNINST_LIBRARIES} ${Boost_LIBRARIES})
     target_link_libraries(timemory-dyninst INTERFACE ${DYNINST_LIBRARIES}
                                                      ${Boost_LIBRARIES})
     foreach(_TARG Dyninst::dyninst Boost::headers Boost::atomic Boost::system
@@ -1767,7 +1777,7 @@ elseif(Dyninst_FOUND AND Boost_FOUND)
 
 elseif(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_DYNINST)
 
-    checkout_git_submodule(
+    timemory_checkout_git_submodule(
         RELATIVE_PATH external/dyninst
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         REPO_URL https://github.com/jrmadsen/dyninst.git
@@ -1832,7 +1842,7 @@ elseif(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_DYNINST)
 else()
     set(TIMEMORY_USE_DYNINST OFF)
     set(TIMEMORY_BUILD_DYNINST OFF)
-    inform_empty_interface(timemory-dyninst "dyninst")
+    timemory_inform_empty_interface(timemory-dyninst "dyninst")
 endif()
 
 if(TIMEMORY_USE_DYNINST)
@@ -1840,9 +1850,9 @@ if(TIMEMORY_USE_DYNINST)
 endif()
 
 if(DYNINST_API_RT)
-    add_cmake_defines(DYNINST_API_RT VALUE QUOTE DEFAULT)
+    timemory_add_cmake_defines(DYNINST_API_RT VALUE QUOTE DEFAULT)
 else()
-    add_cmake_defines(DYNINST_API_RT VALUE QUOTE)
+    timemory_add_cmake_defines(DYNINST_API_RT VALUE QUOTE)
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -1856,7 +1866,7 @@ if(TIMEMORY_USE_ALLINEA_MAP)
 endif()
 
 if(TIMEMORY_USE_ALLINEA_MAP AND AllineaMAP_FOUND)
-    add_rpath(${AllineaMAP_LIBRARIES})
+    timemory_add_rpath(${AllineaMAP_LIBRARIES})
     target_link_libraries(timemory-allinea-map INTERFACE ${AllineaMAP_LIBRARIES})
     target_include_directories(timemory-allinea-map SYSTEM
                                INTERFACE ${AllineaMAP_INCLUDE_DIRS})
@@ -1864,7 +1874,7 @@ if(TIMEMORY_USE_ALLINEA_MAP AND AllineaMAP_FOUND)
                                         TIMEMORY_USE_ALLINEA_MAP)
 else()
     set(TIMEMORY_USE_ALLINEA_MAP OFF)
-    inform_empty_interface(timemory-allinea-map "Allinea MAP")
+    timemory_inform_empty_interface(timemory-allinea-map "Allinea MAP")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -1878,7 +1888,7 @@ if(TIMEMORY_USE_CRAYPAT)
 endif()
 
 if(TIMEMORY_USE_CRAYPAT AND CrayPAT_FOUND)
-    add_rpath(${CrayPAT_LIBRARIES})
+    timemory_add_rpath(${CrayPAT_LIBRARIES})
     target_link_libraries(timemory-craypat INTERFACE ${CrayPAT_LIBRARIES})
     target_link_directories(timemory-craypat INTERFACE ${CrayPAT_LIBRARY_DIRS})
     target_include_directories(timemory-craypat SYSTEM INTERFACE ${CrayPAT_INCLUDE_DIRS})
@@ -1889,7 +1899,7 @@ if(TIMEMORY_USE_CRAYPAT AND CrayPAT_FOUND)
         "-fno-omit-frame-pointer" "-fno-optimize-sibling-calls")
 else()
     set(TIMEMORY_USE_CRAYPAT OFF)
-    inform_empty_interface(timemory-craypat "CrayPAT")
+    timemory_inform_empty_interface(timemory-craypat "CrayPAT")
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -1899,7 +1909,7 @@ endif()
 # ----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_PTL OR TIMEMORY_BUILD_TESTING)
-    checkout_git_submodule(
+    timemory_checkout_git_submodule(
         RECURSIVE
         RELATIVE_PATH external/ptl
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -1928,11 +1938,10 @@ endif()
 
 include(UserPackages)
 
-add_feature(CMAKE_INSTALL_RPATH "Installation RPATH")
-
+timemory_add_feature(CMAKE_INSTALL_RPATH "Installation RPATH")
 if(TIMEMORY_INSTALL_CONFIG)
     install(
-        FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/LocalFindUtilities.cmake
+        FILES ${PROJECT_SOURCE_DIR}/cmake/Modules/TimemoryFindUtilities.cmake
         DESTINATION ${CMAKE_INSTALL_CONFIGDIR}/Modules
         OPTIONAL)
 endif()

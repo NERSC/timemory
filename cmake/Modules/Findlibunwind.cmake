@@ -6,9 +6,9 @@
 # libunwind_INCLUDE_DIR - Path to libunwind.h libunwind_LIBRARIES   - List of libraries
 # for using libunwind libunwind_FOUND       - True if libunwind was found
 
-include(LocalFindUtilities)
+include(TimemoryFindUtilities)
 
-find_root_path(
+timemory_find_root_path(
     libunwind_ROOT
     include/libunwind.h
     HINTS
@@ -58,7 +58,7 @@ if(NOT APPLE)
 
     mark_as_advanced(libunwind_LIBRARY)
 
-    find_static_library(
+    timemory_find_static_library(
         libunwind_STATIC_LIBRARY
         NAMES unwind libunwind
         HINTS ${libunwind_ROOT}

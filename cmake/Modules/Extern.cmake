@@ -35,7 +35,7 @@ foreach(_EXTERN_LIB init native cuda auto-timer)
         if(WIN32
            OR ("${_TYPE}" STREQUAL "shared" AND NOT _BUILD_SHARED_CXX)
            OR ("${_TYPE}" STREQUAL "static" AND NOT _BUILD_STATIC_CXX))
-            add_interface_library(timemory-extern-${_EXTERN_LIB}-${_TYPE})
+            timemory_add_interface_library(timemory-extern-${_EXTERN_LIB}-${_TYPE})
             continue()
         endif()
 

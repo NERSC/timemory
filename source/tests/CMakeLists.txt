@@ -137,7 +137,7 @@ endif()
 set(ENV{TIMEMORY_ENABLED} OFF)
 
 # always make sure timemory-test exists
-add_timemory_test_target()
+timemory_add_timemory_test_target()
 
 add_subdirectory(external)
 

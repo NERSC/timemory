@@ -3,6 +3,7 @@
 
 include(FindPackageHandleStandardArgs)
 include(CMakeParseArguments)
+include(TimemoryFindUtilities)
 
 # ----------------------------------------------------------------------------------------#
 # Useful config variables:
@@ -27,13 +28,6 @@ foreach(
     _gperftools_MISSING_COMPONENTS _gperftools_LIBRARY_BASE)
     unset(${_VAR})
 endforeach()
-
-# ----------------------------------------------------------------------------------------#
-
-function(FIND_STATIC_LIBRARY)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
-    find_library(${ARGN})
-endfunction()
 
 # ----------------------------------------------------------------------------------------#
 
@@ -109,7 +103,7 @@ foreach(_gperftools_COMPONENT ${gperftools_FIND_COMPONENTS})
         DOC
         "gperftools ${_gperftools_COMPONENT} library (shared)")
 
-    find_static_library(
+    timemory_find_static_library(
         ${_gperftools_LIBRARY_BASE}_STATIC
         NAMES ${_gperftools_LIBRARY_NAME}
         HINTS ${gperftools_ROOT_DIR}

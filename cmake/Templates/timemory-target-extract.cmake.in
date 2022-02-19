@@ -188,20 +188,6 @@ endfunction()
 
 # ----------------------------------------------------------------------------------------#
 
-macro(TIMEMORY_SAFE_REMOVE_DUPLICATES)
-    foreach(_LIST ${ARGN})
-        if(${_LIST})
-            list(REMOVE_DUPLICATES ${_LIST})
-        endif()
-    endforeach()
-endmacro()
-
-# ----------------------------------------------------------------------------------------#
-
-# timemory_safe_remove_duplicates(timemory_INTERFACE_COMPONENTS)
-
-# ----------------------------------------------------------------------------------------#
-
 foreach(_TARG ${timemory_INTERFACE_COMPONENTS})
     timemory_target_name(${_TARG} _TARG)
     timemory_target_extract(${_TARG} INTERFACE)

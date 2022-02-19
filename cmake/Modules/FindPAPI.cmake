@@ -42,11 +42,11 @@
 
 # ----------------------------------------------------------------------------------------#
 
-include(LocalFindUtilities)
+include(TimemoryFindUtilities)
 
 # ----------------------------------------------------------------------------------------#
 
-find_root_path(
+timemory_find_root_path(
     PAPI_ROOT
     include/papi.h
     HINTS
@@ -116,7 +116,7 @@ find_library(
 
 # ----------------------------------------------------------------------------------------#
 
-find_static_library(
+timemory_find_static_library(
     PAPI_STATIC_LIBRARY
     NAMES papi
     HINTS ${PAPI_ROOT}
@@ -127,7 +127,7 @@ find_static_library(
 #
 # ----------------------------------------------------------------------------------------#
 
-find_static_library(
+timemory_find_static_library(
     PAPI_pfm_STATIC_LIBRARY
     NAMES pfm libpfm.a libpfm
     HINTS ${PAPI_ROOT}

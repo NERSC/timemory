@@ -418,7 +418,7 @@ if(TARGET timemory-mpip-shared)
     target_link_libraries(timemory-mpip-library INTERFACE timemory-mpip-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-mpip-shared)
 else()
-    inform_empty_interface(timemory-mpip-library
+    timemory_inform_empty_interface(timemory-mpip-library
                            "MPIP standalone instrumentation library")
     set(TIMEMORY_BUILD_MPIP_LIBRARY
         OFF
@@ -430,7 +430,7 @@ if(_OMPT_LIB)
                                         TIMEMORY_USE_OMPT_LIBRARY)
     target_link_libraries(timemory-ompt-library INTERFACE timemory-ompt ${_OMPT_LIB})
 else()
-    inform_empty_interface(timemory-ompt-library
+    timemory_inform_empty_interface(timemory-ompt-library
                            "OpenMP stand-alone instrumentation library")
     set(TIMEMORY_BUILD_OMPT_LIBRARY
         OFF
@@ -443,7 +443,7 @@ if(TARGET timemory-ncclp-shared)
     target_link_libraries(timemory-ncclp-library INTERFACE timemory-ncclp-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-ncclp-shared)
 else()
-    inform_empty_interface(timemory-ncclp-library
+    timemory_inform_empty_interface(timemory-ncclp-library
                            "NCCLP standalone instrumentation library")
     set(TIMEMORY_BUILD_NCCLP_LIBRARY
         OFF
@@ -456,7 +456,7 @@ if(TARGET timemory-mallocp-shared)
     target_link_libraries(timemory-mallocp-library INTERFACE timemory-mallocp-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-mallocp-shared)
 else()
-    inform_empty_interface(timemory-mallocp-library
+    timemory_inform_empty_interface(timemory-mallocp-library
                            "MALLOCP standalone instrumentation library")
     set(TIMEMORY_BUILD_MALLOCP_LIBRARY
         OFF
@@ -479,7 +479,7 @@ elseif(TARGET timemory-compiler-instrument-static)
                           INTERFACE timemory-compiler-instrument-static)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-compiler-instrument-static)
 else()
-    inform_empty_interface(timemory-compiler-instrument
+    timemory_inform_empty_interface(timemory-compiler-instrument
                            "Compiler instrumentation library")
 endif()
 

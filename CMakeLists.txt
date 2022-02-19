@@ -234,7 +234,7 @@ if(NOT "${TIMEMORY_TLS_MODEL}" IN_LIST _TLS_OPTIONS)
     message(FATAL_ERROR "TIMEMORY_TLS_MODEL must be one of: \"${_TLS_OPTIONS}\"")
 endif()
 
-add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
+timemory_add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
 unset(_TLS_DESCRIPT)
 unset(_TLS_OPTIONS)
 
@@ -356,7 +356,7 @@ if(timemory_MAIN_PROJECT)
     mark_as_advanced(TIMEMORY_PRINT_FEATURES)
 
     if(TIMEMORY_PRINT_FEATURES AND NOT TIMEMORY_QUIET_CONFIG)
-        print_features()
+        timemory_print_features()
     endif()
 
 endif()

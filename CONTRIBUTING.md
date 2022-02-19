@@ -30,8 +30,8 @@ Folder containing all the necessary files for the component
 
 ### Step 2. `source/timemory/components/hello_world/CMakeLists.txt`
 
-- Add an option: `add_option(TIMEMORY_USE_HELLO_WORLD "Enable HELLO_WORLD support" OFF)`
-- Add an interface library: `add_interface_library(timemory-hello-world "Enables HELLO_WORLD support")`
+- Add an option: `timemory_add_option(TIMEMORY_USE_HELLO_WORLD "Enable HELLO_WORLD support" OFF)`
+- Add an interface library: `timemory_add_interface_library(timemory-hello-world "Enables HELLO_WORLD support")`
   - Use this library to set all the build-flags, include paths, etc.
 - Link the interface library to the `timemory-extensions` target
 - Use the `timemory_build_intermediate_library(...)` to build the extern templates
@@ -40,8 +40,8 @@ Folder containing all the necessary files for the component
 ```cmake
 # use ON if you want the package to be picked up in auto-detect mode
 define_default_option(_HELLO_WORLD ON)
-add_option(TIMEMORY_USE_HELLO_WORLD "Enable HELLO_WORLD support" ${_HELLO_WORLD})
-add_interface_library(timemory-hello-world "Enables HELLOW_WORLD support")
+timemory_add_option(TIMEMORY_USE_HELLO_WORLD "Enable HELLO_WORLD support" ${_HELLO_WORLD})
+timemory_add_interface_library(timemory-hello-world "Enables HELLOW_WORLD support")
 
 if(TIMEMORY_USE_HELLO_WORLD)
     # if TIMEMORY_REQUIRE_PACKAGES=ON and user requested HELLO_WORLD, this will be fatal
@@ -52,13 +52,13 @@ endif()
 # that this is correctly displayed in final report
 if(NOT HelloWorld_FOUND)
     set(TIMEMORY_USE_HELLO_WORLD OFF CACHE BOOL "Hello World" FORCE)
-    inform_empty_interface(timemory-hello-world "HelloWorld")
+    timemory_inform_empty_interface(timemory-hello-world "HelloWorld")
     return()
 endif()
 
 if(TIMEMORY_USE_HELLO_WORLD)
     # this ensure libtimemory has library in RPATH
-    add_rpath(${HelloWorld_LIBRARIES})
+    timemory_add_rpath(${HelloWorld_LIBRARIES})
     target_link_libraries(timemory-hello-world INTERFACE ${HelloWorld_LIBRARIES})
     target_link_directories(timemory-hello-world INTERFACE ${HelloWorld_LIBRARY_DIRS})
     target_include_directories(timemory-hello-world SYSTEM INTERFACE ${HelloWorld_INCLUDE_DIRS})

@@ -60,7 +60,7 @@ foreach(_VAR FIND_STRATEGY FIND_VIRTUALENV FIND_FRAMEWORK FIND_IMPLEMENTATIONS
 endforeach()
 
 # display version
-add_feature(TIMEMORY_PYTHON_VERSION "Python version for timemory" DOC)
+timemory_add_feature(TIMEMORY_PYTHON_VERSION "Python version for timemory" DOC)
 
 # search hint
 if(PYTHON_ROOT_DIR AND NOT Python3_ROOT_DIR)
@@ -189,14 +189,14 @@ endif()
 if(NOT Python3_FOUND)
     set(TIMEMORY_USE_PYTHON OFF)
     set(TIMEMORY_BUILD_PYTHON OFF)
-    inform_empty_interface(timemory-python "Python embedded interpreter")
-    inform_empty_interface(timemory-plotting "Python plotting from C++")
+    timemory_inform_empty_interface(timemory-python "Python embedded interpreter")
+    timemory_inform_empty_interface(timemory-plotting "Python plotting from C++")
 else()
     set(TIMEMORY_PYTHON_VERSION
         "${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
         CACHE STRING "Python version for timemory")
-    add_feature(PYTHON_EXECUTABLE "Python executable")
-    add_cmake_defines(TIMEMORY_PYTHON_PLOTTER QUOTE VALUE DEFAULT)
+    timemory_add_feature(PYTHON_EXECUTABLE "Python executable")
+    timemory_add_cmake_defines(TIMEMORY_PYTHON_PLOTTER QUOTE VALUE DEFAULT)
     set(TIMEMORY_PYTHON_PLOTTER "${PYTHON_EXECUTABLE}")
     timemory_target_compile_definitions(timemory-plotting INTERFACE TIMEMORY_USE_PLOTTING)
     target_link_libraries(timemory-headers INTERFACE timemory-plotting)
@@ -221,7 +221,7 @@ option(PYBIND11_INSTALL "Enable Pybind11 installation" OFF)
 
 if(TIMEMORY_BUILD_PYTHON AND NOT TARGET pybind11)
     # checkout PyBind11 if not checked out
-    checkout_git_submodule(
+    timemory_checkout_git_submodule(
         RECURSIVE
         RELATIVE_PATH external/pybind11
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -248,8 +248,8 @@ if(NOT PYBIND11_PYTHON_VERSION)
         CACHE STRING "Python version")
 endif()
 
-add_feature(PYBIND11_CPP_STANDARD "PyBind11 C++ standard")
-add_feature(PYBIND11_PYTHON_VERSION "PyBind11 Python version")
+timemory_add_feature(PYBIND11_CPP_STANDARD "PyBind11 C++ standard")
+timemory_add_feature(PYBIND11_PYTHON_VERSION "PyBind11 Python version")
 
 if(NOT "${TIMEMORY_PYTHON_VERSION}" MATCHES "${PYBIND11_PYTHON_VERSION}*")
     message(STATUS "TIMEMORY_PYTHON_VERSION is set to ${TIMEMORY_PYTHON_VERSION}")
@@ -277,7 +277,8 @@ elseif(SPACK_BUILD OR "${TIMEMORY_INSTALL_PYTHON}" STREQUAL "lib")
 else()
     string(REPLACE "\\" "/" Python3_SITEARCH "${Python3_SITEARCH}")
     set(CMAKE_INSTALL_PYTHONDIR ${Python3_SITEARCH})
-    add_feature(Python3_SITEARCH "site-packages directory of python installation")
+    timemory_add_feature(Python3_SITEARCH
+                         "site-packages directory of python installation")
     set(_REMOVE OFF)
     # make the directory if it doesn't exist
     if(NOT EXISTS ${Python3_SITEARCH}/timemory)
@@ -311,7 +312,8 @@ else()
         # get the python directory name, e.g. 'python3.6' from
         # '/opt/local/Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6'
         get_filename_component(PYDIR "${Python3_STDLIB}" NAME)
-        add_feature(Python3_STDLIB "standard-library directory of python installation")
+        timemory_add_feature(Python3_STDLIB
+                             "standard-library directory of python installation")
         # Should not be CMAKE_INSTALL_LIBDIR! Python won't look in a lib64 folder
         set(CMAKE_INSTALL_PYTHONDIR lib/${PYDIR}/site-packages)
     endif()
@@ -377,7 +379,7 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/test-python-install-import.
                ${PROJECT_BINARY_DIR}/tests/test-python-install-import.cmake @ONLY)
 unset(INSTALL_PYTHONDIR)
 
-add_feature(CMAKE_INSTALL_PYTHONDIR "Installation prefix of the python bindings")
+timemory_add_feature(CMAKE_INSTALL_PYTHONDIR "Installation prefix of the python bindings")
 
 set(_PYVERSION_LAST
     "${TIMEMORY_PYTHON_VERSION}"

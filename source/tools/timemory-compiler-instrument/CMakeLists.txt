@@ -64,7 +64,7 @@ endfunction()
 
 # ----------------------------------------------------------------------------------------#
 
-add_interface_library(timemory-compiler-instrument-compile-options INTERFACE)
+timemory_add_interface_library(timemory-compiler-instrument-compile-options INTERFACE)
 
 target_link_libraries(
     timemory-compiler-instrument-compile-options

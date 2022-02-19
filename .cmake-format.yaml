@@ -1,6 +1,6 @@
 parse:
   additional_commands:
-    checkout_git_submodule:
+    timemory_checkout_git_submodule:
       flags:
       - RECURSIVE
       kwargs:
@@ -101,12 +101,12 @@ parse:
         PROPERTY_DEPENDS: '*'
         PUBLIC_LINK: '*'
         PRIVATE_LINK: '*'
-    add_cmake_defines:
+    timemory_add_cmake_defines:
       flags:
         - VALUE
         - QUOTE
         - DEFAULT
-    add_connector_config:
+    timemory_add_connector_config:
       flags:
         - GPU
         - DISABLE_COMPILE_OPTIONS
@@ -116,13 +116,13 @@ parse:
         TARGETS: '*'
         DEFINITIONS: '*'
         ENVIRONMENT: '*'
-    add_papi_connector_config:
+    timemory_add_papi_connector_config:
       kwargs:
         COMPONENTS: '*'
         TARGETS: '*'
         DEFINITIONS: '*'
         ENVIRONMENT: '*'
-    find_package_interface:
+    timemory_find_package_interface:
       kwargs:
         INTERFACE: '*'
         DESCRIPTION: '*'
@@ -138,7 +138,7 @@ parse:
         MODE: '*'
         FLAGS: '*'
         LANGUAGES: '*'
-    find_static_library:
+    timemory_find_static_library:
       kwargs:
         DOC: '*'
         NAMES: '*'
