@@ -224,8 +224,10 @@ timemory_add_feature(CMAKE_C_FLAGS_${_CONFIG} "C optimization type build flags")
 timemory_add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ optimization type build flags")
 timemory_add_feature(CMAKE_CUDA_FLAGS_${_CONFIG} "CUDA optimization type build flags")
 
-timemory_add_option(BUILD_SHARED_LIBS "Build shared libraries" ${_DEFAULT_BUILD_SHARED})
-timemory_add_option(BUILD_STATIC_LIBS "Build static libraries" ${_DEFAULT_BUILD_STATIC})
+timemory_add_option(BUILD_SHARED_LIBS "Build shared libraries" ${_DEFAULT_BUILD_SHARED}
+                    CMAKE_DEFINE)
+timemory_add_option(BUILD_STATIC_LIBS "Build static libraries" ${_DEFAULT_BUILD_STATIC}
+                    CMAKE_DEFINE)
 timemory_add_option(TIMEMORY_SKIP_BUILD "Disable building any libraries" OFF)
 
 if(TIMEMORY_SKIP_BUILD)
@@ -485,6 +487,8 @@ define_default_option(_NCCL ${_USE_CUDA})
 define_default_option(_LIKWID_NVMON ${_LIKWID} ${_NON_APPLE_UNIX} ${_CUDA})
 
 # timemory options
+timemory_add_option(TIMEMORY_USE_VISIBILITY "Enable visibility attributes" ON
+                    CMAKE_DEFINE)
 timemory_add_option(TIMEMORY_USE_DEPRECATED "Enable deprecated code" OFF CMAKE_DEFINE)
 timemory_add_option(TIMEMORY_USE_STATISTICS "Enable statistics by default" ON
                     CMAKE_DEFINE)

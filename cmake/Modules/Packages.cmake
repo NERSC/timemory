@@ -387,6 +387,10 @@ elseif(TIMEMORY_LINK_DL)
     target_link_libraries(timemory-headers INTERFACE dl)
 endif()
 
+if(NOT TIMEMORY_USE_VISIBILITY)
+    target_link_libraries(timemory-headers INTERFACE timemory::timemory-use-visibility)
+endif()
+
 # Realtime Extensions library (searched for in BuildSettings)
 if(rt_LIBRARY)
     target_link_libraries(timemory-headers INTERFACE ${rt_LIBRARY})

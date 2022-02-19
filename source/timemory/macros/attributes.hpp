@@ -112,20 +112,35 @@
 
 //======================================================================================//
 
-#if !defined(TIMEMORY_VISIBILITY)
-#    if !defined(TIMEMORY_MSVC_COMPILER)
-#        define TIMEMORY_VISIBILITY(mode) TIMEMORY_ATTRIBUTE(visibility(mode))
-#    else
+#if !defined(TIMEMORY_USE_VISIBILITY) ||                                                 \
+    (defined(TIMEMORY_USE_VISIBILITY) && TIMEMORY_USE_VISIBILITY > 0)
+#    if !defined(TIMEMORY_VISIBILITY)
+#        if !defined(TIMEMORY_MSVC_COMPILER)
+#            define TIMEMORY_VISIBILITY(mode) TIMEMORY_ATTRIBUTE(visibility(mode))
+#        else
+#            define TIMEMORY_VISIBILITY(mode)
+#        endif
+#    endif
+
+#    if !defined(TIMEMORY_VISIBLE)
+#        define TIMEMORY_VISIBLE TIMEMORY_VISIBILITY("default")
+#    endif
+
+#    if !defined(TIMEMORY_HIDDEN)
+#        define TIMEMORY_HIDDEN TIMEMORY_VISIBILITY("hidden")
+#    endif
+#else
+#    if !defined(TIMEMORY_VISIBILITY)
 #        define TIMEMORY_VISIBILITY(mode)
 #    endif
-#endif
 
-#if !defined(TIMEMORY_VISIBLE)
-#    define TIMEMORY_VISIBLE TIMEMORY_VISIBILITY("default")
-#endif
+#    if !defined(TIMEMORY_VISIBLE)
+#        define TIMEMORY_VISIBLE
+#    endif
 
-#if !defined(TIMEMORY_HIDDEN)
-#    define TIMEMORY_HIDDEN TIMEMORY_VISIBILITY("hidden")
+#    if !defined(TIMEMORY_HIDDEN)
+#        define TIMEMORY_HIDDEN
+#    endif
 #endif
 
 //======================================================================================//

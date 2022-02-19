@@ -332,11 +332,16 @@ endif()
 # ----------------------------------------------------------------------------------------#
 # visibility build flags
 #
+timemory_add_interface_library(timemory-use-visibility
+                               "Defines whether to use visibility attributes")
 timemory_add_interface_library(timemory-default-visibility
                                "Adds -fvisibility=default compiler flag")
 timemory_add_interface_library(timemory-hidden-visibility
                                "Adds -fvisibility=hidden compiler flag")
 
+timemory_target_compile_definitions(
+    timemory-use-visibility INTERFACE
+    TIMEMORY_USE_VISIBILITY=$<BOOL:${TIMEMORY_USE_VISIBILITY}>)
 add_target_flag_if_avail(timemory-default-visibility "-fvisibility=default")
 add_target_flag_if_avail(timemory-hidden-visibility "-fvisibility=hidden"
                          "-fvisibility-inlines-hidden")

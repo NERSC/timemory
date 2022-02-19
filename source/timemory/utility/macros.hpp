@@ -35,18 +35,21 @@
 #include <utility>
 
 #if defined(TIMEMORY_CORE_SOURCE)
-#    define TIMEMORY_UTILITY_SOURCE
+#    define TIMEMORY_UTILITY_SOURCE 1
 #    define TIMEMORY_UTILITY_INLINE
+#    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
 #elif defined(TIMEMORY_USE_CORE_EXTERN)
-#    define TIMEMORY_USE_UTILITY_EXTERN
+#    define TIMEMORY_USE_UTILITY_EXTERN 1
 #    define TIMEMORY_UTILITY_INLINE
+#    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
 #else
 #    define TIMEMORY_UTILITY_INLINE inline
-#    define TIMEMORY_UTILITY_HEADER_ONLY 1
+#    define TIMEMORY_UTILITY_HEADER_MODE 1
+#    define TIMEMORY_UTILITY_LINKAGE(...) inline __VA_ARGS__
 #endif
 //
 #if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_UTILITY_EXTERN)
-#    define TIMEMORY_USE_UTILITY_EXTERN
+#    define TIMEMORY_USE_UTILITY_EXTERN 1
 #endif
 
 #if !defined(TIMEMORY_DEFAULT_UMASK)
@@ -364,22 +367,4 @@ _DBG(const char* msg)
         {}
 #    define _DBG(...)                                                                    \
         {}
-#endif
-
-//======================================================================================//
-//
-// Define macros for utility
-//
-//======================================================================================//
-//
-#if defined(TIMEMORY_UTILITY_SOURCE)
-#    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
-#    define TIMEMORY_UTILITY_INLINE
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_UTILITY_EXTERN)
-#    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
-#    define TIMEMORY_UTILITY_INLINE
-#else
-#    define TIMEMORY_UTILITY_LINKAGE(...) inline __VA_ARGS__
-#    define TIMEMORY_UTILITY_INLINE inline
-#    define TIMEMORY_UTILITY_HEADER_MODE
 #endif
