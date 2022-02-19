@@ -24,6 +24,7 @@
 
 #include "timemory/backends/process.hpp"
 #include "timemory/environment.hpp"
+#include "timemory/macros/os.hpp"
 
 #include <cstdint>
 #include <cstdio>
@@ -125,10 +126,10 @@ get_jump()
 {
 #if defined(TIMEMORY_MACOS)
     static std::unique_ptr<jump> obj = std::make_unique<jump>(
-        tim::get_env<std::string>("TIMEMORY_JUMP_LIBRARY", "libtimemory.so"));
+        tim::get_env<std::string>("TIMEMORY_JUMP_LIBRARY", "libtimemory.dylib"));
 #else
     static std::unique_ptr<jump> obj = std::make_unique<jump>(
-        tim::get_env<std::string>("TIMEMORY_JUMP_LIBRARY", "libtimemory.dylib"));
+        tim::get_env<std::string>("TIMEMORY_JUMP_LIBRARY", "libtimemory.so"));
 #endif
     return obj;
 }
