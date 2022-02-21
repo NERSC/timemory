@@ -90,6 +90,9 @@ TIMEMORY_SET_COMPONENT_API(component::num_io_out, project::timemory, category::i
 TIMEMORY_SET_COMPONENT_API(component::num_minor_page_faults, project::timemory,
                            category::resource_usage, os::supports_unix)
 
+TIMEMORY_SET_COMPONENT_API(component::num_major_page_faults, project::timemory,
+                           category::resource_usage, os::supports_unix)
+
 TIMEMORY_SET_COMPONENT_API(component::voluntary_context_switch, project::timemory,
                            category::resource_usage, os::supports_unix)
 

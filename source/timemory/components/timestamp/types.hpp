@@ -36,6 +36,9 @@
 
 TIMEMORY_DECLARE_COMPONENT(timestamp)
 
+TIMEMORY_SET_COMPONENT_API(component::timestamp, project::timemory, category::timing,
+                           os::agnostic)
+
 TIMEMORY_DEFINE_CONCRETE_TRAIT(base_has_accum, component::timestamp, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(echo_enabled, component::timestamp, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(timeline_storage, component::timestamp, true_type)

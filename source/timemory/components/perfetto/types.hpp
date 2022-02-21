@@ -36,6 +36,10 @@
 
 TIMEMORY_DECLARE_COMPONENT(perfetto_trace)
 
+TIMEMORY_SET_COMPONENT_API(component::perfetto_trace, project::timemory, tpls::perfetto,
+                           category::external, category::timing, category::visualization,
+                           os::agnostic)
+
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::perfetto_trace, false_type)
 
 #if !defined(TIMEMORY_USE_PERFETTO)
