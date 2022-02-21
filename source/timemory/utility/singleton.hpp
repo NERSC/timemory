@@ -33,7 +33,12 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/backends/process.hpp"
+#include "timemory/backends/threading.hpp"
 #include "timemory/macros/attributes.hpp"
+#include "timemory/utility/demangle.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -41,7 +46,9 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <ostream>
 #include <set>
+#include <sstream>
 #include <thread>
 
 //======================================================================================//
@@ -155,8 +162,8 @@ public:
     static void       insert(smart_pointer& itr);
     static void       remove(pointer itr);
     static mutex_t&   get_mutex() { return f_mutex(); }
+    static void       initialize();
 
-    void initialize();
     void reset(pointer ptr);
     void reset();
 
@@ -180,6 +187,19 @@ private:
     deleter_t& get_deleter(
         enable_if_t<!std::is_same<PtrT, std::shared_ptr<Type>>::value> = 0);
 
+    static std::string get_type_info()
+    {
+        return std::string{ "tim::singleton<" } + demangle<Type>() + ", " +
+               demangle<TagT>() + ">";
+    }
+
+    static std::string as_string()
+    {
+        std::stringstream _ss{};
+        _ss << get_type_info() << " " << f_persistent_data();
+        return _ss.str();
+    }
+
 private:
     struct persistent_data
     {
@@ -201,6 +221,35 @@ private:
             m_master_instance = nullptr;
             m_children.clear();
         }
+
+        friend std::ostream& operator<<(std::ostream& _os, const persistent_data& _v)
+        {
+            std::stringstream _ss{};
+            _ss << "[master thread: " << _v.m_master_thread
+                << "][master instance: " << _v.m_master_instance << "][children:";
+            if(!_v.m_children.empty())
+            {
+                for(const auto& itr : _v.m_children)
+                    _ss << " " << itr;
+            }
+            else
+            {
+                _ss << " none";
+            }
+            _ss << "][dtors:";
+            if(!_v.m_dtors.empty())
+            {
+                for(const auto& itr : _v.m_dtors)
+                    _ss << " " << itr.first;
+            }
+            else
+            {
+                _ss << " none";
+            }
+            _ss << "]";
+            _os << _ss.str();
+            return _os;
+        }
     };
 
     static TIMEMORY_NOINLINE persistent_data& f_persistent_data()
@@ -209,14 +258,44 @@ private:
         return _instance;
     }
 
+    static this_type*&  f_this();
     static thread_id_t& f_master_thread();
     static mutex_t&     f_mutex();
     static pointer&     f_master_instance();
     static children_t&  f_children();
     static dtor_map_t&  f_dtors();
+
+    template <typename... Tp, typename PredicateT>
+    static size_t discard_if(std::set<Tp...>& _c, PredicateT&& _pred)
+    {
+        size_t _n  = 0;
+        auto   itr = _c.begin();
+        auto   end = _c.end();
+        for(; itr != end;)
+        {
+            if(_pred(*itr))
+            {
+                itr = _c.erase(itr);
+                ++_n;
+            }
+            else
+                ++itr;
+        }
+        return _n;
+    }
 };
 
 //======================================================================================//
+
+template <typename Type, typename PointerT, typename TagT>
+typename singleton<Type, PointerT, TagT>::this_type*&
+singleton<Type, PointerT, TagT>::f_this()
+{
+    static this_type* _v = nullptr;
+    return _v;
+}
+
+//--------------------------------------------------------------------------------------//
 
 template <typename Type, typename PointerT, typename TagT>
 typename singleton<Type, PointerT, TagT>::thread_id_t&
@@ -266,6 +345,8 @@ singleton<Type, PointerT, TagT>::f_dtors()
 template <typename Type, typename PointerT, typename TagT>
 singleton<Type, PointerT, TagT>::singleton()
 {
+    if(!f_this())
+        f_this() = this;
     initialize();
 }
 
@@ -275,10 +356,9 @@ template <typename Type, typename PointerT, typename TagT>
 singleton<Type, PointerT, TagT>::~singleton()
 {
     if(std::this_thread::get_id() == f_master_thread())
-        f_master_instance() = nullptr;
-    auto& del = get_deleter();
-    if(del)
-        del(_master_instance());
+        reset();
+    if(f_this() == this)
+        f_this() = nullptr;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -289,8 +369,13 @@ singleton<Type, PointerT, TagT>::initialize()
 {
     if(!f_master_instance())
     {
-        f_master_thread()   = std::this_thread::get_id();
-        f_master_instance() = new Type{};
+        auto& _master      = _master_instance();
+        auto& _f_master    = f_master_instance();
+        auto& _master_thrd = f_master_thread();
+        if(!_master)
+            _master.reset(new Type{});
+        _master_thrd = std::this_thread::get_id();
+        _f_master    = _master.get();
     }
 }
 
@@ -304,12 +389,14 @@ singleton<Type, PointerT, TagT>::instance()
     {
         return master_instance();
     }
-    if(!_local_instance().get())
+
+    auto& _local = _local_instance();
+    if(!_local.get())
     {
-        _local_instance().reset(new Type{});
-        insert(_local_instance());
+        _local.reset(new Type{});
+        insert(_local);
     }
-    return _local_instance().get();
+    return _local.get();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -319,10 +406,7 @@ typename singleton<Type, PointerT, TagT>::pointer
 singleton<Type, PointerT, TagT>::master_instance()
 {
     if(!f_master_instance())
-    {
-        f_master_thread()   = std::this_thread::get_id();
-        f_master_instance() = new Type{};
-    }
+        initialize();
     return f_master_instance();
 }
 
@@ -353,8 +437,10 @@ singleton<Type, PointerT, TagT>::insert(smart_pointer& itr)
     auto_lock_t _lk{ f_mutex(), std::defer_lock };
     if(!_lk.owns_lock())
         _lk.lock();
-    f_children().insert(itr.get());
-    f_dtors().emplace(itr.get(), [&]() { itr.reset(); });
+    auto& _children = f_children();
+    auto& _dtors    = f_dtors();
+    _children.insert(itr.get());
+    _dtors.emplace(itr.get(), [&]() { itr.reset(); });
 }
 
 //--------------------------------------------------------------------------------------//
@@ -363,22 +449,43 @@ template <typename Type, typename PointerT, typename TagT>
 void
 singleton<Type, PointerT, TagT>::remove(pointer itr)
 {
-    if(!itr)
-        return;
     auto_lock_t _lk{ f_mutex(), std::defer_lock };
     if(!_lk.owns_lock())
         _lk.lock();
-    for(auto litr = f_children().begin(); litr != f_children().end(); ++litr)
+
+    auto _info = as_string();
+    if(!itr)
     {
-        if(*litr == itr)
+        TIMEMORY_PRINT_HERE("%s :: nullptr passed to remove", _info.c_str());
+        return;
+    }
+
+    auto& _children     = f_children();
+    auto& _dtors        = f_dtors();
+    bool  _has_children = !_children.empty();
+    bool  _has_dtors    = !_dtors.empty();
+
+    size_t _n = discard_if(_children, [itr](pointer _v) { return (_v == itr); });
+
+    if(_has_children && _n != 1)
+    {
+        TIMEMORY_PRINT_HERE("%s :: Warning! Expected one child to be removed but "
+                            "removed %zu children",
+                            _info.c_str(), _n);
+    }
+
+    if(_has_dtors)
+    {
+        auto ditr = _dtors.find(itr);
+        if(ditr != _dtors.end())
+            _dtors.erase(ditr);
+        else
         {
-            f_children().erase(litr);
-            break;
+            TIMEMORY_PRINT_HERE("%s :: Warning! Expected destructor to be removed but "
+                                "destructor was not found",
+                                _info.c_str());
         }
     }
-    auto ditr = f_dtors().find(itr);
-    if(ditr != f_dtors().end())
-        f_dtors().erase(ditr);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -389,17 +496,32 @@ singleton<Type, PointerT, TagT>::reset(pointer ptr)
 {
     if(is_master(ptr))
     {
-        if(!f_dtors().empty())
         {
-            dtor_map_t _dtors{};
-            std::swap(f_dtors(), _dtors);
-            for(auto& itr : _dtors)
-                itr.second();
+            auto_lock_t _lk{ f_mutex(), std::defer_lock };
+            if(!_lk.owns_lock())
+                _lk.lock();
+            auto& _dtors = f_dtors();
+            if(!_dtors.empty())
+            {
+                // create temporary, swap, and iterate over temporary
+                // because the dtor function will remove itself
+                // from dtor map which causes segfault in next iteration
+                dtor_map_t _dtors_tmp{};
+                std::swap(_dtors_tmp, _dtors);
+                for(auto& itr : _dtors_tmp)
+                {
+                    if(itr.first == ptr)
+                        continue;
+                    itr.second();
+                    remove(itr.first);
+                }
+            }
         }
-
-        if(_master_instance().get())
+        auto& _master = _master_instance();
+        if(_master.get())
         {
-            _master_instance().reset();
+            remove(_master.get());
+            _master.reset();
         }
         else if(f_master_instance())
         {
@@ -411,8 +533,9 @@ singleton<Type, PointerT, TagT>::reset(pointer ptr)
     }
     else
     {
-        remove(_local_instance().get());
-        _local_instance().reset();
+        auto& _local = _local_instance();
+        remove(_local.get());
+        _local.reset();
     }
 }
 
@@ -422,33 +545,14 @@ template <typename Type, typename PointerT, typename TagT>
 void
 singleton<Type, PointerT, TagT>::reset()
 {
-    if(_local_instance())
-    {
-        remove(_local_instance().get());
-        _local_instance().reset();
-    }
+    auto& _local = _local_instance();
+    if(_local)
+        reset(_local.get());
 
-    if(is_master_thread())
-    {
-        if(!f_dtors().empty())
-        {
-            dtor_map_t _dtors{};
-            std::swap(f_dtors(), _dtors);
-            for(auto& itr : _dtors)
-                itr.second();
-        }
+    auto& _master = _master_instance();
+    if(_master)
+        reset(_master.get());
 
-        if(_master_instance().get())
-        {
-            _master_instance().reset();
-        }
-        else if(f_master_instance())
-        {
-            auto& del = get_deleter();
-            del(_master_instance());
-            f_master_instance() = nullptr;
-        }
-    }
     f_persistent_data().reset();
 }
 
