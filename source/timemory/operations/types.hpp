@@ -1303,7 +1303,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return m_settings->get_dart_output();
@@ -1312,7 +1312,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return m_settings->get_file_output();
@@ -1321,7 +1321,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return m_settings->get_cout_output();
@@ -1330,7 +1330,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return (m_settings->get_tree_output() || json_forced) &&
@@ -1340,7 +1340,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return (m_settings->get_json_output() || json_forced) &&
@@ -1350,7 +1350,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return m_settings->get_text_output() && m_settings->get_file_output();
@@ -1359,7 +1359,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return m_settings->get_plot_output() && m_settings->get_json_output() &&
@@ -1369,7 +1369,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return m_settings->get_flamegraph_output() && m_settings->get_file_output();

@@ -381,10 +381,10 @@ main(int argc, char** argv)
 
     for(auto itr : signal_forward())
     {
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 0),
-                               "timem will forward signal %i to its worker "
-                               "process if it is sent to this process (PID: %i)",
-                               itr, (int) tim::process::get_id());
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 0),
+                                        "timem will forward signal %i to its worker "
+                                        "process if it is sent to this process (PID: %i)",
+                                        itr, (int) tim::process::get_id());
         if(signal_types().count(itr) > 0)
             throw std::runtime_error(
                 TIMEMORY_JOIN(" ", "Error! timem sampler is using signal", itr,
@@ -515,30 +515,30 @@ main(int argc, char** argv)
             }
         }
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
         tim::mpi::barrier(comm_world_v);
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
         tim::mpi::comm_spawn_multiple(comm_size, cargv_arg0.data(), cargv_argv.data(),
                                       procs.data(), infos.data(), 0, comm_world_v,
                                       &comm_child_v, errcodes.data());
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
 
         // clean up
         for(auto& itr : cargv)
             itr.clear();
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
     }
 #endif
     //
     //----------------------------------------------------------------------------------//
-    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+    TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
 
     if(pid != 0)
     {
         if(use_mpi())
         {
-            CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+            TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
             if(!signal_delivered())
             {
                 // wait for timemory-pid to signal
@@ -548,11 +548,11 @@ main(int argc, char** argv)
         }
         else
         {
-            CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+            TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
             worker_pid() = pid;
         }
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
         tim::process::get_target_id() = worker_pid();
         tim::settings::papi_attach()  = true;
         get_sampler()                 = new sampler_t{ compose_prefix(), signal_types() };
@@ -565,7 +565,7 @@ main(int argc, char** argv)
     }
 
     auto failed_fork = [&]() {
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
         // pid == -1 means error occured
         bool cond = (pid == -1);
         if(pid == -1)
@@ -574,7 +574,7 @@ main(int argc, char** argv)
     };
 
     auto is_child = [&]() {
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
         // pid == 0 means child process created if not using MPI
         bool cond = (pid == 0 && !use_mpi());
         return cond;
@@ -622,56 +622,60 @@ main(int argc, char** argv)
         ///
         get_sampler()->set_frequency(1.0 / sample_freq());
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
-                               "configuring signal types");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
+                                        "configuring signal types");
 
         get_sampler()->configure(signal_types(), verbose());
 
 #if defined(TIMEMORY_USE_MPI)
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "pausing");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "pausing");
         // tim::mpi::barrier(comm_world_v);
         get_sampler()->pause();
 #endif
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "starting sampler");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
+                                        "starting sampler");
         get_sampler()->start();
 
         if(ofs)
         {
-            CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
-                                   "Setting output file");
+            TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
+                                            "Setting output file");
             get_measure()->set_output(ofs.get());
         }
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "target pid = %i",
-                               (int) worker_pid());
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "target pid = %i",
+                                        (int) worker_pid());
         auto status = get_sampler()->wait(worker_pid(), verbose(), debug());
 
         if((debug() && verbose() > 1) || verbose() > 2)
             std::cerr << "[BEFORE STOP][" << pid << "]> " << *get_measure() << std::endl;
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "stopping sampler");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
+                                        "stopping sampler");
         get_sampler()->stop();
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "ignoring signals");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
+                                        "ignoring signals");
         get_sampler()->ignore(signal_types());
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "barrier");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "barrier");
         tim::mpi::barrier(comm_world_v);
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "processing");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "processing");
         parent_process(pid);
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "barrier");
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "barrier");
         tim::mpi::barrier(tim::mpi::comm_world_v);
 
-        CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "exit code = %i", status);
+        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "exit code = %i",
+                                        status);
         ec = status;
     }
 
     delete get_sampler();
 
-    CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "Completed");
+    TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "Completed");
     if(use_mpi() || (!timem_mpi_was_finalized() && tim::dmp::size() == 1))
         tim::mpi::finalize();
 
@@ -774,37 +778,37 @@ store_history(timem_bundle_t* _bundle)
             std::vector<hist_type> _buff{};
             _buff.reserve(_bundle->get_buffer_size());
 
-            CONDITIONAL_PRINT_HERE(debug() && verbose() > 2,
-                                   "thread entering wait. completed: %s, full buffer: "
-                                   "%s, buffer: %zu, history: %zu",
-                                   _scompleted(), _sfullbuff(), _buff.size(),
-                                   history().size());
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                debug() && verbose() > 2,
+                "thread entering wait. completed: %s, full buffer: "
+                "%s, buffer: %zu, history: %zu",
+                _scompleted(), _sfullbuff(), _buff.size(), history().size());
 
             auto_lock_t _lk{ type_mutex<hist_type>() };
             buffer_cv().wait(_lk, []() { return completed() || full_buffer(); });
 
-            CONDITIONAL_PRINT_HERE(debug() && verbose() > 2,
-                                   "thread swapping history. completed: %s, full buffer: "
-                                   "%s, buffer: %zu, history: %zu",
-                                   _scompleted(), _sfullbuff(), _buff.size(),
-                                   history().size());
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                debug() && verbose() > 2,
+                "thread swapping history. completed: %s, full buffer: "
+                "%s, buffer: %zu, history: %zu",
+                _scompleted(), _sfullbuff(), _buff.size(), history().size());
 
             if(_lk.owns_lock())
                 _lk.unlock();
             _buff = _bundle->swap_history(_buff);
 
-            CONDITIONAL_PRINT_HERE(debug() && verbose() > 2,
-                                   "thread transferring buffer contents. completed: %s, "
-                                   "full buffer: %s, buffer: %zu, history: %zu",
-                                   _scompleted(), _sfullbuff(), _buff.size(),
-                                   history().size());
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                debug() && verbose() > 2,
+                "thread transferring buffer contents. completed: %s, "
+                "full buffer: %s, buffer: %zu, history: %zu",
+                _scompleted(), _sfullbuff(), _buff.size(), history().size());
 
             full_buffer() = false;
             history().reserve(history().size() + _buff.size());
             for(auto& itr : _buff)
                 history().emplace_back(std::move(itr));
         }
-        CONDITIONAL_PRINT_HERE(
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
             debug(), "thread completed. completed: %s, full buffer: %s, history: %zu",
             _scompleted(), _sfullbuff(), history().size());
 
@@ -814,7 +818,7 @@ store_history(timem_bundle_t* _bundle)
             buffer_cv().notify_one();
         });
 
-        CONDITIONAL_PRINT_HERE(
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
             debug(),
             "thread sorting history. completed: %s, full buffer: %s, history: %zu",
             _scompleted(), _sfullbuff(), history().size());
@@ -825,7 +829,7 @@ store_history(timem_bundle_t* _bundle)
                              _rhs.first.time_since_epoch().count();
                   });
 
-        CONDITIONAL_PRINT_HERE(
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
             debug(),
             "thread setting history. completed: %s, full buffer: %s, history: %zu",
             _scompleted(), _sfullbuff(), history().size());
@@ -873,20 +877,20 @@ parent_process(pid_t pid)
 
     if(use_mpi() || tim::mpi::size() > 1)
     {
-        CONDITIONAL_PRINT_HERE(debug(), "%s (size: %i)", "Getting MPI measurements",
-                               (int) tim::mpi::size());
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
+            debug(), "%s (size: %i)", "Getting MPI measurements", (int) tim::mpi::size());
         _measurements = get_measure()->mpi_get();
     }
     else
     {
         if(get_measure())
         {
-            CONDITIONAL_PRINT_HERE(debug(), "%s", "Getting serial measurement");
+            TIMEMORY_CONDITIONAL_PRINT_HERE(debug(), "%s", "Getting serial measurement");
             _measurements = { *get_measure() };
         }
         else
         {
-            CONDITIONAL_PRINT_HERE(debug(), "%s", "No measurements");
+            TIMEMORY_CONDITIONAL_PRINT_HERE(debug(), "%s", "No measurements");
             _measurements = {};
         }
     }
@@ -895,8 +899,8 @@ parent_process(pid_t pid)
 
     if(_measurements.empty())
     {
-        CONDITIONAL_PRINT_HERE(debug(), "No measurements on rank %i. Returning",
-                               tim::mpi::rank());
+        TIMEMORY_CONDITIONAL_PRINT_HERE(debug(), "No measurements on rank %i. Returning",
+                                        tim::mpi::rank());
         return;
     }
 
@@ -906,20 +910,20 @@ parent_process(pid_t pid)
         auto& itr = _measurements.at(i);
         if(itr.empty())
         {
-            CONDITIONAL_PRINT_HERE(debug(), "%s (iteration: %zu)",
-                                   "Empty measurement. Continuing", i);
+            TIMEMORY_CONDITIONAL_PRINT_HERE(debug(), "%s (iteration: %zu)",
+                                            "Empty measurement. Continuing", i);
             continue;
         }
         if(!_measurements.empty() && (use_mpi() || tim::mpi::size() > 1))
             itr.set_rank(i);
 
-        CONDITIONAL_PRINT_HERE(debug(), "streaming iteration: %zu", i);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(debug(), "streaming iteration: %zu", i);
         _oss << itr << std::flush;
     }
 
     if(_oss.str().empty())
     {
-        CONDITIONAL_PRINT_HERE(debug(), "%s", "Empty output. Returning");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(debug(), "%s", "Empty output. Returning");
         return;
     }
 
@@ -946,12 +950,12 @@ parent_process(pid_t pid)
     auto quiet = !output_file().empty() && verbose() < 0 && !debug();
     if(!quiet)
     {
-        CONDITIONAL_PRINT_HERE(debug(), "%s", "reporting");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(debug(), "%s", "reporting");
         std::cerr << _oss.str() << std::endl;
     }
     else
     {
-        CONDITIONAL_PRINT_HERE(debug(), "%s", "reporting skipped (quiet)");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(debug(), "%s", "reporting skipped (quiet)");
     }
 
     // tim::mpi::barrier();
@@ -990,8 +994,9 @@ child_process(int argc, char** argv)
 
             if(debug())
             {
-                CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "[%s]> command :: %s",
-                                       command().c_str(), shellc.args().c_str());
+                TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1),
+                                                "[%s]> command :: %s", command().c_str(),
+                                                shellc.args().c_str());
             }
 
             explain(0, shellc.argv()[0], shellc.argv());
@@ -1001,24 +1006,24 @@ child_process(int argc, char** argv)
 
             if(ret != 0)
             {
-                CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "return code: %i",
-                                       ret);
+                TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1),
+                                                "return code: %i", ret);
                 explain(ret, shellc.argv()[0], shellc.argv());
                 ret = execv(shellc.argv()[0], shellc.argv());
             }
 
             if(ret != 0)
             {
-                CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "return code: %i",
-                                       ret);
+                TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1),
+                                                "return code: %i", ret);
                 explain(ret, shellc.argv()[0], shellc.argv());
                 ret = execve(shellc.argv()[0], shellc.argv(), environ);
             }
 
             if(debug())
             {
-                CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "return code: %i",
-                                       ret);
+                TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1),
+                                                "return code: %i", ret);
             }
         }
         else
@@ -1027,7 +1032,7 @@ child_process(int argc, char** argv)
         }
 
         if(debug())
-            CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
+            TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
 
         return ret;
     };
@@ -1039,8 +1044,9 @@ child_process(int argc, char** argv)
         auto argpc = argpv.get_execv(1);
         if(debug())
         {
-            CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "[%s]> command :: '%s'",
-                                   command().c_str(), argpc.args().c_str());
+            TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1),
+                                            "[%s]> command :: '%s'", command().c_str(),
+                                            argpc.args().c_str());
         }
         int ret = execvp(argpc.argv()[0], argpc.argv());
         // explain error if enabled

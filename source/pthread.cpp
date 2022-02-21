@@ -98,7 +98,7 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
             // convert the argument
             wrapper* _wrapper = static_cast<wrapper*>(_arg);
             if(_wrapper->debug())
-                PRINT_HERE("[T%li] Creating timemory manager", (long int) _tid);
+                TIMEMORY_PRINT_HERE("[T%li] Creating timemory manager", (long int) _tid);
             // create the manager and initialize the storage
             auto _tlm = tim::manager::instance();
 #    if defined(TIMEMORY_INTERNAL_TESTING)
@@ -111,16 +111,18 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
             auto _final =
                 get_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{});
             if(_wrapper->debug())
-                PRINT_HERE("[T%li] Executing original function", (long int) _tid);
+                TIMEMORY_PRINT_HERE("[T%li] Executing original function",
+                                    (long int) _tid);
             // execute the original function
             auto* _ret = (*_wrapper)();
             if(_wrapper->debug())
-                PRINT_HERE("[T%li] Executing finalizing callbacks", (long int) _tid);
+                TIMEMORY_PRINT_HERE("[T%li] Executing finalizing callbacks",
+                                    (long int) _tid);
             // finalize
             for(auto& itr : _final)
                 itr();
             if(_wrapper->debug())
-                PRINT_HERE("[T%li] Returning from thread", (long int) _tid);
+                TIMEMORY_PRINT_HERE("[T%li] Returning from thread", (long int) _tid);
             // return the data
             return _ret;
         }
@@ -140,7 +142,7 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
         auto* _settings = tim::settings::instance<TIMEMORY_API>();
         auto  _debug    = (_settings) ? _settings->get_debug() : true;
         if(_debug)
-            PRINT_HERE("[T%li] Creating new thread", (long int) _tid);
+            TIMEMORY_PRINT_HERE("[T%li] Creating new thread", (long int) _tid);
         auto* _obj = new wrapper(start_routine, arg, _debug);
         return pthread_create(thread, attr, &wrapper::wrap, static_cast<void*>(_obj));
     }

@@ -226,7 +226,7 @@ protected:
 TEST_F(gotcha_tests, mpi_explicit)
 {
     mpi_gotcha_t::get_initializer() = [=]() {
-        PRINT_HERE("%s", details::get_test_name().c_str());
+        TIMEMORY_PRINT_HERE("%s", details::get_test_name().c_str());
 #if defined(TIMEMORY_USE_MPI)
         mpi_gotcha_t::configure<0, int, const void*, void*, int, MPI_Datatype, MPI_Op,
                                 MPI_Comm>("MPI_Allreduce");
@@ -277,7 +277,7 @@ TEST_F(gotcha_tests, mpi_explicit)
 TEST_F(gotcha_tests, mpi_macro)
 {
     mpi_gotcha_t::get_initializer() = [=]() {
-        PRINT_HERE("%s", details::get_test_name().c_str());
+        TIMEMORY_PRINT_HERE("%s", details::get_test_name().c_str());
 #if defined(TIMEMORY_USE_MPI)
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 0, MPI_Allreduce);
 #endif
@@ -330,7 +330,7 @@ TEST_F(gotcha_tests, work_explicit)
     using pair_type  = std::pair<float, double>;
 
     work_gotcha_t::get_initializer() = [=]() {
-        PRINT_HERE("%s", details::get_test_name().c_str());
+        TIMEMORY_PRINT_HERE("%s", details::get_test_name().c_str());
         auto mangled_do_work = tim::mangle<decltype(ext::do_work)>("ext::do_work");
         work_gotcha_t::configure<0, tuple_type, int64_t, const pair_type&>(
             mangled_do_work);
@@ -376,7 +376,7 @@ TEST_F(gotcha_tests, work_macro)
     using pair_type = std::pair<float, double>;
 
     work_gotcha_t::get_initializer() = [=]() {
-        PRINT_HERE("%s", details::get_test_name().c_str());
+        TIMEMORY_PRINT_HERE("%s", details::get_test_name().c_str());
         TIMEMORY_CXX_GOTCHA(work_gotcha_t, 0, ext::do_work);
     };
 
@@ -451,7 +451,7 @@ TEST_F(gotcha_tests, malloc_gotcha)
 #endif
     };
 
-    PRINT_HERE("%s", "starting");
+    TIMEMORY_PRINT_HERE("%s", "starting");
     toolset_t tool(details::get_test_name());
 
     float  fsum = 0.0;
@@ -476,7 +476,7 @@ TEST_F(gotcha_tests, malloc_gotcha)
     }
 
     tool.stop();
-    PRINT_HERE("%s", "stopped");
+    TIMEMORY_PRINT_HERE("%s", "stopped");
 
     // malloc_gotcha& mc = *tool.get<malloc_gotcha>();
     // std::cout << mc << std::endl;
@@ -705,7 +705,7 @@ TEST_F(gotcha_tests, member_functions)
 
     memfun_gotcha_t::get_default_ready() = true;
     memfun_gotcha_t::get_initializer()   = [=]() {
-        PRINT_HERE("%s", details::get_test_name().c_str());
+        TIMEMORY_PRINT_HERE("%s", details::get_test_name().c_str());
 
         {
             using func_t = decltype(&DoWork::get);

@@ -706,26 +706,26 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
             // convert the argument
             wrapper* _wrapper = static_cast<wrapper*>(_arg);
             if(_wrapper->debug())
-                PRINT_HERE("%s", "Creating timemory manager");
+                TIMEMORY_PRINT_HERE("%s", "Creating timemory manager");
             // create the manager and initialize the storage
             auto _tlm = tim::manager::instance();
 #if defined(TIMEMORY_INTERNAL_TESTING)
             assert(_tlm.get() != nullptr);
 #endif
             if(_wrapper->debug())
-                PRINT_HERE("%s", "Initializing timemory component storage");
+                TIMEMORY_PRINT_HERE("%s", "Initializing timemory component storage");
             // initialize the storage
             tim::consume_parameters(
                 get_storage(tim::make_index_sequence<TIMEMORY_COMPONENTS_END>{}));
             if(_wrapper->debug())
-                PRINT_HERE("%s", "Executing original function");
+                TIMEMORY_PRINT_HERE("%s", "Executing original function");
             // execute the original function
             auto* _ret = (*_wrapper)();
             // only child threads
             if(tim::threading::get_id() != primary_tidx)
             {
                 if(_wrapper->debug())
-                    PRINT_HERE("%s", "Executing finalizing");
+                    TIMEMORY_PRINT_HERE("%s", "Executing finalizing");
                 // disable future instrumentation for thread
                 get_thread_enabled() = false;
                 // finalize
@@ -746,10 +746,10 @@ struct pthread_gotcha : tim::component::base<pthread_gotcha, void>
                    void* (*start_routine)(void*), void*     arg) const
     {
         if(m_debug)
-            PRINT_HERE("%s", "wrapping pthread_create");
+            TIMEMORY_PRINT_HERE("%s", "wrapping pthread_create");
         auto* _obj = new wrapper(start_routine, arg, m_debug);
         if(m_debug)
-            PRINT_HERE("%s", "executing pthread_create");
+            TIMEMORY_PRINT_HERE("%s", "executing pthread_create");
         return pthread_create(thread, attr, &wrapper::wrap, static_cast<void*>(_obj));
     }
 

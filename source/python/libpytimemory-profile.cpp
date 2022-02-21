@@ -131,7 +131,7 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     if(user_profiler_bundle::bundle_size() == 0)
     {
         if(_config.verbose > 2)
-            PRINT_HERE("%s", "Profiler bundle is empty");
+            TIMEMORY_PRINT_HERE("%s", "Profiler bundle is empty");
         return;
     }
 
@@ -151,8 +151,8 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     if(what < 0)
     {
         if(_config.verbose > 2)
-            PRINT_HERE("%s :: %s", "Ignoring what != {CALL,C_CALL,RETURN,C_RETURN}",
-                       swhat);
+            TIMEMORY_PRINT_HERE("%s :: %s",
+                                "Ignoring what != {CALL,C_CALL,RETURN,C_RETURN}", swhat);
         return;
     }
 
@@ -160,7 +160,7 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     if(!_config.trace_c && (what == PyTrace_C_CALL || what == PyTrace_C_RETURN))
     {
         if(_config.verbose > 2)
-            PRINT_HERE("%s :: %s", "Ignoring C call/return", swhat);
+            TIMEMORY_PRINT_HERE("%s :: %s", "Ignoring C call/return", swhat);
         return;
     }
 
@@ -176,7 +176,8 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     if(_iscall && _sdepth > _config.max_stack_depth)
     {
         if(_config.verbose > 2)
-            PRINT_HERE("skipping %i > %i", (int) _sdepth, (int) _config.max_stack_depth);
+            TIMEMORY_PRINT_HERE("skipping %i > %i", (int) _sdepth,
+                                (int) _config.max_stack_depth);
         return;
     }
 
@@ -206,7 +207,8 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
                 inspect.attr("formatargvalues")(*inspect.attr("getargvalues")(pframe)));
         } catch(py::error_already_set& _exc)
         {
-            CONDITIONAL_PRINT_HERE(_config.verbose > 1, "Error! %s", _exc.what());
+            TIMEMORY_CONDITIONAL_PRINT_HERE(_config.verbose > 1, "Error! %s",
+                                            _exc.what());
             if(!_exc.matches(PyExc_AttributeError))
                 throw;
         }
@@ -259,14 +261,14 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
     if(!_only_funcs.empty() && !_find_matching(_only_funcs, _func))
     {
         if(_config.verbose > 1)
-            PRINT_HERE("Skipping non-included function: %s", _func.c_str());
+            TIMEMORY_PRINT_HERE("Skipping non-included function: %s", _func.c_str());
         return;
     }
 
     if(_find_matching(_skip_funcs, _func))
     {
         if(_config.verbose > 1)
-            PRINT_HERE("Skipping designated function: '%s'", _func.c_str());
+            TIMEMORY_PRINT_HERE("Skipping designated function: '%s'", _func.c_str());
         auto _manager = tim::manager::instance();
         if(!_manager || _manager->is_finalized() || _func == "_shutdown")
         {
@@ -287,27 +289,27 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
        strncmp(_full.c_str(), _timemory_path.c_str(), _timemory_path.length()) == 0)
     {
         if(_config.verbose > 2)
-            PRINT_HERE("Skipping internal function: %s", _func.c_str());
+            TIMEMORY_PRINT_HERE("Skipping internal function: %s", _func.c_str());
         return;
     }
 
     if(!_only_files.empty() && !_find_matching(_only_files, _full))
     {
         if(_config.verbose > 2)
-            PRINT_HERE("Skipping non-included file: %s", _full.c_str());
+            TIMEMORY_PRINT_HERE("Skipping non-included file: %s", _full.c_str());
         return;
     }
 
     if(_find_matching(_skip_files, _full))
     {
         if(_config.verbose > 2)
-            PRINT_HERE("Skipping non-included file: %s", _full.c_str());
+            TIMEMORY_PRINT_HERE("Skipping non-included file: %s", _full.c_str());
         return;
     }
 
-    CONDITIONAL_PRINT_HERE(_config.verbose > 3, "%8s | %s%s | %s | %s", swhat,
-                           _func.c_str(), _get_args().c_str(), _file.c_str(),
-                           _full.c_str());
+    TIMEMORY_CONDITIONAL_PRINT_HERE(_config.verbose > 3, "%8s | %s%s | %s | %s", swhat,
+                                    _func.c_str(), _get_args().c_str(), _file.c_str(),
+                                    _full.c_str());
 
     auto _label = _get_label(_func, _file, _full);
     if(_label.empty())

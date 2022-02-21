@@ -69,16 +69,17 @@ dump(const device_bundle_map_t& _data, bool report = false)
     using map_type = std::map<int, std::vector<bundle_t>>;
     map_type _mdata{};
 
-    CONDITIONAL_PRINT_HERE(debug() || verbose() > 1, "Writing bundle data to %s",
-                           get_config().get_output_filename().c_str());
+    TIMEMORY_CONDITIONAL_PRINT_HERE(debug() || verbose() > 1, "Writing bundle data to %s",
+                                    get_config().get_output_filename().c_str());
 
     for(auto& itr : _data)
     {
         std::vector<bundle_t> _vdata{};
         size_t                _n = itr.second.count();
         _vdata.resize(_n);
-        CONDITIONAL_PRINT_HERE(debug() || verbose() > 1, "Device %i has %i entries",
-                               (int) itr.first, (int) _n);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(debug() || verbose() > 1,
+                                        "Device %i has %i entries", (int) itr.first,
+                                        (int) _n);
         for(size_t i = 0; i < _n; ++i)
         {
             itr.second.read(&_vdata[i]);
@@ -121,9 +122,9 @@ monitor(const std::vector<nvml_device_info>& _device_info)
     // create a ring buffer for each device
     for(const auto& itr : _device_info)
     {
-        CONDITIONAL_PRINT_HERE(debug(),
-                               "Creating ring buffer for %i entries for device %i",
-                               (int) buffer_count(), itr.index);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
+            debug(), "Creating ring buffer for %i entries for device %i",
+            (int) buffer_count(), itr.index);
         device_bundle_map.emplace(itr.index, buffer_count());
     }
 

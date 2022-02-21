@@ -59,7 +59,7 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
     if(_settings)
     {
         if(_settings->get_debug() || _settings->get_verbose() > 3)
-            PRINT_HERE("%s", "");
+            TIMEMORY_PRINT_HERE("%s", "");
 
         if(_settings->get_enable_signal_handler())
         {
@@ -164,7 +164,7 @@ timemory_init(int* argc, char*** argv, const std::string& _prefix,
     if(settings::mpi_init())
     {
         if(settings::debug())
-            PRINT_HERE("%s", "initializing mpi");
+            TIMEMORY_PRINT_HERE("%s", "initializing mpi");
 
         mpi::initialize(argc, argv);
     }
@@ -172,7 +172,7 @@ timemory_init(int* argc, char*** argv, const std::string& _prefix,
     if(settings::upcxx_init())
     {
         if(settings::debug())
-            PRINT_HERE("%s", "initializing upcxx");
+            TIMEMORY_PRINT_HERE("%s", "initializing upcxx");
 
         upc::initialize();
     }
@@ -190,7 +190,7 @@ timemory_init(int* argc, char*** argv, argparse::argument_parser& parser,
     if(settings::mpi_init())
     {
         if(settings::debug())
-            PRINT_HERE("%s", "initializing mpi");
+            TIMEMORY_PRINT_HERE("%s", "initializing mpi");
 
         mpi::initialize(argc, argv);
     }
@@ -198,7 +198,7 @@ timemory_init(int* argc, char*** argv, argparse::argument_parser& parser,
     if(settings::upcxx_init())
     {
         if(settings::debug())
-            PRINT_HERE("%s", "initializing upcxx");
+            TIMEMORY_PRINT_HERE("%s", "initializing upcxx");
 
         upc::initialize();
     }
@@ -226,7 +226,7 @@ timemory_init(std::vector<std::string>& args, argparse::argument_parser& parser,
     if(settings::mpi_init())
     {
         if(settings::debug())
-            PRINT_HERE("%s", "initializing mpi");
+            TIMEMORY_PRINT_HERE("%s", "initializing mpi");
 
         mpi::initialize(argc, argv);
     }
@@ -234,7 +234,7 @@ timemory_init(std::vector<std::string>& args, argparse::argument_parser& parser,
     if(settings::upcxx_init())
     {
         if(settings::debug())
-            PRINT_HERE("%s", "initializing upcxx");
+            TIMEMORY_PRINT_HERE("%s", "initializing upcxx");
 
         upc::initialize();
     }
@@ -321,7 +321,7 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
                 auto vec = tim::delimit(str, " \t;:");
                 for(const auto& itr : vec)
                 {
-                    DEBUG_PRINT_HERE("Processing: %s", itr.c_str());
+                    TIMEMORY_DEBUG_PRINT_HERE("Processing: %s", itr.c_str());
                     auto _pos = itr.find('=');
                     auto _key = itr.substr(0, _pos);
                     auto _val = (_pos == std::string::npos) ? "" : itr.substr(_pos + 1);
@@ -384,7 +384,7 @@ timemory_finalize()
     if(_manager)
     {
         if(_settings && _settings->get_debug())
-            PRINT_HERE("%s", "finalizing manager");
+            TIMEMORY_PRINT_HERE("%s", "finalizing manager");
         _manager->finalize();
     }
 
@@ -393,7 +393,7 @@ timemory_finalize()
         if(_settings->get_upcxx_finalize())
         {
             if(_settings->get_debug())
-                PRINT_HERE("%s", "finalizing upcxx");
+                TIMEMORY_PRINT_HERE("%s", "finalizing upcxx");
 
             upc::finalize();
         }
@@ -401,22 +401,22 @@ timemory_finalize()
         if(_settings->get_mpi_finalize())
         {
             if(_settings->get_debug())
-                PRINT_HERE("%s", "finalizing mpi");
+                TIMEMORY_PRINT_HERE("%s", "finalizing mpi");
             mpi::finalize();
         }
 
         if(_settings->get_debug() || _settings->get_verbose() > 3)
-            PRINT_HERE("%s", "");
+            TIMEMORY_PRINT_HERE("%s", "");
 
         if(_settings->get_enable_signal_handler())
         {
             if(_settings->get_debug())
-                PRINT_HERE("%s", "disabling signal detection");
+                TIMEMORY_PRINT_HERE("%s", "disabling signal detection");
             disable_signal_detection();
         }
 
         if(_settings->get_debug())
-            PRINT_HERE("%s", "done");
+            TIMEMORY_PRINT_HERE("%s", "done");
     }
 }
 //

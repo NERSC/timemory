@@ -736,8 +736,9 @@ public:
             }
             if(!found)
             {
-                PRINT_HERE("Warning! Expected header tag '%s' not found when sorting",
-                           itr.c_str());
+                TIMEMORY_PRINT_HERE(
+                    "Warning! Expected header tag '%s' not found when sorting",
+                    itr.c_str());
             }
         }
 

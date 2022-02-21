@@ -112,13 +112,13 @@ extern "C"
 
     void timemory_register_ompt()
     {
-        DEBUG_PRINT_HERE("%s", "");
+        TIMEMORY_DEBUG_PRINT_HERE("%s", "");
         global_id = timemory_start_ompt();
     }
 
     void timemory_deregister_ompt()
     {
-        DEBUG_PRINT_HERE("%s", "");
+        TIMEMORY_DEBUG_PRINT_HERE("%s", "");
         global_id = timemory_stop_ompt(global_id);
     }
 

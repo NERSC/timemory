@@ -240,10 +240,11 @@ get<Type, true>::operator()(result_type& ret)
                 }
                 std::string _msg = "Intervals: ";
                 _msg += ss.str().substr(2);
-                PRINT_HERE("[%s][pid=%i][tid=%i]> %s. range = { %i, %i }",
-                           demangle<get<Type, true>>().c_str(), (int) process::get_id(),
-                           (int) threading::get_id(), _msg.c_str(), (int) _range.first,
-                           (int) _range.second);
+                TIMEMORY_PRINT_HERE("[%s][pid=%i][tid=%i]> %s. range = { %i, %i }",
+                                    demangle<get<Type, true>>().c_str(),
+                                    (int) process::get_id(), (int) threading::get_id(),
+                                    _msg.c_str(), (int) _range.first,
+                                    (int) _range.second);
             }
         }
 
@@ -298,8 +299,8 @@ get<Type, true>::operator()(result_type& ret)
             {
                 if(!itr)
                 {
-                    PRINT_HERE("[%s] Warning! Invalid iterator!",
-                               demangle<Type>().c_str());
+                    TIMEMORY_PRINT_HERE("[%s] Warning! Invalid iterator!",
+                                        demangle<Type>().c_str());
                     continue;
                 }
                 _min = std::min<int64_t>(_min, itr->depth());
@@ -309,8 +310,8 @@ get<Type, true>::operator()(result_type& ret)
             {
                 if(!itr)
                 {
-                    PRINT_HERE("[%s] Warning! Invalid iterator!",
-                               demangle<Type>().c_str());
+                    TIMEMORY_PRINT_HERE("[%s] Warning! Invalid iterator!",
+                                        demangle<Type>().c_str());
                     continue;
                 }
                 // skip if invalid

@@ -142,9 +142,10 @@ struct static_properties<void, false>
         } catch(std::regex_error& err)
         {
             auto _doption = std::string{ "\\b(" } + _opts + std::string{ ")\\b" };
-            PRINT_HERE("regex error in regex_match(\"%s\", regex{ \"%s\", egrep | icase "
-                       "| optimize }): %s [real: %s]",
-                       _ckey, _doption.c_str(), err.what(), _option.c_str());
+            TIMEMORY_PRINT_HERE(
+                "regex error in regex_match(\"%s\", regex{ \"%s\", egrep | icase "
+                "| optimize }): %s [real: %s]",
+                _ckey, _doption.c_str(), err.what(), _option.c_str());
             TIMEMORY_TESTING_EXCEPTION("regex error in: \"" << _doption << "\" for "
                                                             << _ckey)
         }

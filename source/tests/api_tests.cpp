@@ -217,10 +217,10 @@ TEST_F(api_tests, category)
     using apitypes_t = typename trait::runtime_enabled<wall_clock>::api_type_list;
 
     puts("");
-    PRINT_HERE("component-apis : %s", tim::demangle<wc_api_t>().c_str());
-    PRINT_HERE("true-types     : %s", tim::demangle<wc_false_t>().c_str());
-    PRINT_HERE("false-types    : %s", tim::demangle<wc_true_t>().c_str());
-    PRINT_HERE("type-traits    : %s", tim::demangle<apitypes_t>().c_str());
+    TIMEMORY_PRINT_HERE("component-apis : %s", tim::demangle<wc_api_t>().c_str());
+    TIMEMORY_PRINT_HERE("true-types     : %s", tim::demangle<wc_false_t>().c_str());
+    TIMEMORY_PRINT_HERE("false-types    : %s", tim::demangle<wc_true_t>().c_str());
+    TIMEMORY_PRINT_HERE("type-traits    : %s", tim::demangle<apitypes_t>().c_str());
     puts("");
 
     EXPECT_FALSE(trait::runtime_enabled<wall_clock>::get());

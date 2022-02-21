@@ -277,7 +277,8 @@ public:
                 ar(cereal::make_nvp(data_labels().at(i).c_str(), m_data.at(i)));
             } catch(cereal::Exception& e)
             {
-                PRINT_HERE("Warning! '%s': %s\n", data_labels().at(i).c_str(), e.what());
+                TIMEMORY_PRINT_HERE("Warning! '%s': %s\n", data_labels().at(i).c_str(),
+                                    e.what());
             }
         }
     }

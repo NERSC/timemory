@@ -293,7 +293,8 @@ papi_common::initialize()
         if(is_running<Tp>())
         {
             if(_debug || _verbose > 0)
-                PRINT_HERE("papi event set %i is already running", event_set<Tp>());
+                TIMEMORY_PRINT_HERE("papi event set %i is already running",
+                                    event_set<Tp>());
             return;
         }
         auto& _event_set = event_set<Tp>();
@@ -301,7 +302,7 @@ papi_common::initialize()
         if(!_events.empty())
         {
             if(_debug || _verbose > 1)
-                PRINT_HERE("configuring %i papi events", (int) _events.size());
+                TIMEMORY_PRINT_HERE("configuring %i papi events", (int) _events.size());
             papi::create_event_set(&_event_set, settings::papi_multiplexing());
             papi::add_events(_event_set, _events.data(), _events.size());
             if(settings::papi_overflow() > 0)
@@ -320,8 +321,9 @@ papi_common::initialize()
         }
         if(!_events.empty() && !is_configured<Tp>())
         {
-            CONDITIONAL_PRINT_HERE(!_quiet, "Warning! Configuring %i papi events failed",
-                                   (int) _events.size());
+            TIMEMORY_CONDITIONAL_PRINT_HERE(!_quiet,
+                                            "Warning! Configuring %i papi events failed",
+                                            (int) _events.size());
         }
     }
 }

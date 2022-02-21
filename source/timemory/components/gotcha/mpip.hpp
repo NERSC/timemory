@@ -189,7 +189,7 @@ tim::component::activate_mpip()
             ss << "timemory-mpip-" << demangle<Toolset>() << "-" << demangle<Tag>();
             return ss.str();
         }();
-        DEBUG_PRINT_HERE("Adding cleanup for %s", _label.c_str());
+        TIMEMORY_DEBUG_PRINT_HERE("Adding cleanup for %s", _label.c_str());
         tim::manager::instance()->add_cleanup(_label, cleanup_functor);
         return 1;
     }
@@ -213,7 +213,7 @@ tim::component::deactivate_mpip(uint64_t id)
             ss << "timemory-mpip-" << demangle<Toolset>() << "-" << demangle<Tag>();
             return ss.str();
         }();
-        DEBUG_PRINT_HERE("Removing cleanup for %s", _label.c_str());
+        TIMEMORY_DEBUG_PRINT_HERE("Removing cleanup for %s", _label.c_str());
         tim::manager::instance()->cleanup(_label);
         return 0;
     }

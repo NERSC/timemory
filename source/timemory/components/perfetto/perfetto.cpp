@@ -75,7 +75,7 @@ void
 perfetto_trace::global_init()
 {
 #if defined(TIMEMORY_USE_PERFETTO)
-    DEBUG_PRINT_HERE("Initializing %s", label().c_str());
+    TIMEMORY_DEBUG_PRINT_HERE("Initializing %s", label().c_str());
     if(get_config().session)
         return;
 
@@ -136,7 +136,7 @@ void
 perfetto_trace::global_finalize()
 {
 #if defined(TIMEMORY_USE_PERFETTO)
-    DEBUG_PRINT_HERE("Finalizing %s", label().c_str());
+    TIMEMORY_DEBUG_PRINT_HERE("Finalizing %s", label().c_str());
     dmp::barrier();
 
     // Make sure the last event is closed for this example.

@@ -256,14 +256,14 @@ generate(py::module& _pymod)
             }
         }
 
-        DEBUG_PRINT_HERE("%s", "starting loop");
+        TIMEMORY_DEBUG_PRINT_HERE("%s", "starting loop");
         for(const auto& itr : _obj->ordering())
         {
-            DEBUG_PRINT_HERE("searching for %s", itr.c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("searching for %s", itr.c_str());
             auto sitr = _obj->find(itr);
             if(sitr != _obj->end() && sitr->second)
             {
-                DEBUG_PRINT_HERE("adding args for %s", sitr->first.data());
+                TIMEMORY_DEBUG_PRINT_HERE("adding args for %s", sitr->first.data());
                 bool _add = true;
                 if(!fields.empty())
                 {
@@ -301,7 +301,7 @@ generate(py::module& _pymod)
                 auto vec = tim::delimit(str, " \t;:");
                 for(auto itr : vec)
                 {
-                    DEBUG_PRINT_HERE("Processing: %s", itr.c_str());
+                    TIMEMORY_DEBUG_PRINT_HERE("Processing: %s", itr.c_str());
                     auto _pos = itr.find('=');
                     auto _key = itr.substr(0, _pos);
                     auto _val = (_pos == std::string::npos) ? "" : itr.substr(_pos + 1);

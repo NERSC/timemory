@@ -372,7 +372,7 @@ base<Tp, Value>::get_opaque(scope::config _scope)
 
     _obj.m_setup = [](void* v_result, string_view_cref_t _prefix,
                       scope::config arg_scope) {
-        DEBUG_PRINT_HERE("Setting up %s", demangle<Tp>().c_str());
+        TIMEMORY_DEBUG_PRINT_HERE("Setting up %s", demangle<Tp>().c_str());
         Tp* _result = static_cast<Tp*>(v_result);
         if(!_result)
             _result = new Tp{};
@@ -385,7 +385,7 @@ base<Tp, Value>::get_opaque(scope::config _scope)
                            scope::config arg_scope) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Pushing %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Pushing %s", demangle<Tp>().c_str());
             auto _hash   = add_hash_id(_prefix);
             Tp*  _result = static_cast<Tp*>(v_result);
             invoke::push<TIMEMORY_API>(std::tie(*_result), _scope + arg_scope, _hash);
@@ -395,7 +395,7 @@ base<Tp, Value>::get_opaque(scope::config _scope)
     _obj.m_sample = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Sampling %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Sampling %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             invoke::invoke<operation::sample, TIMEMORY_API>(std::tie(*_result));
         }
@@ -404,7 +404,7 @@ base<Tp, Value>::get_opaque(scope::config _scope)
     _obj.m_start = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Starting %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Starting %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             invoke::start<TIMEMORY_API>(std::tie(*_result));
         }
@@ -413,7 +413,7 @@ base<Tp, Value>::get_opaque(scope::config _scope)
     _obj.m_stop = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Stopping %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Stopping %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             invoke::stop<TIMEMORY_API>(std::tie(*_result));
         }
@@ -422,7 +422,7 @@ base<Tp, Value>::get_opaque(scope::config _scope)
     _obj.m_pop = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Popping %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Popping %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             invoke::pop<TIMEMORY_API>(std::tie(*_result));
         }
@@ -431,7 +431,7 @@ base<Tp, Value>::get_opaque(scope::config _scope)
     _obj.m_get = [_typeid_hash](void* v_result, void*& _ptr, size_t _hash) {
         if(_hash == _typeid_hash && v_result && !_ptr)
         {
-            DEBUG_PRINT_HERE("Getting %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Getting %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             // invoke::get<TIMEMORY_API>(std::tie(*_result), _ptr, _hash);
             // operation::get<Tp>{ *_result, _ptr, _hash };
@@ -442,7 +442,7 @@ base<Tp, Value>::get_opaque(scope::config _scope)
     _obj.m_del = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Deleting %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Deleting %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             delete _result;
         }
@@ -451,7 +451,7 @@ base<Tp, Value>::get_opaque(scope::config _scope)
     _obj.m_update_stats = [](void* v_result, bool _v) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Updating statistics %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Updating statistics %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             invoke::invoke<operation::add_statistics, TIMEMORY_API>(std::tie(*_result),
                                                                     _v);
@@ -475,7 +475,7 @@ base<Tp, void>::get_opaque(scope::config _scope)
 
     _obj.m_setup = [](void* v_result, string_view_cref_t _prefix,
                       scope::config arg_scope) {
-        DEBUG_PRINT_HERE("Setting up %s", demangle<Tp>().c_str());
+        TIMEMORY_DEBUG_PRINT_HERE("Setting up %s", demangle<Tp>().c_str());
         Tp* _result = static_cast<Tp*>(v_result);
         if(!_result)
             _result = new Tp{};
@@ -488,7 +488,7 @@ base<Tp, void>::get_opaque(scope::config _scope)
                            scope::config arg_scope) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Pushing %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Pushing %s", demangle<Tp>().c_str());
             auto _hash   = add_hash_id(_prefix);
             Tp*  _result = static_cast<Tp*>(v_result);
             invoke::push<TIMEMORY_API>(std::tie(*_result), _scope + arg_scope, _hash);
@@ -498,7 +498,7 @@ base<Tp, void>::get_opaque(scope::config _scope)
     _obj.m_sample = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Sampling %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Sampling %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             invoke::invoke<operation::sample, TIMEMORY_API>(std::tie(*_result));
         }
@@ -507,7 +507,7 @@ base<Tp, void>::get_opaque(scope::config _scope)
     _obj.m_start = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Starting %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Starting %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             invoke::start<TIMEMORY_API>(std::tie(*_result));
         }
@@ -516,7 +516,7 @@ base<Tp, void>::get_opaque(scope::config _scope)
     _obj.m_stop = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Stopping %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Stopping %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             invoke::stop<TIMEMORY_API>(std::tie(*_result));
         }
@@ -525,7 +525,7 @@ base<Tp, void>::get_opaque(scope::config _scope)
     _obj.m_pop = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Popping %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Popping %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             invoke::pop<TIMEMORY_API>(std::tie(*_result));
         }
@@ -534,7 +534,7 @@ base<Tp, void>::get_opaque(scope::config _scope)
     _obj.m_get = [_typeid_hash](void* v_result, void*& _ptr, size_t _hash) {
         if(_hash == _typeid_hash && v_result && !_ptr)
         {
-            DEBUG_PRINT_HERE("Getting %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Getting %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             invoke::invoke<operation::get, TIMEMORY_API>(std::tie(*_result), _ptr, _hash);
         }
@@ -543,7 +543,7 @@ base<Tp, void>::get_opaque(scope::config _scope)
     _obj.m_del = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Deleting %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Deleting %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             delete _result;
         }
@@ -552,7 +552,7 @@ base<Tp, void>::get_opaque(scope::config _scope)
     _obj.m_update_stats = [](void* v_result, bool _v) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Updating statistics %s", demangle<Tp>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Updating statistics %s", demangle<Tp>().c_str());
             Tp* _result = static_cast<Tp*>(v_result);
             invoke::invoke<operation::add_statistics, TIMEMORY_API>(std::tie(*_result),
                                                                     _v);

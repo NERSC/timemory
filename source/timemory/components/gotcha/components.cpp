@@ -603,7 +603,8 @@ gotcha<Nt, BundleT, DiffT>::wrap(Args... _args)
 
     if(!_func)
     {
-        PRINT_HERE("nullptr to original function! wrappee: %s", _data.tool_id.c_str());
+        TIMEMORY_PRINT_HERE("nullptr to original function! wrappee: %s",
+                            _data.tool_id.c_str());
         return Ret{};
     }
 
@@ -670,7 +671,7 @@ gotcha<Nt, BundleT, DiffT>::wrap(Args... _args)
     return _ret;
 #else
     consume_parameters(_args...);
-    PRINT_HERE("%s", "should not be here!");
+    TIMEMORY_PRINT_HERE("%s", "should not be here!");
 #endif
     return Ret{};
 }
@@ -696,7 +697,8 @@ gotcha<Nt, BundleT, DiffT>::wrap_void(Args... _args)
 
     if(!_func)
     {
-        PRINT_HERE("nullptr to original function! wrappee: %s", _data.tool_id.c_str());
+        TIMEMORY_PRINT_HERE("nullptr to original function! wrappee: %s",
+                            _data.tool_id.c_str());
         return;
     }
 
@@ -764,7 +766,7 @@ gotcha<Nt, BundleT, DiffT>::wrap_void(Args... _args)
     _data.ready = true;
 #else
     consume_parameters(_args...);
-    PRINT_HERE("%s", "should not be here!");
+    TIMEMORY_PRINT_HERE("%s", "should not be here!");
 #endif
 }
 
@@ -799,7 +801,7 @@ gotcha<Nt, BundleT, DiffT>::replace_func(Args... _args)
     return _ret;
 #else
     consume_parameters(_args...);
-    PRINT_HERE("%s", "should not be here!");
+    TIMEMORY_PRINT_HERE("%s", "should not be here!");
     return Ret{};
 #endif
 }
@@ -815,7 +817,7 @@ gotcha<Nt, BundleT, DiffT>::replace_void_func(Args... _args)
 #if defined(TIMEMORY_USE_GOTCHA)
     static auto& _data = get_data()[N];
 
-    // PRINT_HERE("%s", _data.tool_id.c_str());
+    // TIMEMORY_PRINT_HERE("%s", _data.tool_id.c_str());
 
     using func_t    = void (*)(Args...);
     using wrap_type = tim::component_tuple<operator_type>;
@@ -836,7 +838,7 @@ gotcha<Nt, BundleT, DiffT>::replace_void_func(Args... _args)
     }
 #else
     consume_parameters(_args...);
-    PRINT_HERE("%s", "should not be here!");
+    TIMEMORY_PRINT_HERE("%s", "should not be here!");
 #endif
 }
 

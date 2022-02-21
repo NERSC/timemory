@@ -634,8 +634,9 @@ public:
             auto _hash = add_hash_id(_key);
             if(_hash != m_hash)
             {
-                PRINT_HERE("Warning! Hash for '%s' (%llu) != %llu", _key.c_str(),
-                           (unsigned long long) _hash, (unsigned long long) m_hash);
+                TIMEMORY_PRINT_HERE("Warning! Hash for '%s' (%llu) != %llu", _key.c_str(),
+                                    (unsigned long long) _hash,
+                                    (unsigned long long) m_hash);
             }
         }
 

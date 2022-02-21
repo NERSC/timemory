@@ -275,8 +275,8 @@ struct caliper_config
         auto cnt = instance_tracker_t::start();
         if(cnt == 0)
         {
-            CONDITIONAL_PRINT_HERE(tim::settings::debug(), "%s",
-                                   "Starting Caliper ConfigManager");
+            TIMEMORY_CONDITIONAL_PRINT_HERE(tim::settings::debug(), "%s",
+                                            "Starting Caliper ConfigManager");
             get_manager().start();
         }
     }
@@ -286,8 +286,8 @@ struct caliper_config
         auto cnt = instance_tracker_t::stop();
         if(cnt == 0)
         {
-            CONDITIONAL_PRINT_HERE(tim::settings::debug(), "%s",
-                                   "Flushing Caliper ConfigManager");
+            TIMEMORY_CONDITIONAL_PRINT_HERE(tim::settings::debug(), "%s",
+                                            "Flushing Caliper ConfigManager");
             get_manager().flush();
         }
     }
@@ -319,14 +319,14 @@ struct caliper_marker
     {
         if(m_prefix == nullptr)
             return;
-        DEBUG_PRINT_HERE("'%s'", m_prefix);
+        TIMEMORY_DEBUG_PRINT_HERE("'%s'", m_prefix);
         cali_begin_string(m_id, m_prefix);
     }
     void stop()
     {
         if(m_prefix == nullptr)
             return;
-        DEBUG_PRINT_HERE("'%s'", m_prefix);
+        TIMEMORY_DEBUG_PRINT_HERE("'%s'", m_prefix);
         cali_safe_end_string(m_id, m_prefix);
     }
 
@@ -400,7 +400,7 @@ struct caliper_loop_marker
 
     void start()
     {
-        DEBUG_PRINT_HERE("%s", m_prefix);
+        TIMEMORY_DEBUG_PRINT_HERE("%s", m_prefix);
         cali_begin_string(m_id, m_prefix);
         m_id  = cali_make_loop_iteration_attribute(m_prefix);
         m_itr = 0;
@@ -409,19 +409,19 @@ struct caliper_loop_marker
 
     void mark_begin()
     {
-        DEBUG_PRINT_HERE("%s", m_prefix);
+        TIMEMORY_DEBUG_PRINT_HERE("%s", m_prefix);
         cali_begin_int(m_id, m_itr++);
     }
     void mark_end()
     {
-        DEBUG_PRINT_HERE("%s", m_prefix);
+        TIMEMORY_DEBUG_PRINT_HERE("%s", m_prefix);
         cali_end(m_id);
     }
 
     template <typename T, enable_if_t<std::is_integral<T>::value, int> = 0>
     void mark_begin(T itr)
     {
-        DEBUG_PRINT_HERE("%s @ %i", m_prefix, (int) itr);
+        TIMEMORY_DEBUG_PRINT_HERE("%s @ %i", m_prefix, (int) itr);
         m_itr = itr;
         cali_begin_int(m_id, m_itr++);
     }
@@ -429,14 +429,14 @@ struct caliper_loop_marker
     template <typename T, enable_if_t<std::is_integral<T>::value, int> = 0>
     void mark_end(T)
     {
-        DEBUG_PRINT_HERE("%s @ %i", m_prefix, (int) m_itr);
+        TIMEMORY_DEBUG_PRINT_HERE("%s @ %i", m_prefix, (int) m_itr);
         cali_end(m_id);
     }
 
     template <typename T, enable_if_t<std::is_integral<T>::value, int> = 0>
     tim::scope::destructor record(T itr)
     {
-        DEBUG_PRINT_HERE("%s @ %i", m_prefix, (int) itr);
+        TIMEMORY_DEBUG_PRINT_HERE("%s @ %i", m_prefix, (int) itr);
         m_itr = itr;
         cali_begin_int(m_id, m_itr++);
         return tim::scope::destructor([=]() { cali_end(m_id); });

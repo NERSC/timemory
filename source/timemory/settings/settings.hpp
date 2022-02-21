@@ -507,7 +507,7 @@ settings::pop()
     auto& _stack = get_stack<Tag>();
     if(_stack.empty())
     {
-        PRINT_HERE("%s", "Ignoring settings::pop() on empty stack");
+        TIMEMORY_PRINT_HERE("%s", "Ignoring settings::pop() on empty stack");
         return shared_instance<Tag>();
     }
 
@@ -748,7 +748,8 @@ settings::update(const std::string& _key, const std::string& _val, bool _exact)
     if(itr == m_data.end())
     {
         if(get_verbose() > 0 || get_debug())
-            PRINT_HERE("Key: \"%s\" did not match any known setting", _key.c_str());
+            TIMEMORY_PRINT_HERE("Key: \"%s\" did not match any known setting",
+                                _key.c_str());
         return false;
     }
 

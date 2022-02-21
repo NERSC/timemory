@@ -578,7 +578,8 @@ print<Tp, true>::read_json()
                 ia->finishNode();
             } catch(tim::cereal::Exception& e)
             {
-                PRINT_HERE("Exception reading %s :: %s", json_inpfname.c_str(), e.what());
+                TIMEMORY_PRINT_HERE("Exception reading %s :: %s", json_inpfname.c_str(),
+                                    e.what());
 #if defined(TIMEMORY_INTERNAL_TESTING)
                 TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(true, 8);
                 throw std::runtime_error("error reading json");

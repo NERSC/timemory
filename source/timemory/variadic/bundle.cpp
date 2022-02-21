@@ -241,7 +241,7 @@ bundle<Tag, BundleT, TupleT>::~bundle()
 #if defined(DEBUG) && !defined(NDEBUG)
         if(tim::settings::debug() && tim::settings::verbose() > 4)
         {
-            PRINT_HERE("%s", "deleting components");
+            TIMEMORY_PRINT_HERE("%s", "deleting components");
         }
 #endif
         invoke::destroy<Tag>(m_data);
@@ -1154,8 +1154,8 @@ bundle<Tag, BundleT, TupleT>::serialize(Archive& ar, const unsigned int)
         auto _hash = add_hash_id(_key);
         if(_hash != m_hash)
         {
-            PRINT_HERE("Warning! Hash for '%s' (%llu) != %llu", _key.c_str(),
-                       (unsigned long long) _hash, (unsigned long long) m_hash);
+            TIMEMORY_PRINT_HERE("Warning! Hash for '%s' (%llu) != %llu", _key.c_str(),
+                                (unsigned long long) _hash, (unsigned long long) m_hash);
         }
     }
 

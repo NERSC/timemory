@@ -86,7 +86,7 @@ public:
 
     static void reset()
     {
-        DEBUG_PRINT_HERE("size = %lu", (unsigned long) size());
+        TIMEMORY_DEBUG_PRINT_HERE("size = %lu", (unsigned long) size());
         type::reset();
     }
 
@@ -174,7 +174,8 @@ generate(
                 std::string _slist{};
                 for(auto& itr : components)
                     _slist += ", " + _enum2str[itr];
-                PRINT_HERE("configuring pybundle with [%s]", _slist.substr(2).c_str());
+                TIMEMORY_PRINT_HERE("configuring pybundle with [%s]",
+                                    _slist.substr(2).c_str());
             }
 
             _scope_set(flat_profile, timeline_profile);
@@ -190,9 +191,10 @@ generate(
             if(tim::settings::debug() || tim::settings::verbose() > 3)
             {
                 auto fsize = components.size();
-                PRINT_HERE("final size: %lu, input size: %lu, components size: %lu\n",
-                           (unsigned long) fsize, (unsigned long) isize,
-                           (unsigned long) components.size());
+                TIMEMORY_PRINT_HERE(
+                    "final size: %lu, input size: %lu, components size: %lu\n",
+                    (unsigned long) fsize, (unsigned long) isize,
+                    (unsigned long) components.size());
             }
         } catch(py::cast_error& e)
         {

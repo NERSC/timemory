@@ -68,9 +68,9 @@ papi_common::initialize_papi()
     {
         if(!settings::papi_quiet() && (settings::debug() || settings::verbose() > 2))
         {
-            PRINT_HERE("Initializing papi (initialized: %s, is working: %s)",
-                       state().is_initialized ? "y" : "n",
-                       state().is_working ? "y" : "n");
+            TIMEMORY_PRINT_HERE("Initializing papi (initialized: %s, is working: %s)",
+                                state().is_initialized ? "y" : "n",
+                                state().is_working ? "y" : "n");
         }
         papi::init();
         papi::register_thread();

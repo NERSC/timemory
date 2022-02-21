@@ -69,12 +69,12 @@ record_statistics<CompT, Tp>::operator()(statistics<Tp>& _stats, const CompT& _o
         }
         else
         {
-            CONDITIONAL_PRINT_HERE(settings::debug(),
-                                   "Updating statistics<%s> skipped for %s. Laps: %lu > "
-                                   "1",
-                                   demangle<Tp>().c_str(),
-                                   demangle<component_type>().c_str(),
-                                   (unsigned long) _obj.get_laps());
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                settings::debug(),
+                "Updating statistics<%s> skipped for %s. Laps: %lu > "
+                "1",
+                demangle<Tp>().c_str(), demangle<component_type>().c_str(),
+                (unsigned long) _obj.get_laps());
         }
     }
     else
@@ -209,8 +209,8 @@ add_statistics<T>::operator()(const U& rhs, StatsT& stats, bool _last,
                   "implicit conversion, set trait::permissive_statistics "
                   "to true_type for component");
     using stats_policy_type = policy::record_statistics<U>;
-    DEBUG_PRINT_HERE("%s :: updating %s (accum: %s)", demangle<U>().c_str(),
-                     demangle<StatsT>().c_str(), (_last) ? "y" : "n");
+    TIMEMORY_DEBUG_PRINT_HERE("%s :: updating %s (accum: %s)", demangle<U>().c_str(),
+                              demangle<StatsT>().c_str(), (_last) ? "y" : "n");
     stats_policy_type{}(stats, rhs, _last);
 }
 //

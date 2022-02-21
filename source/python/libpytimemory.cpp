@@ -226,7 +226,7 @@ PYBIND11_MODULE(libpytimemory, timemory)
     if(_settings)
     {
         if(_settings->get_debug() || _settings->get_verbose() > 3)
-            PRINT_HERE("%s", "");
+            TIMEMORY_PRINT_HERE("%s", "");
         //
         if(_settings->get_enable_signal_handler())
         {
@@ -622,7 +622,7 @@ PYBIND11_MODULE(libpytimemory, timemory)
                 }
                 std::cerr << "\n" << std::flush;
 #endif
-                PRINT_HERE("ERROR: %s", e.what());
+                TIMEMORY_PRINT_HERE("ERROR: %s", e.what());
             }
         }
     };
@@ -651,7 +651,7 @@ PYBIND11_MODULE(libpytimemory, timemory)
             _argd(_argc, _argv);
         } catch(std::exception& e)
         {
-            PRINT_HERE("ERROR: %s", e.what());
+            TIMEMORY_PRINT_HERE("ERROR: %s", e.what());
         }
     };
     //----------------------------------------------------------------------------------//
@@ -661,7 +661,7 @@ PYBIND11_MODULE(libpytimemory, timemory)
             tim::mpi::finalize();
         } catch(std::exception& e)
         {
-            PRINT_HERE("ERROR: %s", e.what());
+            TIMEMORY_PRINT_HERE("ERROR: %s", e.what());
         }
     };
     //----------------------------------------------------------------------------------//
@@ -671,7 +671,7 @@ PYBIND11_MODULE(libpytimemory, timemory)
             tim::upc::initialize();
         } catch(std::exception& e)
         {
-            PRINT_HERE("ERROR: %s", e.what());
+            TIMEMORY_PRINT_HERE("ERROR: %s", e.what());
         }
     };
     //----------------------------------------------------------------------------------//
@@ -681,7 +681,7 @@ PYBIND11_MODULE(libpytimemory, timemory)
             tim::mpi::finalize();
         } catch(std::exception& e)
         {
-            PRINT_HERE("ERROR: %s", e.what());
+            TIMEMORY_PRINT_HERE("ERROR: %s", e.what());
         }
     };
     //----------------------------------------------------------------------------------//
@@ -867,8 +867,8 @@ PYBIND11_MODULE(libpytimemory, timemory)
             {
                 const auto& _key   = itr.first;
                 const auto& _value = itr.second;
-                DEBUG_PRINT_HERE("starting %s : %s", _key.c_str(),
-                                 (_value) ? "yes" : "no");
+                TIMEMORY_DEBUG_PRINT_HERE("starting %s : %s", _key.c_str(),
+                                          (_value) ? "yes" : "no");
                 if(PyProfilingIndex_names.at(PyProfilingIndex_MPIP).count(_key) > 0)
                 {
                     if(_value)

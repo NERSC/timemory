@@ -112,13 +112,13 @@ mpi_get<Type, true>::operator()(distrib_type& results)
     auto& data = *m_storage;
 #if !defined(TIMEMORY_USE_MPI)
     if(settings::debug())
-        PRINT_HERE("%s", "timemory not using MPI");
+        TIMEMORY_PRINT_HERE("%s", "timemory not using MPI");
 
     results = distrib_type{};
     results.emplace_back(std::move(data.get()));
 #else
     if(settings::debug())
-        PRINT_HERE("%s", "timemory using MPI");
+        TIMEMORY_PRINT_HERE("%s", "timemory using MPI");
 
     // not yet implemented
     // auto comm =
@@ -214,9 +214,10 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         auto init_size = get_num_records(results);
         if(settings::debug() || settings::verbose() > 3)
         {
-            PRINT_HERE("[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks",
-                       demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
-                       comm_rank, init_size, comm_size);
+            TIMEMORY_PRINT_HERE(
+                "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks",
+                demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                comm_rank, init_size, comm_size);
         }
 
         auto _collapsed = distrib_type{};
@@ -242,10 +243,11 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         if(settings::debug() || settings::verbose() > 3)
         {
             auto fini_size = get_num_records(results);
-            PRINT_HERE("[%s][pid=%i][rank=%i]> collapsed %i records into %i records "
-                       "from %i ranks",
-                       demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
-                       comm_rank, init_size, fini_size, comm_size);
+            TIMEMORY_PRINT_HERE(
+                "[%s][pid=%i][rank=%i]> collapsed %i records into %i records "
+                "from %i ranks",
+                demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                comm_rank, init_size, fini_size, comm_size);
         }
     }
     else if(comm_rank == 0 && settings::collapse_processes() &&
@@ -258,10 +260,11 @@ mpi_get<Type, true>::operator()(distrib_type& results)
 
         if(settings::debug() || settings::verbose() > 3)
         {
-            PRINT_HERE("[%s][pid=%i][rank=%i]> node_count = %i, comm_size = %i, bins = "
-                       "%i, bin size = %i",
-                       demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
-                       comm_rank, settings::node_count(), comm_size, bins, bsize);
+            TIMEMORY_PRINT_HERE(
+                "[%s][pid=%i][rank=%i]> node_count = %i, comm_size = %i, bins = "
+                "%i, bin size = %i",
+                demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                comm_rank, settings::node_count(), comm_size, bins, bsize);
         }
 
         // generate a map of the ranks to the node ids
@@ -272,9 +275,9 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         {
             if(settings::debug())
             {
-                PRINT_HERE("[%s][pid=%i][rank=%i]> adding rank %i to bin %i",
-                           demangle<mpi_get<Type, true>>().c_str(),
-                           (int) process::get_id(), comm_rank, i, midx);
+                TIMEMORY_PRINT_HERE("[%s][pid=%i][rank=%i]> adding rank %i to bin %i",
+                                    demangle<mpi_get<Type, true>>().c_str(),
+                                    (int) process::get_id(), comm_rank, i, midx);
             }
 
             binmap[midx].insert(i);
@@ -290,10 +293,11 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         auto init_size = get_num_records(results);
         if(settings::debug() || settings::verbose() > 3)
         {
-            PRINT_HERE("[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks into "
-                       "%i bins",
-                       demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
-                       comm_rank, init_size, comm_size, (int) binmap.size());
+            TIMEMORY_PRINT_HERE(
+                "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks into "
+                "%i bins",
+                demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                comm_rank, init_size, comm_size, (int) binmap.size());
         }
 
         assert((int32_t) binmap.size() <= (int32_t) settings::node_count());
@@ -319,19 +323,20 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         if(settings::debug() || settings::verbose() > 3)
         {
             auto fini_size = get_num_records(results);
-            PRINT_HERE("[%s][pid=%i][rank=%i]> collapsed %i records into %i records "
-                       "and %i bins",
-                       demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
-                       comm_rank, init_size, fini_size, (int) results.size());
+            TIMEMORY_PRINT_HERE(
+                "[%s][pid=%i][rank=%i]> collapsed %i records into %i records "
+                "and %i bins",
+                demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                comm_rank, init_size, fini_size, (int) results.size());
         }
     }
 
     if(settings::debug() || settings::verbose() > 1)
     {
         auto ret_size = get_num_records(results);
-        PRINT_HERE("[%s][pid=%i]> %i total records on rank %i of %i",
-                   demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
-                   ret_size, comm_rank, comm_size);
+        TIMEMORY_PRINT_HERE("[%s][pid=%i]> %i total records on rank %i of %i",
+                            demangle<mpi_get<Type, true>>().c_str(),
+                            (int) process::get_id(), ret_size, comm_rank, comm_size);
     }
 
 #endif
@@ -389,10 +394,10 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
 {
 #if !defined(TIMEMORY_USE_MPI)
     if(settings::debug())
-        PRINT_HERE("%s", "timemory not using MPI");
+        TIMEMORY_PRINT_HERE("%s", "timemory not using MPI");
     consume_parameters(dst, inp, functor);
 #else
-    CONDITIONAL_PRINT_HERE(settings::debug(), "%s", "timemory using MPI");
+    TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "%s", "timemory using MPI");
 
     auto comm = mpi::comm_world_v;
     mpi::barrier(comm);
@@ -400,8 +405,9 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
     int comm_rank = mpi::rank(comm);
     int comm_size = mpi::size(comm);
 
-    CONDITIONAL_PRINT_HERE(settings::debug(), "timemory using MPI [rank: %i, size: %i]",
-                           comm_rank, comm_size);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(),
+                                    "timemory using MPI [rank: %i, size: %i]", comm_rank,
+                                    comm_size);
 
     //------------------------------------------------------------------------------//
     //  Used to convert a result to a serialization
@@ -413,8 +419,8 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
                                              TIMEMORY_API>::get(ss);
             (*oa)(cereal::make_nvp("data", src));
         }
-        CONDITIONAL_PRINT_HERE(settings::debug(), "sent data [rank: %i] :: %lu",
-                               comm_rank, ss.str().length());
+        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "sent data [rank: %i] :: %lu",
+                                        comm_rank, ss.str().length());
         return ss.str();
     };
 
@@ -422,8 +428,8 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
     //  Used to convert the serialization to a result
     //
     auto recv_serialize = [&](const std::string& src) {
-        CONDITIONAL_PRINT_HERE(settings::debug(), "recv data [rank: %i] :: %lu",
-                               comm_rank, src.length());
+        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "recv data [rank: %i] :: %lu",
+                                        comm_rank, src.length());
         Type              ret;
         std::stringstream ss;
         ss << src;
@@ -453,11 +459,11 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         for(int i = 1; i < comm_size; ++i)
         {
             std::string str;
-            CONDITIONAL_PRINT_HERE(settings::debug(), "[RECV: %i]> starting %i",
-                                   comm_rank, i);
+            TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "[RECV: %i]> starting %i",
+                                            comm_rank, i);
             mpi::recv(str, i, 0, comm);
-            CONDITIONAL_PRINT_HERE(settings::debug(), "[RECV: %i]> completed %i",
-                                   comm_rank, i);
+            TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "[RECV: %i]> completed %i",
+                                            comm_rank, i);
             dst.at(i) = recv_serialize(str);
         }
         dst.at(0) = inp;
@@ -467,9 +473,11 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         //
         //  The non-root rank sends its data to the root rank
         //
-        CONDITIONAL_PRINT_HERE(settings::debug(), "[SEND: %i]> starting", comm_rank);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "[SEND: %i]> starting",
+                                        comm_rank);
         mpi::send(str_ret, 0, 0, comm);
-        CONDITIONAL_PRINT_HERE(settings::debug(), "[SEND: %i]> completed", comm_rank);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "[SEND: %i]> completed",
+                                        comm_rank);
         dst.clear();
     }
 
@@ -479,7 +487,7 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
     if(settings::collapse_processes() && comm_rank == 0)
     {
         auto init_size = get_num_records(dst);
-        CONDITIONAL_PRINT_HERE(
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
             settings::debug() || settings::verbose() > 3,
             "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks",
             demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
@@ -501,7 +509,7 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         // assign dst to collapsed entry
         dst = _dst;
 
-        CONDITIONAL_PRINT_HERE(
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
             settings::debug() || settings::verbose() > 3,
             "[%s][pid=%i][rank=%i]> collapsed %i records into %i records "
             "from %i ranks",
@@ -516,7 +524,7 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         int32_t bsize = comm_size / settings::node_count() + ((nmod == 0) ? 0 : 1);
         int32_t bins  = comm_size / bsize;
 
-        CONDITIONAL_PRINT_HERE(
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
             settings::debug() || settings::verbose() > 3,
             "[%s][pid=%i][rank=%i]> node_count = %i, comm_size = %i, bins = "
             "%i, bin size = %i",
@@ -529,10 +537,10 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         std::map<int32_t, std::set<int32_t>> binmap;
         for(int32_t i = 0; i < comm_size; ++i)
         {
-            CONDITIONAL_PRINT_HERE(settings::debug(),
-                                   "[%s][pid=%i][rank=%i]> adding rank %i to bin %i",
-                                   demangle<mpi_get<Type, true>>().c_str(),
-                                   (int) process::get_id(), comm_rank, i, midx);
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                settings::debug(), "[%s][pid=%i][rank=%i]> adding rank %i to bin %i",
+                demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+                comm_rank, i, midx);
 
             binmap[midx].insert(i);
             // check to see if we reached the bin size
@@ -545,7 +553,7 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         }
 
         auto init_size = get_num_records(dst);
-        CONDITIONAL_PRINT_HERE(
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
             settings::debug() || settings::verbose() > 3,
             "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks into %i bins",
             demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
@@ -571,7 +579,7 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         // assign dst to collapsed entry
         dst = _dst;
 
-        CONDITIONAL_PRINT_HERE(
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
             settings::debug() || settings::verbose() > 3,
             "[%s][pid=%i][rank=%i]> collapsed %i records into %i records "
             "and %i bins",
@@ -580,11 +588,11 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
             (int) dst.size());
     }
 
-    CONDITIONAL_PRINT_HERE(settings::debug() || settings::verbose() > 1,
-                           "[%s][pid=%i]> %i total records on rank %i of %i",
-                           demangle<mpi_get<Type, true>>().c_str(),
-                           (int) process::get_id(), (int) get_num_records(dst),
-                           (int) comm_rank, (int) comm_size);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug() || settings::verbose() > 1,
+                                    "[%s][pid=%i]> %i total records on rank %i of %i",
+                                    demangle<mpi_get<Type, true>>().c_str(),
+                                    (int) process::get_id(), (int) get_num_records(dst),
+                                    (int) comm_rank, (int) comm_size);
 
 #endif
 }

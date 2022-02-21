@@ -68,7 +68,8 @@ template <typename Type>
 storage<Type, false>::storage()
 : base_type(singleton_t::is_master_thread(), instance_count()++, demangle<Type>())
 {
-    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "constructing %s", m_label.c_str());
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "constructing %s",
+                                    m_label.c_str());
     TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
         m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
     get_shared_manager();
@@ -82,7 +83,8 @@ template <typename Type>
 storage<Type, false>::~storage()
 {
     component::state<Type>::has_storage() = false;
-    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "destroying %s", m_label.c_str());
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "destroying %s",
+                                    m_label.c_str());
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -109,7 +111,8 @@ storage<Type, false>::initialize()
     if(m_initialized)
         return;
 
-    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "initializing %s", m_label.c_str());
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "initializing %s",
+                                    m_label.c_str());
     TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
         m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
 
@@ -142,7 +145,8 @@ storage<Type, false>::finalize()
     if(!m_initialized)
         return;
 
-    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "finalizing %s", m_label.c_str());
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "finalizing %s",
+                                    m_label.c_str());
 
     using fini_t = operation::fini<Type>;
     using ValueT = typename trait::collects_data<Type>::type;
@@ -256,8 +260,8 @@ storage<Type, false>::get_shared_manager()
                 auto _verb_v  = _settings->get_verbose();
                 if(_debug_v || _verb_v > 1)
                 {
-                    PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                               "calling singleton::reset(this)");
+                    TIMEMORY_PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
+                                        "calling singleton::reset(this)");
                 }
                 _instance->reset(_this_ptr);
                 _instance = this_type::get_singleton();
@@ -265,15 +269,16 @@ storage<Type, false>::get_shared_manager()
                 {
                     if(_debug_v || _verb_v > 1)
                     {
-                        PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                                   "calling singleton::reset()");
+                        TIMEMORY_PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
+                                            "calling singleton::reset()");
                     }
                     _instance->reset();
                 }
             }
             else
             {
-                DEBUG_PRINT_HERE("[%s]> %p", demangle<Type>().c_str(), (void*) _instance);
+                TIMEMORY_DEBUG_PRINT_HERE("[%s]> %p", demangle<Type>().c_str(),
+                                          (void*) _instance);
             }
             if(_is_master)
                 trait::runtime_enabled<Type>::set(false);

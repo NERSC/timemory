@@ -782,7 +782,7 @@ template <typename Tp, enable_if_t<Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::start()
 {
-    CONDITIONAL_PRINT_HERE(m_verbose > 0, "starting (index: %zu)", m_idx);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0, "starting (index: %zu)", m_idx);
     auto cnt = tracker_type::start();
     base_type::set_started();
     for(auto& itr : m_data)
@@ -798,7 +798,7 @@ template <typename Tp, enable_if_t<Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::stop()
 {
-    CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping (index: %zu)", m_idx);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping (index: %zu)", m_idx);
     auto cnt = tracker_type::stop();
     base_type::set_stopped();
     for(auto& itr : m_data)
@@ -814,11 +814,12 @@ template <typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::start()
 {
-    CONDITIONAL_PRINT_HERE(m_verbose > 0, "starting (index: %zu)", m_idx);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0, "starting (index: %zu)", m_idx);
     auto cnt = tracker_type::start();
     if(cnt.second == 0 && !m_alloc.is_alive())
     {
-        CONDITIONAL_PRINT_HERE(m_verbose > 0, "restarting allocator (index: %zu)", m_idx);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0,
+                                        "restarting allocator (index: %zu)", m_idx);
         m_alloc.restart(this);
     }
     base_type::set_started();
@@ -833,7 +834,7 @@ template <typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::stop()
 {
-    CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping (index: %zu)", m_idx);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping (index: %zu)", m_idx);
     auto cnt = tracker_type::stop();
     base_type::set_stopped();
     for(auto& itr : m_data)
@@ -857,13 +858,13 @@ sampler<CompT<Types...>, N, SigIds...>::stop(std::set<int> _signals)
         TIMEMORY_FOLD_EXPRESSION(_signals.emplace(SigIds));
     }
 
-    CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping %zu signals (index: %zu)",
-                           _signals.size(), m_idx);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping %zu signals (index: %zu)",
+                                    _signals.size(), m_idx);
 
     for(auto itr : _signals)
     {
-        CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping signal %i (index: %zu)", itr,
-                               m_idx);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping signal %i (index: %zu)",
+                                        itr, m_idx);
         auto&       _original_it = m_timer_data.m_original_itimerval[itr];
         itimerval_t _curr;
         auto        _itimer = get_itimer(itr);
@@ -932,11 +933,12 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
     // prevent re-entry from different signals
     static thread_local semaphore_t _sem = []() {
         semaphore_t _v{};
-        CONDITIONAL_PRINT_HERE(settings::debug(), "initializing %s", "semaphore");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "initializing %s",
+                                        "semaphore");
         int _err = 0;
         TIMEMORY_SEMAPHORE_HANDLE_EINTR(sem_init, _err, &_v, 0, 1)
         TIMEMORY_SEMAPHORE_CHECK_MSG(_err, "sem_init(&_v, 0, 1)")
-        CONDITIONAL_PRINT_HERE(settings::debug(), "%s initialized", "semaphore");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "%s initialized", "semaphore");
         return _v;
     }();
 
@@ -947,8 +949,8 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
 
         if(_err == EAGAIN)
         {
-            CONDITIONAL_PRINT_HERE(settings::debug(),
-                                   "Ignoring signal %i (raised while sampling)", signum);
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                settings::debug(), "Ignoring signal %i (raised while sampling)", signum);
             return;
         }
         else if(_err != 0)
@@ -965,8 +967,8 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
         if(!itr)
             continue;
 
-        CONDITIONAL_PRINT_HERE(itr->m_verbose > 1, "sampling signal %i (index: %zu)",
-                               signum, itr->m_idx);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
+            itr->m_verbose > 1, "sampling signal %i (index: %zu)", signum, itr->m_idx);
 
         IF_CONSTEXPR(trait::check_signals<this_type>::value)
         {
@@ -976,7 +978,7 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
             }
             else if(itr->is_bad(signum))
             {
-                CONDITIONAL_PRINT_HERE(
+                TIMEMORY_CONDITIONAL_PRINT_HERE(
                     itr->m_verbose >= 0,
                     "sampler instance received unexpected signal %i (index: %zu)", signum,
                     itr->m_idx);
@@ -1000,19 +1002,20 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t* _info, vo
     // prevent re-entry from different signals
     static thread_local semaphore_t _sem = []() {
         semaphore_t _v{};
-        CONDITIONAL_PRINT_HERE(settings::debug(), "initializing %s", "semaphore");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "initializing %s",
+                                        "semaphore");
         int _err = 0;
         TIMEMORY_SEMAPHORE_HANDLE_EINTR(sem_init, _err, &_v, 0, 1)
         TIMEMORY_SEMAPHORE_CHECK_MSG(_err, "sem_init(&_v, 0, 1)")
-        CONDITIONAL_PRINT_HERE(settings::debug(), "%s initialized", "semaphore");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "%s initialized", "semaphore");
         return _v;
     }();
     static thread_local auto _sem_dtor = scope::destructor{ []() {
-        CONDITIONAL_PRINT_HERE(settings::debug(), "destroying %s", "semaphore");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "destroying %s", "semaphore");
         int                  _err      = 0;
         TIMEMORY_SEMAPHORE_HANDLE_EINTR(sem_destroy, _err, &_sem)
         TIMEMORY_SEMAPHORE_CHECK_MSG(_err, "sem_destroy(&_sem)")
-        CONDITIONAL_PRINT_HERE(settings::debug(), "%s destroyed", "semaphore");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "%s destroyed", "semaphore");
     } };
 
     IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
@@ -1022,8 +1025,8 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t* _info, vo
 
         if(_err == EAGAIN)
         {
-            CONDITIONAL_PRINT_HERE(settings::debug(),
-                                   "Ignoring signal %i (raised while sampling)", signum);
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                settings::debug(), "Ignoring signal %i (raised while sampling)", signum);
             return;
         }
         else if(_err != 0)
@@ -1040,8 +1043,8 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t* _info, vo
         if(!itr)
             continue;
 
-        CONDITIONAL_PRINT_HERE(itr->m_verbose > 1, "sampling signal %i (index: %zu)",
-                               signum, itr->m_idx);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
+            itr->m_verbose > 1, "sampling signal %i (index: %zu)", signum, itr->m_idx);
 
         IF_CONSTEXPR(trait::check_signals<this_type>::value)
         {
@@ -1051,7 +1054,7 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t* _info, vo
             }
             else if(itr->is_bad(signum))
             {
-                CONDITIONAL_PRINT_HERE(
+                TIMEMORY_CONDITIONAL_PRINT_HERE(
                     itr->m_verbose >= 0,
                     "sampler instance received unexpected signal %i (index: %zu)", signum,
                     itr->m_idx);
@@ -1075,7 +1078,8 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
 {
     _verbose = std::max<int>(_verbose, m_verbose);
 
-    CONDITIONAL_PRINT_HERE(_verbose > 1, "configuring sampler (index: %zu)", m_idx);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose > 1, "configuring sampler (index: %zu)",
+                                    m_idx);
 
     size_t wait_count = 0;
     {
@@ -1107,9 +1111,9 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
 
     if(!_signals.empty())
     {
-        CONDITIONAL_PRINT_HERE(_verbose > 1,
-                               "configuring %zu signal handlers (index: %zu)",
-                               _signals.size(), m_idx);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose > 1,
+                                        "configuring %zu signal handlers (index: %zu)",
+                                        _signals.size(), m_idx);
         auto& _custom_sa = m_timer_data.m_custom_sigaction;
 
         memset(&_custom_sa, 0, sizeof(_custom_sa));
@@ -1129,14 +1133,14 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
             // already active
             if(m_timer_data.m_active[itr])
             {
-                CONDITIONAL_PRINT_HERE(
+                TIMEMORY_CONDITIONAL_PRINT_HERE(
                     _verbose > 1, "handler for signal %i is already active (index: %zu)",
                     itr, m_idx);
                 continue;
             }
-            CONDITIONAL_PRINT_HERE(_verbose > 1,
-                                   "configuring handler for signal %i (index: %zu)", itr,
-                                   m_idx);
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                _verbose > 1, "configuring handler for signal %i (index: %zu)", itr,
+                m_idx);
 
             // get the associated itimer type
             auto _itimer = get_itimer(itr);
@@ -1175,8 +1179,8 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
         }
     }
 
-    CONDITIONAL_PRINT_HERE(_verbose > 1,
-                           "signal handler configuration complete (index: %zu)", m_idx);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(
+        _verbose > 1, "signal handler configuration complete (index: %zu)", m_idx);
 
     // unblock signals on thread after configuring
     if(!_signals.empty() && _unblock)

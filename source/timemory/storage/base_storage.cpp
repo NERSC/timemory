@@ -57,9 +57,9 @@ storage::storage(bool _is_master, int64_t _instance_id, std::string _label)
     if(m_is_master && m_instance_id > 0)
     {
         int _id = m_instance_id;
-        PRINT_HERE("%s: %i (%s)",
-                   "Error! base::storage is master but is not zero instance", _id,
-                   m_label.c_str());
+        TIMEMORY_PRINT_HERE("%s: %i (%s)",
+                            "Error! base::storage is master but is not zero instance",
+                            _id, m_label.c_str());
         if(m_instance_id > 10)
         {
             // at this point we have a recursive loop
@@ -70,23 +70,23 @@ storage::storage(bool _is_master, int64_t _instance_id, std::string _label)
     if(!m_is_master && m_instance_id == 0)
     {
         int _id = m_instance_id;
-        PRINT_HERE("%s: %i (%s)",
-                   "Warning! base::storage is not master but is zero instance", _id,
-                   m_label.c_str());
+        TIMEMORY_PRINT_HERE("%s: %i (%s)",
+                            "Warning! base::storage is not master but is zero instance",
+                            _id, m_label.c_str());
     }
 
-    CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "%s: %i (%s)",
-                           "base::storage instance created", (int) m_instance_id,
-                           m_label.c_str());
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "%s: %i (%s)",
+                                    "base::storage instance created", (int) m_instance_id,
+                                    m_label.c_str());
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_STORAGE_INLINE storage::~storage()
 {
-    CONDITIONAL_PRINT_HERE(m_settings->get_debug(),
-                           "base::storage instance %i deleted for %s",
-                           (int) m_instance_id, m_label.c_str());
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(),
+                                    "base::storage instance %i deleted for %s",
+                                    (int) m_instance_id, m_label.c_str());
 }
 //
 //--------------------------------------------------------------------------------------//

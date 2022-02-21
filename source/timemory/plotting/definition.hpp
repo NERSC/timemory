@@ -53,7 +53,7 @@ plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
     auto_lock_t lk(type_mutex<std::ostream>());
 
     if(settings::debug() || settings::verbose() > 2)
-        PRINT_HERE("%s", "");
+        TIMEMORY_PRINT_HERE("%s", "");
 
     if(settings::python_exe().empty())
     {
@@ -63,7 +63,7 @@ plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
     }
 
     if(settings::debug() || settings::verbose() > 2)
-        PRINT_HERE("%s", "");
+        TIMEMORY_PRINT_HERE("%s", "");
 
     const auto& _file = _json_file;
     {
@@ -98,7 +98,7 @@ plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
         cmd += " -e";
 
     if(settings::verbose() > 2 || settings::debug())
-        PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
+        TIMEMORY_PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
 
     std::stringstream _log{};
     auto              _success = launch_process(cmd.c_str(),

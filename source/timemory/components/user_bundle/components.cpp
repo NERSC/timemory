@@ -126,7 +126,8 @@ get_bundle_components(const std::vector<user_bundle_spec_t>& _priority)
     }
 
     auto _debug = (settings::instance()) ? (settings::instance()->get_debug()) : false;
-    CONDITIONAL_PRINT_HERE(_debug, "getting user bundle components: %s", _custom.c_str());
+    TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "getting user bundle components: %s",
+                                    _custom.c_str());
 
     return tim::enumerate_components(tim::delimit(_custom));
 }
@@ -228,7 +229,8 @@ user_bundle::configure(opaque_array_t& _data, typeid_vec_t& _typeids, mutex_t& _
             if(itr > 0 && contains(itr, _typeids))
             {
                 if(settings::verbose() > 1 || settings::debug())
-                    PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
+                    TIMEMORY_PRINT_HERE("Skipping duplicate typeid: %lu",
+                                        (unsigned long) itr);
                 return;
             }
             sum += itr;
@@ -237,7 +239,7 @@ user_bundle::configure(opaque_array_t& _data, typeid_vec_t& _typeids, mutex_t& _
         }
         if(sum == 0)
         {
-            PRINT_HERE("No typeids. Sum: %lu", (unsigned long) sum);
+            TIMEMORY_PRINT_HERE("No typeids. Sum: %lu", (unsigned long) sum);
             return;
         }
         _data.emplace_back(std::move(obj));
@@ -340,7 +342,8 @@ user_bundle::insert(opaque&& obj, typeid_set_t&& _typeids)
             if(itr > 0 && contains(itr, m_typeids))
             {
                 if(settings::verbose() > 1 || settings::debug())
-                    PRINT_HERE("Skipping duplicate typeid: %lu", (unsigned long) itr);
+                    TIMEMORY_PRINT_HERE("Skipping duplicate typeid: %lu",
+                                        (unsigned long) itr);
                 return;
             }
             sum += itr;
@@ -349,7 +352,7 @@ user_bundle::insert(opaque&& obj, typeid_set_t&& _typeids)
         }
         if(sum == 0)
         {
-            PRINT_HERE("No typeids. Sum: %lu", (unsigned long) sum);
+            TIMEMORY_PRINT_HERE("No typeids. Sum: %lu", (unsigned long) sum);
             return;
         }
         m_bundle.emplace_back(std::move(obj));

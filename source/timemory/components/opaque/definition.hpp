@@ -108,7 +108,7 @@ get_opaque(scope::config _scope, Args... args)
 
     if(Toolset::size() == 0)
     {
-        DEBUG_PRINT_HERE("returning! %s is empty", demangle<Toolset>().c_str());
+        TIMEMORY_DEBUG_PRINT_HERE("returning! %s is empty", demangle<Toolset>().c_str());
         return opaque{};
     }
 
@@ -122,7 +122,7 @@ get_opaque(scope::config _scope, Args... args)
 
     auto _setup = [=](void* v_result, string_view_cref_t _prefix,
                       scope::config _arg_scope) {
-        DEBUG_PRINT_HERE("Setting up %s", demangle<Toolset>().c_str());
+        TIMEMORY_DEBUG_PRINT_HERE("Setting up %s", demangle<Toolset>().c_str());
         Toolset_t* _result = static_cast<Toolset_t*>(v_result);
         if(_result == nullptr)
         {
@@ -143,7 +143,7 @@ get_opaque(scope::config _scope, Args... args)
         v_result = _setup(v_result, _prefix, arg_scope);
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Pushing %s", demangle<Toolset>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Pushing %s", demangle<Toolset>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             _result->push();
         }
@@ -152,7 +152,7 @@ get_opaque(scope::config _scope, Args... args)
     _obj.m_sample = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Sampling %s", demangle<Toolset_t>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Sampling %s", demangle<Toolset_t>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             _result->sample();
         }
@@ -161,7 +161,7 @@ get_opaque(scope::config _scope, Args... args)
     _obj.m_start = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Starting %s", demangle<Toolset>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Starting %s", demangle<Toolset>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             _result->start();
         }
@@ -170,7 +170,7 @@ get_opaque(scope::config _scope, Args... args)
     _obj.m_stop = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Stopping %s", demangle<Toolset>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Stopping %s", demangle<Toolset>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             _result->stop();
         }
@@ -179,7 +179,7 @@ get_opaque(scope::config _scope, Args... args)
     _obj.m_pop = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Popping %s", demangle<Toolset>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Popping %s", demangle<Toolset>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             _result->pop();
         }
@@ -188,7 +188,7 @@ get_opaque(scope::config _scope, Args... args)
     _obj.m_get = [](void* v_result, void*& ptr, size_t _hash) {
         if(v_result && !ptr)
         {
-            DEBUG_PRINT_HERE("Getting %s", demangle<Toolset>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Getting %s", demangle<Toolset>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             _result->get(ptr, _hash);
         }
@@ -197,7 +197,7 @@ get_opaque(scope::config _scope, Args... args)
     _obj.m_del = [](void* v_result) {
         if(v_result)
         {
-            DEBUG_PRINT_HERE("Deleting %s", demangle<Toolset>().c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("Deleting %s", demangle<Toolset>().c_str());
             Toolset_t* _result = static_cast<Toolset_t*>(v_result);
             delete _result;
         }

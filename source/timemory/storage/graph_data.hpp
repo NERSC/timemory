@@ -117,10 +117,11 @@ public:
     {
         if(m_master)
         {
-            DEBUG_PRINT_HERE("[%s][%i]> synchronizing sea-level for depth = %i, master "
-                             "depth = %i",
-                             demangle<NodeT>().c_str(), (int) threading::get_id(),
-                             (int) depth(), (int) m_master->depth());
+            TIMEMORY_DEBUG_PRINT_HERE(
+                "[%s][%i]> synchronizing sea-level for depth = %i, master "
+                "depth = %i",
+                demangle<NodeT>().c_str(), (int) threading::get_id(), (int) depth(),
+                (int) m_master->depth());
             add_dummy();
         }
     }
@@ -149,9 +150,10 @@ public:
         if(depth() == m_master->depth())
             return;
 
-        DEBUG_PRINT_HERE("[%s][%i]> Adding dummy for depth = %i, master depth = %i",
-                         demangle<NodeT>().c_str(), (int) threading::get_id(),
-                         (int) depth(), (int) m_master->depth());
+        TIMEMORY_DEBUG_PRINT_HERE(
+            "[%s][%i]> Adding dummy for depth = %i, master depth = %i",
+            demangle<NodeT>().c_str(), (int) threading::get_id(), (int) depth(),
+            (int) m_master->depth());
 
         auto _current = m_master->current();
         auto _hash    = _current->hash();
