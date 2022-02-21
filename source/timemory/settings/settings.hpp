@@ -590,15 +590,33 @@ settings::load(ArchiveT& ar, unsigned int)
     map_type _data;
     for(const auto& itr : m_data)
         _data.insert({ std::string{ itr.first }, itr.second->clone() });
-    auto _map = get_serialize_map<ArchiveT>(data_type_list_t{});
+    auto _map             = get_serialize_map<ArchiveT>(data_type_list_t{});
+    bool _print_exception = (get_verbose() > 2 || get_debug());
+
+#    define TIMEMORY_SETTINGS_TRY_LOAD(...)                                              \
+        {                                                                                \
+            try                                                                          \
+            {                                                                            \
+                __VA_ARGS__;                                                             \
+            } catch(const cereal::Exception& _e)                                         \
+            {                                                                            \
+                if(_print_exception)                                                     \
+                    TIMEMORY_PRINT_HERE("%s", _e.what());                                \
+            }                                                                            \
+        }
+
     for(const auto& itr : _data)
     {
         auto mitr = _map.find(itr.second->get_type_index());
         if(mitr != _map.end())
-            mitr->second(ar, itr.second);
+        {
+            TIMEMORY_SETTINGS_TRY_LOAD(mitr->second(ar, itr.second));
+        }
     }
-    ar(cereal::make_nvp("command_line", m_command_line),
-       cereal::make_nvp("environment", m_environment));
+
+    TIMEMORY_SETTINGS_TRY_LOAD(ar(cereal::make_nvp("command_line", m_command_line)));
+    TIMEMORY_SETTINGS_TRY_LOAD(ar(cereal::make_nvp("environment", m_environment)));
+
     for(const auto& itr : _data)
     {
         auto ditr = m_data.find(itr.first);
@@ -612,6 +630,8 @@ settings::load(ArchiveT& ar, unsigned int)
             m_data.insert({ m_order.back(), itr.second });
         }
     }
+
+#    undef TIMEMORY_SETTINGS_TRY_LOAD
 #else
     consume_parameters(ar);
 #endif
