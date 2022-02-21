@@ -22,10 +22,10 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file mpl/types.hpp
- * \headerfile mpl/types.hpp "timemory/mpl/types.hpp"
+/** \file timemory/mpl/types.hpp
+ * \headerfile timemory/mpl/types.hpp "timemory/mpl/types.hpp"
  *
- * This is a declaration of all the operation structs.
+ * This is a declaration of all the type-trait structs.
  * Care should be taken to make sure that this includes a minimal
  * number of additional headers.
  *
@@ -35,6 +35,7 @@
 
 #include "timemory/api.hpp"
 #include "timemory/mpl/concepts.hpp"
+#include "timemory/mpl/macros.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <cstdint>
