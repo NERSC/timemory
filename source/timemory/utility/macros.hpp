@@ -225,16 +225,16 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
     fflush(stderr);
 }
 
-#if !defined(PRINT_HERE)
-#    define PRINT_HERE(...)                                                              \
+#if !defined(TIMEMORY_PRINT_HERE)
+#    define TIMEMORY_PRINT_HERE(...)                                                     \
         timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                             \
                             TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,  \
                             __FUNCTION__, __VA_ARGS__)
 #endif
 
-#if !defined(DEBUG_PRINT_HERE)
+#if !defined(TIMEMORY_DEBUG_PRINT_HERE)
 #    if defined(DEBUG)
-#        define DEBUG_PRINT_HERE(...)                                                    \
+#        define TIMEMORY_DEBUG_PRINT_HERE(...)                                           \
             if(::tim::settings::debug())                                                 \
             {                                                                            \
                 timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                     \
@@ -242,12 +242,12 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
                                     __LINE__, __FUNCTION__, __VA_ARGS__);                \
             }
 #    else
-#        define DEBUG_PRINT_HERE(...)
+#        define TIMEMORY_DEBUG_PRINT_HERE(...)
 #    endif
 #endif
 
-#if !defined(VERBOSE_PRINT_HERE)
-#    define VERBOSE_PRINT_HERE(VERBOSE_LEVEL, ...)                                       \
+#if !defined(TIMEMORY_VERBOSE_PRINT_HERE)
+#    define TIMEMORY_VERBOSE_PRINT_HERE(VERBOSE_LEVEL, ...)                              \
         if(::tim::settings::verbose() >= VERBOSE_LEVEL)                                  \
         {                                                                                \
             timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
@@ -256,8 +256,8 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
         }
 #endif
 
-#if !defined(CONDITIONAL_PRINT_HERE)
-#    define CONDITIONAL_PRINT_HERE(CONDITION, ...)                                       \
+#if !defined(TIMEMORY_CONDITIONAL_PRINT_HERE)
+#    define TIMEMORY_CONDITIONAL_PRINT_HERE(CONDITION, ...)                              \
         if(CONDITION)                                                                    \
         {                                                                                \
             timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
@@ -284,14 +284,14 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
         }
 #endif
 
-#if !defined(PRETTY_PRINT_HERE)
+#if !defined(TIMEMORY_PRETTY_PRINT_HERE)
 #    if defined(TIMEMORY_GNU_COMPILER) || defined(TIMEMORY_CLANG_COMPILER)
-#        define PRETTY_PRINT_HERE(...)                                                   \
+#        define TIMEMORY_PRETTY_PRINT_HERE(...)                                          \
             timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
                                 TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),        \
                                 __LINE__, __PRETTY_FUNCTION__, __VA_ARGS__)
 #    else
-#        define PRETTY_PRINT_HERE(...)                                                   \
+#        define TIMEMORY_PRETTY_PRINT_HERE(...)                                          \
             timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
                                 TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),        \
                                 __LINE__, __FUNCTION__, __VA_ARGS__)
@@ -313,6 +313,23 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
             timemory_print_demangled_backtrace<DEPTH>(std::cerr,                         \
                                                       TIMEMORY_PID_TID_STRING);          \
         }
+#endif
+
+// backwards compatibility
+#if !defined(PRINT_HERE)
+#    define PRINT_HERE(...) TIMEMORY_PRINT_HERE(__VA_ARGS__)
+#endif
+
+#if !defined(DEBUG_PRINT_HERE)
+#    define DEBUG_PRINT_HERE(...) TIMEMORY_DEBUG_PRINT_HERE(__VA_ARGS__)
+#endif
+
+#if !defined(VERBOSE_PRINT_HERE)
+#    define VERBOSE_PRINT_HERE(...) TIMEMORY_VERBOSE_PRINT_HERE(__VA_ARGS__)
+#endif
+
+#if !defined(CONDITIONAL_PRINT_HERE)
+#    define CONDITIONAL_PRINT_HERE(...) TIMEMORY_CONDITIONAL_PRINT_HERE(__VA_ARGS__)
 #endif
 
 #if defined(DEBUG)
