@@ -308,9 +308,9 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
     }
 
     parser->add_argument()
-        .names({ "--timemory-args" })
+        .names({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-args" })
         .description("A generic option for any setting. Each argument MUST be passed in "
-                     "form: 'NAME=VALUE'. E.g. --timemory-args "
+                     "form: 'NAME=VALUE'. E.g. --" TIMEMORY_SETTINGS_CONFIG_NAME "-args "
                      "\"papi_events=PAPI_TOT_INS,PAPI_TOT_CYC\" text_output=off")
         .action([&](parser_t& p) {
             // get the options
@@ -328,7 +328,7 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
                     if(!_settings->update(_key, _val, false))
                     {
                         std::cerr << "[timemory_argparse]> Warning! For "
-                                     "--timemory-args, key \""
+                                     "--" TIMEMORY_SETTINGS_CONFIG_NAME "-args, key \""
                                   << _key << "\" is not a recognized setting. \"" << _val
                                   << "\" was not applied." << std::endl;
                     }

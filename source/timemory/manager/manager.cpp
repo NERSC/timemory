@@ -29,6 +29,7 @@
 #include "timemory/manager/manager.hpp"
 
 #include "timemory/backends/process.hpp"
+#include "timemory/defines.h"
 #include "timemory/manager/macros.hpp"
 #include "timemory/manager/types.hpp"
 #include "timemory/operations/types/decode.hpp"
@@ -406,7 +407,7 @@ manager::write_metadata(std::ostream& ofs)
     // ensure json write final block during destruction before the file is closed
     using policy_type = policy::output_archive_t<manager>;
     auto oa           = policy_type::get(ofs);
-    oa->setNextName("timemory");
+    oa->setNextName(TIMEMORY_SETTINGS_CONFIG_NAME);
     oa->startNode();
     {
         oa->setNextName("metadata");
@@ -531,7 +532,7 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
         // ensure json write final block during destruction before the file is closed
         using policy_type = policy::output_archive_t<manager>;
         auto oa           = policy_type::get(hfs);
-        oa->setNextName("timemory");
+        oa->setNextName(TIMEMORY_SETTINGS_CONFIG_NAME);
         oa->startNode();
         {
             oa->setNextName("functions");
@@ -809,8 +810,9 @@ manager::get_communicator_group()
     int32_t mpi_node_default = mpi::size() / max_processes;
     if(mpi_node_default < 1)
         mpi_node_default = 1;
-    int32_t mpi_node_count = get_env<int32_t>("TIMEMORY_NODE_COUNT", mpi_node_default);
-    int32_t mpi_split_size = mpi::rank() / (mpi::size() / mpi_node_count);
+    int32_t mpi_node_count = get_env<int32_t>("TIMEMORY_NODE_COUNT",
+mpi_node_default); int32_t mpi_split_size = mpi::rank() / (mpi::size() /
+mpi_node_count);
 
     // Split the communicator based on the number of nodes and use the
     // original rank for ordering
@@ -827,11 +829,11 @@ manager::get_communicator_group()
         std::stringstream _info;
         _info << "\t" << mpi::rank() << " Rank      : " << mpi::rank() << std::endl;
         _info << "\t" << mpi::rank() << " Size      : " << mpi::size() << std::endl;
-        _info << "\t" << mpi::rank() << " Node      : " << mpi_node_count << std::endl;
-        _info << "\t" << mpi::rank() << " Local Size: " << local_mpi_size << std::endl;
-        _info << "\t" << mpi::rank() << " Local Rank: " << local_mpi_rank << std::endl;
-        _info << "\t" << mpi::rank() << " Local File: " << local_mpi_file << std::endl;
-        std::cout << "tim::manager::" << __FUNCTION__ << "\n" << _info.str();
+        _info << "\t" << mpi::rank() << " Node      : " << mpi_node_count <<
+std::endl; _info << "\t" << mpi::rank() << " Local Size: " << local_mpi_size <<
+std::endl; _info << "\t" << mpi::rank() << " Local Rank: " << local_mpi_rank <<
+std::endl; _info << "\t" << mpi::rank() << " Local File: " << local_mpi_file <<
+std::endl; std::cout << "tim::manager::" << __FUNCTION__ << "\n" << _info.str();
     }
 #    endif
 
@@ -961,7 +963,8 @@ timemory_library_constructor()
     }
     else
     {
-        printf("[%s]> manager :: master != worker : %p vs. %p. TLS behavior is abnormal. "
+        printf("[%s]> manager :: master != worker : %p vs. %p. TLS behavior is "
+               "abnormal. "
                "Report any issues to https://github.com/NERSC/timemory/issues\n",
                __FUNCTION__, (void*) _master.get(), (void*) _worker.get());
         if(!signal_settings::is_active())

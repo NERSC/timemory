@@ -31,6 +31,8 @@
 
 #include "timemory/timemory.hpp"
 
+#include <string>
+
 namespace kokkosp = tim::kokkosp;
 
 //--------------------------------------------------------------------------------------//
@@ -73,11 +75,13 @@ add_kernel_logger()
         return;
     _first         = false;
     using strvec_t = std::vector<std::string>;
+    using strset_t = std::set<std::string>;
 
     tim::settings::instance()->insert<bool, bool&>(
-        std::string{ "TIMEMORY_KOKKOS_KERNEL_LOGGER" }, std::string{},
-        std::string{ "Enables kernel logging" }, enable_kernel_logger,
-        strvec_t({ "--timemory-kokkos-kernel-logger" }));
+        TIMEMORY_SETTINGS_KEY("KOKKOS_KERNEL_LOGGER"),
+        std::string{ "kokkos_kernel_logger" }, std::string{ "Enables kernel logging" },
+        enable_kernel_logger, strset_t{ "native", "component", "kokkos" },
+        strvec_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-kokkos-kernel-logger" }));
 }
 
 inline void
