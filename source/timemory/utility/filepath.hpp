@@ -209,6 +209,11 @@ open(std::ofstream& _ofs, std::string _fpath, Args&&... _args)
         _path = _path.substr(0, _pos);
         _base = _base.substr(_pos + 1);
     }
+    else
+    {
+        _path  = {};
+        _fpath = std::string{ "./" } + _base;
+    }
 
     if(!_path.empty())
     {
