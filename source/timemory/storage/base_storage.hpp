@@ -32,10 +32,12 @@
 #include "timemory/storage/macros.hpp"
 #include "timemory/storage/types.hpp"
 #include "timemory/utility/locking.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <mutex>
 #include <string>
 
 namespace tim
@@ -132,7 +134,10 @@ storage::base_instance()
     if(_ret == nullptr)
     {
         // thread will copy the hash-table so use a lock here
-        auto_lock_t lk(type_mutex<base::storage>());
+        auto_lock_t _lk{ type_mutex<base::storage>(), std::defer_lock };
+        if(!locking::try_lock_for_n(_lk))
+            TIMEMORY_PRINT_HERE("%s", "failed to acquire base::storage lock. Potential "
+                                      "data-race for hash-table may cause issues");
         _ret = static_cast<base::storage*>(storage_type::instance());
     }
 
