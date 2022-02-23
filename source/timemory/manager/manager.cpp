@@ -407,7 +407,7 @@ manager::write_metadata(std::ostream& ofs)
     // ensure json write final block during destruction before the file is closed
     using policy_type = policy::output_archive_t<manager>;
     auto oa           = policy_type::get(ofs);
-    oa->setNextName(TIMEMORY_SETTINGS_CONFIG_NAME);
+    oa->setNextName(TIMEMORY_PROJECT_NAME);
     oa->startNode();
     {
         oa->setNextName("metadata");
@@ -532,7 +532,7 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
         // ensure json write final block during destruction before the file is closed
         using policy_type = policy::output_archive_t<manager>;
         auto oa           = policy_type::get(hfs);
-        oa->setNextName(TIMEMORY_SETTINGS_CONFIG_NAME);
+        oa->setNextName(TIMEMORY_PROJECT_NAME);
         oa->startNode();
         {
             oa->setNextName("functions");

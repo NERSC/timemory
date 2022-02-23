@@ -58,8 +58,8 @@
 #    define TIMEMORY_SETTINGS_PREFIX "TIMEMORY_"
 #endif
 //
-#if !defined(TIMEMORY_SETTINGS_CONFIG_NAME)
-#    define TIMEMORY_SETTINGS_CONFIG_NAME "timemory"
+#if !defined(TIMEMORY_PROJECT_NAME)
+#    define TIMEMORY_PROJECT_NAME "timemory"
 #endif
 //
 #if !defined(TIMEMORY_SETTINGS_KEY)

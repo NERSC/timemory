@@ -566,60 +566,59 @@ settings::initialize_core()
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, config_file, TIMEMORY_SETTINGS_KEY("CONFIG_FILE"),
-        "Configuration file for " TIMEMORY_SETTINGS_CONFIG_NAME,
-        TIMEMORY_JOIN(
-            ';', TIMEMORY_JOIN('/', homedir, "." TIMEMORY_SETTINGS_CONFIG_NAME ".cfg"),
-            TIMEMORY_JOIN('/', homedir, "." TIMEMORY_SETTINGS_CONFIG_NAME ".json")),
+        "Configuration file for " TIMEMORY_PROJECT_NAME,
+        TIMEMORY_JOIN(';', TIMEMORY_JOIN('/', homedir, "." TIMEMORY_PROJECT_NAME ".cfg"),
+                      TIMEMORY_JOIN('/', homedir, "." TIMEMORY_PROJECT_NAME ".json")),
         TIMEMORY_ESC(strset_t{ "native", "core" }),
-        strvector_t({ "-C", "--" TIMEMORY_SETTINGS_CONFIG_NAME "-config" }));
+        strvector_t({ "-C", "--" TIMEMORY_PROJECT_NAME "-config" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, suppress_config, TIMEMORY_SETTINGS_KEY("SUPPRESS_CONFIG"),
         "Disable processing of setting configuration files", false,
         TIMEMORY_ESC(strset_t{ "native", "core" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-suppress-config",
-                      "--" TIMEMORY_SETTINGS_CONFIG_NAME "-no-config" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-suppress-config",
+                      "--" TIMEMORY_PROJECT_NAME "-no-config" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, suppress_parsing, TIMEMORY_SETTINGS_KEY("SUPPRESS_PARSING"),
         "Disable parsing environment", false, TIMEMORY_ESC(strset_t{ "native", "core" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-suppress-parsing" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-suppress-parsing" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, enabled, TIMEMORY_SETTINGS_KEY("ENABLED"), "Activation state of timemory",
         TIMEMORY_DEFAULT_ENABLED, TIMEMORY_ESC(strset_t{ "native", "core" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-enabled" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-enabled" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         int, verbose, TIMEMORY_SETTINGS_KEY("VERBOSE"), "Verbosity level", 0,
         TIMEMORY_ESC(strset_t{ "native", "core", "debugging" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-verbose" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-verbose" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, debug, TIMEMORY_SETTINGS_KEY("DEBUG"), "Enable debug output", false,
         TIMEMORY_ESC(strset_t{ "native", "core", "debugging" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-debug" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-debug" }), -1, 1);
 
     TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(
         bool, flat_profile, TIMEMORY_SETTINGS_KEY("FLAT_PROFILE"),
         "Set the label hierarchy mode to default to flat",
         scope::get_fields()[scope::flat::value],
         TIMEMORY_ESC(strset_t{ "native", "core", "data", "data_layout" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-flat-profile" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-flat-profile" }), -1, 1);
 
     TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(
         bool, timeline_profile, TIMEMORY_SETTINGS_KEY("TIMELINE_PROFILE"),
         "Set the label hierarchy mode to default to timeline",
         scope::get_fields()[scope::timeline::value],
         TIMEMORY_ESC(strset_t{ "native", "core", "data", "data_layout" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-timeline-profile" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-timeline-profile" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         uint16_t, max_depth, TIMEMORY_SETTINGS_KEY("MAX_DEPTH"),
         "Set the maximum depth of label hierarchy reporting",
         std::numeric_limits<uint16_t>::max(),
         TIMEMORY_ESC(strset_t{ "native", "core", "data" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-max-depth" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-max-depth" }), 1);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -636,7 +635,7 @@ settings::initialize_components()
         "not set. E.g. user_mpip_bundle will use this if MPIP_COMPONENTS is not "
         "specified",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-global-components" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-global-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, ompt_components, TIMEMORY_SETTINGS_KEY("OMPT_COMPONENTS"),
@@ -644,7 +643,7 @@ settings::initialize_components()
         "'user_ompt_bundle'. Priority: TRACE_COMPONENTS -> PROFILER_COMPONENTS -> "
         "COMPONENTS -> GLOBAL_COMPONENTS",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-ompt-components" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-ompt-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, mpip_components, TIMEMORY_SETTINGS_KEY("MPIP_COMPONENTS"),
@@ -652,7 +651,7 @@ settings::initialize_components()
         "'user_mpip_bundle'. Priority: TRACE_COMPONENTS -> PROFILER_COMPONENTS -> "
         "COMPONENTS -> GLOBAL_COMPONENTS",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-mpip-components" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-mpip-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, ncclp_components, TIMEMORY_SETTINGS_KEY("NCCLP_COMPONENTS"),
@@ -660,7 +659,7 @@ settings::initialize_components()
         "'user_ncclp_bundle'. Priority: MPIP_COMPONENTS -> TRACE_COMPONENTS -> "
         "PROFILER_COMPONENTS -> COMPONENTS -> GLOBAL_COMPONENTS",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-ncclp-components" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-ncclp-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, trace_components, TIMEMORY_SETTINGS_KEY("TRACE_COMPONENTS"),
@@ -668,7 +667,7 @@ settings::initialize_components()
         "designed for full profiling. These components will be subjected to throttling. "
         "Priority: COMPONENTS -> GLOBAL_COMPONENTS",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-trace-components" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-trace-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, profiler_components, TIMEMORY_SETTINGS_KEY("PROFILER_COMPONENTS"),
@@ -676,7 +675,7 @@ settings::initialize_components()
         "designed for full python profiling. This specification will be overridden by a "
         "trace_components specification. Priority: COMPONENTS -> GLOBAL_COMPONENTS",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-profiler-components" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-profiler-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, kokkos_components, TIMEMORY_SETTINGS_KEY("KOKKOS_COMPONENTS"),
@@ -684,20 +683,20 @@ settings::initialize_components()
         "designed for kokkos profiling. Priority: TRACE_COMPONENTS -> "
         "PROFILER_COMPONENTS -> COMPONENTS -> GLOBAL_COMPONENTS",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-kokkos-components" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-kokkos-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, components, TIMEMORY_SETTINGS_KEY("COMPONENTS"),
         "A specification of components which is used by the library interface. This "
         "falls back to GLOBAL_COMPONENTS.",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-components" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         std::string, network_interface, TIMEMORY_SETTINGS_KEY("NETWORK_INTERFACE"),
         "Default network interface", std::string{},
         TIMEMORY_ESC(strset_t{ "native", "component" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-network-interface" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-network-interface" }), -1, 1);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -711,83 +710,83 @@ settings::initialize_io()
         bool, auto_output, TIMEMORY_SETTINGS_KEY("AUTO_OUTPUT"),
         "Generate output at application termination", true,
         TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-auto-output" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-auto-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, cout_output, TIMEMORY_SETTINGS_KEY("COUT_OUTPUT"), "Write output to stdout",
         true, TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-cout-output" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-cout-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, file_output, TIMEMORY_SETTINGS_KEY("FILE_OUTPUT"), "Write output to files",
         true, TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-file-output" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-file-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, text_output, TIMEMORY_SETTINGS_KEY("TEXT_OUTPUT"),
         "Write text output files", true, TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-text-output" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-text-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, json_output, TIMEMORY_SETTINGS_KEY("JSON_OUTPUT"),
         "Write json output files", true, TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-json-output" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-json-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, tree_output, TIMEMORY_SETTINGS_KEY("TREE_OUTPUT"),
         "Write hierarchical json output files", true,
         TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-tree-output" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-tree-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, dart_output, TIMEMORY_SETTINGS_KEY("DART_OUTPUT"),
         "Write dart measurements for CDash", false,
         TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-dart-output" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-dart-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, time_output, TIMEMORY_SETTINGS_KEY("TIME_OUTPUT"),
         "Output data to subfolder w/ a timestamp (see also: TIME_FORMAT)", false,
         TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-time-output" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-time-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, plot_output, TIMEMORY_SETTINGS_KEY("PLOT_OUTPUT"),
         "Generate plot outputs from json outputs", TIMEMORY_DEFAULT_PLOTTING,
         TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-plot-output" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-plot-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, diff_output, TIMEMORY_SETTINGS_KEY("DIFF_OUTPUT"),
         "Generate a difference output vs. a pre-existing output (see also: "
         "INPUT_PATH and INPUT_PREFIX)",
         false, TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-diff-output" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-diff-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, flamegraph_output, TIMEMORY_SETTINGS_KEY("FLAMEGRAPH_OUTPUT"),
         "Write a json output for flamegraph visualization (use chrome://tracing)", true,
         TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-flamegraph-output" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-flamegraph-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, ctest_notes, TIMEMORY_SETTINGS_KEY("CTEST_NOTES"),
         "Write a CTestNotes.txt for each text output", false,
         TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-ctest-notes" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-ctest-notes" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, output_path, TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"),
         "Explicitly specify the output folder for results", "timemory-output",
         TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-output-path" }),
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-output-path" }),
         1);  // folder
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, output_prefix, TIMEMORY_SETTINGS_KEY("OUTPUT_PREFIX"),
         "Explicitly specify a prefix for all output files", "",
         TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-output-prefix" }),
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-output-prefix" }),
         1);  // file prefix
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
@@ -795,7 +794,7 @@ settings::initialize_io()
         "Explicitly specify the input folder for difference "
         "comparisons (see also: DIFF_OUTPUT)",
         "", TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-input-path" }),
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-input-path" }),
         1);  // folder
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
@@ -803,7 +802,7 @@ settings::initialize_io()
         "Explicitly specify the prefix for input files used in difference "
         "comparisons (see also: DIFF_OUTPUT)",
         "", TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-input-prefix" }),
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-input-prefix" }),
         1);  // file prefix
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
@@ -811,8 +810,7 @@ settings::initialize_io()
         "File extensions used when searching for input files used in difference "
         "comparisons (see also: DIFF_OUTPUT)",
         "json,xml", TIMEMORY_ESC(strset_t{ "native", "io" }),
-        strvector_t(
-            { "--" TIMEMORY_SETTINGS_CONFIG_NAME "-input-extensions" }));  // extensions
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-input-extensions" }));  // extensions
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -827,31 +825,31 @@ settings::initialize_format()
         "Customize the folder generation when TIME_OUTPUT is enabled (see also: "
         "strftime)",
         "%F_%I.%M_%p", TIMEMORY_ESC(strset_t{ "native", "io", "format" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-time-format" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-time-format" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         int16_t, precision, TIMEMORY_SETTINGS_KEY("PRECISION"),
         "Set the global output precision for components", -1,
         TIMEMORY_ESC(strset_t{ "native", "io", "format" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-precision" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-precision" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         int16_t, width, TIMEMORY_SETTINGS_KEY("WIDTH"),
         "Set the global output width for components", -1,
         TIMEMORY_ESC(strset_t{ "native", "io", "format" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-width" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-width" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         int32_t, max_width, TIMEMORY_SETTINGS_KEY("MAX_WIDTH"),
         "Set the maximum width for component label outputs", 120,
         TIMEMORY_ESC(strset_t{ "native", "io", "format" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-max-width" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-max-width" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, scientific, TIMEMORY_SETTINGS_KEY("SCIENTIFIC"),
         "Set the global numerical reporting to scientific format", false,
         TIMEMORY_ESC(strset_t{ "native", "io", "format" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-scientific" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-scientific" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         int16_t, timing_precision, TIMEMORY_SETTINGS_KEY("TIMING_PRECISION"),
@@ -868,7 +866,7 @@ settings::initialize_format()
         "Set the units for components with "
         "'uses_timing_units' type-trait",
         "", TIMEMORY_ESC(strset_t{ "native", "io", "format" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-timing-units" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-timing-units" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         bool, timing_scientific, TIMEMORY_SETTINGS_KEY("TIMING_SCIENTIFIC"),
@@ -891,7 +889,7 @@ settings::initialize_format()
         "Set the units for components with "
         "'uses_memory_units' type-trait",
         "", TIMEMORY_ESC(strset_t{ "native", "io", "format" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-memory-units" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-memory-units" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         bool, memory_scientific, TIMEMORY_SETTINGS_KEY("MEMORY_SCIENTIFIC"),
@@ -923,19 +921,19 @@ settings::initialize_parallel()
         bool, collapse_threads, TIMEMORY_SETTINGS_KEY("COLLAPSE_THREADS"),
         "Enable/disable combining thread-specific data", true,
         TIMEMORY_ESC(strset_t{ "native", "parallelism", "data_layout" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-collapse-threads" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-collapse-threads" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, collapse_processes, TIMEMORY_SETTINGS_KEY("COLLAPSE_PROCESSES"),
         "Enable/disable combining process-specific data", true,
         TIMEMORY_ESC(strset_t{ "native", "parallelism", "data_layout" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-collapse-processes" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-collapse-processes" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, cpu_affinity, TIMEMORY_SETTINGS_KEY("CPU_AFFINITY"),
         "Enable pinning threads to CPUs (Linux-only)", false,
         TIMEMORY_ESC(strset_t{ "native", "parallelism" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-cpu-affinity" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-cpu-affinity" }), -1, 1);
 
     TIMEMORY_SETTINGS_REFERENCE_IMPL(
         process::id_t, target_pid, TIMEMORY_SETTINGS_KEY("TARGET_PID"),
@@ -947,20 +945,20 @@ settings::initialize_parallel()
         "Enable/disable timemory calling MPI_Init / MPI_Init_thread during certain "
         "timemory_init(...) invocations",
         false, TIMEMORY_ESC(strset_t{ "native", "parallelism", "mpi" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-mpi-init" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-mpi-init" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, mpi_finalize, TIMEMORY_SETTINGS_KEY("MPI_FINALIZE"),
         "Enable/disable timemory calling MPI_Finalize "
         "during timemory_finalize(...) invocations",
         false, TIMEMORY_ESC(strset_t{ "native", "parallelism", "mpi" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-mpi-finalize" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-mpi-finalize" }), -1, 1);
 
     TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(
         bool, mpi_thread, TIMEMORY_SETTINGS_KEY("MPI_THREAD"),
         "Call MPI_Init_thread instead of MPI_Init (see also: MPI_INIT)",
         mpi::use_mpi_thread(), TIMEMORY_ESC(strset_t{ "native", "parallelism", "mpi" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-mpi-thread" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-mpi-thread" }), -1, 1);
 
     TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(
         string_t, mpi_thread_type, TIMEMORY_SETTINGS_KEY("MPI_THREAD_TYPE"),
@@ -968,7 +966,7 @@ settings::initialize_parallel()
         "also: MPI_INIT and MPI_THREAD)",
         mpi::use_mpi_thread_type(),
         TIMEMORY_ESC(strset_t{ "native", "parallelism", "mpi" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-mpi-thread-type" }), 1, 1,
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-mpi-thread-type" }), 1, 1,
         strvector_t{ "single", "serialized", "funneled", "multiple" });
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
@@ -976,20 +974,20 @@ settings::initialize_parallel()
         "Enable/disable timemory calling upcxx::init() "
         "during certain timemory_init(...) invocations",
         false, TIMEMORY_ESC(strset_t{ "native", "parallelism", "upcxx" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-upcxx-init" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-upcxx-init" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, upcxx_finalize, TIMEMORY_SETTINGS_KEY("UPCXX_FINALIZE"),
         "Enable/disable timemory calling upcxx::finalize() during timemory_finalize()",
         false, TIMEMORY_ESC(strset_t{ "native", "parallelism", "upcxx" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-upcxx-finalize" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-upcxx-finalize" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         int32_t, node_count, TIMEMORY_SETTINGS_KEY("NODE_COUNT"),
         "Total number of nodes used in application. Setting this value > 1 will result "
         "in aggregating N processes into groups of N / NODE_COUNT",
         0, TIMEMORY_ESC(strset_t{ "native", "parallelism", "dmp" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-node-count" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-node-count" }), 1);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -1003,31 +1001,31 @@ settings::initialize_tpls()
         bool, papi_threading, TIMEMORY_SETTINGS_KEY("PAPI_THREADING"),
         "Enable multithreading support when using PAPI", true,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "papi" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-papi-threading" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-papi-threading" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, papi_multiplexing, TIMEMORY_SETTINGS_KEY("PAPI_MULTIPLEXING"),
         "Enable multiplexing when using PAPI", false,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "papi" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-papi-multiplexing" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-papi-multiplexing" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, papi_fail_on_error, TIMEMORY_SETTINGS_KEY("PAPI_FAIL_ON_ERROR"),
         "Configure PAPI errors to trigger a runtime error", false,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "papi" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-papi-fail-on-error" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-papi-fail-on-error" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, papi_quiet, TIMEMORY_SETTINGS_KEY("PAPI_QUIET"),
         "Configure suppression of reporting PAPI errors/warnings", false,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "papi" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-papi-quiet" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-papi-quiet" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, papi_events, TIMEMORY_SETTINGS_KEY("PAPI_EVENTS"),
         "PAPI presets and events to collect (see also: papi_avail)", "",
         TIMEMORY_ESC(strset_t{ "native", "tpl", "papi" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-papi-events" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-papi-events" }));
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         bool, papi_attach, TIMEMORY_SETTINGS_KEY("PAPI_ATTACH"),
@@ -1038,7 +1036,7 @@ settings::initialize_tpls()
         int, papi_overflow, TIMEMORY_SETTINGS_KEY("PAPI_OVERFLOW"),
         "Value at which PAPI hw counters trigger an overflow callback", 0,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "papi" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-papi-overflow" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-papi-overflow" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         uint64_t, cuda_event_batch_size, TIMEMORY_SETTINGS_KEY("CUDA_EVENT_BATCH_SIZE"),
@@ -1054,46 +1052,46 @@ settings::initialize_tpls()
         int32_t, cupti_activity_level, TIMEMORY_SETTINGS_KEY("CUPTI_ACTIVITY_LEVEL"),
         "Default group of kinds tracked via CUpti Activity API", 1,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-cupti-activity-level" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-cupti-activity-level" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, cupti_activity_kinds, TIMEMORY_SETTINGS_KEY("CUPTI_ACTIVITY_KINDS"),
         "Specific cupti activity kinds to track", "",
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-cupti-activity-kinds" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-cupti-activity-kinds" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, cupti_events, TIMEMORY_SETTINGS_KEY("CUPTI_EVENTS"),
         "Hardware counter event types to collect on NVIDIA "
         "GPUs",
         "", TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-cupti-events" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-cupti-events" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, cupti_metrics, TIMEMORY_SETTINGS_KEY("CUPTI_METRICS"),
         "Hardware counter metric types to collect on "
         "NVIDIA GPUs",
         "", TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-cupti-metrics" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-cupti-metrics" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         int, cupti_device, TIMEMORY_SETTINGS_KEY("CUPTI_DEVICE"),
         "Target device for CUPTI data collection", 0,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-cupti-device" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-cupti-device" }), 1);
 
     insert<int>(
         TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_PERIOD"), "cupti_pcsampling_period",
         "The period for PC sampling. Must be >= 5 and <= 31", 8,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
-        strvector_t{ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-cupti-pcsampling-period" });
+        strvector_t{ "--" TIMEMORY_PROJECT_NAME "-cupti-pcsampling-period" });
 
     insert<bool>(
         TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_PER_LINE"), "cupti_pcsampling_per_line",
         "Report the PC samples per-line or collapse into one entry for entire function",
         false,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
-        strvector_t{ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-cupti-pcsampling-per-line" });
+        strvector_t{ "--" TIMEMORY_PROJECT_NAME "-cupti-pcsampling-per-line" });
 
     insert<bool>(
         TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_REGION_TOTALS"),
@@ -1101,29 +1099,26 @@ settings::initialize_tpls()
         "When enabled, region markers will report total samples from all child functions",
         true,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
-        strvector_t{ "--" TIMEMORY_SETTINGS_CONFIG_NAME
-                     "-cupti-pcsampling-region-totals" });
+        strvector_t{ "--" TIMEMORY_PROJECT_NAME "-cupti-pcsampling-region-totals" });
 
     insert<bool>(
         TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_SERIALIZED"),
         "cupti_pcsampling_serialized", "Serialize all the kernel functions", false,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
-        strvector_t{ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-cupti-pcsampling-serialize" });
+        strvector_t{ "--" TIMEMORY_PROJECT_NAME "-cupti-pcsampling-serialize" });
 
     insert<size_t>(
         TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_NUM_COLLECT"),
         "cupti_pcsampling_num_collect", "Number of PCs to be collected", size_t{ 100 },
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
-        strvector_t{ "--" TIMEMORY_SETTINGS_CONFIG_NAME
-                     "-cupti-pcsampling-num-collect" });
+        strvector_t{ "--" TIMEMORY_PROJECT_NAME "-cupti-pcsampling-num-collect" });
 
     insert<std::string>(
         TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_STALL_REASONS"),
         "cupti_pcsampling_stall_reasons", "The PC sampling stall reasons to count",
         std::string{},
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
-        strvector_t{ "--" TIMEMORY_SETTINGS_CONFIG_NAME
-                     "-cupti-pcsampling-stall-reasons" });
+        strvector_t{ "--" TIMEMORY_PROJECT_NAME "-cupti-pcsampling-stall-reasons" });
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         string_t, craypat_categories, TIMEMORY_SETTINGS_KEY("CRAYPAT"),
@@ -1135,7 +1130,7 @@ settings::initialize_tpls()
         string_t, python_exe, TIMEMORY_SETTINGS_KEY("PYTHON_EXE"),
         "Configure the python executable to use", TIMEMORY_PYTHON_PLOTTER,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "python" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-python-exe" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-python-exe" }));
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -1149,7 +1144,7 @@ settings::initialize_roofline()
         string_t, roofline_mode, TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE"),
         "Configure the roofline collection mode. Options: 'op' 'ai'.", "op",
         TIMEMORY_ESC(strset_t{ "native", "component", "roofline" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-roofline-mode" }), 1, 1,
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-roofline-mode" }), 1, 1,
         strvector_t({ "op", "ai" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
@@ -1157,7 +1152,7 @@ settings::initialize_roofline()
         "Configure the roofline collection mode for CPU "
         "specifically. Options: 'op', 'ai'",
         "op", TIMEMORY_ESC(strset_t{ "native", "component", "roofline" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-cpu-roofline-mode" }), 1, 1,
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-cpu-roofline-mode" }), 1, 1,
         strvector_t({ "op", "ai" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
@@ -1168,7 +1163,7 @@ settings::initialize_roofline()
             m_data[TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE")].get())
             ->get(),
         TIMEMORY_ESC(strset_t{ "native", "component", "roofline" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-gpu-roofline-mode" }), 1, 1,
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-gpu-roofline-mode" }), 1, 1,
         strvector_t({ "op", "ai" }));
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
@@ -1224,34 +1219,32 @@ settings::initialize_miscellaneous()
         "E.g. "
         "suppress individual CUDA kernels, etc. when using Cupti components",
         true, TIMEMORY_ESC(strset_t{ "native", "component", "data" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-add-secondary" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-add-secondary" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         size_t, throttle_count, TIMEMORY_SETTINGS_KEY("THROTTLE_COUNT"),
         "Minimum number of laps before checking whether a key should be throttled", 10000,
         TIMEMORY_ESC(strset_t{ "native", "component", "data" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-throttle-count" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-throttle-count" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         size_t, throttle_value, TIMEMORY_SETTINGS_KEY("THROTTLE_VALUE"),
         "Average call time in nanoseconds when # laps > throttle_count that triggers "
         "throttling",
         10000, TIMEMORY_ESC(strset_t{ "native", "component", "data" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-throttle-value" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-throttle-value" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, enable_signal_handler, TIMEMORY_SETTINGS_KEY("ENABLE_SIGNAL_HANDLER"),
         "Enable signals in timemory_init", false,
         TIMEMORY_ESC(strset_t{ "native", "debugging" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-enable-signal-handler" }), -1,
-        1)
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-enable-signal-handler" }), -1, 1)
 
     TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(
         bool, allow_signal_handler, TIMEMORY_SETTINGS_KEY("ALLOW_SIGNAL_HANDLER"),
         "Allow signal handling to be activated", signal_settings::allow(),
         TIMEMORY_ESC(strset_t{ "native", "debugging" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-allow-signal-handler" }), -1,
-        1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-allow-signal-handler" }), -1, 1);
 
     TIMEMORY_SETTINGS_REFERENCE_IMPL(
         bool, enable_all_signals, TIMEMORY_SETTINGS_KEY("ENABLE_ALL_SIGNALS"),
@@ -1268,13 +1261,13 @@ settings::initialize_miscellaneous()
         "Configure default setting for auto_{list,tuple,hybrid} to write to stdout "
         "during destruction of the bundle",
         false, TIMEMORY_ESC(strset_t{ "native", "debugging" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-destructor-report" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-destructor-report" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, stack_clearing, TIMEMORY_SETTINGS_KEY("STACK_CLEARING"),
         "Enable/disable stopping any markers still running during finalization", true,
         TIMEMORY_ESC(strset_t{ "native", "debugging" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-stack-clearing" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-stack-clearing" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         bool, banner, TIMEMORY_SETTINGS_KEY("BANNER"),
@@ -1378,19 +1371,19 @@ settings::initialize_dart()
         string_t, dart_type, TIMEMORY_SETTINGS_KEY("DART_TYPE"),
         "Only echo this measurement type (see also: DART_OUTPUT)", "",
         TIMEMORY_ESC(strset_t{ "native", "io", "dart" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-dart-type" }));
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-dart-type" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         uint64_t, dart_count, TIMEMORY_SETTINGS_KEY("DART_COUNT"),
         "Only echo this number of dart tags (see also: DART_OUTPUT)", 1,
         TIMEMORY_ESC(strset_t{ "native", "io", "dart" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-dart-count" }), 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-dart-count" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, dart_label, TIMEMORY_SETTINGS_KEY("DART_LABEL"),
         "Echo the category instead of the label (see also: DART_OUTPUT)", true,
         TIMEMORY_ESC(strset_t{ "native", "io", "dart" }),
-        strvector_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-dart-label" }), -1, 1);
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-dart-label" }), -1, 1);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -1468,7 +1461,7 @@ settings::read(std::istream& ifs, std::string inp)
         auto ia           = policy_type::get(ifs);
         try
         {
-            ia->setNextName(TIMEMORY_SETTINGS_CONFIG_NAME);
+            ia->setNextName(TIMEMORY_PROJECT_NAME);
             ia->startNode();
             {
                 try
@@ -1500,7 +1493,7 @@ settings::read(std::istream& ifs, std::string inp)
     {
         using policy_type = policy::input_archive<cereal::XMLInputArchive, TIMEMORY_API>;
         auto ia           = policy_type::get(ifs);
-        ia->setNextName(TIMEMORY_SETTINGS_CONFIG_NAME);
+        ia->setNextName(TIMEMORY_PROJECT_NAME);
         ia->startNode();
         {
             try
@@ -1676,10 +1669,10 @@ settings::init_config(bool _search_default)
         TIMEMORY_PRINT_HERE("%s", "");
 
     static const auto _homedir = get_env<string_t>("HOME");
-    static const auto _dcfgs   = std::set<std::string>{
-        _homedir + std::string("/." TIMEMORY_SETTINGS_CONFIG_NAME ".cfg"),
-        _homedir + std::string("/." TIMEMORY_SETTINGS_CONFIG_NAME ".json")
-    };
+    static const auto _dcfgs =
+        std::set<std::string>{ _homedir + std::string("/." TIMEMORY_PROJECT_NAME ".cfg"),
+                               _homedir +
+                                   std::string("/." TIMEMORY_PROJECT_NAME ".json") };
 
     auto _cfg   = get_config_file();
     auto _files = tim::delimit(_cfg, ",;:");

@@ -55,7 +55,7 @@ namespace tim
 /// std::string dname)
 /// \param[in] fname Filename
 /// \param[in] obj Object to serialize
-/// \param[in] mname Main label for archive (default: TIMEMORY_SETTINGS_CONFIG_NAME)
+/// \param[in] mname Main label for archive (default: TIMEMORY_PROJECT_NAME)
 /// \param[in] dname Label for the data (default: "data")
 ///
 /// \brief Generic function for serializing data. Uses the \ref
@@ -66,7 +66,7 @@ template <typename Tp, typename FuncT>
 void
 generic_serialization(
     const std::string& fname, const Tp& obj,
-    const std::string& _main_name = TIMEMORY_SETTINGS_CONFIG_NAME,
+    const std::string& _main_name = TIMEMORY_PROJECT_NAME,
     const std::string& _data_name = "data",
     FuncT&& _func = [](typename policy::output_archive_t<decay_t<Tp>>::type&) {})
 {
@@ -93,7 +93,7 @@ generic_serialization(
 /// \tparam ApiT API tag for \ref tim::policy::output_archive look-up
 /// \param[in] fname Filename
 /// \param[in] obj Object to serialize
-/// \param[in] mname Main label for archive (default: TIMEMORY_SETTINGS_CONFIG_NAME)
+/// \param[in] mname Main label for archive (default: TIMEMORY_PROJECT_NAME)
 /// \param[in] dname Label for the data (default: "data")
 ///
 /// \brief Generic function for serializing data. Uses the \ref
@@ -104,7 +104,7 @@ template <typename ArchiveT, typename ApiT = TIMEMORY_API, typename Tp, typename
 void
 generic_serialization(
     const std::string& fname, const Tp& obj,
-    const std::string& _main_name = TIMEMORY_SETTINGS_CONFIG_NAME,
+    const std::string& _main_name = TIMEMORY_PROJECT_NAME,
     const std::string& _data_name = "data",
     FuncT&& _func = [](typename policy::output_archive_t<decay_t<Tp>>::type&) {})
 {
@@ -133,7 +133,7 @@ generic_serialization(
 /// \tparam ApiT API tag for \ref tim::policy::output_archive look-up
 /// \param[in] fname Filename
 /// \param[in] obj Object to serialize
-/// \param[in] mname Main label for archive (default: TIMEMORY_SETTINGS_CONFIG_NAME)
+/// \param[in] mname Main label for archive (default: TIMEMORY_PROJECT_NAME)
 /// \param[in] dname Label for the data (default: "data")
 ///
 /// \brief Generic function for serializing data. Uses the \ref
@@ -144,7 +144,7 @@ template <typename ArchiveT, typename ApiT = TIMEMORY_API, typename Tp, typename
 void
 generic_serialization(
     std::ostream& ofs, const Tp& obj,
-    const std::string& _main_name = TIMEMORY_SETTINGS_CONFIG_NAME,
+    const std::string& _main_name = TIMEMORY_PROJECT_NAME,
     const std::string& _data_name = "data",
     FuncT&& _func = [](typename policy::output_archive_t<decay_t<Tp>>::type&) {})
 {

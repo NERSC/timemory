@@ -81,7 +81,7 @@ add_kernel_logger()
         TIMEMORY_SETTINGS_KEY("KOKKOS_KERNEL_LOGGER"),
         std::string{ "kokkos_kernel_logger" }, std::string{ "Enables kernel logging" },
         enable_kernel_logger, strset_t{ "native", "component", "kokkos" },
-        strvec_t({ "--" TIMEMORY_SETTINGS_CONFIG_NAME "-kokkos-kernel-logger" }));
+        strvec_t({ "--" TIMEMORY_PROJECT_NAME "-kokkos-kernel-logger" }));
 }
 
 inline void

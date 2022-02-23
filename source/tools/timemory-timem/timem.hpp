@@ -40,7 +40,7 @@
 
 // tweaks settings
 #define TIMEMORY_SETTINGS_PREFIX "TIMEM_"
-#define TIMEMORY_SETTINGS_CONFIG_NAME "timem"
+#define TIMEMORY_PROJECT_NAME "timem"
 
 #include "timemory/api/macros.hpp"
 
