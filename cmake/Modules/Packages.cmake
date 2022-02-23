@@ -1715,14 +1715,15 @@ endif()
 if(Dyninst_FOUND AND TARGET Dyninst::Dyninst) # updated Dyninst CMake system was found
     # useful for defining the location of the runtime API
     find_library(
-        DYNINST_API_RT dyninstAPI_RT
+        TIMEMORY_DYNINST_API_RT dyninstAPI_RT
         HINTS ${Dyninst_ROOT_DIR} ${Dyninst_DIR}
         PATHS ${Dyninst_ROOT_DIR} ${Dyninst_DIR}
         PATH_SUFFIXES lib)
 
-    if(DYNINST_API_RT)
-        target_compile_definitions(timemory-dyninst
-                                   INTERFACE DYNINST_API_RT="${DYNINST_API_RT}")
+    if(TIMEMORY_DYNINST_API_RT)
+        target_compile_definitions(
+            timemory-dyninst
+            INTERFACE TIMEMORY_DYNINST_API_RT="${TIMEMORY_DYNINST_API_RT}")
     endif()
 
     timemory_add_rpath(${Dyninst_LIBRARIES})
@@ -1745,7 +1746,7 @@ elseif(Dyninst_FOUND AND Boost_FOUND)
 
     # useful for defining the location of the runtime API
     find_library(
-        DYNINST_API_RT dyninstAPI_RT
+        TIMEMORY_DYNINST_API_RT dyninstAPI_RT
         HINTS ${Dyninst_ROOT_DIR} ${Dyninst_DIR}
         PATHS ${Dyninst_ROOT_DIR} ${Dyninst_DIR}
         PATH_SUFFIXES lib)
@@ -1759,9 +1760,10 @@ elseif(Dyninst_FOUND AND Boost_FOUND)
         set(TBB_INCLUDE_DIRS ${TBB_INCLUDE_DIR})
     endif()
 
-    if(DYNINST_API_RT)
-        target_compile_definitions(timemory-dyninst
-                                   INTERFACE DYNINST_API_RT="${DYNINST_API_RT}")
+    if(TIMEMORY_DYNINST_API_RT)
+        target_compile_definitions(
+            timemory-dyninst
+            INTERFACE TIMEMORY_DYNINST_API_RT="${TIMEMORY_DYNINST_API_RT}")
     endif()
 
     if(Boost_DIR)
@@ -1839,15 +1841,15 @@ elseif(TIMEMORY_USE_DYNINST AND TIMEMORY_BUILD_DYNINST)
     target_link_libraries(timemory-dyninst INTERFACE Dyninst::Dyninst)
     timemory_target_compile_definitions(timemory-dyninst INTERFACE TIMEMORY_USE_DYNINST)
 
-    set(DYNINST_API_RT
+    set(TIMEMORY_DYNINST_API_RT
         ${PROJECT_BINARY_DIR}/external/dyninst/dyninstAPI_RT/libdyninstAPI_RT${CMAKE_SHARED_LIBRARY_SUFFIX}
         )
 
-    if(DYNINST_API_RT)
+    if(TIMEMORY_DYNINST_API_RT)
         target_compile_definitions(
             timemory-dyninst
             INTERFACE
-                DYNINST_API_RT="${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}:$<TARGET_FILE_DIR:Dyninst::dyninstAPI_RT>:${CMAKE_INSTALL_PREFIX}/lib/$<TARGET_FILE_NAME:Dyninst::dyninstAPI_RT>:$<TARGET_FILE:Dyninst::dyninstAPI_RT>"
+                TIMEMORY_DYNINST_API_RT="${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}:$<TARGET_FILE_DIR:Dyninst::dyninstAPI_RT>:${CMAKE_INSTALL_PREFIX}/lib/$<TARGET_FILE_NAME:Dyninst::dyninstAPI_RT>:$<TARGET_FILE:Dyninst::dyninstAPI_RT>"
             )
     endif()
 else()
@@ -1860,10 +1862,10 @@ if(TIMEMORY_USE_DYNINST)
     set(TIMEMORY_BUILD_DYNINST_TOOLS ${TIMEMORY_USE_DYNINST})
 endif()
 
-if(DYNINST_API_RT)
-    timemory_add_cmake_defines(DYNINST_API_RT VALUE QUOTE DEFAULT)
+if(TIMEMORY_DYNINST_API_RT)
+    timemory_add_cmake_defines(TIMEMORY_DYNINST_API_RT VALUE QUOTE DEFAULT)
 else()
-    timemory_add_cmake_defines(DYNINST_API_RT VALUE QUOTE)
+    timemory_add_cmake_defines(TIMEMORY_DYNINST_API_RT VALUE QUOTE)
 endif()
 
 # ----------------------------------------------------------------------------------------#
