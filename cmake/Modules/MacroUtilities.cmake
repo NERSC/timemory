@@ -18,6 +18,16 @@ unset(${PROJECT_NAME_UC}_COMPILED_LIBRARIES CACHE)
 unset(${PROJECT_NAME_UC}_INTERFACE_LIBRARIES CACHE)
 
 # -----------------------------------------------------------------------
+# timemory_set_if_empty: same as set(...) except only performed if the variable is
+# undefined or empty
+#
+macro(TIMEMORY_SET_IF_EMPTY _VARIABLE _VALUE)
+    if(NOT DEFINED ${_VARIABLE} OR "${${_VARIABLE}}" STREQUAL "")
+        set(${_VARIABLE} "${_VALUE}" ${ARGN})
+    endif()
+endmacro()
+
+# -----------------------------------------------------------------------
 # message which handles TIMEMORY_QUIET_CONFIG settings
 # -----------------------------------------------------------------------
 #
