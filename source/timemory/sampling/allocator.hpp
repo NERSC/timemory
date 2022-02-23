@@ -26,7 +26,6 @@
 
 #include "timemory/backends/threading.hpp"
 #include "timemory/macros/os.hpp"
-#include "timemory/sampling/sampler.hpp"
 
 #include <atomic>
 #include <cerrno>
