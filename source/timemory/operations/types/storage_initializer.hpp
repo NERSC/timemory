@@ -33,6 +33,9 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/utility/type_list.hpp"
+
+#include <utility>
 
 namespace tim
 {
@@ -62,6 +65,38 @@ invoke_preinit(long)
 //
 //--------------------------------------------------------------------------------------//
 //
+struct preinitializer
+{
+    template <typename... Tp>
+    bool operator()(type_list<Tp...>) const
+    {
+        TIMEMORY_FOLD_EXPRESSION(invoke_preinit<Tp>(0));
+        return true;
+    }
+    template <size_t... Idx>
+    bool operator()(std::index_sequence<Idx...>) const
+    {
+        TIMEMORY_FOLD_EXPRESSION(invoke_preinit<component::enumerator_t<Idx>>(0));
+        return true;
+    }
+
+    template <typename... Tp>
+    bool operator()() const
+    {
+        return (*this)(type_list<Tp...>{});
+    }
+    template <size_t... Idx>
+    bool operator()() const
+    {
+        return (*this)(std::index_sequence<Idx...>{});
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
+//
+//--------------------------------------------------------------------------------------//
+//
 template <typename T>
 enable_if_t<trait::uses_storage<T>::value, storage_initializer> storage_initializer::get(
     std::true_type)
@@ -73,7 +108,7 @@ enable_if_t<trait::uses_storage<T>::value, storage_initializer> storage_initiali
     if(!trait::runtime_enabled<T>::get())
         return storage_initializer{};
 
-    invoke_preinit<T>(0);
+    preinitializer{}.template operator()<T>();
 
     using storage_type = storage<T, typename T::value_type>;
 

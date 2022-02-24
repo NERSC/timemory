@@ -49,6 +49,11 @@
         TIMEMORY_VAR_NAME_COMBINE(timemory_storage_initializer_, Y)
 #endif
 
+#if !defined(TIMEMORY_PREINIT_VARIABLE)
+#    define TIMEMORY_PREINIT_VARIABLE(Y)                                                 \
+        TIMEMORY_VAR_NAME_COMBINE(timemory_preinitializer_, Y)
+#endif
+
 #if !defined(TIMEMORY_LINESTR)
 #    define TIMEMORY_LINESTR TIMEMORY_STRINGIZE(__LINE__)
 #endif

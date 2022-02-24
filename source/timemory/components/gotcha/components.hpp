@@ -291,6 +291,10 @@ public:
 
 #    if !defined(TIMEMORY_NVCC_COMPILER)
     template <size_t N, typename Ret, typename... Args>
+    struct instrument<N, Ret, type_list<Args...>> : instrument<N, Ret, Args...>
+    {};
+
+    template <size_t N, typename Ret, typename... Args>
     struct instrument<N, Ret, std::tuple<Args...>> : instrument<N, Ret, Args...>
     {};
 #    endif

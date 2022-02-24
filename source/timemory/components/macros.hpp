@@ -380,6 +380,28 @@
 #endif
 
 //--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_INVOKE_PREINIT)
+#    define TIMEMORY_INVOKE_PREINIT(...)                                                 \
+        namespace tim                                                                    \
+        {                                                                                \
+        namespace internal                                                               \
+        {                                                                                \
+        namespace initialization                                                         \
+        {                                                                                \
+        namespace                                                                        \
+        {                                                                                \
+        using namespace ::tim::component;                                                \
+        namespace component = ::tim::component;                                          \
+        auto                                 TIMEMORY_PREINIT_VARIABLE(__COUNTER__) =    \
+            ::tim::preinitializer{}.template operator()<__VA_ARGS__>();                  \
+        }                                                                                \
+        }                                                                                \
+        }                                                                                \
+        }
+#endif
+
+//--------------------------------------------------------------------------------------//
 // backwards compatibility
 #if !defined(TIMEMORY_STORAGE_INITIALIZER)
 #    define TIMEMORY_STORAGE_INITIALIZER(...) TIMEMORY_INITIALIZE_STORAGE(__VA_ARGS__)

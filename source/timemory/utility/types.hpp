@@ -36,6 +36,7 @@
 #include "timemory/macros/os.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/type_list.hpp"
 
 #include <array>
 #include <bitset>
@@ -165,14 +166,6 @@ using identity_t = typename identity<T>::type;
 /// \brief this is a placeholder type for optional type-traits. It is used as the default
 /// type for the type-traits to signify there is no specialization.
 struct null_type : concepts::null_type
-{};
-//
-//--------------------------------------------------------------------------------------//
-//
-/// \struct tim::type_list
-/// \brief lightweight tuple-alternative for meta-programming logic
-template <typename... Tp>
-struct type_list
 {};
 //
 //--------------------------------------------------------------------------------------//
