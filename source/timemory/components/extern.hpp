@@ -134,26 +134,26 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(TIMEMORY_USE_OMPT_EXTERN)
-#    include "timemory/components/ompt/extern.hpp"
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
-#    include "timemory/components/user_bundle/extern.hpp"
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
 #if defined(TIMEMORY_USE_DATA_TRACKER_EXTERN)
 #    include "timemory/components/data_tracker/extern.hpp"
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_OMPT_EXTERN)
+#    include "timemory/components/ompt/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 #if defined(TIMEMORY_USE_TIMESTAMP_EXTERN)
 #    include "timemory/components/timestamp/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
+#    include "timemory/components/user_bundle/extern.hpp"
 #endif
 //
 //--------------------------------------------------------------------------------------//

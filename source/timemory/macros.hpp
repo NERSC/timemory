@@ -670,25 +670,6 @@
 
 //======================================================================================//
 //
-//                              OPENMP TOOLS (OMPT)
-//
-//======================================================================================//
-//
-#if !defined(TIMEMORY_OMPT_API_TAG)
-#    define TIMEMORY_OMPT_API_TAG TIMEMORY_API
-#endif
-
-// for callback declarations
-#if !defined(TIMEMORY_OMPT_CBDECL)
-#    if defined(TIMEMORY_USE_OMPT)
-#        define TIMEMORY_OMPT_CBDECL(NAME) (ompt_callback_t) & NAME
-#    else
-#        define TIMEMORY_OMPT_CBDECL(...)
-#    endif
-#endif
-
-//======================================================================================//
-//
 //                                      OTHERS
 //
 //======================================================================================//

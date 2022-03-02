@@ -32,5 +32,8 @@
 #include "timemory/components/extern/common.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/components/ompt/components.hpp"
+#include "timemory/components/ompt/types.hpp"
 
 TIMEMORY_DECLARE_EXTERN_COMPONENT(ompt_native_handle, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(ompt_native_data_tracker, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(ompt_data_tracker_t, true, int64_t)

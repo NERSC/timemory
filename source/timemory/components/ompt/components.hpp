@@ -105,6 +105,12 @@ struct ompt_handle
 
     static void global_finalize() { trait::runtime_enabled<toolset_type>::set(false); }
 
+    static void thread_finalize()
+    {
+        if(get_persistent_data().m_cleanup)
+            get_persistent_data().m_cleanup();
+    }
+
     void start()
     {
 #if defined(TIMEMORY_USE_OMPT)
@@ -141,11 +147,22 @@ public:
         return get_persistent_data().m_prefix;
     }
 
+    template <typename FuncT>
+    static void add_cleanup(FuncT&& _current)
+    {
+        auto _former                    = get_persistent_data().m_cleanup;
+        get_persistent_data().m_cleanup = [_former, _current]() {
+            _former();
+            _current();
+        };
+    }
+
 private:
     struct persistent_data
     {
-        std::string m_prefix;
-        mutex_t     m_mutex;
+        mutex_t               m_mutex;
+        std::string           m_prefix  = {};
+        std::function<void()> m_cleanup = []() {};
     };
 
     static persistent_data& get_persistent_data()

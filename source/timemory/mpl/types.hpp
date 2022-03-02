@@ -34,6 +34,7 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/defines.h"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/macros.hpp"
 #include "timemory/utility/types.hpp"
@@ -45,8 +46,6 @@
 #include <type_traits>
 #include <vector>
 
-//======================================================================================//
-//
 namespace tim
 {
 //
@@ -329,6 +328,12 @@ struct uses_value_storage;
 
 template <typename ApiT>
 struct perfetto_category;
+
+template <typename ApiT, typename... T>
+struct max_threads
+{
+    static constexpr size_t value = TIMEMORY_MAX_THREADS;
+};
 
 //--------------------------------------------------------------------------------------//
 //

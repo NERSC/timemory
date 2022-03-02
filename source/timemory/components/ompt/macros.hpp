@@ -22,8 +22,28 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/ompt/extern.hpp"
+#pragma once
 
-TIMEMORY_EXTERN_COMPONENT(ompt_native_handle, false, void)
-TIMEMORY_EXTERN_COMPONENT(ompt_native_data_tracker, false, void)
-TIMEMORY_EXTERN_COMPONENT(ompt_data_tracker_t, true, int64_t)
+#include "timemory/api.hpp"
+
+#if defined(TIMEMORY_OMPT_SOURCE)
+#    define TIMEMORY_OMPT_INLINE
+#elif defined(TIMEMORY_USE_OMPT_EXTERN)
+#    define TIMEMORY_OMPT_INLINE
+#else
+#    define TIMEMORY_OMPT_HEADER_MODE 1
+#    define TIMEMORY_OMPT_INLINE inline
+#endif
+
+#if !defined(TIMEMORY_OMPT_API_TAG)
+#    define TIMEMORY_OMPT_API_TAG TIMEMORY_API
+#endif
+
+// for callback declarations
+#if !defined(TIMEMORY_OMPT_CBCAST)
+#    if defined(TIMEMORY_USE_OMPT)
+#        define TIMEMORY_OMPT_CBCAST(NAME) reinterpret_cast<ompt_callback_t>(&NAME)
+#    else
+#        define TIMEMORY_OMPT_CBCAST(...)
+#    endif
+#endif

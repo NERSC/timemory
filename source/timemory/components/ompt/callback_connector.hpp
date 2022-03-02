@@ -22,8 +22,34 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/ompt/extern.hpp"
+#pragma once
 
-TIMEMORY_EXTERN_COMPONENT(ompt_native_handle, false, void)
-TIMEMORY_EXTERN_COMPONENT(ompt_native_data_tracker, false, void)
-TIMEMORY_EXTERN_COMPONENT(ompt_data_tracker_t, true, int64_t)
+#include "timemory/components/ompt/types.hpp"
+#include "timemory/manager/manager.hpp"
+#include "timemory/utility/macros.hpp"
+
+namespace tim
+{
+namespace openmp
+{
+//
+template <typename Components, typename ApiT>
+bool
+callback_connector<Components, ApiT>::is_enabled()
+{
+    if(!manager::instance() ||
+       (manager::instance() && manager::instance()->is_finalizing()))
+    {
+        trait::runtime_enabled<type>::set(false);
+        trait::runtime_enabled<handle_type>::set(false);
+        return false;
+    }
+
+    TIMEMORY_DEBUG_PRINT_HERE("[timemory][ompt]> %s :: handle enabled = %s",
+                              demangle<type>().c_str(),
+                              (trait::runtime_enabled<handle_type>::get()) ? "y" : "n");
+
+    return (trait::runtime_enabled<handle_type>::get());
+}
+}  // namespace openmp
+}  // namespace tim

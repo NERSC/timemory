@@ -28,8 +28,12 @@
 #include "timemory/components/data_tracker/types.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/components/ompt/backends.hpp"
+#include "timemory/components/ompt/macros.hpp"
 #include "timemory/enum.h"
+#include "timemory/macros/attributes.hpp"
 #include "timemory/mpl/type_traits.hpp"
+
+#include <type_traits>
 
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(user_bundle, size_t Idx, typename Tag = TIMEMORY_API)
 //
@@ -110,47 +114,23 @@ struct is_available<component::ompt_native_data_tracker> : false_type
 #endif
 //
 }  // namespace trait
-}  // namespace tim
 //
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_PROPERTY_SPECIALIZATION(ompt_handle<TIMEMORY_API>, TIMEMORY_OMPT_HANDLE,
-                                 "ompt_handle", "ompt", "ompt_handle", "openmp",
-                                 "openmp_tools")
-//
-//======================================================================================//
-//
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/types.hpp"
-//
-//======================================================================================//
-//
-namespace tim
-{
 namespace openmp
 {
 //
 //--------------------------------------------------------------------------------------//
 //
-namespace mode
+enum class mode
 {
-/// \struct tim::openmp::mode::begin_callback
-/// \brief This is the beginning of a paired callback
-struct begin_callback
-{};
-/// \struct tim::openmp::mode::end_callback
-/// \brief This is the end of a paired callback
-struct end_callback
-{};
-/// \struct tim::openmp::mode::store_callback
-/// \brief This is a callback that just stores some data
-struct store_callback
-{};
-/// \struct tim::openmp::mode::endpoint_callback
-/// \brief This is a callback whose first argument designates an endpoint
-struct endpoint_callback
-{};
-}  // namespace mode
+    unspecified_callback,
+    begin_callback,
+    end_callback,
+    store_callback,
+    endpoint_callback
+};
+//
+template <mode V>
+using mode_constant = std::integral_constant<mode, V>;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -172,110 +152,15 @@ struct callback_connector;
 //
 //--------------------------------------------------------------------------------------//
 //
-/// \fn void openmp::user_context_callback(Handler& h, std::string& key, Args... args)
-/// \brief These functions can be specialized an overloaded for quick access
-/// to the the openmp callbacks. The first function (w/ string) is invoked by every
-/// openmp callback. The other versions (w/ mode) is invoked depending on how
-/// each callback is configured
-///
-template <typename Handler, typename... Args>
-void
-user_context_callback(Handler& handle, std::string& key, Args... args)
+template <typename Components, typename ApiT>
+struct callback_connector
 {
-    consume_parameters(handle, key, args...);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Handler, typename... Args>
-void
-user_context_callback(Handler& handle, mode::begin_callback, Args... args)
-{
-    auto functor = [&args...](Tp* c) {
-        c->construct(args...);
-        c->store(args...);
-        c->start();
-        c->audit(args...);
-    };
-    handle.template construct<Tp>(functor);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Handler, typename... Args>
-void
-user_context_callback(Handler& handle, mode::end_callback, Args... args)
-{
-    auto functor = [&args...](Tp* c) {
-        c->audit(args...);
-        c->stop();
-    };
-    handle.template destroy<Tp>(functor);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Handler, typename... Args>
-void
-user_context_callback(Handler& handle, mode::store_callback, Args... args)
-{
-    Tp c(handle.key());
-    c.store(args...);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Handler, typename... Args>
-void
-user_context_callback(Handler&              handle, mode::endpoint_callback,
-                      ompt_scope_endpoint_t endp, Args... args)
-{
-    if(endp == ompt_scope_begin)
-    {
-        auto functor = [&endp, &args...](Tp* c) {
-            c->construct(endp, args...);
-            c->store(endp, args...);
-            c->start();
-            c->audit(endp, args...);
-        };
-        handle.template construct<Tp>(functor);
-    }
-    else if(endp == ompt_scope_end)
-    {
-        auto functor = [&endp, &args...](Tp* c) {
-            c->audit(endp, args...);
-            c->stop();
-        };
-        handle.template destroy<Tp>(functor);
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename Handler, typename Arg, typename... Args>
-void
-user_context_callback(Handler& handle, mode::endpoint_callback, Arg arg,
-                      ompt_scope_endpoint_t endp, Args... args)
-{
-    if(endp == ompt_scope_begin)
-    {
-        auto functor = [&arg, &endp, &args...](Tp* c) {
-            c->construct(endp, args...);
-            c->store(endp, args...);
-            c->start();
-            c->audit(arg, endp, args...);
-        };
-        handle.template construct<Tp>(functor);
-    }
-    else if(endp == ompt_scope_end)
-    {
-        auto functor = [&arg, &endp, &args...](Tp* c) {
-            c->audit(arg, endp, args...);
-            c->stop();
-        };
-        handle.template destroy<Tp>(functor);
-    }
-}
+    using api_type    = ApiT;
+    using type        = Components;
+    using handle_type = component::ompt_handle<api_type>;
+
+    static bool is_enabled();
+};
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -286,45 +171,36 @@ user_context_callback(Handler& handle, mode::endpoint_callback, Arg arg,
 /// in order to create a unique identifier and a label and then instruments the callback
 /// based on the \tparam Mode template parameter.
 ///
-template <typename Components, typename Connector, typename Mode, typename... Args>
+template <typename Connector, mode Mode, typename... Args>
 struct ompt_wrapper
 {
-    using args_type      = std::tuple<Mode, Args...>;
-    using component_type = Components;
+    using api_type       = typename Connector::api_type;
+    using component_type = typename Connector::type;
 
-    static void callback(Args... args)
-    {
-        constexpr auto can_ctor = std::is_constructible<Connector, Mode, Args...>::value;
-        static_assert(can_ctor,
-                      "Error! Cannot construct the connector with given arguments");
-        Connector(Mode{}, args...);
-    }
+    static void callback(Args... args);
 };
-//
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace openmp
+
+namespace ompt
+{
+template <typename ApiT>
+void
+configure(ompt_function_lookup_t lookup, int, ompt_data_t*);
+}  // namespace ompt
 }  // namespace tim
-//
-//--------------------------------------------------------------------------------------//
-//
-#if defined(TIMEMORY_USE_OMPT)
-//
-//--------------------------------------------------------------------------------------//
 
-extern "C" int
-ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
-                ompt_data_t* tool_data);
+TIMEMORY_PROPERTY_SPECIALIZATION(ompt_handle<TIMEMORY_API>, TIMEMORY_OMPT_HANDLE,
+                                 "ompt_handle", "ompt", "ompt_handle", "openmp",
+                                 "openmp_tools")
 
-extern "C" ompt_start_tool_result_t*
-ompt_start_tool(unsigned int omp_version, const char* runtime_version);
+#if defined(TIMEMORY_USE_OMPT) &&                                                        \
+    (!defined(TIMEMORY_OMPT_HEADER_MODE) ||                                              \
+     (defined(TIMEMORY_OMPT_HEADER_MODE) && TIMEMORY_OMPT_HEADER_MODE == 0))
 
-extern "C" void
-ompt_finalize(ompt_data_t* tool_data);
+extern "C"
+{
+    extern ompt_start_tool_result_t* ompt_start_tool(
+        unsigned int omp_version, const char* runtime_version) TIMEMORY_VISIBLE;
+}
 
-//--------------------------------------------------------------------------------------//
-//
 #endif
-//
-//--------------------------------------------------------------------------------------//
-//

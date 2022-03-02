@@ -22,8 +22,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/ompt/extern.hpp"
+#pragma once
 
-TIMEMORY_EXTERN_COMPONENT(ompt_native_handle, false, void)
-TIMEMORY_EXTERN_COMPONENT(ompt_native_data_tracker, false, void)
-TIMEMORY_EXTERN_COMPONENT(ompt_data_tracker_t, true, int64_t)
+#include "timemory/components/ompt/callback_connector.hpp"
+#include "timemory/components/ompt/context_handler.hpp"
+#include "timemory/components/ompt/types.hpp"
+
+namespace tim
+{
+namespace openmp
+{
+//
+template <typename Connector, mode Mode, typename... Args>
+void
+ompt_wrapper<Connector, Mode, Args...>::callback(Args... args)
+{
+    if(!Connector::is_enabled())
+        return;
+
+    context_handler<api_type>{ Mode }(args...);
+}
+}  // namespace openmp
+}  // namespace tim

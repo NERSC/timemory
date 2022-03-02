@@ -24,46 +24,7 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_OMPT)
-
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/macros.hpp"
-#    include "timemory/components/ompt/components.hpp"
-#    include "timemory/components/ompt/tool.hpp"
-#    include "timemory/components/ompt/types.hpp"
-
-extern "C"
-{
-    // NOLINTNEXTLINE
-    int ompt_initialize(ompt_function_lookup_t lookup, int initial_device_num,
-                        ompt_data_t* tool_data)
-    {
-        printf("[timemory]> OpenMP-tools configuring for initial device %i\n\n",
-               initial_device_num);
-        tim::ompt::configure<TIMEMORY_OMPT_API_TAG>(lookup, initial_device_num,
-                                                    tool_data);
-        return 1;  // success
-    }
-
-    // NOLINTNEXTLINE
-    void ompt_finalize(ompt_data_t* tool_data)
-    {
-        printf("\n[timemory]> OpenMP-tools finalized\n\n");
-        tim::consume_parameters(tool_data);
-    }
-
-    // NOLINTNEXTLINE
-    ompt_start_tool_result_t* ompt_start_tool(unsigned int omp_version,
-                                              const char*  runtime_version)
-    {
-        printf("\n[timemory]> OpenMP version: %u, runtime version: %s\n", omp_version,
-               runtime_version);
-        static auto data =
-            new ompt_start_tool_result_t{ &ompt_initialize, &ompt_finalize, { 0 } };
-        return (ompt_start_tool_result_t*) data;
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-//
-#endif  // TIMEMORY_USE_OMPT
+#include "timemory/components/ompt/components.hpp"
+#include "timemory/components/ompt/configure.hpp"
+#include "timemory/components/ompt/tool.hpp"
+#include "timemory/components/ompt/types.hpp"

@@ -547,6 +547,10 @@ if(CMAKE_CXX_COMPILER_IS_CLANG OR TIMEMORY_BUILD_DOCS)
     timemory_add_option(TIMEMORY_USE_XRAY "Enable XRay instrumentation" OFF CMAKE_DEFINE)
 endif()
 
+set(TIMEMORY_MAX_THREADS 2048 CACHE STRING "Maximum number of statically allocated thread-local statics")
+timemory_add_feature(TIMEMORY_MAX_THREADS "Maximum number of statically allocated thread-local statics")
+timemory_add_cmake_defines(TIMEMORY_MAX_THREADS VALUE DEFAULT)
+
 if(TIMEMORY_BUILD_EXAMPLES
    AND TIMEMORY_USE_COVERAGE
    AND "$ENV{CONTINUOUS_INTEGRATION}" STREQUAL "true")
