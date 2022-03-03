@@ -26,6 +26,7 @@
 #define TIMEMORY_CONFIG_CONFIG_CPP_ 1
 
 #include "timemory/config/macros.hpp"
+#include "timemory/defines.h"
 
 #if defined(TIMEMORY_CONFIG_SOURCE) || !defined(TIMEMORY_USE_CONFIG_EXTERN)
 //
@@ -99,16 +100,25 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
             itr = '-';
     }
 
-    size_t pos = std::string::npos;
-    while((pos = exe_name.find("--")) != std::string::npos)
-        exe_name.erase(pos, 1);
+    auto _remove_double_hyphen = [](std::string exe_name) {
+        size_t pos = std::string::npos;
+        while((pos = exe_name.find("--")) != std::string::npos)
+            exe_name.erase(pos, 1);
+        return exe_name;
+    };
+
+    auto _default_exe_name = _remove_double_hyphen(_prefix + _suffix);
 
     if(exe_name.empty())
-        exe_name = "timemory-output";
+        exe_name = _default_exe_name;
+
+    exe_name = _remove_double_hyphen(exe_name);
 
     if(_settings)
     {
-        _settings->get_output_path() = exe_name;
+        if(_settings->get_output_path() == _default_exe_name ||
+           _settings->get_output_path() == "timemory-output")
+            _settings->set("output_path", exe_name, false);
 
         // allow environment overrides
         settings::parse(_settings);

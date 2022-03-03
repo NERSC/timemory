@@ -732,15 +732,16 @@ PYBIND11_MODULE(libpytimemory, timemory)
     timemory.def("set_rusage_self", set_rusage_self,
                  "Set the rusage to record child processes");
     //----------------------------------------------------------------------------------//
-    timemory.def("timemory_init", _init, "Initialize timemory",
-                 py::arg("argv") = py::list{}, py::arg("prefix") = "timemory-",
-                 py::arg("suffix") = "-output");
+    timemory.def(
+        "timemory_init", _init, "Initialize timemory", py::arg("argv") = py::list{},
+        py::arg("prefix") = TIMEMORY_PROJECT_NAME "-", py::arg("suffix") = "-output");
     //----------------------------------------------------------------------------------//
     timemory.def("timemory_finalize", _finalize,
                  "Finalize timemory (generate output) -- important to call if using MPI");
     //----------------------------------------------------------------------------------//
     timemory.def("initialize", _init, "Initialize timemory", py::arg("argv") = py::list{},
-                 py::arg("prefix") = "timemory-", py::arg("suffix") = "-output");
+                 py::arg("prefix") = TIMEMORY_PROJECT_NAME "-",
+                 py::arg("suffix") = "-output");
     //----------------------------------------------------------------------------------//
     timemory.def("finalize", _finalize,
                  "Finalize timemory (generate output) -- important to call if using MPI");

@@ -220,21 +220,44 @@ settings::store_command_line(int argc, char** argv)
 TIMEMORY_SETTINGS_INLINE std::string
                          settings::format(std::string _fpath, const std::string& _tag)
 {
-    auto&       _cmdline     = command_line();
-    std::string _arg0_string = {};    // only the first cmdline arg
-    std::string _argv_string = {};    // entire argv cmd
-    std::string _args_string = {};    // cmdline args
-    std::string _argt_string = _tag;  // prefix + cmdline args
-    std::string _tag0_string = _tag;  // only the basic prefix
+    using strpair_t           = std::pair<std::string, std::string>;
+    auto        _cmdline      = command_line();
+    std::string _arg0_string  = {};    // only the first cmdline arg
+    std::string _argv_string  = {};    // entire argv cmd
+    std::string _args_string  = {};    // cmdline args
+    std::string _argt_string  = _tag;  // prefix + cmdline args
+    std::string _tag0_string  = _tag;  // only the basic prefix
+    auto        _argn_options = std::vector<strpair_t>{};
+
+    auto _replace = [](auto& _v, const strpair_t& itr) {
+        auto pos = std::string::npos;
+        while((pos = _v.find(itr.first)) != std::string::npos)
+            _v.replace(pos, itr.first.length(), itr.second);
+    };
+
+    if(_cmdline.size() > 1 && _cmdline.at(1) == "--")
+        _cmdline.erase(_cmdline.begin() + 1);
+
+    for(auto& itr : _cmdline)
+    {
+        _replace(itr, { "/", "_" });
+        while(!itr.empty() && itr.at(0) == '_')
+            itr = itr.substr(1);
+    }
+
     if(!_cmdline.empty())
     {
         _arg0_string += _cmdline.at(0);
         _argv_string += _cmdline.at(0);
         for(size_t i = 1; i < _cmdline.size(); ++i)
         {
-            _argv_string += _cmdline.at(i);
-            _argt_string += _cmdline.at(i);
-            _args_string += _cmdline.at(i);
+            auto _v = std::string{ "_" } + _cmdline.at(i);
+            _argv_string += _v;
+            _argt_string += _v;
+            _args_string += _v;
+            _argn_options.emplace_back(TIMEMORY_JOIN("", "%arg", i, "%"), _v);
+            _argn_options.emplace_back(TIMEMORY_JOIN("", "%arg", i, "_hash%"),
+                                       md5::compute_md5(_v));
         }
     }
 
@@ -244,15 +267,10 @@ TIMEMORY_SETTINGS_INLINE std::string
     auto _slurm_job_id  = get_env<std::string>("SLURM_JOB_ID", "0", false);
     auto _slurm_proc_id = get_env<std::string>("SLURM_PROCID", _dmp_rank, false);
 
-    auto _replace = [&_fpath](const auto& itr) {
-        auto pos = std::string::npos;
-        while((pos = _fpath.find(itr.first)) != std::string::npos)
-            _fpath.replace(pos, itr.first.length(), itr.second);
-    };
     using strpairinit_t = std::initializer_list<std::pair<std::string, std::string>>;
     for(auto&& itr : strpairinit_t{ { "--", "-" }, { "__", "_" }, { "//", "/" } })
     {
-        _replace(itr);
+        _replace(_fpath, itr);
     }
 
     if(_fpath.find('%') == std::string::npos)
@@ -260,7 +278,7 @@ TIMEMORY_SETTINGS_INLINE std::string
 
     for(auto&& itr : strpairinit_t{ { "%arg0%", _arg0_string },
                                     { "%arg0_hash%", md5::compute_md5(_arg0_string) },
-                                    { "%argv%", _arg0_string },
+                                    { "%argv%", _argv_string },
                                     { "%argv_hash%", md5::compute_md5(_argv_string) },
                                     { "%argt%", _argt_string },
                                     { "%argt_hash%", md5::compute_md5(_argt_string) },
@@ -278,8 +296,16 @@ TIMEMORY_SETTINGS_INLINE std::string
                                     { "%r", _slurm_proc_id },
                                     { "%s", _dmp_size } })
     {
-        _replace(itr);
+        _replace(_fpath, itr);
     }
+
+    for(auto&& itr : _argn_options)
+        _replace(_fpath, itr);
+
+    std::regex _re{ "(.*)%(arg[0-9]+|arg[0-9]+_hash)%([-/_]*)(.*)" };
+    while(std::regex_search(_fpath, _re))
+        _fpath = std::regex_replace(_fpath, _re, "$1$4");
+
     return _fpath;
 }
 //
@@ -777,8 +803,8 @@ settings::initialize_io()
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, output_path, TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"),
-        "Explicitly specify the output folder for results", "timemory-output",
-        TIMEMORY_ESC(strset_t{ "native", "io" }),
+        "Explicitly specify the output folder for results",
+        TIMEMORY_PROJECT_NAME "-output", TIMEMORY_ESC(strset_t{ "native", "io" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-output-path" }),
         1);  // folder
 
