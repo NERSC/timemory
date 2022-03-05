@@ -104,8 +104,8 @@ get_unw_backtrace()
     static_assert(Depth > 0, "Error !(Depth > 0)");
     static_assert(Offset >= 0, "Error !(Offset >= 0)");
 
-    unw_cursor_t  cursor{};
-    unw_context_t context{};
+    static thread_local unw_cursor_t  cursor{};
+    static thread_local unw_context_t context{};
 
     // destination
     std::array<char[512], Depth> btrace{};
