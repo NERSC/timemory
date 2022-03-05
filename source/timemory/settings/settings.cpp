@@ -241,6 +241,8 @@ TIMEMORY_SETTINGS_INLINE std::string
     for(auto& itr : _cmdline)
     {
         _replace(itr, { "/", "_" });
+        while(!itr.empty() && itr.at(0) == '.')
+            itr = itr.substr(1);
         while(!itr.empty() && itr.at(0) == '_')
             itr = itr.substr(1);
     }
