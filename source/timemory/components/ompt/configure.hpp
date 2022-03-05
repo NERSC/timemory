@@ -44,8 +44,6 @@ void
 configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
 {
 #if defined(TIMEMORY_USE_OMPT)
-    (void) _v;
-    (void) _data;
     //
     //----------------------------------------------------------------------------------//
     //
@@ -57,7 +55,8 @@ configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
     //----------------------------------------------------------------------------------//
     //
 #    define TIMEMORY_OMPT_LOOKUP(TYPE, NAME)                                             \
-        printf("[timemory][ompt] finding %s...\n", #NAME);                               \
+        if(settings::verbose() > 1 || settings::debug())                                 \
+            fprintf(stderr, "[timemory][ompt] finding %s...\n", #NAME);                  \
         static TYPE OMPT_##NAME = (TYPE) lookup(#NAME);                                  \
         consume_parameters(OMPT_##NAME)
     //
@@ -388,11 +387,12 @@ configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
     timemory_ompt_register_callback(ompt_callback_cancel,
                                     TIMEMORY_OMPT_CBCAST(cancel_cb_t::callback));
     */
-    if(settings::verbose() > 0 || settings::debug())
-        printf("\n");
-#else
-    consume_parameters(lookup);
+    if(settings::verbose() > 1 || settings::debug())
+        fprintf(stderr, "\n");
 #endif
+    (void) lookup;
+    (void) _v;
+    (void) _data;
 }
 }  // namespace ompt
 }  // namespace tim

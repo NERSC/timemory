@@ -46,15 +46,16 @@ extern "C"
         static auto ompt_initialize = [](ompt_function_lookup_t lookup,
                                          int                    initial_device_num,
                                          ompt_data_t*           tool_data) -> int {
-            printf("[timemory]> OpenMP-tools configuring for initial device %i\n\n",
-                   initial_device_num);
+            fprintf(stderr,
+                    "[timemory]> OpenMP-tools configuring for initial device %i\n\n",
+                    initial_device_num);
             tim::ompt::configure<TIMEMORY_OMPT_API_TAG>(lookup, initial_device_num,
                                                         tool_data);
             return 1;  // success
         };
 
         static auto ompt_finalize = [](ompt_data_t* tool_data) {
-            printf("\n[timemory]> OpenMP-tools finalized\n\n");
+            fprintf(stderr, "\n[timemory]> OpenMP-tools finalized\n\n");
             tim::consume_parameters(tool_data);
         };
 
