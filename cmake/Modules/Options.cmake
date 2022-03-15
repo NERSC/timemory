@@ -338,6 +338,7 @@ timemory_add_option(TIMEMORY_INSTALL_HEADERS "Install the header files" ON)
 timemory_add_option(
     TIMEMORY_INSTALL_CONFIG
     "Install the cmake package config files, i.e. timemory-config.cmake, etc." ON)
+timemory_add_option(TIMEMORY_INSTALL_LIBRARIES "Install the libraries" ON)
 timemory_add_option(
     TIMEMORY_INSTALL_ALL
     "'install' target depends on 'all' target. Set to OFF to only install artifacts which were explicitly built"
