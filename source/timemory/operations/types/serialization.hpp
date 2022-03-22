@@ -848,7 +848,22 @@ serialization<Tp, true>::operator()(mpi_data, mpi::comm_t comm, const ValueT& en
         {
             auto ia =
                 policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>::get(ss);
-            (*ia)(cereal::make_nvp("data", ret));
+            try
+            {
+                (*ia)(cereal::make_nvp("data", ret));
+            } catch(cereal::Exception& e)
+            {
+                std::string _msg = ss.str();
+                // truncate
+                constexpr size_t max_msg_len = 60;
+                if(_msg.length() > max_msg_len)
+                    _msg = TIMEMORY_JOIN("...", _msg.substr(0, max_msg_len - 13),
+                                         _msg.substr(_msg.length() - 10));
+                TIMEMORY_PRINT_HERE(
+                    "Warning! Exception in operation::serialization<%s>::recv_serialize: "
+                    "%s\n\t%s",
+                    demangle<Tp>().c_str(), e.what(), _msg.c_str());
+            }
         }
         return ret;
     };

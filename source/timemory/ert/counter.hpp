@@ -343,8 +343,8 @@ serialize(std::string fname, exec_data<Counter>& obj)
         auto send_serialize = [&](const exec_data<Counter>& src) {
             std::stringstream ss;
             {
-                cereal::JSONOutputArchive::Options opt(16, space, 0);
-                cereal::JSONOutputArchive          oa(ss, opt);
+                cereal::JSONOutputArchive::Options opt{ 16, space, 0 };
+                cereal::JSONOutputArchive          oa{ ss, opt };
                 oa(cereal::make_nvp("data", src));
             }
             return ss.str();
@@ -354,12 +354,27 @@ serialize(std::string fname, exec_data<Counter>& obj)
         //  Used to convert the serialization to a result
         //
         auto recv_serialize = [&](const std::string& src) {
-            exec_data<Counter> ret;
-            std::stringstream  ss;
+            exec_data<Counter> ret{};
+            std::stringstream  ss{};
             ss << src;
             {
-                cereal::JSONInputArchive ia(ss);
-                ia(cereal::make_nvp("data", ret));
+                cereal::JSONInputArchive ia{ ss };
+                try
+                {
+                    ia(cereal::make_nvp("data", ret));
+                } catch(cereal::Exception& e)
+                {
+                    std::string _msg = ss.str();
+                    // truncate
+                    constexpr size_t max_msg_len = 60;
+                    if(_msg.length() > max_msg_len)
+                        _msg = TIMEMORY_JOIN("...", _msg.substr(0, max_msg_len - 13),
+                                             _msg.substr(_msg.length() - 10));
+                    TIMEMORY_PRINT_HERE(
+                        "Warning! Exception in ert::serialize::recv_serialize: "
+                        "%s\n\t%s",
+                        e.what(), _msg.c_str());
+                }
             }
             return ret;
         };

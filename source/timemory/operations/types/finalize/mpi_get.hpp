@@ -152,7 +152,22 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         {
             auto ia =
                 policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>::get(ss);
-            (*ia)(cereal::make_nvp("data", ret));
+            try
+            {
+                (*ia)(cereal::make_nvp("data", ret));
+            } catch(cereal::Exception& e)
+            {
+                std::string _msg = ss.str();
+                // truncate
+                constexpr size_t max_msg_len = 120;
+                if(_msg.length() > max_msg_len)
+                    _msg = TIMEMORY_JOIN("...", _msg.substr(0, max_msg_len - 23),
+                                         _msg.substr(_msg.length() - 20));
+                TIMEMORY_PRINT_HERE("Warning! Exception in "
+                                    "operation::finalize::mpi_get<%s>::recv_serialize: "
+                                    "%s\n\t%s",
+                                    demangle<Type>().c_str(), e.what(), _msg.c_str());
+            }
             if(settings::debug())
             {
                 printf("[RECV: %i]> data size: %lli\n", comm_rank,
@@ -430,13 +445,28 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
     auto recv_serialize = [&](const std::string& src) {
         TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "recv data [rank: %i] :: %lu",
                                         comm_rank, src.length());
-        Type              ret;
-        std::stringstream ss;
+        Type              ret{};
+        std::stringstream ss{};
         ss << src;
         {
             auto ia =
                 policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>::get(ss);
-            (*ia)(cereal::make_nvp("data", ret));
+            try
+            {
+                (*ia)(cereal::make_nvp("data", ret));
+            } catch(cereal::Exception& e)
+            {
+                std::string _msg = ss.str();
+                // truncate
+                constexpr size_t max_msg_len = 120;
+                if(_msg.length() > max_msg_len)
+                    _msg = TIMEMORY_JOIN("...", _msg.substr(0, max_msg_len - 23),
+                                         _msg.substr(_msg.length() - 20));
+                TIMEMORY_PRINT_HERE("Warning! Exception in "
+                                    "operation::finalize::mpi_get<%s>::recv_serialize: "
+                                    "%s\n\t%s",
+                                    demangle<Type>().c_str(), e.what(), _msg.c_str());
+            }
         }
         return ret;
     };

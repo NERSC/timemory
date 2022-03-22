@@ -139,7 +139,22 @@ upc_get<Type, true>::operator()(distrib_type& results)
         {
             auto ia =
                 policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>::get(ss);
-            (*ia)(cereal::make_nvp("data", ret));
+            try
+            {
+                (*ia)(cereal::make_nvp("data", ret));
+            } catch(cereal::Exception& e)
+            {
+                std::string _msg = ss.str();
+                // truncate
+                constexpr size_t max_msg_len = 60;
+                if(_msg.length() > max_msg_len)
+                    _msg = TIMEMORY_JOIN("...", _msg.substr(0, max_msg_len - 13),
+                                         _msg.substr(_msg.length() - 10));
+                TIMEMORY_PRINT_HERE("Warning! Exception in "
+                                    "operation::finalize::upc_get<%s>::send_serialize: "
+                                    "%s\n\t%s",
+                                    demangle<Type>().c_str(), e.what(), _msg.c_str());
+            }
             if(settings::debug())
                 printf("[RECV: %i]> data size: %lli\n", comm_rank,
                        (long long int) ret.size());
@@ -364,7 +379,22 @@ upc_get<Type, true>::operator()(basic_tree_vector_type& bt)
         {
             auto ia =
                 policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>::get(ss);
-            (*ia)(cereal::make_nvp("data", ret));
+            try
+            {
+                (*ia)(cereal::make_nvp("data", ret));
+            } catch(cereal::Exception& e)
+            {
+                std::string _msg = ss.str();
+                // truncate
+                constexpr size_t max_msg_len = 60;
+                if(_msg.length() > max_msg_len)
+                    _msg = TIMEMORY_JOIN("...", _msg.substr(0, max_msg_len - 13),
+                                         _msg.substr(_msg.length() - 10));
+                TIMEMORY_PRINT_HERE("Warning! Exception in "
+                                    "operation::finalize::upc_get<%s>::recv_serialize: "
+                                    "%s\n\t%s",
+                                    demangle<Type>().c_str(), e.what(), _msg.c_str());
+            }
             if(settings::debug())
                 printf("[RECV: %i]> data size: %lli\n", comm_rank,
                        (long long int) ret.size());
