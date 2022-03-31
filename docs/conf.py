@@ -164,16 +164,13 @@ if False:
         print(f"cleaning macros from {file}...")
         for line in fileinput.input(file, inplace=True):
             for key in [
-                "TIMEMORY_NEVER_INSTRUMENT"
-                "TIMEMORY_EXTERN_VISIBLE",
+                "TIMEMORY_NEVER_INSTRUMENT" "TIMEMORY_EXTERN_VISIBLE",
                 "TIMEMORY_ALWAYS_INLINE",
                 "TIMEMORY_NODISCARD",
-                "TIMEMORY_NOINLINE"
-                "TIMEMORY_FLATTEN",
+                "TIMEMORY_NOINLINE" "TIMEMORY_FLATTEN",
                 "TIMEMORY_HIDDEN",
                 "TIMEMORY_NOCLONE",
-                "TIMEMORY_INLINE"
-                "TIMEMORY_HOT",
+                "TIMEMORY_INLINE" "TIMEMORY_HOT",
                 "TIMEMORY_LAMBDA",
                 "TIMEMORY_DEVICE_LAMBDA",
                 "TIMEMORY_DEVICE_FUCTION",
@@ -246,6 +243,23 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+
+html_theme_options = {
+    "analytics_id": "G-R0682G8FP1",
+    "analytics_anonymize_ip": False,
+    "logo_only": False,
+    "display_version": True,
+    "prev_next_buttons_location": "bottom",
+    "style_external_links": True,
+    "vcs_pageview_mode": "",
+    # 'style_nav_header_background': 'white',
+    # Toc options
+    "collapse_navigation": True,
+    "sticky_navigation": True,
+    "navigation_depth": 4,
+    "includehidden": True,
+    "titles_only": False,
+}
 
 # Breathe Configuration
 breathe_projects = {"timemory": "doxygen-xml"}
