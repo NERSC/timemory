@@ -20,3 +20,4 @@ dependencies:
   - sphinx <4.0.0
   - sphinx-markdown-tables
   - docutils
+  - jinja2 <3.1
