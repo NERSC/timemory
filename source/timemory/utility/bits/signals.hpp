@@ -31,6 +31,8 @@
 
 #pragma once
 
+#include "timemory/environment/declaration.hpp"
+#include "timemory/settings/macros.hpp"
 #include "timemory/utility/declaration.hpp"
 
 #include <cstdlib>
@@ -39,6 +41,8 @@
 #include <string>
 
 namespace tim
+{
+inline namespace signals
 {
 //======================================================================================//
 
@@ -119,8 +123,13 @@ signal_settings::check_environment()
 
     for(const auto& itr : _list)
     {
-        auto _enable  = get_env("SIGNAL_ENABLE_" + itr.first, false);
-        auto _disable = get_env("SIGNAL_DISABLE_" + itr.first, false);
+        auto _name = std::get<0>(get_info(itr.second));
+        auto _enable =
+            get_env(TIMEMORY_SETTINGS_PREFIX "SIGNAL_ENABLE_" + itr.first,
+                    get_env(TIMEMORY_SETTINGS_PREFIX "SIGNAL_ENABLE_" + _name, false));
+        auto _disable =
+            get_env(TIMEMORY_SETTINGS_PREFIX "SIGNAL_DISABLE_" + itr.first,
+                    get_env(TIMEMORY_SETTINGS_PREFIX "SIGNAL_DISABLE_" + _name, false));
 
         if(_enable)
             signal_settings::enable(itr.second);
@@ -200,7 +209,7 @@ signal_settings::str(const sys_signal& _type)
     std::stringstream ss;
     auto              _descript = [&](const descript_tuple_t& _data) {
         ss << " Signal: " << std::setw(10) << std::get<0>(_data)
-           << " (error code: " << std::setw(3) << std::get<1>(_data) << ") "
+           << " (signal number: " << std::setw(3) << std::get<1>(_data) << ") "
            << std::setw(40) << std::get<2>(_data);
     };
 
@@ -321,6 +330,7 @@ signal_settings::get_default()
 
 //======================================================================================//
 
+}  // namespace signals
 }  // namespace tim
 
 //======================================================================================//
