@@ -258,9 +258,13 @@ public:
     //
     vector_t<std::string> label_array() const
     {
-        vector_t<std::string> arr(events.size(), "");
+        std::vector<std::string> arr = events;
         for(size_type i = 0; i < events.size(); ++i)
-            arr[i] = papi::get_event_info(events[i]).short_descr;
+        {
+            papi::event_info_t _info = papi::get_event_info(events.at(i));
+            if(!_info.modified_short_descr)
+                arr.at(i) = _info.short_descr;
+        }
 
         for(auto& itr : arr)
         {

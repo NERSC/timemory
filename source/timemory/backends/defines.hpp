@@ -24,6 +24,29 @@
 
 #pragma once
 
-#include "timemory/backends/defines.hpp"
-#include "timemory/backends/types/cupti.hpp"
-#include "timemory/backends/types/papi.hpp"
+#if defined(TIMEMORY_COMMON_SOURCE) && !defined(TIMEMORY_BACKENDS_SOURCE)
+#    define TIMEMORY_BACKENDS_SOURCE 1
+#elif defined(TIMEMORY_USE_COMMON_EXTERN) && !defined(TIMEMORY_USE_BACKENDS_EXTERN)
+#    define TIMEMORY_USE_BACKENDS_EXTERN 1
+#endif
+//
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_BACKENDS_EXTERN)
+#    define TIMEMORY_USE_BACKENDS_EXTERN 1
+#endif
+//
+#if defined(TIMEMORY_BACKENDS_SOURCE)
+#    define TIMEMORY_BACKENDS_LINKAGE(...) __VA_ARGS__
+#    define TIMEMORY_BACKENDS_INLINE
+#elif defined(TIMEMORY_USE_BACKENDS_EXTERN)
+#    define TIMEMORY_BACKENDS_LINKAGE(...) extern __VA_ARGS__
+#    define TIMEMORY_BACKENDS_INLINE
+#else
+#    define TIMEMORY_BACKENDS_LINKAGE(...) inline __VA_ARGS__
+#    define TIMEMORY_BACKENDS_INLINE inline
+#endif
+//
+#if !defined(TIMEMORY_BACKENDS_SOURCE) && !defined(TIMEMORY_USE_BACKENDS_EXTERN)
+#    if !defined(TIMEMORY_BACKENDS_HEADER_ONLY_MODE)
+#        define TIMEMORY_BACKENDS_HEADER_ONLY_MODE 1
+#    endif
+#endif

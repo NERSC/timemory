@@ -76,7 +76,9 @@ struct papi_tuple
     using tracker_type = policy::instance_tracker<papi_tuple<EventTypes...>>;
     using common_type  = this_type;
 
-    static const size_type num_events = sizeof...(EventTypes);
+    static constexpr size_type num_events      = sizeof...(EventTypes);
+    static constexpr size_type event_count_max = num_events;
+
     template <typename Tp>
     using array_t = std::array<Tp, num_events>;
 

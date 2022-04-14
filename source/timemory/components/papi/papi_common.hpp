@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/backends/papi.hpp"
 #include "timemory/components/papi/backends.hpp"
 #include "timemory/components/papi/macros.hpp"
 #include "timemory/components/papi/types.hpp"
@@ -38,6 +39,7 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -62,7 +64,7 @@ public:
     using array_t = std::array<Tp, N>;
 
     using size_type         = size_t;
-    using event_list        = vector_t<int>;
+    using event_list        = vector_t<string_t>;
     using value_type        = vector_t<long long>;
     using entry_type        = typename value_type::value_type;
     using get_initializer_t = std::function<event_list()>;
@@ -85,10 +87,10 @@ public:
     {
         TIMEMORY_DEFAULT_OBJECT(common_data)
 
-        bool          is_configured = false;
-        bool          is_fixed      = false;
-        int           event_set     = PAPI_NULL;
-        vector_t<int> events        = {};
+        bool               is_configured = false;
+        bool               is_fixed      = false;
+        int                event_set     = PAPI_NULL;
+        vector_t<string_t> events        = {};
     };
 
     //----------------------------------------------------------------------------------//
@@ -201,30 +203,54 @@ papi_common::get_initializer()
         {
             if(!settings::papi_quiet())
                 fprintf(stderr,
-                        "[papi_common]> PAPI could not be initialized (initialized: "
+                        "[timemory][papi_common]> PAPI could not be initialized "
+                        "(initialized: "
                         "%s, working: %s)\n",
                         state().is_initialized ? "y" : "n",
                         state().is_working ? "y" : "n");
-            return vector_t<int>{};
+            return vector_t<string_t>{};
         }
 
         auto events_str = settings::papi_events();
 
         if(settings::verbose() > 1 || settings::debug())
         {
-            printf("[papi_common]> TIMEMORY_PAPI_EVENTS: '%s'...\n", events_str.c_str());
+            fprintf(stderr, "[timemory][papi_common]> papi events: '%s'...\n",
+                    events_str.c_str());
         }
 
         // don't delimit colons!
         vector_t<string_t> events_str_list = delimit(events_str, "\"',; ");
-        vector_t<int>      events_list;
+        vector_t<string_t> events_list;
+
+        static std::set<string_t> query_success{};
+        static std::set<string_t> query_failure{};
+
+        auto _query_event = [](const string_t& _evt) {
+            static std::mutex            _mtx{};
+            std::unique_lock<std::mutex> _lk{ _mtx };
+            if(query_success.count(_evt) > 0)
+                return true;
+            if(query_failure.count(_evt) > 0)
+                return false;
+            auto _v = papi::query_event(_evt);
+            (void) papi::get_event_info(_evt);
+            if(_v)
+                query_success.emplace(_evt);
+            else
+                query_failure.emplace(_evt);
+            return _v;
+        };
 
         auto& pevents = private_events();
-        for(int& pevent : pevents)
+        for(auto& pevent : pevents)
         {
-            auto fitr = std::find(events_list.begin(), events_list.end(), pevent);
+            string_t _pevent_str = papi::get_event_info(pevent).symbol;
+            if(!_query_event(_pevent_str))
+                continue;
+            auto fitr = std::find(events_list.begin(), events_list.end(), _pevent_str);
             if(fitr == events_list.end())
-                events_list.push_back(pevent);
+                events_list.push_back(_pevent_str);
         }
 
         for(const auto& itr : events_str_list)
@@ -234,44 +260,44 @@ papi_common::get_initializer()
 
             if(settings::debug())
             {
-                printf("[papi_common]> Getting event code from '%s'...\n", itr.c_str());
+                fprintf(stderr, "[timemory][papi_common]> Querying event '%s'...\n",
+                        itr.c_str());
             }
 
-            int evt_code = papi::get_event_code(itr);
-            if(evt_code == PAPI_NOT_INITED)  // defined as zero
+            if(!_query_event(itr))
             {
-                std::stringstream ss;
-                ss << "[papi_common] Error creating event with ID: " << itr;
+                std::stringstream _ss{};
+                _ss << "[timemory][papi_common]> Event '" << itr << "' not valid";
                 if(settings::papi_fail_on_error())
                 {
-                    TIMEMORY_EXCEPTION(ss.str());
+                    TIMEMORY_EXCEPTION(_ss.str());
                 }
-                else
+                else if(settings::verbose() >= 0)
                 {
-                    fprintf(stderr, "%s\n", ss.str().c_str());
+                    fprintf(stderr, "%s\n", _ss.str().c_str());
                 }
+                continue;
+            }
+
+            auto fitr = std::find(events_list.begin(), events_list.end(), itr);
+            if(fitr == events_list.end())
+            {
+                if(settings::debug() || settings::verbose() > 1)
+                {
+                    fprintf(
+                        stderr,
+                        "[timemory][papi_common] Successfully queried event '%s'...\n",
+                        itr.c_str());
+                }
+                events_list.push_back(itr);
             }
             else
             {
-                auto fitr = std::find(events_list.begin(), events_list.end(), evt_code);
-                if(fitr == events_list.end())
+                if(settings::debug() || settings::verbose() > 1)
                 {
-                    if(settings::debug() || settings::verbose() > 1)
-                    {
-                        printf("[papi_common] Successfully created event '%s' with "
-                               "code '%i'...\n",
-                               itr.c_str(), evt_code);
-                    }
-                    events_list.push_back(evt_code);
-                }
-                else
-                {
-                    if(settings::debug() || settings::verbose() > 1)
-                    {
-                        printf("[papi_common] Event '%s' with code '%i' already "
-                               "exists...\n",
-                               itr.c_str(), evt_code);
-                    }
+                    fprintf(stderr,
+                            "[timemory][papi_common] Event '%s' already exists...\n",
+                            itr.c_str());
                 }
             }
         }

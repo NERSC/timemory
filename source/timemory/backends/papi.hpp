@@ -22,26 +22,25 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file backends/papi.hpp
- * \headerfile backends/papi.hpp "timemory/backends/papi.hpp"
- * Provides implementation of PAPI routines.
- *
- */
-
 #pragma once
 
 // define TIMEMORY_EXTERNAL_PAPI_DEFINITIONS if these enumerations/defs in bits/papi.hpp
 // cause problems
 
+#include "timemory/backends/defines.hpp"
 #include "timemory/backends/hardware_counters.hpp"
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/backends/types/papi.hpp"
+#include "timemory/macros/language.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <cassert>
 #include <cstdint>
+#include <memory>
+#include <mutex>
 #include <thread>
 
 #if defined(TIMEMORY_UNIX)
@@ -79,16 +78,93 @@
 
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-
 namespace papi
 {
-//--------------------------------------------------------------------------------------//
-
 using string_t         = std::string;
-using event_info_t     = PAPI_event_info_t;
 using ulong_t          = unsigned long int;
 using hwcounter_info_t = std::vector<hardware_counters::info>;
+
+struct component_info : PAPI_component_info_t
+{
+    using base_type = PAPI_component_info_t;
+
+    TIMEMORY_DEFAULT_OBJECT(component_info)
+
+    component_info(int _idx, base_type _info)
+    : base_type{ _info }
+    , index{ _idx }
+    {}
+
+    explicit component_info(base_type _info)
+    : base_type{ _info }
+    , index{ _info.CmpIdx }
+    {}
+
+    friend bool operator==(const component_info& lhs, const component_info& rhs)
+    {
+        return (lhs.index == rhs.index && strcmp(lhs.name, rhs.name) == 0);
+    }
+
+    friend bool operator!=(const component_info& lhs, const component_info& rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    friend bool operator<(const component_info& lhs, const component_info& rhs)
+    {
+        return (lhs.index < rhs.index);
+    }
+
+    int index = 0;
+};
+
+struct event_info : PAPI_event_info_t
+{
+    using base_type = PAPI_event_info_t;
+
+    TIMEMORY_DEFAULT_OBJECT(event_info)
+
+    event_info(PAPI_event_info_t _info)
+    : base_type{ _info }
+    {}
+
+    event_info(PAPI_event_info_t _info, string_t _unqual_sym, string_t _unqual_long_descr,
+               bool _qualified = true, bool _mod_short_descr = false)
+    : base_type{ _info }
+    , qualified{ _qualified }
+    , modified_short_descr{ _mod_short_descr }
+    , unqualified_symbol{ std::move(_unqual_sym) }
+    , unqualified_long_descr{ std::move(_unqual_long_descr) }
+    {}
+
+    friend bool operator==(const event_info& lhs, const event_info& rhs)
+    {
+        return (lhs.component_index == rhs.component_index)
+                   ? (lhs.event_code == rhs.event_code)
+                   : false;
+    }
+
+    friend bool operator!=(const event_info& lhs, const event_info& rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    friend bool operator<(const event_info& lhs, const event_info& rhs)
+    {
+        return (lhs.component_index == rhs.component_index)
+                   ? (lhs.event_code < rhs.event_code)
+                   : (lhs.component_index < rhs.component_index);
+    }
+
+    bool     qualified              = false;
+    bool     modified_short_descr   = false;
+    string_t unqualified_symbol     = {};
+    string_t unqualified_long_descr = {};
+};
+
+using event_info_t         = event_info;
+using component_info_t     = component_info;
+using component_info_map_t = std::map<component_info, std::vector<event_info>>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -160,28 +236,36 @@ working()
 
 //--------------------------------------------------------------------------------------//
 
+inline auto&
+get_component_info_map()
+{
+    static auto _v = std::make_unique<component_info_map_t>();
+    return _v;
+}
+
+//--------------------------------------------------------------------------------------//
+
 inline bool
-check(int retval, const char* mesg, bool quiet = false)
+check(int retval, string_view_cref_t mesg, bool quiet = false)
 {
     bool success = (retval == PAPI_OK);
     if(!success && !quiet)
     {
 #if defined(TIMEMORY_USE_PAPI)
-        auto*             error_str   = PAPI_strerror(retval);
-        static const auto BUFFER_SIZE = 1024;
-        static char       buf[BUFFER_SIZE];
-        sprintf(buf, "%s : PAPI_error %d: %s\n", mesg, retval, error_str);
+        auto*  error_str = PAPI_strerror(retval);
+        auto&& _msg      = TIMEMORY_JOIN(' ', "[timemory][papi]", mesg, ":: PAPI_error",
+                                    retval, ":", error_str);
         if(settings::papi_fail_on_error())
         {
-            TIMEMORY_EXCEPTION(buf);
+            TIMEMORY_EXCEPTION(_msg);
         }
         else
         {
             if(working() && !settings::papi_quiet())
-                fprintf(stderr, "%s", buf);
+                fprintf(stderr, "%s\n", _msg.c_str());
         }
 #else
-        fprintf(stderr, "%s (error code = %i)\n", mesg, retval);
+        fprintf(stderr, "[timemory][papi] %s (error code = %i)\n", mesg.data(), retval);
 #endif
     }
     return (success && working());
@@ -206,19 +290,19 @@ set_debug(int level)
 inline string_t
 as_string(int* events, long long* values, int num_events, const string_t& indent)
 {
-    std::stringstream ss;
+    string_t _str{};
 #if defined(TIMEMORY_USE_PAPI)
     for(int i = 0; i < num_events; ++i)
     {
         PAPI_event_info_t evt_info;
-        PAPI_get_event_info(events[i], &evt_info);
-        char* description = evt_info.long_descr;
-        ss << indent << description << " : " << values[i] << std::endl;
+        if(PAPI_get_event_info(events[i], &evt_info) == PAPI_OK)
+            _str = TIMEMORY_JOIN("", _str, indent, evt_info.long_descr, " : ", values[i],
+                                 '\n');
     }
 #else
     consume_parameters(events, values, num_events, indent);
 #endif
-    return ss.str();
+    return _str;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -254,43 +338,13 @@ unregister_thread()
 
 //--------------------------------------------------------------------------------------//
 
-inline int
-get_event_code(const std::string& event_code_str)
-{
-#if defined(TIMEMORY_USE_PAPI) && defined(TIMEMORY_UNIX)
-    static const uint64_t BUFFER_SIZE = 1024;
-    int                   event_code  = -1;
-    char                  event_code_char[BUFFER_SIZE];
-    sprintf(event_code_char, "%s", event_code_str.c_str());
-    int               retval = PAPI_event_name_to_code(event_code_char, &event_code);
-    std::stringstream ss;
-    ss << "Warning!! Failure converting " << event_code_str << " to enum value";
-    working() = check(retval, ss.str().c_str());
-    return (retval == PAPI_OK) ? event_code : PAPI_NOT_INITED;
-#else
-    consume_parameters(event_code_str);
-    return PAPI_NOT_INITED;
-#endif
-}
+int
+get_event_code(string_view_cref_t event_code_str);
 
 //--------------------------------------------------------------------------------------//
 
-inline std::string
-get_event_code_name(int event_code)
-{
-#if defined(TIMEMORY_USE_PAPI) && defined(TIMEMORY_UNIX)
-    static const uint64_t BUFFER_SIZE = 1024;
-    char                  event_code_char[BUFFER_SIZE];
-    int                   retval = PAPI_event_code_to_name(event_code, event_code_char);
-    std::stringstream     ss;
-    ss << "Warning!! Failure converting event code " << event_code << " to a name";
-    working() = check(retval, ss.str().c_str());
-    return (retval == PAPI_OK) ? std::string(event_code_char) : "";
-#else
-    consume_parameters(event_code);
-    return "";
-#endif
-}
+std::string
+get_event_code_name(int event_code);
 
 //--------------------------------------------------------------------------------------//
 
@@ -308,29 +362,47 @@ get_event_info(int evt_type)
 
 //--------------------------------------------------------------------------------------//
 
+event_info_t
+get_event_info(string_view_cref_t evt_type);
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
+is_initialized()
+{
+#if defined(TIMEMORY_USE_PAPI)
+    return (PAPI_is_initialized() != 0);
+#else
+    return false;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename Tp>
-inline void
+inline bool
 attach(int event_set, Tp pid_or_tid)
 {
     // inform PAPI that a previously registered thread is disappearing
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_attach(event_set, pid_or_tid);
-    working()  = check(retval, "Warning!! Failure attaching to event set");
+    return (working() = check(retval, "Warning!! Failure attaching to event set"));
 #else
     consume_parameters(event_set, pid_or_tid);
+    return false;
 #endif
 }
 
 //--------------------------------------------------------------------------------------//
 namespace details
 {
-inline void
+inline bool
 init_threading()
 {
 #if defined(TIMEMORY_USE_PAPI)
     static bool _threading = settings::papi_threading();
     if(!_threading)
-        return;
+        return false;
 
     static bool threading_initialized = false;
     if(is_master_thread() && !threading_initialized && working())
@@ -350,18 +422,21 @@ init_threading()
                         "currently working\n");
         }
     }
+    return working();
+#else
+    return false;
 #endif
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+inline bool
 init_multiplexing()
 {
 #if defined(TIMEMORY_USE_PAPI)
     static bool _multiplexing = settings::papi_multiplexing();
     if(!_multiplexing)
-        return;
+        return false;
 
     static bool multiplexing_initialized = false;
     if(!multiplexing_initialized)
@@ -381,6 +456,9 @@ init_multiplexing()
                         "errors\n");
         }
     }
+    return working();
+#else
+    return false;
 #endif
 }
 
@@ -395,48 +473,64 @@ auto papi_main_tid_assigned = (get_main_tid(), true);
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+inline bool
 init_library()
 {
 #if defined(TIMEMORY_USE_PAPI)
-    if((PAPI_is_initialized() == 0) && papi_main_tid_assigned)
+    if(!is_initialized() && papi_main_tid_assigned)
     {
         int retval = PAPI_library_init(PAPI_VER_CURRENT);
         if(retval != PAPI_VER_CURRENT && retval > 0)
             fprintf(stderr, "PAPI library version mismatch!\n");
         working() = (retval == PAPI_VER_CURRENT);
     }
+    return working();
+#else
+    return false;
 #endif
 }
+
+size_t
+generate_component_info(bool _qualifiers = true, bool _force = false);
 }  // namespace details
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+inline bool
 init()
 {
     // initialize the PAPI library
 #if defined(TIMEMORY_USE_PAPI)
-    if(PAPI_is_initialized() == 0)
+    if(!is_initialized())
     {
         details::init_library();
         details::init_multiplexing();
         if(!working())
-            fprintf(stderr, "Warning!! PAPI library not fully initialized!\n");
+            fprintf(stderr,
+                    "[timemory][papi] Warning!! PAPI library not fully initialized!\n");
+        else
+        {
+            if(details::generate_component_info() == 0)
+            {
+                fprintf(stderr,
+                        "[timemory][papi] Warning!! No PAPI component info was found\n");
+            }
+        }
     }
 #else
     working() = false;
 #endif
+    return working();
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+inline bool
 shutdown()
 {
     // finish using PAPI and free all related resources
 #if defined(TIMEMORY_USE_PAPI)
-    if(PAPI_is_initialized() != 0)
+    if(is_initialized())
     {
         unregister_thread();
         if(get_tid() == get_main_tid())
@@ -444,8 +538,10 @@ shutdown()
             PAPI_shutdown();
             working() = false;
         }
+        return true;
     }
 #endif
+    return false;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -674,8 +770,36 @@ add_event(int event_set, int event)
     if(working())
     {
         int  retval   = PAPI_add_event(event_set, event);
-        bool _working = check(retval, "Warning!! Failure to add event to event set");
+        bool _working = check(retval, TIMEMORY_JOIN(" ", "Warning!! Failure to add event",
+                                                    event, "to event set", event_set));
         working()     = _working;
+        return _working;
+    }
+#else
+    consume_parameters(event_set, event);
+#endif
+    return false;
+}
+
+//--------------------------------------------------------------------------------------//
+
+bool
+add_event(int event_set, string_view_cref_t event_name);
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
+remove_event(int event_set, int event)
+{
+    // add single PAPI preset or native hardware event to an event set
+#if defined(TIMEMORY_USE_PAPI)
+    if(working())
+    {
+        int  retval = PAPI_remove_event(event_set, event);
+        bool _working =
+            check(retval, TIMEMORY_JOIN(" ", "Warning!! Failure to remove event", event,
+                                        "from event set", event_set));
+        working() = _working;
         return _working;
     }
 #else
@@ -687,26 +811,28 @@ add_event(int event_set, int event)
 //--------------------------------------------------------------------------------------//
 
 inline bool
-remove_event(int event_set, int event)
+remove_event(int event_set, string_view_cref_t event_name)
 {
     // add single PAPI preset or native hardware event to an event set
 #if defined(TIMEMORY_USE_PAPI)
     if(working())
     {
-        int  retval   = PAPI_remove_event(event_set, event);
-        bool _working = check(retval, "Warning!! Failure to remove event from event set");
-        working()     = _working;
+        int  retval = PAPI_remove_named_event(event_set, event_name.data());
+        bool _working =
+            check(retval, TIMEMORY_JOIN(" ", "Warning!! Failure to remove named event",
+                                        event_name, "from event set", event_set));
+        working() = _working;
         return _working;
     }
 #else
-    consume_parameters(event_set, event);
+    consume_parameters(event_set, event_name);
 #endif
     return false;
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+inline bool
 add_events(int event_set, int* events, int number)
 {
     // add array of PAPI preset or native hardware events to an event set
@@ -720,11 +846,17 @@ add_events(int event_set, int* events, int number)
 #else
     consume_parameters(event_set, events, number);
 #endif
+    return working();
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+std::vector<bool>
+add_events(int event_set, string_t* events, int number);
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
 remove_events(int event_set, int* events, int number)
 {
     // add array of PAPI preset or native hardware events to an event set
@@ -737,11 +869,37 @@ remove_events(int event_set, int* events, int number)
 #else
     consume_parameters(event_set, events, number);
 #endif
+    return working();
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+inline std::vector<bool>
+remove_events(int event_set, string_t* events, int number)
+{
+    std::vector<bool> _success(number, false);
+    // add array of PAPI preset or native hardware events to an event set
+#if defined(TIMEMORY_USE_PAPI)
+    init();
+    if(working())
+    {
+        for(int i = 0; i < number; ++i)
+        {
+            auto retval = PAPI_remove_named_event(event_set, events[i].c_str());
+            _success[i] = check(
+                retval, TIMEMORY_JOIN(" ", "Warning!! Failure to remove named event",
+                                      events[i], "from event set", event_set));
+        }
+    }
+#else
+    consume_parameters(event_set, events, number);
+#endif
+    return _success;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
 assign_event_set_component(int event_set, int cidx)
 {
     // assign a component index to an existing but empty eventset
@@ -754,11 +912,12 @@ assign_event_set_component(int event_set, int cidx)
 #else
     consume_parameters(event_set, cidx);
 #endif
+    return working();
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+inline bool
 attach(int event_set, unsigned long tid)
 {
     // attach specified event set to a specific process or thread id
@@ -772,11 +931,12 @@ attach(int event_set, unsigned long tid)
 #else
     consume_parameters(event_set, tid);
 #endif
+    return working();
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+inline bool
 detach(int event_set)
 {
     // detach specified event set from a previously specified process or thread id
@@ -789,6 +949,7 @@ detach(int event_set)
 #else
     consume_parameters(event_set);
 #endif
+    return working();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -798,6 +959,19 @@ query_event(int event)
 {
 #if defined(TIMEMORY_USE_PAPI)
     return (PAPI_query_event(event) == PAPI_OK);
+#else
+    consume_parameters(event);
+    return false;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
+query_event(const std::string& event)
+{
+#if defined(TIMEMORY_USE_PAPI)
+    return (PAPI_query_named_event(event.c_str()) == PAPI_OK);
 #else
     consume_parameters(event);
     return false;
@@ -821,95 +995,36 @@ overflow(int evt_set, int evt_code, int threshold, int flags, Func&& handler)
 
 //--------------------------------------------------------------------------------------//
 
-inline hwcounter_info_t
-available_events_info()
+template <typename Func>
+inline bool
+overflow(int evt_set, string_view_cref_t evt_name, int threshold, int flags,
+         Func&& handler)
 {
-    hwcounter_info_t evts{};
-
 #if defined(TIMEMORY_USE_PAPI)
-    details::init_library();
-    if(working())
-    {
-        for(int i = 0; i < PAPI_END_idx; ++i)
-        {
-            PAPI_event_info_t info;
-            auto              ret = PAPI_get_event_info((i | PAPI_PRESET_MASK), &info);
-            if(ret != PAPI_OK)
-                continue;
-
-            bool     _avail = query_event((i | PAPI_PRESET_MASK));
-            string_t _sym   = get_timemory_papi_presets()[i].symbol;
-            string_t _pysym = _sym;
-            for(auto& itr : _pysym)
-                itr = tolower(itr);
-            string_t _rm = "papi_";
-            auto     idx = _pysym.find(_rm);
-            if(idx != string_t::npos)
-                _pysym.substr(idx + _rm.length());
-            evts.push_back(hardware_counters::info(
-                _avail, hardware_counters::api::papi, i, PAPI_PRESET_MASK, _sym, _pysym,
-                get_timemory_papi_presets()[i].short_descr,
-                get_timemory_papi_presets()[i].long_descr));
-        }
-    }
+    auto _info = get_event_info(evt_name);
+    return (PAPI_overflow(evt_set, _info.event_code, threshold, flags,
+                          std::forward<Func>(handler)) == PAPI_OK);
+#else
+    consume_parameters(evt_set, evt_name, threshold, flags, handler);
+    return false;
 #endif
-    if(!working() || evts.empty())
-    {
-        for(int i = 0; i < TIMEMORY_PAPI_PRESET_EVENTS; ++i)
-        {
-            if(get_timemory_papi_presets()[i].symbol == nullptr)
-                continue;
-
-            string_t _sym   = get_timemory_papi_presets()[i].symbol;
-            string_t _pysym = _sym;
-            for(auto& itr : _pysym)
-                itr = tolower(itr);
-            evts.push_back(hardware_counters::info(
-                false, hardware_counters::api::papi, i, PAPI_PRESET_MASK, _sym, _pysym,
-                get_timemory_papi_presets()[i].short_descr,
-                get_timemory_papi_presets()[i].long_descr));
-        }
-    }
-
-    return evts;
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline tim::hardware_counters::info
-get_hwcounter_info(const std::string& event_code_str)
-{
-#if defined(TIMEMORY_USE_PAPI)
-    details::init_library();
-#endif
+hwcounter_info_t
+available_events_info();
 
-    if(working())
-    {
-        auto         idx         = get_event_code(event_code_str);
-        event_info_t _info       = get_event_info(idx);
-        bool         _avail      = query_event(idx);
-        string_t     _sym        = _info.symbol;
-        string_t     _short_desc = _info.short_descr;
-        string_t     _long_desc  = _info.long_descr;
-        string_t     _pysym      = _sym;
-        for(auto& itr : _pysym)
-            itr = tolower(itr);
-        // int32_t _off = _info.event_code;
-        int32_t _off = 0;
-        return hardware_counters::info(_avail, hardware_counters::api::papi, idx, _off,
-                                       _sym, _pysym, _short_desc, _long_desc);
-    }
+//--------------------------------------------------------------------------------------//
 
-    return hardware_counters::info(false, hardware_counters::api::papi, -1, 0,
-                                   event_code_str, "", "", "");
-}
+tim::hardware_counters::info
+get_hwcounter_info(const std::string& event_code_str);
 
 //--------------------------------------------------------------------------------------//
 
 }  // namespace papi
-
-//--------------------------------------------------------------------------------------//
-
 }  // namespace tim
 
-//--------------------------------------------------------------------------------------//
+#if defined(TIMEMORY_BACKENDS_HEADER_ONLY_MODE) && TIMEMORY_BACKENDS_HEADER_ONLY_MODE > 0
+#    include "timemory/backends/papi.cpp"
+#endif

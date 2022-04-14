@@ -70,7 +70,8 @@
 #    define PAPI_ECOUNT -23        /* Too many events or attributes */
 #    define PAPI_ECOMBO -24        /* Bad combination of features */
 #    define PAPI_ECMP_DISABLED -25 /* Component containing event is disabled */
-#    define PAPI_NUM_ERRORS 26     /* Number of error messages specified in this API */
+#    define PAPI_EDELAY_INIT -26
+#    define PAPI_NUM_ERRORS	 27    /* Number of error messages specified in this API */
 
 #    define PAPI_NOT_INITED 0
 #    define PAPI_LOW_LEVEL_INITED 1    /* Low level has called library init */
@@ -484,7 +485,7 @@ enum
 #    define PAPI_MAX_INFO_TERMS                                                          \
         12 /* should match PAPI_EVENTS_IN_DERIVED_EVENT defined in papi_internal.h */
 
-typedef struct __PAPI_event_info
+typedef struct _timemory_PAPI_event_info
 {
     unsigned int event_code = 0;  /* preset (0x8xxxxxxx) or
                                  native (0x4xxxxxxx) event code */
@@ -539,6 +540,67 @@ typedef struct __PAPI_event_info
                                    anomalies or restrictions */
 
 } PAPI_event_info_t;
+
+typedef struct _timemory_PAPI_component_option
+{
+    char name[PAPI_MAX_STR_LEN];         // Name of the component we're using
+    char short_name[PAPI_MIN_STR_LEN];   // Short name of component, to be prepended to
+                                         // event names
+    char description[PAPI_MAX_STR_LEN];  // Description of the component
+    char version[PAPI_MIN_STR_LEN];      // Version of this component
+    char support_version[PAPI_MIN_STR_LEN];  // Version of the support library
+    char kernel_version[PAPI_MIN_STR_LEN];   // Version of the kernel PMC support driver
+    char disabled_reason[PAPI_MAX_STR_LEN];  // Reason for failure of initialization
+    int  disabled;     // 0 if enabled, otherwise error code from initialization
+    int  initialized;  // Component is ready to use
+    int  CmpIdx;       // Index into the vector array for this component; set at init time
+    int  num_cntrs;    // Number of hardware counters the component supports
+    int num_mpx_cntrs;  // Number of hardware counters the component or PAPI can multiplex
+                        // supports
+    int num_preset_events;        // Number of preset events the component supports
+    int num_native_events;        // Number of native events the component supports
+    int default_domain;           // The default domain when this component is used
+    int available_domains;        // Available domains
+    int default_granularity;      // The default granularity when this component is used
+    int available_granularities;  // Available granularities
+    int hardware_intr_sig;        // Signal used by hardware to deliver PMC events
+    //   int opcode_match_width;      // Width of opcode matcher if exists, 0 if not
+    int   component_type;           // Type of component
+    char* pmu_names[PAPI_PMU_MAX];  // list of pmu names supported by this component
+    int   reserved[8];
+    unsigned int
+                 hardware_intr : 1;  // hw overflow intr, does not need to be emulated in software
+    unsigned int precise_intr : 1;    // Performance interrupts happen precisely
+    unsigned int posix1b_timers : 1;  // Using POSIX 1b interval timers (timer_create)
+                                      // instead of setitimer
+    unsigned int kernel_profile : 1;  // Has kernel profiling support (buffered interrupts
+                                      // or sprofil-like)
+    unsigned int kernel_multiplex : 1;  // In kernel multiplexing
+    //   unsigned int data_address_range:1;    // Supports data address range limiting
+    //   unsigned int instr_address_range:1;   // Supports instruction address range
+    //   limiting
+    unsigned int fast_counter_read : 1;   // Supports a user level PMC read instruction
+    unsigned int fast_real_timer : 1;     // Supports a fast real timer
+    unsigned int fast_virtual_timer : 1;  // Supports a fast virtual timer
+    unsigned int attach : 1;              // Supports attach
+    unsigned int
+        attach_must_ptrace : 1;  // Attach must first ptrace and stop the thread/process
+    //   unsigned int edge_detect:1;           // Supports edge detection on events
+    //   unsigned int invert:1;                // Supports invert detection on events
+    //   unsigned int profile_ear:1;      	   // Supports data/instr/tlb miss address
+    //   sampling
+    //     unsigned int cntr_groups:1;           // Underlying hardware uses counter
+    //     groups (e.g. POWER5)
+    unsigned int cntr_umasks : 1;  // counters have unit masks
+    //   unsigned int cntr_IEAR_events:1;      // counters support instr event addr
+    //   register unsigned int cntr_DEAR_events:1;      // counters support data event
+    //   addr register unsigned int cntr_OPCM_events:1;      // counter events support
+    //   opcode matching
+    // This should be a granularity option
+    unsigned int cpu : 1;      // Supports specifying cpu number to use with event set
+    unsigned int inherit : 1;  // Supports child processes inheriting parents counters
+    unsigned int reserved_bits : 12;
+} PAPI_component_info_t;
 
 #endif  // !defined(TIMEMORY_USE_PAPI) && !defined(TIMEMORY_EXTERNAL_PAPI_DEFINITIONS)
 

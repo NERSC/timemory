@@ -352,6 +352,33 @@ endfunction()
 
 # ----------------------------------------------------------------------------------------#
 #
+# timemory external interface library -> timemory-headers
+#
+# ----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_EXTERNAL_INTERFACE_LIBRARY)
+    function(TIMEMORY_ADD_EXTERNAL_INTERFACE_LIBRARY_FIELDS)
+        foreach(_TYPE COMPILE_DEFINITIONS COMPILE_OPTIONS INCLUDE_DIRECTORIES
+                      LINK_LIBRARIES LINK_DIRECTORIES LINK_OPTIONS)
+            get_target_property(_${_TYPE} ${TIMEMORY_EXTERNAL_INTERFACE_LIBRARY}
+                                INTERFACE_${_TYPE})
+            if(NOT _${_TYPE})
+                set(_${_TYPE})
+            endif()
+        endforeach()
+        timemory_target_compile_definitions(timemory-headers INTERFACE
+                                            ${_COMPILE_DEFINITIONS})
+        target_include_directories(timemory-headers INTERFACE ${_INCLUDE_DIRECTORIES})
+        target_compile_options(timemory-headers INTERFACE ${_COMPILE_OPTIONS})
+        target_link_libraries(timemory-headers INTERFACE ${_LINK_LIBRARIES})
+        target_link_directories(timemory-headers INTERFACE ${_LINK_DIRECTORIES})
+        target_link_options(timemory-headers INTERFACE ${_LINK_OPTIONS})
+    endfunction()
+    timemory_add_external_interface_library_fields()
+endif()
+
+# ----------------------------------------------------------------------------------------#
+#
 # timemory headers
 #
 # ----------------------------------------------------------------------------------------#

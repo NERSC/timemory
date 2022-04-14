@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/backends/papi.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/papi/backends.hpp"
 #include "timemory/components/papi/papi_common.hpp"
@@ -60,8 +61,9 @@ struct papi_array
     using get_initializer_t = std::function<event_list()>;
     using common_type       = void;
 
-    static const short precision = 3;
-    static const short width     = 8;
+    static constexpr size_t event_count_max = MaxNumEvents;
+    static const short      precision       = 3;
+    static const short      width           = 8;
 
     template <typename Tp>
     using array_t = std::array<Tp, MaxNumEvents>;
@@ -260,9 +262,13 @@ public:
     //
     std::vector<std::string> label_array() const
     {
-        std::vector<std::string> arr(events.size());
+        std::vector<std::string> arr = events;
         for(size_type i = 0; i < events.size(); ++i)
-            arr[i] = papi::get_event_info(events[i]).short_descr;
+        {
+            papi::event_info_t _info = papi::get_event_info(events.at(i));
+            if(!_info.modified_short_descr)
+                arr.at(i) = _info.short_descr;
+        }
 
         for(auto& itr : arr)
         {
