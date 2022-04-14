@@ -1521,23 +1521,33 @@ settings::read(std::istream& ifs, std::string inp)
     {
         using policy_type = policy::input_archive<cereal::XMLInputArchive, TIMEMORY_API>;
         auto ia           = policy_type::get(ifs);
-        ia->setNextName(TIMEMORY_PROJECT_NAME);
-        ia->startNode();
+        try
         {
-            try
+            ia->setNextName(TIMEMORY_PROJECT_NAME);
+            ia->startNode();
             {
-                ia->setNextName("metadata");
-                ia->startNode();
-                // settings
-                (*ia)(cereal::make_nvp("settings", *this));
-                ia->finishNode();
-            } catch(...)
-            {
-                // settings
-                (*ia)(cereal::make_nvp("settings", *this));
+                try
+                {
+                    ia->setNextName("metadata");
+                    ia->startNode();
+                    // settings
+                    (*ia)(cereal::make_nvp("settings", *this));
+                    ia->finishNode();
+                } catch(...)
+                {
+                    // settings
+                    (*ia)(cereal::make_nvp("settings", *this));
+                }
             }
+            ia->finishNode();
+        } catch(tim::cereal::Exception& e)
+        {
+            TIMEMORY_PRINT_HERE("Exception reading %s :: %s", inp.c_str(), e.what());
+#    if defined(TIMEMORY_INTERNAL_TESTING)
+            TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(true, 8);
+#    endif
+            return false;
         }
-        ia->finishNode();
         return true;
     }
 #endif
@@ -1650,6 +1660,8 @@ settings::read(std::istream& ifs, std::string inp)
                             fprintf(stderr, "[timemory::settings]['%s']> %-30s :: %s\n",
                                     inp.c_str(), key.c_str(), val.c_str());
                         ++valid;
+                        itr.second->set_config_updated(true);
+                        itr.second->set_environ_updated(false);
                         itr.second->parse(val);
                     }
                 }

@@ -86,12 +86,13 @@ struct vsettings
     vsettings& operator=(vsettings&&) = default;
 
     virtual std::string                as_string() const                        = 0;
-    virtual void                       reset()                                  = 0;
-    virtual void                       parse()                                  = 0;
-    virtual void                       parse(const std::string&)                = 0;
+    virtual bool                       reset()                                  = 0;
+    virtual bool                       parse()                                  = 0;
+    virtual bool                       parse(const std::string&)                = 0;
+    virtual bool                       is_updated()                             = 0;
     virtual void                       add_argument(argparse::argument_parser&) = 0;
     virtual std::shared_ptr<vsettings> clone()                                  = 0;
-    virtual void                       clone(std::shared_ptr<vsettings> rhs);
+    virtual void                       clone(const std::shared_ptr<vsettings>& rhs);
 
     virtual display_map_t get_display(std::ios::fmtflags fmt = {}, int _w = -1,
                                       int _p = -1);
@@ -110,9 +111,13 @@ struct vsettings
     void set_choices(const std::vector<std::string>& v) { m_choices = v; }
     void set_command_line(const std::vector<std::string>& v) { m_cmdline = v; }
     void set_categories(const std::set<std::string>& v) { m_categories = v; }
+    void set_config_updated(bool _v) { m_cfg_updated = _v; }
+    void set_environ_updated(bool _v) { m_env_updated = _v; }
 
     auto get_type_index() const { return m_type_index; }
     auto get_value_index() const { return m_value_index; }
+    auto get_config_updated() const { return m_cfg_updated; }
+    auto get_environ_updated() const { return m_env_updated; }
 
     virtual bool matches(const std::string&, bool&& exact = true) const;
     virtual bool matches(const std::string&, const std::string&, bool exact = true) const;
@@ -151,9 +156,16 @@ protected:
     }
 
     template <typename Tp>
-    void report_change(Tp _old, const Tp& _new);
+    bool report_change(Tp _old, const Tp& _new);
+
+    vsettings(std::string _name, std::string _env_name, std::string _descript,
+              std::set<std::string> _categories, std::vector<std::string> _cmdline,
+              int32_t _count, int32_t _max_count, std::vector<std::string> _choices,
+              bool _cfg_upd, bool _env_upd);
 
 protected:
+    bool                     m_cfg_updated = false;
+    bool                     m_env_updated = false;
     std::type_index          m_type_index  = std::type_index(typeid(void));
     std::type_index          m_value_index = std::type_index(typeid(void));
     int32_t                  m_count       = -1;
@@ -215,13 +227,10 @@ vsettings::set(const Tp& _val)
 }
 //
 template <typename Tp>
-void
+bool
 vsettings::report_change(Tp _old, const Tp& _new)
 {
-    if(get_debug() < 1)
-        return;
-
-    if(_old != _new)
+    if(get_debug() >= 1 && _old != _new)
     {
         std::ostringstream oss;
         oss << std::boolalpha;
@@ -233,6 +242,7 @@ vsettings::report_change(Tp _old, const Tp& _new)
         }
         std::cerr << oss.str() << std::flush;
     }
+    return (_old != _new);
 }
 //
 }  // namespace tim
