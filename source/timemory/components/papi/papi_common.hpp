@@ -198,6 +198,7 @@ template <typename Tp>
 inline papi_common::get_initializer_t&
 papi_common::get_initializer()
 {
+    static std::mutex        _papi_common_lk{};
     static get_initializer_t _instance = []() {
         if(!papi_common::initialize_papi())
         {
@@ -213,10 +214,19 @@ papi_common::get_initializer()
 
         auto events_str = settings::papi_events();
 
+        if(events_str.empty() && private_events().empty())
+            return std::vector<string_t>{};
+
         if(settings::verbose() > 1 || settings::debug())
         {
-            fprintf(stderr, "[timemory][papi_common]> papi events: '%s'...\n",
-                    events_str.c_str());
+            static std::string           _last_events_str = {};
+            std::unique_lock<std::mutex> _lk{ _papi_common_lk };
+            if(events_str != _last_events_str)
+            {
+                fprintf(stderr, "[timemory][papi_common]> papi events: '%s'...\n",
+                        events_str.c_str());
+                _last_events_str = events_str;
+            }
         }
 
         // don't delimit colons!
@@ -227,8 +237,7 @@ papi_common::get_initializer()
         static std::set<string_t> query_failure{};
 
         auto _query_event = [](const string_t& _evt) {
-            static std::mutex            _mtx{};
-            std::unique_lock<std::mutex> _lk{ _mtx };
+            std::unique_lock<std::mutex> _lk{ _papi_common_lk };
             if(query_success.count(_evt) > 0)
                 return true;
             if(query_failure.count(_evt) > 0)
