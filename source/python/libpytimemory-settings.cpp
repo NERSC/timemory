@@ -27,6 +27,7 @@
 #endif
 
 #include "libpytimemory-components.hpp"
+#include "timemory/defines.h"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/filepath.hpp"
@@ -370,8 +371,9 @@ generate(py::module& _pymod)
             if(!tim::filepath::open(_ofs, _fname))
                 throw std::runtime_error("Error opening " + _fname + " for output");
             if(tim::settings::verbose() > 0)
-                fprintf(stderr, "[%s]|%i> Outputting '%s'...\n", "settings",
-                        tim::dmp::rank(), _fname.c_str());
+                fprintf(stderr, "[%s][%s]|%i> Outputting '%s'...\n",
+                        TIMEMORY_PROJECT_NAME, "settings", tim::dmp::rank(),
+                        _fname.c_str());
             _ofs << _ss.str() << "\n";
         }
         return py::module::import("json").attr("loads")(_ss.str());

@@ -36,6 +36,7 @@
 #    define TIMEMORY_COMPONENT_PERFETTO_INLINE inline
 #endif
 
+#include "timemory/defines.h"
 #include "timemory/manager.hpp"
 #include "timemory/operations/types/decode.hpp"
 #include "timemory/operations/types/storage_initializer.hpp"
@@ -157,8 +158,8 @@ perfetto_trace::global_finalize()
         TIMEMORY_JOIN('_', _label, _category), "pftrace", dmp::is_initialized(), _rank);
     // output to a unique filename per rank if DMP is initialized
     if(settings::verbose() >= 0)
-        fprintf(stderr, "[%s]|%i> Outputting '%s'...\n", _label.c_str(), (int) _rank,
-                _fname.c_str());
+        fprintf(stderr, "[%s][%s]|%i> Outputting '%s'...\n", TIMEMORY_PROJECT_NAME,
+                _label.c_str(), (int) _rank, _fname.c_str());
     manager::instance()->add_file_output("binary", _label, _fname);
 
     // Write the result into a file.

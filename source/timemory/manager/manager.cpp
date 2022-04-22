@@ -507,10 +507,11 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
         return;
 
     if((f_verbose() >= 0 || _banner || f_debug()) && !_hashes.empty())
-        fprintf(stderr, "\n[metadata::%s]> Outputting '%s' and '%s'...\n", context,
-                fname.c_str(), hname.c_str());
+        fprintf(stderr, "\n[%s][%s][metadata]> Outputting '%s' and '%s'...\n",
+                TIMEMORY_PROJECT_NAME, context, fname.c_str(), hname.c_str());
     else if((f_verbose() >= 0 || _banner || f_debug()) && _hashes.empty())
-        fprintf(stderr, "\n[metadata::%s]> Outputting '%s'...\n", context, fname.c_str());
+        fprintf(stderr, "\n[%s][%s][metadata]> Outputting '%s'...\n",
+                TIMEMORY_PROJECT_NAME, context, fname.c_str());
 
     std::ofstream ofs{};
     if(filepath::open(ofs, fname))

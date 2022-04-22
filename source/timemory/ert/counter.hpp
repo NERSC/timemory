@@ -35,6 +35,7 @@
 #include "timemory/backends/hip.hpp"
 #include "timemory/components/cuda/backends.hpp"
 #include "timemory/components/timing/ert_timer.hpp"
+#include "timemory/defines.h"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"
@@ -435,7 +436,8 @@ serialize(std::string fname, exec_data<Counter>& obj)
     {
         fname = settings::compose_output_filename(fname, ".json");
         if(settings::verbose() >= 0)
-            fprintf(stderr, "[%i]> Outputting '%s'...\n", dmp_rank, fname.c_str());
+            fprintf(stderr, "[%s][ert]|%i> Outputting '%s'...\n", TIMEMORY_PROJECT_NAME,
+                    dmp_rank, fname.c_str());
         std::ofstream ofs{};
         if(filepath::open(ofs, fname))
         {

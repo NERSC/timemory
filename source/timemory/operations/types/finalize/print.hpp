@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/data/stream.hpp"
+#include "timemory/defines.h"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/operations/declaration.hpp"
@@ -98,7 +99,8 @@ base::print::print_text(const std::string& outfname, stream_type stream)  // NOL
         if(filepath::open(fout, outfname))
         {
             if(!m_settings || m_settings->get_verbose() >= 0)
-                fprintf(stderr, "[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
+                fprintf(stderr, "[%s][%s]|%i> Outputting '%s'...\n",
+                        TIMEMORY_PROJECT_NAME, label.c_str(), node_rank,
                         outfname.c_str());
             write(fout, stream);
             manager::instance()->add_text_output(label, outfname);
@@ -363,8 +365,8 @@ print<Tp, true>::update_data()
 
     if(m_settings->get_debug())
     {
-        printf("[%s]|%i> dmp results size: %i\n", label.c_str(), node_rank,
-               (int) node_results.size());
+        fprintf(stderr, "[%s][%s]|%i> dmp results size: %i\n", TIMEMORY_PROJECT_NAME,
+                label.c_str(), node_rank, (int) node_results.size());
     }
 
     setup();
@@ -446,7 +448,8 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results)
                 fext = "unknown";
             manager::instance()->add_file_output(fext, label, outfname);
             if(!m_settings || m_settings->get_verbose() >= 0)
-                fprintf(stderr, "[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
+                fprintf(stderr, "[%s][%s]|%i> Outputting '%s'...\n",
+                        TIMEMORY_PROJECT_NAME, label.c_str(), node_rank,
                         outfname.c_str());
 
             // ensure write final block during destruction before the file is closed
@@ -484,8 +487,8 @@ print<Tp, true>::print_tree(const std::string& outfname, result_tree& rt)
             fext = "unknown";
         manager::instance()->add_file_output(fext, label, outfname);
         if(!m_settings || m_settings->get_verbose() >= 0)
-            fprintf(stderr, "[%s]|%i> Outputting '%s'...\n", label.c_str(), node_rank,
-                    outfname.c_str());
+            fprintf(stderr, "[%s][%s]|%i> Outputting '%s'...\n", TIMEMORY_PROJECT_NAME,
+                    label.c_str(), node_rank, outfname.c_str());
         std::ofstream ofs{};
         if(filepath::open(ofs, outfname))
         {
@@ -564,8 +567,8 @@ print<Tp, true>::read_json()
         std::ifstream ifs(json_inpfname.c_str());
         if(ifs)
         {
-            printf("[%s]|%i> Reading '%s'...\n", label.c_str(), node_rank,
-                   json_inpfname.c_str());
+            fprintf(stderr, "[%s][%s]|%i> Reading '%s'...\n", TIMEMORY_PROJECT_NAME,
+                    label.c_str(), node_rank, json_inpfname.c_str());
 
             // ensure write final block during destruction before the file is closed
             auto ia = policy_type::get(ifs);
@@ -588,8 +591,9 @@ print<Tp, true>::read_json()
         }
         else
         {
-            fprintf(stderr, "[%s]|%i> Failure opening '%s' for input...\n", label.c_str(),
-                    node_rank, json_inpfname.c_str());
+            fprintf(stderr, "[%s][%s]|%i> Failure opening '%s' for input...\n",
+                    TIMEMORY_PROJECT_NAME, label.c_str(), node_rank,
+                    json_inpfname.c_str());
 #if defined(TIMEMORY_INTERNAL_TESTING)
             throw std::runtime_error("error opening file");
 #endif
