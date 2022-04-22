@@ -30,17 +30,6 @@
 //
 //======================================================================================//
 
-#if defined(__x86_64__)
-#    if !defined(TIMEMORY_64BIT)
-#        define TIMEMORY_64BIT 1
-#    endif
-#else
-#    if !defined(TIMEMORY_32BIT)
-#        define TIMEMORY_32BIT 1
-#    endif
-#endif
-
-//--------------------------------------------------------------------------------------//
 // timemory prefixed os preprocessor definitions
 //
 #if defined(_WIN32) || defined(_WIN64) || defined(WIN32) || defined(WIN64)

@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/compat/macros.h"
+#include "timemory/macros/arch.hpp"
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/compiler.hpp"
 #include "timemory/macros/language.hpp"

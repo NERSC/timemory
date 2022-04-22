@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/macros/arch.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
@@ -35,6 +36,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <numeric>
+#include <regex>
 #include <sstream>
 #include <string>
 
@@ -53,6 +55,43 @@ struct cpu_info
     std::string model     = {};
     std::string features  = {};
 };
+
+TIMEMORY_INLINE void
+memory_fence()
+{
+#if defined(TIMEMORY_ARCH_X86) && TIMEMORY_ARCH_X86 > 0
+    asm volatile("mfence;" : : : "memory");
+#elif defined(_OPENMP)
+#    pragma omp flush
+#endif
+}
+//
+TIMEMORY_INLINE void
+store_fence()
+{
+#if defined(TIMEMORY_ARCH_X86) && TIMEMORY_ARCH_X86 > 0
+    asm volatile("sfence;" : : : "memory");
+#else
+    memory_fence();
+#endif
+}
+//
+TIMEMORY_INLINE void
+load_fence()
+{
+#if defined(TIMEMORY_ARCH_X86) && TIMEMORY_ARCH_X86 > 0
+    asm volatile("lfence;" : : : "memory");
+#else
+    memory_fence();
+#endif
+}
+//
+TIMEMORY_INLINE void
+fence()
+{
+    memory_fence();
+}
+//
 
 inline cpu_info
 get_info()
