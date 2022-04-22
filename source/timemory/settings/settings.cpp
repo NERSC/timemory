@@ -1483,6 +1483,23 @@ settings::read(std::istream& ifs, std::string inp)
     }
     m_read_configs.emplace(inp);
 
+    std::string _inp = inp;
+    if(_inp.length() > 30)
+    {
+        auto _inp_delim = tim::delimit(filepath::canonical(inp), "/");
+        auto _sz        = _inp_delim.size();
+        if(_sz > 4)
+            _inp = TIMEMORY_JOIN('/', "", _inp_delim.at(0), _inp_delim.at(1), "...",
+                                 _inp_delim.at(_sz - 2), _inp_delim.at(_sz - 1));
+        else if(_sz > 3)
+            _inp = TIMEMORY_JOIN('/', "", _inp_delim.at(0), "...", _inp_delim.at(_sz - 2),
+                                 _inp_delim.at(_sz - 1));
+        else if(_sz > 2)
+            _inp = TIMEMORY_JOIN('/', "", "...", _inp_delim.at(_sz - 2),
+                                 _inp_delim.at(_sz - 1));
+        _inp = filepath::osrepr(_inp);
+    }
+
     if(inp.find(".json") != std::string::npos || inp == "json")
     {
         using policy_type = policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>;
@@ -1508,7 +1525,7 @@ settings::read(std::istream& ifs, std::string inp)
             ia->finishNode();
         } catch(tim::cereal::Exception& e)
         {
-            TIMEMORY_PRINT_HERE("Exception reading %s :: %s", inp.c_str(), e.what());
+            TIMEMORY_PRINT_HERE("Exception reading %s :: %s", _inp.c_str(), e.what());
 #if defined(TIMEMORY_INTERNAL_TESTING)
             TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(true, 8);
 #endif
@@ -1542,7 +1559,7 @@ settings::read(std::istream& ifs, std::string inp)
             ia->finishNode();
         } catch(tim::cereal::Exception& e)
         {
-            TIMEMORY_PRINT_HERE("Exception reading %s :: %s", inp.c_str(), e.what());
+            TIMEMORY_PRINT_HERE("Exception reading %s :: %s", _inp.c_str(), e.what());
 #    if defined(TIMEMORY_INTERNAL_TESTING)
             TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(true, 8);
 #    endif
@@ -1613,9 +1630,9 @@ settings::read(std::istream& ifs, std::string inp)
                 continue;
             if(line.empty())
                 continue;
-            if(get_debug() || get_verbose() > 4)
-                fprintf(stderr, "[timemory::settings]['%s']> %s\n", inp.c_str(),
-                        line.c_str());
+            if(get_debug() || get_verbose() >= 5)
+                fprintf(stderr, "[%s][settings]['%s']> %s\n", TIMEMORY_PROJECT_NAME,
+                        _inp.c_str(), line.c_str());
             if(_is_comment(line))
                 continue;
             ++expected;
@@ -1656,9 +1673,10 @@ settings::read(std::istream& ifs, std::string inp)
                 {
                     if(itr.second->matches(key))
                     {
-                        if(get_debug() || get_verbose() > 0)
-                            fprintf(stderr, "[timemory::settings]['%s']> %-30s :: %s\n",
-                                    inp.c_str(), key.c_str(), val.c_str());
+                        if(get_debug() || get_verbose() >= 2)
+                            fprintf(stderr, "[%s][settings]['%s']> %-30s :: %s\n",
+                                    TIMEMORY_PROJECT_NAME, _inp.c_str(), key.c_str(),
+                                    val.c_str());
                         ++valid;
                         itr.second->set_config_updated(true);
                         itr.second->set_environ_updated(false);
@@ -1673,23 +1691,34 @@ settings::read(std::istream& ifs, std::string inp)
                         itr = std::toupper(itr);
                     if(_key.find(TIMEMORY_SETTINGS_PREFIX) == 0)
                     {
-                        if(get_debug() || get_verbose() > 0)
+                        if(get_debug() || get_verbose() >= 3)
                         {
                             fprintf(stderr,
-                                    "[timemory::settings]['%s']> Unknown setting with "
+                                    "[%s][settings]['%s']> Unknown setting with "
                                     "recognized prefix ('%s') exported to environment: "
                                     "'%s' (value = '%s')\n",
-                                    inp.c_str(), TIMEMORY_SETTINGS_PREFIX, _key.c_str(),
-                                    val.c_str());
+                                    TIMEMORY_PROJECT_NAME, _inp.c_str(),
+                                    TIMEMORY_SETTINGS_PREFIX, _key.c_str(), val.c_str());
                         }
                         tim::set_env(key, val, 0);
+                        if(!std::any_of(m_unknown_configs.begin(),
+                                        m_unknown_configs.end(),
+                                        [&key, &val](auto&& itr) {
+                                            return std::tie(key, val) ==
+                                                   std::tie(itr.first, itr.second);
+                                        }))
+                            m_unknown_configs.emplace_back(strpair_t{ key, val });
                     }
                     else
                     {
-                        fprintf(stderr,
-                                "[timemory::settings]['%s']> WARNING! Unknown setting "
-                                "ignored: '%s' (value = '%s')\n",
-                                inp.c_str(), key.c_str(), val.c_str());
+                        if(get_debug() || get_verbose() >= 2)
+                        {
+                            fprintf(stderr,
+                                    "[%s][settings]['%s']> WARNING! Unknown setting "
+                                    "ignored: '%s' (value = '%s')\n",
+                                    TIMEMORY_PROJECT_NAME, _inp.c_str(), key.c_str(),
+                                    val.c_str());
+                        }
                     }
                 }
             }

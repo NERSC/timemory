@@ -85,6 +85,7 @@ struct TIMEMORY_VISIBILITY("default") settings
     using iterator       = typename data_type::iterator;
     using const_iterator = typename data_type::const_iterator;
     using pointer_t      = std::shared_ptr<settings>;
+    using strpair_t      = std::pair<std::string, std::string>;
 
     template <typename Tp, typename Vp>
     using tsetting_pointer_t = std::shared_ptr<tsettings<Tp, Vp>>;
@@ -306,6 +307,8 @@ public:
 
     void init_config(bool search_default = true);
 
+    std::vector<strpair_t> get_unknown_configs() const { return m_unknown_configs; }
+
 public:
     template <size_t Idx = 0>
     static int64_t indent_width(int64_t _w = settings::width());
@@ -418,13 +421,14 @@ private:
     }
 
 private:
-    bool                  m_initialized  = false;
-    data_type             m_data         = {};
-    std::string           m_tag          = {};
-    strvector_t           m_order        = {};
-    strvector_t           m_command_line = {};
-    strvector_t           m_environment  = get_global_environment();
-    std::set<std::string> m_read_configs = {};
+    bool                   m_initialized     = false;
+    data_type              m_data            = {};
+    std::string            m_tag             = {};
+    strvector_t            m_order           = {};
+    strvector_t            m_command_line    = {};
+    strvector_t            m_environment     = get_global_environment();
+    std::set<std::string>  m_read_configs    = {};
+    std::vector<strpair_t> m_unknown_configs = {};
 
     /// This is set by timemory_init
     void set_initialized(bool _v) { m_initialized = _v; }
