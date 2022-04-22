@@ -782,7 +782,7 @@ template <typename Tp, enable_if_t<Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::start()
 {
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0, "starting (index: %zu)", m_idx);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "starting (index: %zu)", m_idx);
     auto cnt = tracker_type::start();
     base_type::set_started();
     for(auto& itr : m_data)
@@ -798,7 +798,7 @@ template <typename Tp, enable_if_t<Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::stop()
 {
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping (index: %zu)", m_idx);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "stopping (index: %zu)", m_idx);
     auto cnt = tracker_type::stop();
     base_type::set_stopped();
     for(auto& itr : m_data)
@@ -814,11 +814,11 @@ template <typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::start()
 {
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0, "starting (index: %zu)", m_idx);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "starting (index: %zu)", m_idx);
     auto cnt = tracker_type::start();
     if(cnt.second == 0 && !m_alloc.is_alive())
     {
-        TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0,
+        TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2,
                                         "restarting allocator (index: %zu)", m_idx);
         m_alloc.restart(this);
     }
@@ -834,7 +834,7 @@ template <typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::stop()
 {
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping (index: %zu)", m_idx);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "stopping (index: %zu)", m_idx);
     auto cnt = tracker_type::stop();
     base_type::set_stopped();
     for(auto& itr : m_data)
@@ -858,12 +858,12 @@ sampler<CompT<Types...>, N, SigIds...>::stop(std::set<int> _signals)
         TIMEMORY_FOLD_EXPRESSION(_signals.emplace(SigIds));
     }
 
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping %zu signals (index: %zu)",
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "stopping %zu signals (index: %zu)",
                                     _signals.size(), m_idx);
 
     for(auto itr : _signals)
     {
-        TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose > 0, "stopping signal %i (index: %zu)",
+        TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "stopping signal %i (index: %zu)",
                                         itr, m_idx);
         auto&       _original_it = m_timer_data.m_original_itimerval[itr];
         itimerval_t _curr;
@@ -968,7 +968,7 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
             continue;
 
         TIMEMORY_CONDITIONAL_PRINT_HERE(
-            itr->m_verbose > 1, "sampling signal %i (index: %zu)", signum, itr->m_idx);
+            itr->m_verbose >= 4, "sampling signal %i (index: %zu)", signum, itr->m_idx);
 
         IF_CONSTEXPR(trait::check_signals<this_type>::value)
         {
@@ -1044,7 +1044,7 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t* _info, vo
             continue;
 
         TIMEMORY_CONDITIONAL_PRINT_HERE(
-            itr->m_verbose > 1, "sampling signal %i (index: %zu)", signum, itr->m_idx);
+            itr->m_verbose >= 4, "sampling signal %i (index: %zu)", signum, itr->m_idx);
 
         IF_CONSTEXPR(trait::check_signals<this_type>::value)
         {
@@ -1078,7 +1078,7 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
 {
     _verbose = std::max<int>(_verbose, m_verbose);
 
-    TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose > 1, "configuring sampler (index: %zu)",
+    TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose >= 3, "configuring sampler (index: %zu)",
                                     m_idx);
 
     size_t wait_count = 0;
@@ -1090,7 +1090,7 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
 
     if(wait_count == 0)
     {
-        if(_verbose > 0)
+        if(_verbose >= 1)
         {
             fprintf(stderr,
                     "[sampler::configure]> No existing sampler has been configured to "
@@ -1111,7 +1111,7 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
 
     if(!_signals.empty())
     {
-        TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose > 1,
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose >= 3,
                                         "configuring %zu signal handlers (index: %zu)",
                                         _signals.size(), m_idx);
         auto& _custom_sa = m_timer_data.m_custom_sigaction;
@@ -1134,12 +1134,12 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
             if(m_timer_data.m_active[itr])
             {
                 TIMEMORY_CONDITIONAL_PRINT_HERE(
-                    _verbose > 1, "handler for signal %i is already active (index: %zu)",
+                    _verbose >= 3, "handler for signal %i is already active (index: %zu)",
                     itr, m_idx);
                 continue;
             }
             TIMEMORY_CONDITIONAL_PRINT_HERE(
-                _verbose > 1, "configuring handler for signal %i (index: %zu)", itr,
+                _verbose >= 3, "configuring handler for signal %i (index: %zu)", itr,
                 m_idx);
 
             // get the associated itimer type
@@ -1180,7 +1180,7 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
     }
 
     TIMEMORY_CONDITIONAL_PRINT_HERE(
-        _verbose > 1, "signal handler configuration complete (index: %zu)", m_idx);
+        _verbose >= 3, "signal handler configuration complete (index: %zu)", m_idx);
 
     // unblock signals on thread after configuring
     if(!_signals.empty() && _unblock)
@@ -1217,13 +1217,13 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
     if(_debug)
         _verbose = 100;
 
-    if(_verbose > 2)
+    if(_verbose >= 4)
         fprintf(stderr, "[%i]> waiting for pid %i...\n", process::get_id(), wait_pid);
 
     //----------------------------------------------------------------------------------//
     //
     auto print_info = [=](pid_t _pid, int _status, int _errv, int _retv) {
-        if(_verbose > 2)
+        if(_verbose >= 4)
         {
             fprintf(stderr, "[%i]> return code: %i, error value: %i, status: %i\n", _pid,
                     _retv, _errv, _status);
@@ -1234,12 +1234,12 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
     //----------------------------------------------------------------------------------//
     //
     auto diagnose_status = [=](pid_t _pid, int status) {
-        if(_verbose > 2)
+        if(_verbose >= 4)
             fprintf(stderr, "[%i]> diagnosing status %i...\n", _pid, status);
 
         if(WIFEXITED(status) && WEXITSTATUS(status) == EXIT_SUCCESS)
         {
-            if(_verbose > 2 || (_debug && _verbose > 0))
+            if(_verbose >= 4 || (_debug && _verbose >= 2))
             {
                 fprintf(stderr, "[%i]> program terminated normally with exit code: %i\n",
                         _pid, WEXITSTATUS(status));
@@ -1253,7 +1253,7 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
         {
             int sig = WSTOPSIG(status);
             // stopped with signal 'sig'
-            if(_verbose > 3)
+            if(_verbose >= 5)
             {
                 fprintf(stderr, "[%i]> program stopped with signal %i. Exit code: %i\n",
                         _pid, sig, ret);
@@ -1261,7 +1261,7 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
         }
         else if(WCOREDUMP(status))
         {
-            if(_verbose > 3)
+            if(_verbose >= 5)
             {
                 fprintf(stderr,
                         "[%i]> program terminated and produced a core dump. Exit "
@@ -1272,7 +1272,7 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
         else if(WIFSIGNALED(status))
         {
             ret = WTERMSIG(status);
-            if(_verbose > 3)
+            if(_verbose >= 5)
             {
                 fprintf(stderr,
                         "[%i]> program terminated because it received a signal "
@@ -1282,11 +1282,11 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
         }
         else if(WIFEXITED(status) && WEXITSTATUS(status))
         {
-            if(ret == 127 && (_verbose > 3))
+            if(ret == 127 && (_verbose >= 5))
             {
                 fprintf(stderr, "[%i]> execv failed\n", _pid);
             }
-            else if(_verbose > 3)
+            else if(_verbose >= 5)
             {
                 fprintf(stderr,
                         "[%i]> program terminated with a non-zero status. Exit "
@@ -1296,7 +1296,7 @@ sampler<CompT<Types...>, N, SigIds...>::wait(const pid_t wait_pid, int _verbose,
         }
         else
         {
-            if(_verbose > 3)
+            if(_verbose >= 5)
                 fprintf(stderr, "[%i]> program terminated abnormally.\n", _pid);
             ret = EXIT_FAILURE;
         }
