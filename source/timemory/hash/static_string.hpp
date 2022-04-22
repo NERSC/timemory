@@ -58,7 +58,7 @@ struct static_string
     static string_registry_t get_registry();
 
 private:
-    static std::unique_ptr<string_registry_t>& get_private_registry();
+    static string_registry_t*& get_private_registry();
 
     const char* m_string = nullptr;
 };

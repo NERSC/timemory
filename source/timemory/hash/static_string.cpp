@@ -70,13 +70,13 @@ static_string::get_registry()
 }
 
 TIMEMORY_HASH_INLINE
-std::unique_ptr<static_string::string_registry_t>&
+static_string::string_registry_t*&
 static_string::get_private_registry()
 {
-    static thread_local auto _instance = std::make_unique<string_registry_t>();
+    // this is an intentional data "leak"
+    static thread_local auto* _instance = new string_registry_t{};
     return _instance;
 }
-
 }  // namespace hash
 }  // namespace tim
 
