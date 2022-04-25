@@ -22,13 +22,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef TIMEMORY_COMPONENTS_PAPI_PAPI_COMMON_H_
-#define TIMEMORY_COMPONENTS_PAPI_PAPI_COMMON_H_ 1
+#ifndef TIMEMORY_COMPONENTS_PAPI_PAPI_COMMON_CPP_
+#define TIMEMORY_COMPONENTS_PAPI_PAPI_COMMON_CPP_ 1
 
 #include "timemory/components/papi/macros.hpp"
 
-#if !defined(TIMEMORY_PAPI_HEADER_ONLY_MODE) ||                                          \
-    (defined(TIMEMORY_PAPI_HEADER_ONLY_MODE) && TIMEMORY_PAPI_HEADER_ONLY_MODE < 1)
+#if !defined(TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE) ||                                \
+    (defined(TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE) &&                                \
+     TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE < 1)
 #    include "timemory/components/papi/papi_common.hpp"
 #endif
 

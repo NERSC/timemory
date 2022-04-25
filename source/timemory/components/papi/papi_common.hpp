@@ -200,6 +200,9 @@ papi_common::get_initializer()
 {
     static std::mutex        _papi_common_lk{};
     static get_initializer_t _instance = []() {
+        if(!trait::runtime_enabled<papi_common>::get())
+            return std::vector<string_t>{};
+
         if(!papi_common::initialize_papi())
         {
             if(!settings::papi_quiet())
@@ -387,6 +390,7 @@ papi_common::finalize()
 }  // namespace component
 }  // namespace tim
 
-#if defined(TIMEMORY_PAPI_HEADER_ONLY_MODE) && TIMEMORY_PAPI_HEADER_ONLY_MODE > 0
+#if defined(TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE) &&                                 \
+    TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE > 0
 #    include "timemory/components/papi/papi_common.cpp"
 #endif

@@ -30,6 +30,7 @@
 #include "timemory/components/papi/papi_common.hpp"
 #include "timemory/components/papi/types.hpp"
 #include "timemory/mpl/policy.hpp"
+#include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 
@@ -79,7 +80,7 @@ struct papi_array
     static auto& get_initializer() { return papi_common::get_initializer<common_type>(); }
     static void  configure()
     {
-        if(!is_configured<common_type>())
+        if(trait::runtime_enabled<this_type>::get() && !is_configured<common_type>())
             papi_common::initialize<common_type>();
     }
     static void initialize() { configure(); }
@@ -92,7 +93,7 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    papi_array() { events = get_events<common_type>(); }
+    papi_array();
     ~papi_array()                     = default;
     papi_array(const papi_array&)     = default;
     papi_array(papi_array&&) noexcept = default;
@@ -399,5 +400,12 @@ public:
         return os;
     }
 };
+
+template <size_t MaxNumEvents>
+papi_array<MaxNumEvents>::papi_array()
+{
+    if(trait::runtime_enabled<this_type>::get())
+        events = get_events<common_type>();
+}
 }  // namespace component
 }  // namespace tim
