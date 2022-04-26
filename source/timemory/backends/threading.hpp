@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/defines.h"
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/delimit.hpp"
 #include "timemory/utility/locking.hpp"
@@ -78,10 +79,23 @@ using native_handle_t = std::thread::native_handle_type;
 //
 namespace internal
 {
-inline std::set<int64_t>&
+inline std::vector<int64_t>&
 get_available_ids()
 {
-    static std::set<int64_t> _v{};
+    static auto _v = []() {
+        auto _tmp = std::vector<int64_t>{};
+        _tmp.reserve(TIMEMORY_MAX_THREADS);
+        return _tmp;
+    }();
+    return _v;
+}
+//
+/// add thread ids to this set to avoid them being recycled
+/// when the thread is destroyed
+inline std::set<int64_t>&
+get_reserved_ids()
+{
+    static auto _v = std::set<int64_t>{ 0 };
     return _v;
 }
 //
@@ -89,7 +103,7 @@ struct recycle_ids
 {
     operator bool() const { return value; }
 
-#if defined(TIMEMORY_FORCE_UNIQUE_THREAD_IDS)
+#if defined(TIMEMORY_FORCE_UNIQUE_THREAD_IDS) && TIMEMORY_FORCE_UNIQUE_THREAD_IDS > 0
     // ignore assignments
     recycle_ids& operator=(bool) { return *this; }
 #else
@@ -121,29 +135,49 @@ get_id()
 {
     static std::atomic<int64_t> _global_counter{ 0 };
     static thread_local auto    _this_id = []() {
-        if(!recycle_ids())
-            return std::make_pair(_global_counter++, scope::destructor{ []() {} });
-
         int64_t _id = -1;
-        struct threading_ids
-        {};
+        if(recycle_ids() && _global_counter >= TIMEMORY_MAX_THREADS)
         {
-            auto_lock_t _lk{ type_mutex<threading_ids>() };
-            if(!internal::get_available_ids().empty())
+            auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
+            auto&       _avail = internal::get_available_ids();
+            if(!_avail.empty())
             {
-                _id = *internal::get_available_ids().rbegin();
-                internal::get_available_ids().erase(_id);
+                // always grab from front
+                _id = _avail.at(0);
+                for(size_t i = 1; i < _avail.size(); ++i)
+                    _avail[i - 1] = _avail[i];
+                _avail.pop_back();
             }
         }
-        if(_id == -1)
+
+        if(_id < 0)
             _id = _global_counter++;
-        auto _dtor = [_id]() {
-            auto_lock_t _lk{ type_mutex<threading_ids>() };
-            internal::get_available_ids().emplace(_id);
-        };
-        return std::make_pair(_id, scope::destructor{ std::move(_dtor) });
+
+        return std::make_pair(_id, scope::destructor{ [_id]() {
+                                  auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
+                                  if(internal::get_reserved_ids().count(_id) == 0)
+                                      internal::get_available_ids().emplace_back(_id);
+                              } });
     }();
     return _this_id.first;
+}
+//
+inline auto
+add_reserved_id(int64_t _v = get_id())
+{
+    auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
+    if(_v > 0)
+        internal::get_reserved_ids().emplace(_v);
+    return internal::get_reserved_ids();
+}
+//
+inline auto
+erase_reserved_id(int64_t _v = get_id())
+{
+    auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
+    if(_v > 0)
+        internal::get_reserved_ids().erase(_v);
+    return internal::get_reserved_ids();
 }
 //
 //--------------------------------------------------------------------------------------//
