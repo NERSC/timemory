@@ -268,6 +268,31 @@ struct stop_last_bundle : concepts::quirk_type
 /// - first argument to a bundler member function
 struct unsafe : concepts::quirk_type
 {};
+
+/// \struct tim::quirk::fast
+/// \brief When present, this argument instructs to pick the fast possible implementation
+/// Usage:
+/// - the second template argument to a gotcha component. The third template parameter
+///   must have a function operator accepting the: 1. gotcha data object, 2. a function
+///   pointer to the callee, and 3. the arguments.
+///
+struct fast : concepts::quirk_type
+{};
 //
 }  // namespace quirk
+
+namespace concepts
+{
+template <>
+struct tuple_type<quirk::fast>
+{
+    using type = std::tuple<>;
+};
+//
+template <>
+struct component_type<quirk::fast>
+{
+    using type = lightweight_tuple<>;
+};
+}  // namespace concepts
 }  // namespace tim

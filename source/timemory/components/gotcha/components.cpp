@@ -160,6 +160,8 @@ gotcha<Nt, BundleT, DiffT>::construct(const std::string& _func, int _priority,
     static_assert(N < Nt, "Error! N must be less than Nt!");
     auto& _data = get_data()[N];
 
+    assert(_data.index == N);
+
     if(!is_permitted<N, Ret, Args...>(_func))
         return false;
 
@@ -222,28 +224,37 @@ gotcha<Nt, BundleT, DiffT>::construct(const std::string& _func, int _priority,
 
 template <size_t Nt, typename BundleT, typename DiffT>
 template <size_t N, typename Ret, typename... Args>
-auto
-gotcha<Nt, BundleT, DiffT>::configure(const std::string& _func, int _priority,
-                                      const std::string& _tool)
+bool
+gotcha<Nt, BundleT, DiffT>::configure(const gotcha_config<N, Ret, Args...>& _cfg)
 {
-    return construct<N, Ret, Args...>(_func, _priority, _tool);
+    for(auto&& itr : _cfg.names)
+    {
+        if(construct<N, Ret, Args...>(itr, _cfg.priority, _cfg.tool))
+            return true;
+    }
+    return false;
 }
 
 //----------------------------------------------------------------------------------//
 
 template <size_t Nt, typename BundleT, typename DiffT>
 template <size_t N, typename Ret, typename... Args>
-auto
+bool
+gotcha<Nt, BundleT, DiffT>::configure(const std::string& _func, int _priority,
+                                      const std::string& _tool)
+{
+    return configure(gotcha_config<N, Ret, Args...>{ _func, _priority, _tool });
+}
+
+//----------------------------------------------------------------------------------//
+
+template <size_t Nt, typename BundleT, typename DiffT>
+template <size_t N, typename Ret, typename... Args>
+bool
 gotcha<Nt, BundleT, DiffT>::configure(const std::vector<std::string>& _funcs,
                                       int _priority, const std::string& _tool)
 {
-    auto itr = _funcs.begin();
-    auto ret = false;
-    while(!ret && itr != _funcs.end())
-    {
-        ret = construct<N, Ret, Args...>(*itr, _priority, _tool);
-        ++itr;
-    }
+    return configure(gotcha_config<N, Ret, Args...>{ _funcs, _priority, _tool });
 }
 
 //----------------------------------------------------------------------------------//
@@ -456,7 +467,7 @@ void
 gotcha<Nt, BundleT, DiffT>::instrument<N, Ret, Args...>::generate(
     const std::string& _func, const std::string& _tool, int _priority)
 {
-    this_type::configure<N, Ret, Args...>(_func, _priority, _tool);
+    this_type::configure(gotcha_config<N, Ret, Args...>{ _func, _priority, _tool });
 }
 
 //----------------------------------------------------------------------------------//
@@ -649,7 +660,7 @@ gotcha<Nt, BundleT, DiffT>::wrap(Args... _args)
     //
     bundle_type _bundle{ _data.tool_id };
     _bundle.construct(_args...);
-    _bundle.start();
+    _bundle.start(_data);
     _bundle.store(_data);
     _bundle.audit(_data, audit::incoming{}, _args...);
     toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
@@ -661,7 +672,7 @@ gotcha<Nt, BundleT, DiffT>::wrap(Args... _args)
 
     toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
     _bundle.audit(_data, audit::outgoing{}, _ret);
-    _bundle.stop();
+    _bundle.stop(_data);
     toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
 
     // allow re-entrance into wrapper
@@ -746,7 +757,7 @@ gotcha<Nt, BundleT, DiffT>::wrap_void(Args... _args)
     //
     bundle_type _bundle{ _data.tool_id };
     _bundle.construct(_args...);
-    _bundle.start();
+    _bundle.start(_data);
     _bundle.store(_data);
     _bundle.audit(_data, audit::incoming{}, _args...);
     toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
@@ -758,7 +769,7 @@ gotcha<Nt, BundleT, DiffT>::wrap_void(Args... _args)
 
     toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
     _bundle.audit(_data, audit::outgoing{});
-    _bundle.stop();
+    _bundle.stop(_data);
 
     // allow re-entrance into wrapper
     toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
@@ -839,6 +850,29 @@ gotcha<Nt, BundleT, DiffT>::replace_void_func(Args... _args)
 #else
     consume_parameters(_args...);
     TIMEMORY_PRINT_HERE("%s", "should not be here!");
+#endif
+}
+
+//----------------------------------------------------------------------------------//
+
+template <size_t Nt, typename BundleT, typename DiffT>
+template <size_t N, typename Ret, typename... Args>
+Ret
+gotcha<Nt, BundleT, DiffT>::fast_func(Args... _args)
+{
+    static_assert(N < Nt, "Error! N must be less than Nt!");
+    static_assert(components_size == 0, "Error! Number of components must be zero!");
+
+#if defined(TIMEMORY_USE_GOTCHA)
+    using func_t = Ret (*)(Args...);
+    return operator_type{}(
+        get_data()[N],
+        reinterpret_cast<func_t>(gotcha_get_wrappee(get_data()[N].wrappee)),
+        std::forward<Args>(_args)...);
+#else
+    consume_parameters(_args...);
+    TIMEMORY_PRINT_HERE("%s", "should not be here!");
+    return Ret();
 #endif
 }
 
