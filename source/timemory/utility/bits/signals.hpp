@@ -123,13 +123,14 @@ signal_settings::check_environment()
 
     for(const auto& itr : _list)
     {
-        auto _name = std::get<0>(get_info(itr.second));
-        auto _enable =
-            get_env(TIMEMORY_SETTINGS_PREFIX "SIGNAL_ENABLE_" + itr.first,
-                    get_env(TIMEMORY_SETTINGS_PREFIX "SIGNAL_ENABLE_" + _name, false));
+        auto _name   = std::get<0>(get_info(itr.second));
+        auto _enable = get_env(
+            TIMEMORY_SETTINGS_PREFIX "SIGNAL_ENABLE_" + _name,
+            get_env(TIMEMORY_SETTINGS_PREFIX "SIGNAL_ENABLE_" + itr.first, false, false));
         auto _disable =
-            get_env(TIMEMORY_SETTINGS_PREFIX "SIGNAL_DISABLE_" + itr.first,
-                    get_env(TIMEMORY_SETTINGS_PREFIX "SIGNAL_DISABLE_" + _name, false));
+            get_env(TIMEMORY_SETTINGS_PREFIX "SIGNAL_DISABLE_" + _name,
+                    get_env(TIMEMORY_SETTINGS_PREFIX "SIGNAL_DISABLE_" + itr.first, false,
+                            false));
 
         if(_enable)
             signal_settings::enable(itr.second);
