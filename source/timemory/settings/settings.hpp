@@ -32,6 +32,7 @@
 #include "timemory/defines.h"
 #include "timemory/environment/declaration.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/macros/language.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/settings/tsettings.hpp"
@@ -337,6 +338,18 @@ public:
     template <typename Tp, typename Sp = string_t>
     bool set(Sp&& _key, Tp&& _val, bool _exact = true);
 
+    /// mark this option as enabled. returns whether option was found
+    bool enable(string_view_cref_t _key, bool _exact = true);
+
+    /// mark this option as not enabled. returns whether option was found
+    bool disable(string_view_cref_t _key, bool _exact = true);
+
+    /// mark all the options in this category as enabled. returns all options enabled
+    std::set<std::string> enable_category(string_view_cref_t _key);
+
+    /// mark all the options in this category as not enabled. returns all options disabled
+    std::set<std::string> disable_category(string_view_cref_t _key);
+
     /// \fn bool update(const std::string& key, const std::string& val, bool exact)
     /// \param key Identifier for the setting. Either name, env-name, or command-line opt
     /// \param val Update value
@@ -444,6 +457,7 @@ private:
     void initialize_miscellaneous() TIMEMORY_VISIBILITY("hidden");
     void initialize_ert() TIMEMORY_VISIBILITY("hidden");
     void initialize_dart() TIMEMORY_VISIBILITY("hidden");
+    void initialize_disabled() TIMEMORY_VISIBILITY("hidden");
 
     static auto& indent_width_map()
     {

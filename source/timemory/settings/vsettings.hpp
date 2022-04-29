@@ -119,6 +119,13 @@ struct vsettings
     auto get_config_updated() const { return m_cfg_updated; }
     auto get_environ_updated() const { return m_env_updated; }
 
+    // enabled = true/false does not affect the return value, it is provided
+    // so that is can be specified to various tools, e.g. timemory-avail, whether
+    // or not the setting is relevant in the context of the current build/configuration
+    // or whether it should be added as a command-line option, etc.
+    void set_enabled(bool _v) { m_enabled = _v; }
+    auto get_enabled() const { return m_enabled; }
+
     virtual bool matches(const std::string&, bool&& exact = true) const;
     virtual bool matches(const std::string&, const std::string&, bool exact = true) const;
     virtual bool matches(const std::string&, const char*, bool _exact = true) const;
@@ -161,9 +168,10 @@ protected:
     vsettings(std::string _name, std::string _env_name, std::string _descript,
               std::set<std::string> _categories, std::vector<std::string> _cmdline,
               int32_t _count, int32_t _max_count, std::vector<std::string> _choices,
-              bool _cfg_upd, bool _env_upd);
+              bool _cfg_upd, bool _env_upd, bool _enabled);
 
 protected:
+    bool                     m_enabled     = true;
     bool                     m_cfg_updated = false;
     bool                     m_env_updated = false;
     std::type_index          m_type_index  = std::type_index(typeid(void));

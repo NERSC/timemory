@@ -276,7 +276,7 @@ template <typename Tp, typename Vp>
 void
 tsettings<Tp, Vp>::add_argument(argparse::argument_parser& p)
 {
-    if(!m_cmdline.empty())
+    if(!m_cmdline.empty() && m_enabled)
     {
         if(std::is_same<Tp, bool>::value)
             m_max_count = 1;
@@ -315,7 +315,7 @@ tsettings<Tp, Vp>::clone()
         std::string{ m_description }, std::set<std::string>{ m_categories },
         std::vector<std::string>{ m_cmdline }, int32_t{ m_count }, int32_t{ m_max_count },
         std::vector<std::string>{ m_choices }, bool{ m_cfg_updated },
-        bool{ m_env_updated });
+        bool{ m_env_updated }, bool{ m_enabled });
 }
 //
 template <typename Tp, typename Vp>
@@ -364,6 +364,7 @@ tsettings<Tp, Vp>::save(Archive& ar, const unsigned int,
     ar(cereal::make_nvp("value", m_value));
     ar(cereal::make_nvp("config_updated", m_cfg_updated));
     ar(cereal::make_nvp("environ_updated", m_env_updated));
+    ar(cereal::make_nvp("enabled", m_enabled));
 }
 //
 template <typename Tp, typename Vp>

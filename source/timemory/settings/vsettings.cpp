@@ -70,8 +70,10 @@ TIMEMORY_SETTINGS_INLINE
 vsettings::vsettings(std::string _name, std::string _env_name, std::string _descript,
                      std::set<std::string> _categories, std::vector<std::string> _cmdline,
                      int32_t _count, int32_t _max_count,
-                     std::vector<std::string> _choices, bool _cfg_upd, bool _env_upd)
-: m_cfg_updated{ _cfg_upd }
+                     std::vector<std::string> _choices, bool _cfg_upd, bool _env_upd,
+                     bool _enabled)
+: m_enabled{ _enabled }
+, m_cfg_updated{ _cfg_upd }
 , m_env_updated{ _env_upd }
 , m_count{ _count }
 , m_max_count{ _max_count }
@@ -193,6 +195,7 @@ vsettings::clone(const std::shared_ptr<vsettings>& rhs)
         return;
     m_cfg_updated = rhs->m_cfg_updated;
     m_env_updated = rhs->m_env_updated;
+    m_enabled     = rhs->m_enabled;
     m_count       = rhs->m_count;
     m_max_count   = rhs->m_max_count;
     m_name        = rhs->m_name;
