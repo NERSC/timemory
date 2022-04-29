@@ -1088,6 +1088,8 @@ private:
                         _e.what(), _current_version, typeid(T).name());
             version = _current_version;
         }
+#else
+        (void) _current_version;
 #endif
         itsVersionedTypes.emplace_hint(lookupResult, hash, version);
 

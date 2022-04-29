@@ -212,27 +212,27 @@ generate_component_info(bool _with_qualifiers, bool _force)
                     }
                     else
                     {
-                        auto _pos = _descr.find_last_of(_c);
-                        if(_pos != std::string::npos)
-                            _descr = _descr.substr(0, _pos);
+                        auto _dpos = _descr.find_last_of(_c);
+                        if(_dpos != std::string::npos)
+                            _descr = _descr.substr(0, _dpos);
                     }
 
-                    for(auto itr : { ' ', '.', ',' })
+                    for(auto iitr : { ' ', '.', ',' })
                     {
-                        while(_descr.at(_descr.length() - 1) == itr)
+                        while(_descr.at(_descr.length() - 1) == iitr)
                             _descr = _descr.substr(0, _descr.length() - 1);
                     }
 
                     using strpair_t = std::pair<string_t, string_t>;
-                    for(auto&& itr :
+                    for(auto&& iitr :
                         { strpair_t{ "[\\,\\.] \\(", " (" },
                           strpair_t{ "[\\,\\.]\\)", ")" },
                           strpair_t{ "\\(monitor ", "(" }, strpair_t{ "\\(at ", "(" } })
                     {
-                        const std::regex _punct_paren{ itr.first,
+                        const std::regex _punct_paren{ iitr.first,
                                                        std::regex_constants::optimize };
                         while(std::regex_search(_descr, _punct_paren))
-                            _descr = std::regex_replace(_descr, _punct_paren, itr.second);
+                            _descr = std::regex_replace(_descr, _punct_paren, iitr.second);
                     }
                 };
                 // remove words from end until less than max length

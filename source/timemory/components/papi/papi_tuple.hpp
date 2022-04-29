@@ -96,9 +96,11 @@ public:
         if(!is_configured<common_type>())
         {
             papi_common::get_initializer<common_type>() = []() {
-                return std::vector<int>({ EventTypes... });
+                return std::vector<std::string>{ TIMEMORY_FOLD_EXPRESSION(
+                    papi::get_event_info(EventTypes).symbol) };
             };
-            papi_common::get_events<common_type>() = { EventTypes... };
+            papi_common::get_events<common_type>() = { TIMEMORY_FOLD_EXPRESSION(
+                papi::get_event_info(EventTypes).symbol) };
             papi_common::initialize<common_type>();
         }
     }

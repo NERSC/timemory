@@ -336,45 +336,13 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix 
 #        endif
 #    endif
 //
-#    if defined(TIMEMORY_USE_LIBUNWIND)
-#        if !defined(timemory_get_backtrace)
-#            define timemory_get_backtrace ::tim::backtrace::get_unw_backtrace
-#        endif
-#        if !defined(timemory_get_demangled_backtrace)
-#            define timemory_get_demangled_backtrace                                     \
-                ::tim::backtrace::get_demangled_unw_backtrace
-#        endif
-#        if !defined(timemory_print_backtrace)
-#            define timemory_print_backtrace ::tim::backtrace::print_unw_backtrace
-#        endif
-#        if !defined(timemory_print_demangled_backtrace)
-#            define timemory_print_demangled_backtrace                                   \
-                ::tim::backtrace::print_demangled_unw_backtrace
-#        endif
-#    else
-#        if !defined(timemory_get_backtrace)
-#            define timemory_get_backtrace ::tim::backtrace::get_native_backtrace
-#        endif
-#        if !defined(timemory_get_demangled_backtrace)
-#            define timemory_get_demangled_backtrace                                     \
-                ::tim::backtrace::get_demangled_native_backtrace
-#        endif
-#        if !defined(timemory_print_backtrace)
-#            define timemory_print_backtrace ::tim::backtrace::print_native_backtrace
-#        endif
-#        if !defined(timemory_print_demangled_backtrace)
-#            define timemory_print_demangled_backtrace                                   \
-                ::tim::backtrace::print_demangled_native_backtrace
-#        endif
-#    endif
-//
 #else
 //
 // define these dummy functions since they are used in operation::decode
 //
 template <size_t Depth, size_t Offset = 2>
 static inline std::ostream&
-print_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {},
+print_native_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {},
                 std::string = {})
 {
     os << "[timemory]> Backtrace not supported on this platform\n";
@@ -383,7 +351,7 @@ print_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {}
 //
 template <size_t Depth, size_t Offset = 3>
 static inline std::ostream&
-print_demangled_backtrace(std::ostream& os = std::cerr, std::string = {},
+print_demangled_native_backtrace(std::ostream& os = std::cerr, std::string = {},
                           std::string = {}, std::string = {})
 {
     os << "[timemory]> Backtrace not supported on this platform\n";
@@ -412,3 +380,36 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string = {},
 //
 }  // namespace backtrace
 }  // namespace tim
+
+// using macros here is not ideal but saves another frame being created
+#if defined(TIMEMORY_USE_LIBUNWIND)
+#    if !defined(timemory_get_backtrace)
+#        define timemory_get_backtrace ::tim::backtrace::get_unw_backtrace
+#    endif
+#    if !defined(timemory_get_demangled_backtrace)
+#        define timemory_get_demangled_backtrace                                         \
+            ::tim::backtrace::get_demangled_unw_backtrace
+#    endif
+#    if !defined(timemory_print_backtrace)
+#        define timemory_print_backtrace ::tim::backtrace::print_unw_backtrace
+#    endif
+#    if !defined(timemory_print_demangled_backtrace)
+#        define timemory_print_demangled_backtrace                                       \
+            ::tim::backtrace::print_demangled_unw_backtrace
+#    endif
+#else
+#    if !defined(timemory_get_backtrace)
+#        define timemory_get_backtrace ::tim::backtrace::get_native_backtrace
+#    endif
+#    if !defined(timemory_get_demangled_backtrace)
+#        define timemory_get_demangled_backtrace                                         \
+            ::tim::backtrace::get_demangled_native_backtrace
+#    endif
+#    if !defined(timemory_print_backtrace)
+#        define timemory_print_backtrace ::tim::backtrace::print_native_backtrace
+#    endif
+#    if !defined(timemory_print_demangled_backtrace)
+#        define timemory_print_demangled_backtrace                                       \
+            ::tim::backtrace::print_demangled_native_backtrace
+#    endif
+#endif

@@ -100,11 +100,11 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
             itr = '-';
     }
 
-    auto _remove_double_hyphen = [](std::string exe_name) {
+    auto _remove_double_hyphen = [](std::string _exe_name) {
         size_t pos = std::string::npos;
-        while((pos = exe_name.find("--")) != std::string::npos)
-            exe_name.erase(pos, 1);
-        return exe_name;
+        while((pos = _exe_name.find("--")) != std::string::npos)
+            _exe_name.erase(pos, 1);
+        return _exe_name;
     };
 
     auto _default_exe_name = _remove_double_hyphen(_prefix + _suffix);

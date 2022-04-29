@@ -103,6 +103,7 @@ were not available when timemory was installed.
 | `timemory::timemory-undefined-sanitizer` | Adds compiler flags to enable undefined sanitizer (-fsanitize=undefined) |
 | `timemory::timemory-unreachable-sanitizer` | Adds compiler flags to enable unreachable sanitizer (-fsanitize=unreachable) |
 | `timemory::timemory-upcxx` | Enables UPC++ support |
+| `timemory::timemory-use-visibility` | Defines whether to use visibility attributes |
 | `timemory::timemory-vector` | Adds pre-processor definition of the max vectorization width in bytes |
 | `timemory::timemory-vtune` | Enables VTune support (ittnotify) |
 | `timemory::timemory-xml` | Enables XML serialization support |
