@@ -273,6 +273,20 @@ demangle_backtrace(const std::string& str)
     return str;
 }
 //
+TIMEMORY_UTILITY_INLINE
+std::string
+demangle_native_backtrace(const char* cstr)
+{
+    return std::string{ cstr };
+}
+//
+TIMEMORY_UTILITY_INLINE
+std::string
+demangle_native_backtrace(const std::string& str)
+{
+    return str;
+}
+//
 #endif  // defined(TIMEMORY_UNIX)
 }  // namespace tim
 

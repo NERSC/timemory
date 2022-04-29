@@ -81,19 +81,21 @@ elseif(TIMEMORY_USE_HIP)
     target_compile_definitions(ex_ert PRIVATE USE_GPU)
 endif()
 
-find_package(Kokkos 3.0 QUIET)
-if(Kokkos_FOUND AND USE_KOKKOS)
-    add_executable(ex_ert_kokkos ex_ert_kokkos.cpp)
-    target_link_libraries(ex_ert_kokkos timemory-ert-example Kokkos::kokkos)
-    install(
-        TARGETS ex_ert_kokkos
-        DESTINATION bin
-        COMPONENT examples
-        OPTIONAL)
+if(TIMEMORY_BUILD_KOKKOS_SAMPLE)
+    find_package(Kokkos 3.1)
+    if(Kokkos_FOUND AND USE_KOKKOS)
+        add_executable(ex_ert_kokkos ex_ert_kokkos.cpp)
+        target_link_libraries(ex_ert_kokkos timemory-ert-example Kokkos::kokkos)
+        install(
+            TARGETS ex_ert_kokkos
+            DESTINATION bin
+            COMPONENT examples
+            OPTIONAL)
 
-    if(USE_CUDA OR TIMEMORY_USE_CUDA)
-        set_source_files_properties(ex_ert_kokkos.cpp PROPERTIES LANGUAGE CUDA
-                                                                 LINKER_LANGUAGE CUDA)
-        target_compile_definitions(ex_ert_kokkos PRIVATE USE_CUDA)
+        if(USE_CUDA OR TIMEMORY_USE_CUDA)
+            set_source_files_properties(ex_ert_kokkos.cpp PROPERTIES LANGUAGE CUDA
+                                                                    LINKER_LANGUAGE CUDA)
+            target_compile_definitions(ex_ert_kokkos PRIVATE USE_CUDA)
+        endif()
     endif()
 endif()
