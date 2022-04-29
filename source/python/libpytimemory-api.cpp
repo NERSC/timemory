@@ -36,6 +36,8 @@
 #    include "timemory/backends/types/cupti.hpp"
 #endif
 
+#include <pybind11/cast.h>
+
 //======================================================================================//
 //
 namespace pyapi
@@ -65,23 +67,34 @@ generate_papi(py::module& _pymod)
     py::module _papi = _pymod.def_submodule("papi", "PAPI Python interface");
 
 #define PYTIMEMORY_PAPI_BINDING(NAME, HELP) _papi.def(#NAME, &tim::papi::NAME, HELP)
+#define PYTIMEMORY_PAPI_BINDING_1(NAME, HELP)                                            \
+    _papi.def(                                                                           \
+        #NAME, [](int _v) { return tim::papi::NAME(_v); }, HELP);                        \
+    _papi.def(                                                                           \
+        #NAME, [](const std::string& _v) { return tim::papi::NAME(_v); }, HELP)
+#define PYTIMEMORY_PAPI_BINDING_2(NAME, HELP)                                            \
+    _papi.def(                                                                           \
+        #NAME, [](int _c, int _v) { return tim::papi::NAME(_c, _v); }, HELP);            \
+    _papi.def(                                                                           \
+        #NAME, [](int _c, const std::string& _v) { return tim::papi::NAME(_c, _v); },    \
+        HELP)
 
     PYTIMEMORY_PAPI_BINDING(working, "Return status of PAPI");
     PYTIMEMORY_PAPI_BINDING(set_debug, "Set the debug level");
     PYTIMEMORY_PAPI_BINDING(register_thread, "Register a thread");
     PYTIMEMORY_PAPI_BINDING(get_event_code_name, "Get name of an event code");
     PYTIMEMORY_PAPI_BINDING(detach, "Detach from a process or thread");
-    PYTIMEMORY_PAPI_BINDING(query_event, "Query availability of an event");
     PYTIMEMORY_PAPI_BINDING(shutdown, "Shutdown PAPI");
     PYTIMEMORY_PAPI_BINDING(print_hw_info, "Print the hardware info");
     PYTIMEMORY_PAPI_BINDING(enable_multiplexing, "Enable multiplexing on an event set");
     PYTIMEMORY_PAPI_BINDING(destroy_event_set, "Destroy an event set");
     PYTIMEMORY_PAPI_BINDING(start, "Start an event set");
     PYTIMEMORY_PAPI_BINDING(reset, "Reset hardware events for an event set");
-    PYTIMEMORY_PAPI_BINDING(add_event, "Add hardware events to an event set");
-    PYTIMEMORY_PAPI_BINDING(remove_event, "Remove hardware events from an event set");
     PYTIMEMORY_PAPI_BINDING(assign_event_set_component,
                             "Assign a component index to an existing but empty eventset");
+    PYTIMEMORY_PAPI_BINDING_1(query_event, "Query availability of an event");
+    PYTIMEMORY_PAPI_BINDING_2(add_event, "Add hardware events to an event set");
+    PYTIMEMORY_PAPI_BINDING_2(remove_event, "Remove hardware events from an event set");
 
 #undef PYTIMEMORY_PAPI_BINDING
 

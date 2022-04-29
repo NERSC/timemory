@@ -96,11 +96,15 @@ public:
         if(!is_configured<common_type>())
         {
             papi_common::get_initializer<common_type>() = []() {
-                return std::vector<std::string>{ TIMEMORY_FOLD_EXPRESSION(
-                    papi::get_event_info(EventTypes).symbol) };
+                // use this verbose syntax bc nvcc sucks
+                std::vector<std::string> _v{};
+                _v.reserve(sizeof...(EventTypes));
+                for(auto&& itr : { EventTypes... })
+                    _v.emplace_back(papi::get_event_info(itr).symbol);
+                return _v;
             };
-            papi_common::get_events<common_type>() = { TIMEMORY_FOLD_EXPRESSION(
-                papi::get_event_info(EventTypes).symbol) };
+            papi_common::get_events<common_type>() =
+                papi_common::get_initializer<common_type>()();
             papi_common::initialize<common_type>();
         }
     }

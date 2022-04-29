@@ -343,7 +343,7 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix 
 template <size_t Depth, size_t Offset = 2>
 static inline std::ostream&
 print_native_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {},
-                std::string = {})
+                       std::string = {})
 {
     os << "[timemory]> Backtrace not supported on this platform\n";
     return os;
@@ -352,7 +352,7 @@ print_native_backtrace(std::ostream& os = std::cerr, std::string = {}, std::stri
 template <size_t Depth, size_t Offset = 3>
 static inline std::ostream&
 print_demangled_native_backtrace(std::ostream& os = std::cerr, std::string = {},
-                          std::string = {}, std::string = {})
+                                 std::string = {}, std::string = {})
 {
     os << "[timemory]> Backtrace not supported on this platform\n";
     return os;

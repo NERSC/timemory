@@ -968,10 +968,10 @@ query_event(int event)
 //--------------------------------------------------------------------------------------//
 
 inline bool
-query_event(const std::string& event)
+query_event(string_view_cref_t event)
 {
 #if defined(TIMEMORY_USE_PAPI)
-    return (PAPI_query_named_event(event.c_str()) == PAPI_OK);
+    return (PAPI_query_named_event(event.data()) == PAPI_OK);
 #else
     consume_parameters(event);
     return false;

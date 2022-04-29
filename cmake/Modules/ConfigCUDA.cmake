@@ -66,8 +66,8 @@ if("CUDA" IN_LIST LANGUAGES)
         unset(_CUDA_COMPUTE_CAPABILITY)
     endif()
 
-    target_compile_definitions(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
-                               INTERFACE ${PROJECT_USE_CUDA_OPTION})
+    timemory_target_compile_definitions(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda INTERFACE
+                                        ${PROJECT_USE_CUDA_OPTION})
 
     target_include_directories(
         ${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
@@ -183,8 +183,8 @@ if("CUDA" IN_LIST LANGUAGES)
     add_user_flags(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda "CUDA")
 
     if(DEFINED PROJECT_CUDA_USE_HALF_OPTION AND ${PROJECT_CUDA_USE_HALF_OPTION})
-        target_compile_definitions(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
-                                   INTERFACE ${PROJECT_CUDA_USE_HALF_DEFINITION})
+        timemory_target_compile_definitions(${PROJECT_CUDA_INTERFACE_PREFIX}-cuda
+                                            INTERFACE ${PROJECT_CUDA_USE_HALF_DEFINITION})
     endif()
 
     target_include_directories(

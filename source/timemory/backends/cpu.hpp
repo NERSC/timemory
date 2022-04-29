@@ -60,7 +60,11 @@ TIMEMORY_INLINE void
 memory_fence()
 {
 #if defined(TIMEMORY_ARCH_X86) && TIMEMORY_ARCH_X86 > 0
+#    if defined(TIMEMORY_WINDOWS)
+    __asm("mfence;" : : : "memory");
+#    else
     asm volatile("mfence;" : : : "memory");
+#    endif
 #elif defined(_OPENMP)
 #    pragma omp flush
 #endif
@@ -70,7 +74,11 @@ TIMEMORY_INLINE void
 store_fence()
 {
 #if defined(TIMEMORY_ARCH_X86) && TIMEMORY_ARCH_X86 > 0
+#    if defined(TIMEMORY_WINDOWS)
+    __asm("sfence;" : : : "memory");
+#    else
     asm volatile("sfence;" : : : "memory");
+#    endif
 #else
     memory_fence();
 #endif
@@ -80,7 +88,11 @@ TIMEMORY_INLINE void
 load_fence()
 {
 #if defined(TIMEMORY_ARCH_X86) && TIMEMORY_ARCH_X86 > 0
+#    if defined(TIMEMORY_WINDOWS)
+    __asm("lfence;" : : : "memory");
+#    else
     asm volatile("lfence;" : : : "memory");
+#    endif
 #else
     memory_fence();
 #endif

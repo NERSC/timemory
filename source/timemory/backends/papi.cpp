@@ -232,7 +232,8 @@ generate_component_info(bool _with_qualifiers, bool _force)
                         const std::regex _punct_paren{ iitr.first,
                                                        std::regex_constants::optimize };
                         while(std::regex_search(_descr, _punct_paren))
-                            _descr = std::regex_replace(_descr, _punct_paren, iitr.second);
+                            _descr =
+                                std::regex_replace(_descr, _punct_paren, iitr.second);
                     }
                 };
                 // remove words from end until less than max length
