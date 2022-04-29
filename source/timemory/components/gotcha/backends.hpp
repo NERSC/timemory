@@ -201,7 +201,7 @@ struct gotcha_data
     bool          is_active    = false;        /// is currently wrapping
     bool          is_finalized = false;        /// no more wrapping is allowed
     int           priority     = 0;            /// current priority
-    size_t        index        = -1;           /// index in gotcha wrapper
+    size_t        index        = 0;            /// index in gotcha wrapper
     binding_t     binding      = binding_t{};  /// hold the binder set
     wrappee_t     wrapper      = nullptr;      /// the func pointer doing wrapping
     wrappee_t     wrappee      = nullptr;      /// the func pointer being wrapped
