@@ -29,6 +29,7 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <vector>
 
 #if __cplusplus >= 201703L  // C++17
 #    include <string_view>
@@ -453,6 +454,16 @@ static_assert(!is_string_type<int[4]>::value, "Issue with is_string_type");
 static_assert(!is_string_type<const int[4]>::value, "Issue with is_string_type");
 static_assert(!is_string_type<volatile int[4]>::value, "Issue with is_string_type");
 #endif
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_vector
+/// \brief concept that specifies that a type is a C++ vector
+///
+TIMEMORY_IMPL_IS_CONCEPT(vector)
+
+template <typename Tp, typename... Tail>
+struct is_vector<std::vector<Tp, Tail...>> : true_type
+{};
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::has_gotcha

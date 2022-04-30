@@ -185,7 +185,7 @@ protected:
     {
 #if defined(TIMEMORY_USE_PAPI)
         papi_array_t::get_initializer() = []() {
-            return std::vector<int>({ PAPI_TOT_CYC, PAPI_LST_INS });
+            return std::vector<std::string>{ "PAPI_TOT_CYC", "PAPI_LST_INS" };
         };
 #else
         static_assert(list_t::can_heap_init<papi_array_t>() == false,

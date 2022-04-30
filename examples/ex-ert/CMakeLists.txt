@@ -94,7 +94,7 @@ if(TIMEMORY_BUILD_KOKKOS_SAMPLE)
 
         if(USE_CUDA OR TIMEMORY_USE_CUDA)
             set_source_files_properties(ex_ert_kokkos.cpp PROPERTIES LANGUAGE CUDA
-                                                                    LINKER_LANGUAGE CUDA)
+                                                                     LINKER_LANGUAGE CUDA)
             target_compile_definitions(ex_ert_kokkos PRIVATE USE_CUDA)
         endif()
     endif()

@@ -96,15 +96,9 @@ public:
         if(!is_configured<common_type>())
         {
             papi_common::get_initializer<common_type>() = []() {
-                // use this verbose syntax bc nvcc sucks
-                std::vector<std::string> _v{};
-                _v.reserve(sizeof...(EventTypes));
-                for(auto&& itr : { EventTypes... })
-                    _v.emplace_back(papi::get_event_info(itr).symbol);
-                return _v;
+                return std::vector<int>{ EventTypes... };
             };
-            papi_common::get_events<common_type>() =
-                papi_common::get_initializer<common_type>()();
+            papi_common::get_events<common_type>() = { EventTypes... };
             papi_common::initialize<common_type>();
         }
     }
