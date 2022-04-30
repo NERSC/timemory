@@ -40,7 +40,7 @@ environment:
       TOOLS: "OFF"
       WINSOCK: "OFF"
       USE_ARCH: "OFF"
-      USE_PYTHON: "ON"
+      USE_PYTHON: "OFF"
       BUILD_C: "ON"
       BUILD_SHARED: "ON"
       BUILD_STATIC: "OFF"
@@ -87,7 +87,7 @@ install:
           $env:PYTHON_EXE = "C:\Python$env:PYTHON\python.exe"
         }
         python -m pip install --disable-pip-version-check --user --upgrade pip wheel
-        python -m pip install --user matplotlib numpy pillow cython six pandas pydot multiprocess
+        python -m pip install --user numpy matplotlib pillow cython six pandas pydot multiprocess
       } elseif ($env:CONDA) {
         if ($env:PLATFORM -eq "x64") {
           $env:PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts;$env:PATH"
@@ -100,8 +100,6 @@ install:
           $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
           $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
         }
-        conda update -y -n base conda
-        conda install -y -c conda-forge -c defaults matplotlib numpy pillow cython six pandas pydot multiprocess
       }
       $env:TIMEMORY_FILE_OUTPUT = "OFF"
       $env:TIMEMORY_AUTO_OUTPUT = "ON"

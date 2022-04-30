@@ -1948,7 +1948,7 @@ endif()
 #
 # ----------------------------------------------------------------------------------------#
 
-if(TIMEMORY_USE_PTL OR TIMEMORY_BUILD_TESTING)
+if(TIMEMORY_USE_PTL OR (TIMEMORY_BUILD_TESTING AND NOT WIN32))
     timemory_checkout_git_submodule(
         RECURSIVE
         RELATIVE_PATH external/ptl
