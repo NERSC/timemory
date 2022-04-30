@@ -98,7 +98,7 @@ public:
             papi_common::get_initializer<common_type>() = []() {
                 return std::vector<int>{ EventTypes... };
             };
-            papi_common::get_events<common_type>() = { EventTypes... };
+            papi_common::get_events<common_type>() = std::vector<int>{ EventTypes... };
             papi_common::initialize<common_type>();
         }
     }
