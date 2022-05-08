@@ -24,10 +24,10 @@
 
 #pragma once
 
-#include "timemory/runtime/callbacks.hpp"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/runtime/enumerate.hpp"
 #include "timemory/runtime/extern.hpp"
+#include "timemory/runtime/info.hpp"
 #include "timemory/runtime/initialize.hpp"
 #include "timemory/runtime/insert.hpp"
 #include "timemory/runtime/invoker.hpp"

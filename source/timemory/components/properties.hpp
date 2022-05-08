@@ -37,6 +37,7 @@
 #include "timemory/macros/language.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/settings/macros.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <cstdio>
 #include <cstring>

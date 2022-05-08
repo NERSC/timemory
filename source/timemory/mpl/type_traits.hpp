@@ -33,6 +33,7 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/defines.h"
 #include "timemory/environment/types.hpp"
 #include "timemory/mpl/available.hpp"
 #include "timemory/mpl/types.hpp"
@@ -1093,9 +1094,12 @@ struct uses_value_storage<T, type_list<>, A>
 /// \struct tim::trait::perfetto_category
 /// \brief Provides the static category for perfetto traces
 template <typename ApiT>
-struct perfetto_category
+struct perfetto_category;
+
+template <>
+struct perfetto_category<TIMEMORY_API>
 {
-    static constexpr auto value = "timemory";
+    static constexpr auto value = TIMEMORY_PROJECT_NAME;
 };
 
 //--------------------------------------------------------------------------------------//
