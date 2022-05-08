@@ -24,15 +24,37 @@
 
 #pragma once
 
+#include "timemory/components/perfetto/policy.hpp"
+#include "timemory/components/perfetto/types.hpp"
+
+#include <type_traits>
+
 // perfetto forward decl types
 namespace perfetto
 {
 struct TracingInitArgs;
 struct TracingSession;
+struct CounterTrack;
 }  // namespace perfetto
 
+// perfetto header
 #if defined(TIMEMORY_USE_PERFETTO)
 #    include <perfetto.h>
+#endif
+
+// provides a constexpr "category"
+#if !defined(TIMEMORY_PERFETTO_API)
+#    define TIMEMORY_PERFETTO_API ::tim::project::timemory
+#endif
+
+// allow including file to override by defining before inclusion
+#if !defined(TIMEMORY_PERFETTO_CATEGORIES)
+#    define TIMEMORY_PERFETTO_CATEGORIES                                                 \
+        perfetto::Category("timemory").SetDescription("Events from the timemory API")
+#endif
+
+#if defined(TIMEMORY_USE_PERFETTO) && !defined(TIMEMORY_PERFETTO_CATEGORIES_DEFINED)
+PERFETTO_DEFINE_CATEGORIES(TIMEMORY_PERFETTO_CATEGORIES);
 #endif
 
 namespace tim
@@ -41,6 +63,11 @@ namespace backend
 {
 namespace perfetto
 {
+template <typename... Args>
+void
+unused_args(Args&&...)
+{}
+
 #if defined(TIMEMORY_USE_PERFETTO)
 
 using namespace ::perfetto;
@@ -56,17 +83,18 @@ struct tracing_session
 
 #endif
 
-template <typename ApiT = TIMEMORY_PERFETTO_API, typename Tp>
+template <typename ApiT, typename Tp, typename... Args>
 void
-trace_counter(const char*, Tp, enable_if_t<std::is_integral<Tp>::value, int> = 0);
+trace_counter(policy::perfetto_category<ApiT>, const char*, Tp, Args&&...,
+              std::enable_if_t<std::is_integral<Tp>::value, int> = 0);
 
-template <typename ApiT = TIMEMORY_PERFETTO_API>
+template <typename ApiT, typename... Args>
 void
-trace_event_start(const char*);
+trace_event_start(policy::perfetto_category<ApiT>, const char*, Args&&...);
 
-template <typename ApiT = TIMEMORY_PERFETTO_API>
+template <typename ApiT, typename... Args>
 void
-trace_event_stop();
+trace_event_stop(policy::perfetto_category<ApiT>, Args&&...);
 
 }  // namespace perfetto
 }  // namespace backend
@@ -78,36 +106,40 @@ trace_event_stop();
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename ApiT, typename Tp>
+template <typename ApiT, typename Tp, typename... Args>
 void
-tim::backend::perfetto::trace_counter(const char* _label, Tp _val,
-                                      enable_if_t<std::is_integral<Tp>::value, int>)
+tim::backend::perfetto::trace_counter(policy::perfetto_category<ApiT> _category,
+                                      const char* _label, Tp _val, Args&&... _args,
+                                      std::enable_if_t<std::is_integral<Tp>::value, int>)
 {
 #if defined(TIMEMORY_USE_PERFETTO)
-    TRACE_COUNTER(::tim::trait::perfetto_category<ApiT>::value, _label, _val);
+    TRACE_COUNTER(_category(), _label, _val, std::forward<Args>(_args)...);
 #else
-    (void) _label;
-    (void) _val;
+    unused_args(_category, _label, _val, _args...);
 #endif
 }
 
-template <typename ApiT>
+template <typename ApiT, typename... Args>
 void
-tim::backend::perfetto::trace_event_start(const char* _label)
+tim::backend::perfetto::trace_event_start(policy::perfetto_category<ApiT> _category,
+                                          const char* _label, Args&&... _args)
 {
 #if defined(TIMEMORY_USE_PERFETTO)
-    TRACE_EVENT_BEGIN(::tim::trait::perfetto_category<ApiT>::value,
-                      perfetto::StaticString(_label));
+    TRACE_EVENT_BEGIN(_category(), perfetto::StaticString(_label),
+                      std::forward<Args>(_args)...);
 #else
-    (void) _label;
+    unused_args(_category, _label, _args...);
 #endif
 }
 
-template <typename ApiT>
+template <typename ApiT, typename... Args>
 void
-tim::backend::perfetto::trace_event_stop()
+tim::backend::perfetto::trace_event_stop(policy::perfetto_category<ApiT> _category,
+                                         Args&&... _args)
 {
 #if defined(TIMEMORY_USE_PERFETTO)
-    TRACE_EVENT_END(::tim::trait::perfetto_category<ApiT>::value);
+    TRACE_EVENT_END(_category(), std::forward<Args>(_args)...);
+#else
+    unused_args(_category, _args...);
 #endif
 }

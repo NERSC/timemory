@@ -24,44 +24,23 @@
 
 #pragma once
 
-#include "timemory/components/macros.hpp"
-#include "timemory/components/perfetto/macros.hpp"
-#include "timemory/enum.h"
-#include "timemory/mpl/type_traits.hpp"
-
-TIMEMORY_DECLARE_COMPONENT(perfetto_trace)
-
-TIMEMORY_SET_COMPONENT_API(component::perfetto_trace, project::timemory, tpls::perfetto,
-                           category::external, category::timing, category::visualization,
-                           os::agnostic)
-
-TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::perfetto_trace, false_type)
-
-#if !defined(TIMEMORY_USE_PERFETTO)
-TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::perfetto_trace, false_type)
-#endif
-
-#if defined(TIMEMORY_PYBIND11_SOURCE)
-//
 namespace tim
 {
 namespace trait
 {
-//
-template <>
-struct python_args<TIMEMORY_STORE, component::perfetto_trace>
-{
-    using type = type_list<type_list<size_t>, type_list<const char*, size_t>>;
-};
-//
-template <>
-struct python_args<TIMEMORY_START, component::perfetto_trace>
-{
-    using type = type_list<type_list<const char*>>;
-};
-}  // namespace trait
-}  // namespace tim
-#endif
+template <typename ApiT>
+struct perfetto_category;
+}
 
-TIMEMORY_PROPERTY_SPECIALIZATION(perfetto_trace, TIMEMORY_PERFETTO_TRACE,
-                                 "perfetto_trace", "perfetto")
+namespace policy
+{
+template <typename ApiT>
+struct perfetto_category
+{
+    constexpr decltype(auto) operator()() const
+    {
+        return trait::perfetto_category<ApiT>::value;
+    }
+};
+}  // namespace policy
+}  // namespace tim
