@@ -288,7 +288,7 @@ timemory_add_google_test(
     LINK_LIBRARIES common-test-libs ${_LIBRARY})
 
 timemory_add_google_test(
-    component_bundle_tests MPI
+    component_bundle_tests MPI RUN_SERIAL
     NPROCS 2
     SOURCES component_bundle_tests.cpp
     LINK_LIBRARIES common-test-libs ${_LIBRARY}
