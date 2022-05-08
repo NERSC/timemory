@@ -110,7 +110,8 @@ jobs:
       - run:
           name: build
           command: >
-            export CONTINUOUS_INTEGRATION=true
+            export CONTINUOUS_INTEGRATION=true &&
+            export CTEST_PARALLEL_LEVEL=2 &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&
@@ -155,7 +156,8 @@ jobs:
       - run:
           name: build
           command: >
-            export CONTINUOUS_INTEGRATION=true
+            export CONTINUOUS_INTEGRATION=true &&
+            export CTEST_PARALLEL_LEVEL=2 &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&
@@ -197,7 +199,8 @@ jobs:
       - run:
           name: build
           command: >
-            export CONTINUOUS_INTEGRATION=true
+            export CONTINUOUS_INTEGRATION=true &&
+            export CTEST_PARALLEL_LEVEL=2 &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&
@@ -236,7 +239,8 @@ jobs:
       - run:
           name: build
           command: >
-            export CONTINUOUS_INTEGRATION=true
+            export CONTINUOUS_INTEGRATION=true &&
+            export CTEST_PARALLEL_LEVEL=2 &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&

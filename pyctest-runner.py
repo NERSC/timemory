@@ -1260,7 +1260,7 @@ def run_pyctest():
 
         pyct.test(
             construct_name("ex-derived"),
-            construct_command(["./ex_derived"], args),
+            construct_command(["./ex_derived", "30", "5"], args),
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
@@ -1331,7 +1331,7 @@ def run_pyctest():
 
         pyct.test(
             construct_name("ex-c-timing"),
-            construct_command(["./ex_c_timing"], args),
+            construct_command(["./ex_c_timing", "30"], args),
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,
@@ -1403,7 +1403,7 @@ def run_pyctest():
         if args.gotcha:
             pyct.test(
                 construct_name("ex-gotcha"),
-                construct_command(["./ex_gotcha"], args),
+                construct_command(["./ex_gotcha", "5"], args),
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
@@ -1424,7 +1424,7 @@ def run_pyctest():
             )
 
             if args.mpi and dmprun is not None:
-                ex_gotcha_cmd = [dmprun] + dmpargs + ["./ex_gotcha_mpi"]
+                ex_gotcha_cmd = [dmprun] + dmpargs + ["./ex_gotcha_mpi", "5"]
                 pyct.test(
                     construct_name("ex-gotcha-mpi"),
                     construct_command(ex_gotcha_cmd, args),
@@ -1586,7 +1586,7 @@ def run_pyctest():
 
         pyct.test(
             construct_name("ex-statistics"),
-            construct_command(["./ex_cxx_statistics"], args),
+            construct_command(["./ex_cxx_statistics", "30", "5"], args),
             {
                 "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                 "LABELS": pyct.PROJECT_NAME,

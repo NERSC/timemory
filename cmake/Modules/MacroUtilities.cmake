@@ -264,8 +264,8 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     set(multival_args SOURCES DEPENDS PROPERTIES DEFINITIONS LINK_LIBRARIES COMMAND
                       OPTIONS ENVIRONMENT)
     # parse args
-    cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS;MPI" "NPROCS;TIMEOUT;TARGET"
-                          "${multival_args}" ${ARGN})
+    cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS;MPI;RUN_SERIAL"
+                          "NPROCS;TIMEOUT;TARGET" "${multival_args}" ${ARGN})
 
     if(NOT TARGET google-test-debug-options)
         add_library(google-test-debug-options INTERFACE)
@@ -288,8 +288,7 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             ${_OPTS}
             TARGET_NAME ${TEST_TARGET} OUTPUT_NAME ${TEST_TARGET}
             SOURCES ${TEST_SOURCES}
-            LINK_LIBRARIES timemory-google-test ${TEST_LINK_LIBRARIES}
-            PROPERTIES "${TEST_PROPERTIES}")
+            LINK_LIBRARIES timemory-google-test ${TEST_LINK_LIBRARIES})
 
         target_compile_definitions(${TEST_TARGET} PUBLIC ${TEST_DEFINITIONS})
 
@@ -315,6 +314,15 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             set(TEST_NPROCS 2)
         endif()
         set(TEST_LAUNCHER ${MPIEXEC_EXECUTABLE} -n ${TEST_NPROCS})
+    else()
+        set(TEST_MPI OFF)
+    endif()
+
+    include(ProcessorCount)
+    processorcount(NUM_PROCS_REAL)
+
+    if(TEST_RUN_SERIAL OR (TEST_MPI AND NOT TEST_NPROCS LESS ${NUM_PROCS_REAL}))
+        list(APPEND TEST_PROPERTIES RUN_SERIAL ON)
     endif()
 
     if("${TEST_COMMAND}" STREQUAL "")
@@ -350,7 +358,7 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             ${TEST_TARGET}
             TEST_LIST ${TEST_NAME}_TESTS ${TEST_OPTIONS} DISCOVERY_TIMEOUT 15
             WORKING_DIRECTORY ${WORKING_DIR}
-            PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}"
+            PROPERTIES ${TEST_PROPERTIES} ENVIRONMENT "${TEST_ENVIRONMENT}"
             TIMEOUT ${TEST_TIMEOUT})
     elseif(TEST_ADD_TESTS)
         gtest_add_tests(
@@ -359,14 +367,15 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             WORKING_DIRECTORY ${WORKING_DIR})
         set_tests_properties(
             ${${TEST_NAME}_TESTS} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}" TIMEOUT
-                                             ${TEST_TIMEOUT})
+                                             ${TEST_TIMEOUT} ${TEST_PROPERTIES})
     else()
         add_test(
             NAME ${TEST_NAME}
             COMMAND ${TEST_COMMAND}
             WORKING_DIRECTORY ${WORKING_DIR} ${TEST_OPTIONS})
-        set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}"
-                                                     TIMEOUT ${TEST_TIMEOUT})
+        set_tests_properties(
+            ${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}" TIMEOUT
+                                    ${TEST_TIMEOUT} ${TEST_PROPERTIES})
     endif()
 
     if(TEST_DEPENDS)

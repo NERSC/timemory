@@ -44,7 +44,7 @@
 using namespace tim::stl;
 using namespace tim::component;
 
-using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
+using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS>;
 
 using auto_tuple_t =
     tim::auto_tuple_t<wall_clock, system_clock, thread_cpu_clock, thread_cpu_util,
@@ -242,11 +242,11 @@ test_2_timing()
         std::vector<std::thread> threads;
         runtime.start();
         {
-            for(int i = 0; i < 7; ++i)
+            for(int i = 0; i < 3; ++i)
                 threads.push_back(std::thread(run_fib, 35));
-            threads.push_back(std::thread(run_fib, 43));
+            threads.push_back(std::thread(run_fib, 40));
 
-            run_fib(40);
+            run_fib(38);
 
             for(auto& itr : threads)
                 itr.join();

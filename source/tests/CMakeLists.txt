@@ -19,6 +19,12 @@ mark_as_advanced(TIMEMORY_SOCKET_TESTS)
 # include the current directory
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+# for use when environment settings + discover tests causes some issues on Windows
+set(_DISCOVER_TESTS_WITH_ENVIRON DISCOVER_TESTS)
+if(WIN32)
+    set(_DISCOVER_TESTS_WITH_ENVIRON)
+endif()
+
 set(CMAKE_UNITY_BUILD OFF)
 if(NOT DEFINED CTEST_TEST_TIMEOUT OR "${CTEST_TEST_TIMEOUT}" STREQUAL "")
     set(CTEST_TEST_TIMEOUT 180)
@@ -154,7 +160,7 @@ foreach(_LINK_TYPE shared static)
         if(TARGET timemory::timemory-compiler-instrument-${_LINK_TYPE})
             #
             add_timemory_google_test(
-                compiler_instrument${_EXTRA}_${_LINK_TYPE}_tests
+                compiler_instrument${_EXTRA}_${_LINK_TYPE}_tests RUN_SERIAL
                 TARGET compiler_instrument_${_LINK_TYPE}_tests
                 SOURCES instrumentation_tests.cpp
                 DEFINITIONS DISABLE_TIMEMORY
@@ -163,7 +169,7 @@ foreach(_LINK_TYPE shared static)
                 ENVIRONMENT ${compiler_instr_env} PROPERTIES PROCESSOR_AFFINITY ON)
             #
             add_timemory_google_test(
-                compiler_instrument_mt${_EXTRA}_${_LINK_TYPE}_tests
+                compiler_instrument_mt${_EXTRA}_${_LINK_TYPE}_tests RUN_SERIAL
                 TARGET compiler_instrument_mt_${_LINK_TYPE}_tests
                 SOURCES instrumentation_tests.cpp
                 DEFINITIONS ENABLE_MT DISABLE_TIMEMORY
@@ -172,7 +178,7 @@ foreach(_LINK_TYPE shared static)
                 ENVIRONMENT ${compiler_instr_env} PROPERTIES PROCESSOR_AFFINITY ON)
             #
             add_timemory_google_test(
-                compiler_instrument_timemory${_EXTRA}_${_LINK_TYPE}_tests
+                compiler_instrument_timemory${_EXTRA}_${_LINK_TYPE}_tests RUN_SERIAL
                 TARGET compiler_instrument_timemory_${_LINK_TYPE}_tests
                 SOURCES instrumentation_tests.cpp
                 LINK_LIBRARIES common-test-libs test-opt-flags ${_LIBRARY}
@@ -180,7 +186,7 @@ foreach(_LINK_TYPE shared static)
                 ENVIRONMENT ${compiler_instr_env} PROPERTIES PROCESSOR_AFFINITY ON)
             #
             add_timemory_google_test(
-                compiler_instrument_timemory_mt${_EXTRA}_${_LINK_TYPE}_tests
+                compiler_instrument_timemory_mt${_EXTRA}_${_LINK_TYPE}_tests RUN_SERIAL
                 TARGET compiler_instrument_timemory_mt_${_LINK_TYPE}_tests
                 SOURCES instrumentation_tests.cpp
                 DEFINITIONS ENABLE_MT
@@ -193,7 +199,7 @@ endforeach()
 
 if(TARGET custom-record-functions)
     add_timemory_google_test(
-        library_tests DISCOVER_TESTS
+        library_tests DISCOVER_TESTS RUN_SERIAL
         SOURCES library_tests.cpp
         LINK_LIBRARIES common-test-libs custom-record-functions timemory::timemory-core
                        PROPERTIES PROCESSOR_AFFINITY ON)
@@ -209,14 +215,14 @@ if(_LIBRARY_TARGET
     list(APPEND trace_tests_env "TIMEMORY_MPI_THREAD_TYPE=funneled")
 
     add_timemory_google_test(
-        trace_tests MPI NPROC 4
+        trace_tests RUN_SERIAL MPI NPROC 4
         SOURCES trace_tests.cpp
         LINK_LIBRARIES common-test-libs ${_LIBRARY_TARGET} timemory::timemory-plotting
                        timemory::timemory-mpip-library timemory::timemory-ompt-library
         ENVIRONMENT ${trace_tests_env} PROPERTIES PROCESSOR_AFFINITY ON)
 
     add_timemory_google_test(
-        throttle_tests DISCOVER_TESTS
+        throttle_tests DISCOVER_TESTS RUN_SERIAL
         SOURCES throttle_tests.cpp
         LINK_LIBRARIES common-test-libs ${_LIBRARY_TARGET} PROPERTIES PROCESSOR_AFFINITY
                        ON)
@@ -248,7 +254,7 @@ endif()
 
 if(TIMEMORY_SOCKET_TESTS)
     add_timemory_google_test(
-        socket_tests
+        socket_tests RUN_SERIAL
         SOURCES socket_tests.cpp
         LINK_LIBRARIES common-test-libs timemory::timemory-core test-werror-flags
         TIMEOUT 15)
@@ -288,11 +294,11 @@ add_timemory_google_test(
     LINK_LIBRARIES common-test-libs ${_LIBRARY})
 
 add_timemory_google_test(
-    component_bundle_tests MPI
+    component_bundle_tests ${_DISCOVER_TESTS_WITH_ENVIRON} MPI
     NPROCS 2
     SOURCES component_bundle_tests.cpp
     LINK_LIBRARIES common-test-libs ${_LIBRARY}
-    ENVIRONMENT ${component_bundle_tests_env} PROPERTIES PROCESSOR_AFFINITY ON)
+    ENVIRONMENT ${component_bundle_tests_env})
 
 list(APPEND kokkosp_tests_env "TIMEMORY_COLLAPSE_THREADS=ON")
 list(APPEND kokkosp_tests_env "TIMEMORY_NODE_COUNT=1")
@@ -313,16 +319,16 @@ add_timemory_google_test(
 
 add_timemory_google_test(
     flat_tests DISCOVER_TESTS
-    SOURCES flat_tests.cpp PROPERTIES PROCESSOR_AFFINITY ON
+    SOURCES flat_tests.cpp
     LINK_LIBRARIES common-test-libs extern-test-templates)
 
 add_timemory_google_test(
     timeline_tests DISCOVER_TESTS
-    SOURCES timeline_tests.cpp PROPERTIES PROCESSOR_AFFINITY ON
+    SOURCES timeline_tests.cpp
     LINK_LIBRARIES common-test-libs extern-test-templates)
 
 add_timemory_google_test(
-    data_tracker_tests DISCOVER_TESTS
+    data_tracker_tests DISCOVER_TESTS RUN_SERIAL
     SOURCES data_tracker_tests.cpp
     LINK_LIBRARIES common-test-libs timemory::timemory-plotting timemory::timemory-core
                    ${_LIBRARY})
@@ -338,19 +344,19 @@ endif()
 if(NOT WIN32)
     # cache structures are designed for use on Windows
     add_timemory_google_test(
-        cache_tests
+        cache_tests RUN_SERIAL
         SOURCES cache_tests.cpp
         LINK_LIBRARIES common-test-libs timemory::timemory-core ${_LIBRARY}
         TIMEOUT 300 PROPERTIES PROCESSOR_AFFINITY ON)
 endif()
 
 add_timemory_google_test(
-    archive_storage_tests
+    archive_storage_tests RUN_SERIAL
     SOURCES archive_storage_tests.cpp
     LINK_LIBRARIES common-test-libs timemory::timemory-dmp ${_LIBRARY})
 
 add_timemory_google_test(
-    threading_tests DISCOVER_TESTS
+    threading_tests DISCOVER_TESTS RUN_SERIAL
     SOURCES threading_tests.cpp PROPERTIES PROCESSOR_AFFINITY ON
     LINK_LIBRARIES common-test-libs timemory::timemory-plotting timemory::timemory-core
                    timemory::timemory-ompt ${_LIBRARY} ${_OPENMP})
@@ -358,7 +364,7 @@ add_timemory_google_test(
 if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
     list(APPEND ptl_tests_env "TIMEMORY_ENABLE_PTHREAD_GOTCHA_WRAPPER=ON")
     add_timemory_google_test(
-        ptl_tests
+        ptl_tests RUN_SERIAL
         SOURCES ptl_tests.cpp
         LINK_LIBRARIES
             common-test-libs PTL::ptl ${_LIBRARY} $<$<NOT:$<BOOL:WIN32>>:test-debug-flags>
@@ -388,7 +394,7 @@ if(NOT WIN32)
 endif()
 
 add_timemory_google_test(
-    tuple_tests DISCOVER_TESTS
+    tuple_tests DISCOVER_TESTS RUN_SERIAL
     SOURCES tuple_tests.cpp
     LINK_LIBRARIES common-test-libs timemory::timemory-papi timemory::timemory-plotting
                    timemory::timemory-caliper ${_LIBRARY})
@@ -400,14 +406,14 @@ add_timemory_google_test(
                    ${_LIBRARY})
 
 add_timemory_google_test(
-    hybrid_tests DISCOVER_TESTS
+    hybrid_tests DISCOVER_TESTS RUN_SERIAL
     SOURCES hybrid_tests.cpp
     LINK_LIBRARIES common-test-libs ${HYBRID_COMPONENTS} timemory::timemory-plotting
                    timemory::timemory-core ${_LIBRARY})
 
 add_timemory_google_test(
-    timing_tests DISCOVER_TESTS
-    SOURCES timing_tests.cpp PROPERTIES PROCESSOR_AFFINITY ON
+    timing_tests DISCOVER_TESTS RUN_SERIAL
+    SOURCES timing_tests.cpp PROPERTIES
     LINK_LIBRARIES common-test-libs timemory::timemory-plotting timemory::timemory-core
                    ${_LIBRARY})
 
@@ -482,7 +488,7 @@ endif()
 if(TIMEMORY_USE_PAPI)
     # roofline
     add_timemory_google_test(
-        cpu_roofline_tests DISCOVER_TESTS
+        cpu_roofline_tests DISCOVER_TESTS RUN_SERIAL
         SOURCES cpu_roofline_tests.cpp PROPERTIES PROCESSOR_AFFINITY ON
         LINK_LIBRARIES
             common-test-libs timemory::timemory-papi timemory::timemory-plotting
@@ -597,7 +603,7 @@ endif()
 
 if(TIMEMORY_USE_GOTCHA)
     add_timemory_google_test(
-        gotcha_tests DISCOVER_TESTS
+        gotcha_tests DISCOVER_TESTS RUN_SERIAL
         SOURCES gotcha_tests.cpp
         LINK_LIBRARIES
             common-test-libs gotcha-tests-lib timemory::timemory-headers
@@ -688,7 +694,7 @@ endif()
 
 if(TIMEMORY_BUILD_ERT)
     add_timemory_google_test(
-        ert_tests
+        ert_tests RUN_SERIAL
         SOURCES ert_tests.cpp PROPERTIES PROCESSOR_AFFINITY ON
         LINK_LIBRARIES common-test-libs timemory::timemory-ert ${_LIBRARY})
 endif()
@@ -725,6 +731,8 @@ if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
         NAME python_tests
         COMMAND ${PYTHON_EXECUTABLE} -m timemory.test -v -v
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
+    set_tests_properties(python_tests PROPERTIES RUN_SERIAL ON)
 endif()
 
 # Tests recording the symbols of each compiled library
