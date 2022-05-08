@@ -34,7 +34,7 @@ emit-separator "Attaching to pid ${PID}"
 
 emit-separator "Analyzing results in ${TIMEMORY_OUTPUT_PATH}"
 
-WALL_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-wall.txt"
+WALL_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-wall_clock.txt"
 
 if [ ! -f "${WALL_FILE}" ]; then
     echo -e "Missing wall-clock output file: \"${WALL_FILE}\""

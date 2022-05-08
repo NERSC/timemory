@@ -29,7 +29,7 @@ emit-separator "Executing non-instrumented run"
 # no instrumentation
 @MPIEXEC_EXECUTABLE@ -n 2 @COMMAND@
 
-ORIG_WALL_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-wall.txt"
+ORIG_WALL_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-wall_clock.txt"
 
 export TIMEMORY_OUTPUT_PREFIX="mpip"
 
