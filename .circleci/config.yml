@@ -160,22 +160,25 @@ jobs:
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&
-            python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -j 1
+            python ./pyctest-runner.py -F --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -T Start Update Configure
             --build-libs shared
             --mpi
-            --papi
             --gotcha
             --tools mpip mallocp dyninst
             --cxx-standard=17
-            --compile-time-perf ${HOME}/ctp
-            -- -V --output-on-failure
-            -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
+            -- -VV
+            -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install &&
+            cmake --build build-timemory/Linux --target all --parallel 2 &&
+            pushd build-timemory/Linux &&
+            ctest --output-on-failure &&
+            popd
       - run:
           name: install
           command: >
             cmake --build build-timemory/Linux --target install --parallel 2 &&
             export CMAKE_PREFIX_PATH=${HOME}/timemory-install:${CMAKE_PREFIX_PATH} &&
             cmake -B build-examples -DUSE_MPI=ON examples
+    resource_class: large
   gpu-dev-build:
     docker:
       - image: jrmadsen/timemory:dev-gpu
