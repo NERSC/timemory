@@ -420,10 +420,15 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
 {
     if(verbose_level > 0)
     {
-        std::cerr << "[argparse::parse]> parsing '";
+        std::stringstream _msg{};
         for(const auto& itr : _args)
-            std::cerr << itr << " ";
-        std::cerr << "'" << '\n';
+            _msg << " " << itr;
+        auto _cmd = _msg.str();
+        if(_cmd.length() > 0)
+        {
+            _cmd = _cmd.substr(1);
+            std::cerr << "[argparse::parse]> parsing '" << _cmd << "'...\n";
+        }
     }
 
     for(auto& a : m_arguments)
