@@ -41,6 +41,7 @@
 #include "timemory/settings/settings.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/demangle.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <atomic>
 #include <cstdint>
@@ -188,6 +189,9 @@ public:
     /// provides a serialization function for the type.
     template <typename Tp>
     static void add_metadata(const std::string&, const Tp&);
+    template <typename FuncT>
+    static auto add_metadata(FuncT&& _func)
+        -> decltype(_func(std::declval<cereal::PrettyJSONOutputArchive&>()), void());
     /// Add a metadata entry of a const character array. This only exists to avoid
     /// the template function from serializing the pointer.
     static void add_metadata(const std::string&, const char*);
@@ -482,6 +486,23 @@ manager::add_metadata(const std::string& _key, const Tp& _value)
             return;
         auto* ar = static_cast<cereal::PrettyJSONOutputArchive*>(_varchive);
         (*ar)(cereal::make_nvp(_key.c_str(), _value));
+    });
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename FuncT>
+auto
+manager::add_metadata(FuncT&& _func)
+    -> decltype(_func(std::declval<cereal::PrettyJSONOutputArchive&>()), void())
+{
+    auto_lock_t _lk(type_mutex<manager>());
+    ++f_manager_persistent_data().metadata_count;
+    f_manager_persistent_data().func_metadata.push_back([_func](void* _varchive) {
+        if(!_varchive)
+            return;
+        auto* ar = static_cast<cereal::PrettyJSONOutputArchive*>(_varchive);
+        _func(*ar);
     });
 }
 //

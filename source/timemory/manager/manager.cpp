@@ -121,10 +121,11 @@ manager::manager()
         add_metadata("TIMEMORY_GIT_REVISION", TIMEMORY_GIT_REVISION);
 #    endif
 
+        auto _cpu_features = delimit(_cpu_info.features, " \t");
         add_metadata("CPU_MODEL", _cpu_info.model);
         add_metadata("CPU_VENDOR", _cpu_info.vendor);
-        add_metadata("CPU_FEATURES", _cpu_info.features);
         add_metadata("CPU_FREQUENCY", _cpu_info.frequency);
+        add_metadata("CPU_FEATURES", _cpu_features);
         add_metadata("HW_CONCURRENCY", threading::affinity::hw_concurrency());
         add_metadata("HW_PHYSICAL_CPU", threading::affinity::hw_physicalcpu());
 
