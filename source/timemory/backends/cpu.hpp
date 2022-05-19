@@ -165,7 +165,7 @@ get_info()
 
     cpu_info         _info{};
     std::string      line{};
-    const std::regex re(".*: (.*)$");
+    const std::regex re{ ".*: (.*)$" };
 
     while(std::getline(ifs, line))
     {
