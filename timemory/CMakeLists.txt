@@ -61,7 +61,7 @@ foreach(_SUBMODULE ${PYTHON_SUBMODULE_FOLDERS})
             configure_file(${PROJECT_SOURCE_DIR}/${_DIR}/${_FILE}.py.in
                            ${PROJECT_BINARY_DIR}/${_DIR}/${_FILE}.py @ONLY)
         endif()
-        if(CMAKE_INSTALL_PYTHONDIR)
+        if(CMAKE_INSTALL_PYTHONDIR AND timemory_MAIN_PROJECT)
             install(
                 FILES ${PROJECT_BINARY_DIR}/${_DIR}/${_FILE}.py
                 DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_DIR}
@@ -102,7 +102,7 @@ file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/mpi_support/mpi_exe_info.txt "${MPI_EXE_I
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/mpi_support/mpi_c_info.txt "${MPI_C_INFO}")
 file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/mpi_support/mpi_cxx_info.txt "${MPI_CXX_INFO}")
 
-if(CMAKE_INSTALL_PYTHONDIR)
+if(CMAKE_INSTALL_PYTHONDIR AND timemory_MAIN_PROJECT)
     foreach(_TYPE exe c cxx)
         install(
             FILES ${CMAKE_CURRENT_BINARY_DIR}/mpi_support/mpi_${_TYPE}_info.txt
@@ -115,7 +115,7 @@ file(GLOB BIN_FILES ${CMAKE_CURRENT_SOURCE_DIR}/bin/*)
 foreach(_FILE ${BIN_FILES})
     get_filename_component(_NAME ${_FILE} NAME)
     configure_file(${_FILE} ${CMAKE_CURRENT_BINARY_DIR}/bin/${_NAME} COPYONLY)
-    if(CMAKE_INSTALL_PYTHONDIR)
+    if(CMAKE_INSTALL_PYTHONDIR AND timemory_MAIN_PROJECT)
         install(
             PROGRAMS ${CMAKE_CURRENT_SOURCE_DIR}/bin/${_NAME}
             DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}/bin
@@ -131,7 +131,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/__init__.py.in
 
 configure_file(${PROJECT_SOURCE_DIR}/pytest.ini ${PROJECT_BINARY_DIR}/pytest.ini COPYONLY)
 
-if(CMAKE_INSTALL_PYTHONDIR)
+if(CMAKE_INSTALL_PYTHONDIR AND timemory_MAIN_PROJECT)
     install(
         FILES ${CMAKE_CURRENT_BINARY_DIR}/__init__.py
         DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}
@@ -149,7 +149,7 @@ foreach(PYLIB_SUBMODULE ${PYTHON_SUBMODULE_FILES})
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/${PYLIB_SUBMODULE}.py
                    ${CMAKE_CURRENT_BINARY_DIR}/${PYLIB_SUBMODULE}.py @ONLY)
 
-    if(CMAKE_INSTALL_PYTHONDIR)
+    if(CMAKE_INSTALL_PYTHONDIR AND timemory_MAIN_PROJECT)
         install(
             FILES ${CMAKE_CURRENT_BINARY_DIR}/${PYLIB_SUBMODULE}.py
             DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${PROJECT_NAME}
@@ -200,7 +200,7 @@ function(TIMEMORY_PYTHON_CONSOLE_SCRIPT SCRIPT_NAME SCRIPT_SUBMODULE SCRIPT_FUNC
     configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/console-script.py.in
                    ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME} @ONLY)
 
-    if(CMAKE_INSTALL_PYTHONDIR)
+    if(CMAKE_INSTALL_PYTHONDIR AND timemory_MAIN_PROJECT)
         install(
             PROGRAMS ${PROJECT_BINARY_DIR}/bin/${SCRIPT_NAME}
             DESTINATION ${CMAKE_INSTALL_BINDIR}
