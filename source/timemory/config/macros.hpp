@@ -44,9 +44,12 @@
 #if defined(TIMEMORY_CONFIG_SOURCE)
 #    define TIMEMORY_CONFIG_LINKAGE(...) __VA_ARGS__
 #elif defined(TIMEMORY_USE_CONFIG_EXTERN)
-#    define TIMEMORY_CONFIG_LINKAGE(...) extern __VA_ARGS__
+#    define TIMEMORY_CONFIG_LINKAGE(...) __VA_ARGS__
 #else
 #    define TIMEMORY_CONFIG_LINKAGE(...) inline __VA_ARGS__
+#    if !defined(TIMEMORY_CONFIG_HEADER_ONLY_MODE)
+#        define TIMEMORY_CONFIG_HEADER_ONLY_MODE 1
+#    endif
 #endif
 //
 //--------------------------------------------------------------------------------------//
