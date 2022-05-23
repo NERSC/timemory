@@ -1687,10 +1687,22 @@ if(TIMEMORY_USE_TAU)
 endif()
 
 if(TIMEMORY_USE_TAU AND TAU_FOUND)
-    target_link_libraries(timemory-tau INTERFACE ${TAU_LIBRARIES})
+    # target_compile_definitions(timemory-tau INTERFACE ${TAU_DEFINITIONS})
     target_include_directories(timemory-tau SYSTEM INTERFACE ${TAU_INCLUDE_DIRS})
+    set(TIMEMORY_TAU_LIBRARIES)
+    foreach(_LIB ${TAU_LIBRARIES})
+        find_library(
+            TAU_${_LIB}_LIBRARY
+            NAMES ${_LIB}
+            HINTS ${TAU_LIBRARY_DIRS}
+            PATHS ${TAU_LIBRARY_DIRS} REQUIRED
+            NO_DEFAULT_PATH)
+        list(APPEND TIMEMORY_TAU_LIBRARIES ${TAU_${_LIB}_LIBRARY})
+    endforeach()
+    target_link_libraries(timemory-tau INTERFACE ${TIMEMORY_TAU_LIBRARIES})
+    # target_link_options(timemory-tau INTERFACE ${TAU_LINK_OPTIONS})
     timemory_target_compile_definitions(timemory-tau INTERFACE TIMEMORY_USE_TAU)
-    timemory_add_rpath(${TAU_LIBRARIES})
+    timemory_add_rpath(${TIMEMORY_TAU_LIBRARIES})
 else()
     set(TIMEMORY_USE_TAU OFF)
     timemory_inform_empty_interface(timemory-tau "TAU")
@@ -1702,8 +1714,8 @@ endif()
 #
 # ----------------------------------------------------------------------------------------#
 
-target_link_libraries(timemory-roofline-options INTERFACE timemory-compile-extra
-                                                          timemory-arch)
+target_link_libraries(timemory-roofline-options
+                      INTERFACE $<BUILD_INTERFACE:timemory-compile-options> timemory-arch)
 
 target_link_libraries(timemory-cpu-roofline INTERFACE timemory-roofline-options
                                                       timemory-papi)

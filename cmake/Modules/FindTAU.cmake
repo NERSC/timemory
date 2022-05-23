@@ -35,76 +35,177 @@
 #
 # TAU_INCLUDE_DIR    The path to the TAU include directory: cached
 #
-# TAU_LIBRARY        The path to the TAU library: cached
+# TAU_LIBRARIES        The path to the TAU library: cached
 #
 # You should not need to set these in the vast majority of cases
 #
 
 # ----------------------------------------------------------------------------------------#
 
-find_path(
-    TAU_ROOT_DIR
-    NAMES include/TAU.h tau/include/TAU.h include/tau/TAU.h
-    HINTS ENV TAU_ROOT_DIR
-    PATH_SUFFIXES lib lib64
-    DOC "TAU root installation directory")
+find_program(
+    TAU_CXX_COMPILER
+    NAMES tau_cxx.sh
+    PATH_SUFFIXES bin)
 
 # ----------------------------------------------------------------------------------------#
 
-find_path(
-    TAU_INCLUDE_DIR
-    NAMES TAU.h
-    HINTS ${TAU_ROOT_DIR} ENV TAU_ROOT_DIR ENV CPATH
-    PATH_SUFFIXES include include/tau tau/include
-    DOC "Path to the TAU headers")
+function(TAU_CXX_DEFINE_SHOW_VARIABLES)
+    set(_TAU_CXX_EXECUTE_OPTIONS)
+    if(NOT CMAKE_VERSION VERSION_LESS 3.18)
+        list(APPEND _TAU_CXX_EXECUTE_OPTIONS ECHO_ERROR_VARIABLE)
+    endif()
+    if(NOT CMAKE_VERSION VERSION_LESS 3.19)
+        list(APPEND _TAU_CXX_EXECUTE_OPTIONS COMMAND_ERROR_IS_FATAL ANY)
+    endif()
+    foreach(_OPT SHOW_COMPILER SHOW SHOW_INCLUDES SHOW_LIBS SHOW_SHARED_LIBS)
+        string(TOLOWER "${_OPT}" _TAU_CXX_${_OPT}_OPT)
+        string(REPLACE "_" "" _TAU_CXX_${_OPT}_OPT "${_TAU_CXX_${_OPT}_OPT}")
+        set(TAU_CXX_${_OPT}_OPT
+            "${_TAU_CXX_${_OPT}_OPT}"
+            CACHE STRING "tau_cxx.sh -tau:\${TAU_CXX_${_OPT}_OPT}")
+        mark_as_advanced(TAU_CXX_${_OPT}_OPT)
+        if(NOT TAU_CXX_${_OPT})
+            execute_process(
+                COMMAND ${TAU_CXX_COMPILER} -tau:${TAU_CXX_${_OPT}_OPT}
+                OUTPUT_VARIABLE _OUT
+                RESULT_VARIABLE _RET
+                ERROR_VARIABLE _ERR
+                OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE
+                COMMAND_ECHO STDOUT ${_TAU_CXX_EXECUTE_OPTIONS})
+            if(NOT _RET EQUAL 0)
+                message(
+                    SEND_ERROR
+                        "`${TAU_CXX_COMPILER} -tau:${TAU_CXX_${_OPT}_OPT}` exited with error code: ${_RET}"
+                    )
+                message(SEND_ERROR "tau_cxx.sh output :: ${_OUT}")
+                if(NOT "ECHO_ERROR_VARIABLE" IN_LIST _TAU_CXX_EXECUTE_OPTIONS)
+                    message(SEND_ERROR "tau_cxx.sh error  :: ${_ERR}")
+                endif()
+                continue()
+            endif()
+            if("${_OPT}" STREQUAL "SHOW")
+                string(REPLACE "${TAU_CXX_SHOW_COMPILER} " "" _OUT "${_OUT}")
+            endif()
+            if("${TAU_CXX_${_OPT}}" STREQUAL "")
+                unset(TAU_CXX_${_OPT} CACHE)
+            endif()
+            set(TAU_CXX_${_OPT}
+                "${_OUT}"
+                CACHE STRING "output from `tau_cxx.sh -tau:${TAU_CXX_${_OPT}_OPT}`")
+            mark_as_advanced(TAU_CXX_${_OPT})
+        endif()
+    endforeach()
+endfunction()
 
-# ----------------------------------------------------------------------------------------#
+function(_SET_TAU_PROCESS_VARIABLE _VAR)
+    string(REGEX REPLACE "[ \t]$" "" _VAL "${ARGN}")
+    set(TAU_CXX_${_VAR}
+        "${_VAL}"
+        CACHE STRING "Regex for matching to flag")
+    mark_as_advanced(TAU_CXX_${_VAR})
+endfunction()
 
-find_library(
-    TAU_LIBRARY
-    NAMES TAU
-    HINTS ${TAU_ROOT_DIR}
-          ENV
-          TAU_ROOT_DIR
-          ENV
-          LD_LIBRARY_PATH
-          ENV
-          LIBRARY_PATH
-          ENV
-          DYLD_LIBRARY_PATH
-    PATH_SUFFIXES
-        lib
-        lib64
-        tau
-        lib/tau
-        lib64/tau
-        # system processor
-        lib/tau/${CMAKE_SYSTEM_PROCESSOR}
-        lib64/tau/${CMAKE_SYSTEM_PROCESSOR}
-        lib/tau/${CMAKE_SYSTEM_PROCESSOR}/lib
-        lib64/tau/${CMAKE_SYSTEM_PROCESSOR}/lib64
-        lib64/tau/${CMAKE_SYSTEM_PROCESSOR}/lib
-        ${CMAKE_SYSTEM_PROCESSOR}/lib
-        ${CMAKE_SYSTEM_PROCESSOR}/lib/tau
-        ${CMAKE_SYSTEM_PROCESSOR}/lib64
-        ${CMAKE_SYSTEM_PROCESSOR}/lib64/tau
-    DOC "Path to the TAU library")
+# variables for matching the prefix of an option
+_set_tau_process_variable(INCLUDE_DIRS_MATCH "-I|${CMAKE_INCLUDE_SYSTEM_FLAG_CXX}")
+_set_tau_process_variable(DEFINITIONS_MATCH "-D|/D")
+_set_tau_process_variable(LIBRARY_DIRS_MATCH "-L")
+_set_tau_process_variable(LIBRARIES_MATCH "-l(TAU|tau)")
+_set_tau_process_variable(LINK_OPTIONS_MATCH "-Wl")
+
+# variables for replacing the prefix of an option
+_set_tau_process_variable(INCLUDE_DIRS_REPLACE "${TAU_CXX_INCLUDE_DIRS_MATCH}")
+_set_tau_process_variable(DEFINITIONS_REPLACE "${TAU_CXX_DEFINITIONS_MATCH}")
+_set_tau_process_variable(LIBRARY_DIRS_REPLACE "${TAU_CXX_LIBRARY_DIRS_MATCH}")
+_set_tau_process_variable(LIBRARIES_REPLACE "-l")
+_set_tau_process_variable(LINK_OPTIONS_REPLACE)
+
+function(TAU_PROCESS_CXX_OUTPUT _VAR_PREFIX _STR)
+    set(_VARS)
+    foreach(_VAR INCLUDE_DIRS DEFINITIONS LIBRARY_DIRS LIBRARIES LINK_OPTIONS)
+        if("${_VAR}" IN_LIST ARGN AND NOT "${_VAR_PREFIX}_${_VAR}")
+            list(APPEND _VARS "${_VAR}")
+        endif()
+    endforeach()
+
+    string(REPLACE " " ";" _STR "${_STR}")
+
+    foreach(_VAR ${_VARS})
+        set(_${_VAR})
+        set(_MATCH "${TAU_CXX_${_VAR}_MATCH}")
+        set(_REPLACE "${TAU_CXX_${_VAR}_REPLACE}")
+        set(_ADD_NEXT OFF)
+        foreach(_VAL ${_STR})
+            if(_ADD_NEXT)
+                set(_ADD_NEXT OFF)
+                list(APPEND _${_VAR} "${_VAL}")
+                continue()
+            elseif(NOT "${_VAL}" MATCHES "^(${_MATCH})")
+                continue()
+            elseif("${_VAL}" MATCHES "^(${_MATCH})$")
+                set(_ADD_NEXT ON)
+            else()
+                if(_REPLACE)
+                    string(REGEX REPLACE "^(${_REPLACE})(.*)" "\\2" _VAL "${_VAL}")
+                endif()
+                if(_VAL)
+                    list(APPEND _${_VAR} "${_VAL}")
+                endif()
+            endif()
+        endforeach()
+        if(_${_VAR})
+            set(${_VAR_PREFIX}_${_VAR}
+                "${_${_VAR}}"
+                CACHE STRING "${_VAR} for TAU")
+        endif()
+    endforeach()
+endfunction()
+
+if(TAU_CXX_COMPILER)
+    tau_cxx_define_show_variables()
+
+    tau_process_cxx_output(TAU "${TAU_CXX_SHOW}" DEFINITIONS)
+    tau_process_cxx_output(TAU "${TAU_CXX_SHOW_INCLUDES}" INCLUDE_DIRS)
+
+    if(BUILD_SHARED_LIBS
+       OR "shared" IN_LIST TAU_FIND_COMPONENTS
+       OR (BUILD_STATIC_LIBS AND CMAKE_POSITION_INDEPENDENT_CODE))
+        tau_process_cxx_output(TAU "${TAU_CXX_SHOW_SHARED_LIBS}" LIBRARY_DIRS LIBRARIES
+                               LINK_OPTIONS)
+        if(TAU_LIBRARIES)
+            set(TAU_shared_FOUND ON)
+        endif()
+    elseif(BUILD_STATIC_LIBS OR "static" IN_LIST TAU_FIND_COMPONENTS)
+        tau_process_cxx_output(TAU "${TAU_CXX_SHOW_LIBS}" LIBRARY_DIRS LIBRARIES
+                               LINK_OPTIONS)
+        if(TAU_LIBRARIES)
+            set(TAU_static_FOUND ON)
+        endif()
+    else()
+        tau_process_cxx_output(TAU "${TAU_CXX_SHOW_SHARED_LIBS}" LIBRARY_DIRS LIBRARIES
+                               LINK_OPTIONS)
+    endif()
+endif()
 
 # ----------------------------------------------------------------------------------------#
 
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set TAU_FOUND to TRUE if all listed
 # variables are TRUE
-find_package_handle_standard_args(TAU DEFAULT_MSG TAU_INCLUDE_DIR TAU_LIBRARY)
+find_package_handle_standard_args(
+    TAU
+    REQUIRED_VARS TAU_INCLUDE_DIRS TAU_LIBRARIES
+    HANDLE_COMPONENTS)
 
 # ----------------------------------------------------------------------------------------#
 
 if(TAU_FOUND)
-    add_library(TAU INTERFACE)
-    target_link_libraries(TAU INTERFACE ${TAU_LIBRARY})
-    target_include_directories(TAU INTERFACE ${TAU_INCLUDE_DIR})
-    get_filename_component(TAU_INCLUDE_DIRS ${TAU_INCLUDE_DIR} REALPATH)
-    get_filename_component(TAU_LIBRARIES ${TAU_LIBRARY} REALPATH)
+    add_library(TAU::TAU INTERFACE IMPORTED)
+    target_link_libraries(TAU::TAU INTERFACE ${TAU_LIBRARIES})
+    target_compile_definitions(TAU::TAU INTERFACE ${TAU_DEFINITIONS})
+    target_include_directories(TAU::TAU SYSTEM INTERFACE ${TAU_INCLUDE_DIRS})
+    target_link_directories(TAU::TAU INTERFACE ${TAU_LIBRARY_DIRS})
+    target_link_options(TAU::TAU INTERFACE ${TAU_LINK_OPTIONS})
 endif()
 
-mark_as_advanced(TAU_INCLUDE_DIR TAU_LIBRARY)
+mark_as_advanced(TAU_INCLUDE_DIRS TAU_DEFINITIONS TAU_LIBRARY_DIRS TAU_LIBRARIES
+                 TAU_LINK_OPTIONS)

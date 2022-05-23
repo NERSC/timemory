@@ -14,5 +14,6 @@ if(TIMEMORY_USE_TAU)
         HEADERS ${header_files}
         SOURCES ${source_files}
         DEPENDS ${DEPS}
-        PROPERTY_DEPENDS GLOBAL)
+        PROPERTY_DEPENDS GLOBAL
+        PRIVATE_LINK TAU::TAU)
 endif()

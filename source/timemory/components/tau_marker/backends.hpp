@@ -31,7 +31,42 @@
 #pragma once
 
 #if defined(TIMEMORY_USE_TAU)
-#    define TAU_ENABLED
-#    define TAU_DOT_H_LESS_HEADERS
+#    if !defined(TAU_ENABLED)
+#        define TAU_ENABLED
+#    endif
+#    if !defined(TAU_DOT_H_LESS_HEADERS)
+#        define TAU_DOT_H_LESS_HEADERS
+#    endif
 #    include "TAU.h"
+#    if !defined(TIMEMORY_TAU_INIT)
+#        define TIMEMORY_TAU_INIT(...) Tau_init(__VA_ARGS__)
+#    endif
+#    if !defined(TIMEMORY_TAU_SET_NODE)
+#        define TIMEMORY_TAU_SET_NODE(...) Tau_set_node(__VA_ARGS__)
+#    endif
+#    if !defined(TIMEMORY_TAU_START)
+#        define TIMEMORY_TAU_START(...) Tau_start(__VA_ARGS__)
+#    endif
+#    if !defined(TIMEMORY_TAU_STOP)
+#        define TIMEMORY_TAU_STOP(...) Tau_stop(__VA_ARGS__)
+#    endif
+#    if !defined(TIMEMORY_TAU_REGISTER_THREAD)
+#        define TIMEMORY_TAU_REGISTER_THREAD TAU_REGISTER_THREAD
+#    endif
+#else
+#    if !defined(TIMEMORY_TAU_INIT)
+#        define TIMEMORY_TAU_INIT(...) ::tim::consume_parameters(__VA_ARGS__)
+#    endif
+#    if !defined(TIMEMORY_TAU_SET_NODE)
+#        define TIMEMORY_TAU_SET_NODE(...) ::tim::consume_parameters(__VA_ARGS__)
+#    endif
+#    if !defined(TIMEMORY_TAU_START)
+#        define TIMEMORY_TAU_START(...) ::tim::consume_parameters(__VA_ARGS__)
+#    endif
+#    if !defined(TIMEMORY_TAU_STOP)
+#        define TIMEMORY_TAU_STOP(...) ::tim::consume_parameters(__VA_ARGS__)
+#    endif
+#    if !defined(TIMEMORY_TAU_REGISTER_THREAD)
+#        define TIMEMORY_TAU_REGISTER_THREAD ::tim::consume_parameters
+#    endif
 #endif
