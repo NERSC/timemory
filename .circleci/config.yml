@@ -81,7 +81,7 @@ jobs:
             --disable-build-caliper
             --disable-build-gotcha
             --cxx-standard=17
-            -- -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=OFF -DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF -DTIMEMORY_UNITY_BUILD=OFF -- -j1 &&
+            -- -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=OFF -DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF -DTIMEMORY_UNITY_BUILD=OFF -DTIMEMORY_USE_LIBUNWIND=OFF -- -j1 &&
             rm -f .hold &&
             SUBPACKAGES="api bundle common component hardware_counters mpi bundle options plotting profiler region roofline settings signals trace units util";
             python -c "import timemory";
