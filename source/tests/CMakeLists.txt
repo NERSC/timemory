@@ -469,9 +469,10 @@ if(TIMEMORY_USE_PAPI AND VALID_PARANOID)
             ${_LIBRARY})
 
     # zen cpus *think* PAPI_DP_OPS is valid but it is always zero
-    target_compile_definitions(
-        papi_tests PRIVATE DISABLE_DP=$<IF:$<STREQUAL:${CpuArch_TARGET},zen>,1,0>)
-
+    if(TARGET papi_tests)
+        target_compile_definitions(
+            papi_tests PRIVATE DISABLE_DP=$<IF:$<STREQUAL:${CpuArch_TARGET},zen>,1,0>)
+    endif()
 elseif(TIMEMORY_USE_PAPI)
     if(PARANOID_VALUE)
         paranoid_warning_message(${PARANOID_FILE} ${PARANOID_VALUE}
