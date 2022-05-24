@@ -25,7 +25,7 @@
 #pragma once
 
 //
-#if defined(TIMEMORY_USE_CORE_EXTERN)
+#if defined(TIMEMORY_USE_CORE_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 // clang-format off
 #    include "timemory/hash/extern.hpp"
 #    include "timemory/environment/extern.hpp"
@@ -34,47 +34,47 @@
 // clang-format on
 #endif
 //
-#if defined(TIMEMORY_USE_MANAGER_EXTERN)
+#if defined(TIMEMORY_USE_MANAGER_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #    include "timemory/manager/extern.hpp"
 #endif
 //
-#if defined(TIMEMORY_USE_ERT_EXTERN)
+#if defined(TIMEMORY_USE_ERT_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #    include "timemory/ert/extern.hpp"
 #endif
 //
-#if defined(TIMEMORY_USE_CONFIG_EXTERN)
+#if defined(TIMEMORY_USE_CONFIG_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #    include "timemory/config/extern.hpp"
 #endif
 //
-#if defined(TIMEMORY_USE_STORAGE_EXTERN)
+#if defined(TIMEMORY_USE_STORAGE_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #    include "timemory/storage/extern.hpp"
 #endif
 //
-#if defined(TIMEMORY_USE_OPERATIONS_EXTERN)
+#if defined(TIMEMORY_USE_OPERATIONS_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #    include "timemory/operations/extern.hpp"
 #endif
 //
-#if defined(TIMEMORY_USE_BACKEND_EXTERN)
+#if defined(TIMEMORY_USE_BACKEND_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #    include "timemory/backends/extern.hpp"
 #    include "timemory/backends/types/mpi/extern.hpp"
 #endif
 //
-#if defined(TIMEMORY_USE_VARIADIC_EXTERN)
+#if defined(TIMEMORY_USE_VARIADIC_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #endif
 //
-#if defined(TIMEMORY_USE_COMPONENT_EXTERN)
+#if defined(TIMEMORY_USE_COMPONENT_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #    include "timemory/components/extern.hpp"
 #endif
 //
-#if defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
+#if defined(TIMEMORY_USE_USER_BUNDLE_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #    include "timemory/components/user_bundle/extern.hpp"
 #endif
 //
-#if defined(TIMEMORY_USE_CONTAINERS_EXTERN)
+#if defined(TIMEMORY_USE_CONTAINERS_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #    include "timemory/containers/extern.hpp"
 #endif
 //
-#if defined(TIMEMORY_USE_RUNTIME_EXTERN)
+#if defined(TIMEMORY_USE_RUNTIME_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #    include "timemory/runtime/extern.hpp"
 #endif
 //
