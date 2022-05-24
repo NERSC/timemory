@@ -26,6 +26,7 @@
 
 // For std::decay
 #include <type_traits>
+#include <utility>
 
 namespace tim
 {
@@ -115,14 +116,25 @@ namespace scope
 //
 /// \struct tim::scope::destructor
 /// \brief provides an object which can be returned from functions that will execute
-/// the lambda provided during construction when it is destroyed
+/// the lambda provided during construction when it is destroyed. Uses transient_function
+/// instead of std::function which is faster to compile and will not allocate on the heap
 ///
 struct transient_destructor
 {
-    template <typename FuncT>
-    transient_destructor(FuncT&& _func)
-    : m_functor(std::forward<FuncT>(_func))
-    {}
+    /// \fn transient_destructor(FuncT&& _fini, InitT&& _init)
+    /// \tparam FuncT "std::function<void()> or void (*)()"
+    /// \tparam InitT "std::function<void()> or void (*)()"
+    /// \param _fini Function to execute when object is destroyed
+    /// \param _init Function to execute when object is created (optional)
+    ///
+    /// \brief Provides a utility to perform an operation when exiting a scope.
+    template <typename FuncT, typename InitT = void (*)()>
+    transient_destructor(
+        FuncT&& _fini, InitT&& _init = []() {})
+    : m_functor{ std::forward<FuncT>(_fini) }
+    {
+        _init();
+    }
 
     // delete copy operations
     transient_destructor(const transient_destructor&) = delete;

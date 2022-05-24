@@ -624,14 +624,24 @@ operator+(config _lhs, config _rhs) -> config
 //
 /// \struct tim::scope::destructor
 /// \brief provides an object which can be returned from functions that will execute
-/// the lambda provided during construction when it is destroyed
+/// the lambda provided during construction when it is destroyed.
 ///
 struct destructor
 {
-    template <typename FuncT>
-    destructor(FuncT&& _func)
-    : m_functor(std::forward<FuncT>(_func))
-    {}
+    /// \fn destructor(FuncT&& _fini, InitT&& _init)
+    /// \tparam FuncT "std::function<void()> or void (*)()"
+    /// \tparam InitT "std::function<void()> or void (*)()"
+    /// \param _fini Function to execute when object is destroyed
+    /// \param _init Function to execute when object is created (optional)
+    ///
+    /// \brief Provides a utility to perform an operation when exiting a scope.
+    template <typename FuncT, typename InitT = void (*)()>
+    destructor(
+        FuncT&& _fini, InitT&& _init = []() {})
+    : m_functor{ std::forward<FuncT>(_fini) }
+    {
+        _init();
+    }
 
     // delete copy operations
     destructor(const destructor&) = delete;
@@ -639,7 +649,7 @@ struct destructor
 
     // allow move operations
     destructor(destructor&& rhs) noexcept
-    : m_functor(std::move(rhs.m_functor))
+    : m_functor{ std::move(rhs.m_functor) }
     {
         rhs.m_functor = []() {};
     }
