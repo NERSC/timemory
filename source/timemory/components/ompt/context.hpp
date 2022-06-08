@@ -99,8 +99,8 @@ context_start_constructed(string_view_cref_t _key, Tp& _data, ompt_data_t* _ompt
             TIMEMORY_JOIN("", "Error! Missing value in ompt_data_t! key = ", _key));
 
     if(_data.count(_idx) == 0)
-        throw std::runtime_error(
-            TIMEMORY_JOIN("", "Error! data does not contain index ", _idx));
+        throw std::runtime_error(TIMEMORY_JOIN("", "Error! data does not contain index ",
+                                               _idx, "! key = ", _key));
 
     auto _v = _data.at(_idx);
     _v->start(_args...);
@@ -130,8 +130,8 @@ context_relaxed_stop(string_view_cref_t _key, Tp& _data, ompt_data_t* _ompt_data
     auto _idx = _ompt_data->value;
 
     if(_data.count(_idx) == 0)
-        throw std::runtime_error(
-            TIMEMORY_JOIN("", "Error! data does not contain index ", _idx));
+        throw std::runtime_error(TIMEMORY_JOIN("", "Error! data does not contain index ",
+                                               _idx, "! key = ", _key));
 
     auto _v = _data.at(_idx);
 
