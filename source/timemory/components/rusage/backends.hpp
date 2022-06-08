@@ -130,7 +130,7 @@ check_rusage_call(int ret, const char* _func)
 //
 struct rusage_cache
 {
-    rusage_cache() { update(); }
+    explicit rusage_cache(rusage_type_t _t = get_rusage_type()) { update(_t); }
     ~rusage_cache() = default;
 
     rusage_cache(const rusage_cache&) = delete;
@@ -139,10 +139,12 @@ struct rusage_cache
     rusage_cache(rusage_cache&&) noexcept = default;
     rusage_cache& operator=(rusage_cache&&) noexcept = default;
 
-    inline void update()
+    inline void update(rusage_type_t _t)
     {
 #if defined(TIMEMORY_UNIX)
-        check_rusage_call(getrusage(get_rusage_type(), &m_data), __FUNCTION__);
+        check_rusage_call(getrusage(_t, &m_data), __FUNCTION__);
+#else
+        (void) _t;
 #endif
     }
 
