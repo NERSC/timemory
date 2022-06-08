@@ -938,11 +938,14 @@ timemory_library_constructor()
     auto* _inst = timemory_manager_master_instance();
     if(_settings)
     {
+        auto _strict_v                 = _settings->get_strict_config();
+        _settings->get_strict_config() = false;
         _settings->init_config();
-        static auto _dir         = _settings->get_output_path();
-        static auto _prefix      = _settings->get_output_prefix();
-        static auto _time_output = _settings->get_time_output();
-        static auto _time_format = _settings->get_time_format();
+        _settings->get_strict_config() = _strict_v;
+        static auto _dir               = _settings->get_output_path();
+        static auto _prefix            = _settings->get_output_prefix();
+        static auto _time_output       = _settings->get_time_output();
+        static auto _time_format       = _settings->get_time_format();
         tim::consume_parameters(_dir, _prefix, _time_output, _time_format);
     }
 

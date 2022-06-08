@@ -133,6 +133,7 @@ struct TIMEMORY_VISIBILITY("default") settings
     TIMEMORY_SETTINGS_MEMBER_DECL(string_t, config_file)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, suppress_parsing)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, suppress_config)
+    TIMEMORY_SETTINGS_MEMBER_DECL(bool, strict_config)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, enabled)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, auto_output)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, cout_output)

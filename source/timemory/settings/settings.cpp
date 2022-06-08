@@ -44,7 +44,9 @@
 #include <cctype>
 #include <fstream>
 #include <initializer_list>
+#include <iterator>
 #include <locale>
+#include <regex>
 #include <string>
 
 namespace tim
@@ -661,19 +663,27 @@ settings::initialize_core()
         "Configuration file for " TIMEMORY_PROJECT_NAME,
         TIMEMORY_JOIN(';', TIMEMORY_JOIN('/', homedir, "." TIMEMORY_PROJECT_NAME ".cfg"),
                       TIMEMORY_JOIN('/', homedir, "." TIMEMORY_PROJECT_NAME ".json")),
-        TIMEMORY_ESC(strset_t{ "native", "core" }),
+        TIMEMORY_ESC(strset_t{ "native", "core", "config" }),
         strvector_t({ "-C", "--" TIMEMORY_PROJECT_NAME "-config" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, suppress_config, TIMEMORY_SETTINGS_KEY("SUPPRESS_CONFIG"),
         "Disable processing of setting configuration files", false,
-        TIMEMORY_ESC(strset_t{ "native", "core" }),
+        TIMEMORY_ESC(strset_t{ "native", "core", "config" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-suppress-config",
                       "--" TIMEMORY_PROJECT_NAME "-no-config" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
+        bool, strict_config, TIMEMORY_SETTINGS_KEY("STRICT_CONFIG"),
+        "Throw errors for unknown setting names in configuration files instead of "
+        "emitting a warning",
+        true, TIMEMORY_ESC(strset_t{ "native", "core", "config" }),
+        strvector_t({ "--" TIMEMORY_PROJECT_NAME "-strict-config" }));
+
+    TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, suppress_parsing, TIMEMORY_SETTINGS_KEY("SUPPRESS_PARSING"),
-        "Disable parsing environment", false, TIMEMORY_ESC(strset_t{ "native", "core" }),
+        "Disable parsing environment", false,
+        TIMEMORY_ESC(strset_t{ "native", "core", "config" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-suppress-parsing" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
@@ -1716,31 +1726,144 @@ settings::read(std::istream& ifs, std::string inp)
             return true;
         };
 
-        int                                expected = 0;
-        int                                valid    = 0;
-        std::map<std::string, std::string> _variables{};
+        int                                                      expected = 0;
+        int                                                      valid    = 0;
+        std::map<std::string, std::string>                       _variables{};
+        std::function<std::pair<std::string, bool>(std::string)> _resolve_variables{};
 
-        std::function<std::string(std::string)> _resolve_variable{};
-        _resolve_variable = [&](std::string _v) {
-            if(_v.empty())
-                return _v;
-            if(_v.at(0) != '$')
-                return _v;
-            static const char* _env_syntax = "$env:";
-            if(_v.find(_env_syntax) == 0)
-                return _resolve_variable(
-                    get_env<std::string>(_v.substr(strlen(_env_syntax)), ""));
-            auto vitr = _variables.find(_v);
-            if(vitr != _variables.end())
-                return _resolve_variable(vitr->second);
-            if(_v.at(0) == '$')
-                _v = _v.substr(1);
-            for(const auto& itr : *this)
-            {
-                if(itr.second->matches(_v))
-                    return _resolve_variable(itr.second->as_string());
-            }
+        auto _resolve = [&_resolve_variables](std::string _v) {
+            std::pair<std::string, bool> _resolved{};
+            while((_resolved = _resolve_variables(_v)).second)
+                _v = _resolved.first;
             return _v;
+        };
+
+        // replaces VAR in $env:VAR with the value of the environment variable VAR
+        auto _resolve_env = [&](std::string _v) -> std::pair<std::string, bool> {
+            const char* _env_syntax = "$env:";
+            auto        _pos        = _v.find(_env_syntax);
+            if(_pos == std::string::npos)
+                return std::make_pair(_v, false);
+
+            if(get_debug() || get_verbose() >= 5)
+                fprintf(stderr,
+                        "[%s][settings]['%s']> Resolving environment variables in '%s'\n",
+                        TIMEMORY_PROJECT_NAME, _inp.c_str(), _v.c_str());
+
+            // remove the $env: and store everything before it
+            std::string _prefix = _v.substr(0, _pos);
+            _v                  = _v.substr(_pos + strlen(_env_syntax));
+
+            // resolve any remaining variables or environment variables in the substring
+            _v = _resolve(_v);
+
+            auto _re  = std::regex{ "^([A-Z])([A-Z0-9_]+)" };
+            auto _beg = std::sregex_iterator{ _v.begin(), _v.end(), _re };
+            auto _end = std::sregex_iterator{};
+            for(auto itr = _beg; itr != _end; ++itr)
+            {
+                auto _env_name = itr->str();
+                if(_env_name.empty())
+                {
+                    std::stringstream _msg{};
+                    _msg << "Error! evaluation of $env: syntax returned an empty string. "
+                            "Environment variables must consist solely of uppercase "
+                            "letters, digits, and '_' and do not begin with a digit :: "
+                         << _v;
+                    throw std::runtime_error(_msg.str());
+                }
+
+                return std::make_pair(_prefix +
+                                          _v.replace(0, _env_name.length(),
+                                                     get_env<std::string>(_env_name, "")),
+                                      true);
+            }
+            return std::make_pair(_prefix + _v, false);
+        };
+
+        // replaces VAR in $VAR or ${VAR} with the value of the config defined variable
+        // or the settings value
+        auto _resolve_var = [&](std::string _v) -> std::pair<std::string, bool> {
+            auto _pos = _v.find('$');
+            if(_pos == std::string::npos)
+                return std::make_pair(_v, false);
+
+            if(get_debug() || get_verbose() >= 5)
+                fprintf(stderr, "[%s][settings]['%s']> Expanding settings in '%s'\n",
+                        TIMEMORY_PROJECT_NAME, _inp.c_str(), _v.c_str());
+
+            // remove the $ and store everything before it
+            std::string _prefix = _v.substr(0, _pos);
+            _v                  = _v.substr(_pos + 1);
+
+            // resolve any remaining variables or environment variables in the substring
+            _v = _resolve(_v);
+
+            for(const auto& itr : _variables)
+            {
+                auto _var = itr.first.substr(1);
+                if(_v.find(std::string{ "{" } + _var + "}") == 0)
+                    return std::make_pair(
+                        _prefix + _v.replace(0, _var.length() + 2, itr.second), true);
+                else if(_v.find(_var) == 0)
+                    return std::make_pair(
+                        _prefix + _v.replace(0, _var.length(), itr.second), true);
+            }
+
+            auto _re  = std::regex{ "^[{|]([A-Za-z])([A-Za-z0-9_]+)[|}]" };
+            auto _beg = std::sregex_iterator{ _v.begin(), _v.end(), _re };
+            auto _end = std::sregex_iterator{};
+            for(auto itr = _beg; itr != _end; ++itr)
+            {
+                auto _var_name = itr->str();
+                if(_var_name.empty())
+                {
+                    std::stringstream _msg{};
+                    _msg << "Error! evaluation of setting variable: syntax returned an "
+                            "empty string. "
+                            "Settings must consist solely of alphanumeric characters and "
+                            "'_' and do not begin with a digit :: "
+                         << _v;
+                    throw std::runtime_error(_msg.str());
+                }
+
+                for(const auto& itr : *this)
+                {
+                    if(itr.second->matches(_v))
+                        return std::make_pair(_prefix +
+                                                  _v.replace(0, _var_name.length(),
+                                                             itr.second->as_string()),
+                                              true);
+                }
+            }
+            return std::make_pair(_prefix + _v, false);
+        };
+
+        _resolve_variables = [&](std::string _v) {
+            std::pair<std::string, bool> _results = { _v, false };
+
+            if(_v.empty())
+                return _results;
+
+            // if not $ then just return
+            auto _pos = _v.find('$');
+            if(_pos == std::string::npos)
+                return _results;
+
+            if(get_debug() || get_verbose() >= 5)
+                fprintf(stderr, "[%s][settings]['%s']> Resolving variables in '%s'\n",
+                        TIMEMORY_PROJECT_NAME, _inp.c_str(), _v.c_str());
+
+            std::pair<std::string, bool> _replace_results = {};
+            while((_replace_results = _resolve_env(_v)).second)
+                _v = _replace_results.first;
+
+            while((_replace_results = _resolve_var(_v)).second)
+                _v = _replace_results.first;
+
+            if(_results.first != _v)
+                return std::make_pair(_v, true);
+            return _results;
         };
 
         while(ifs)
@@ -1768,7 +1891,17 @@ settings::read(std::istream& ifs, std::string inp)
                 {
                     if(delim.empty() || delim.at(i) == "#" || delim.at(i).at(0) == '#')
                         continue;
-                    val += "," + _resolve_variable(delim.at(i));
+                    auto _v = _resolve(delim.at(i));
+                    if(_v != delim.at(i))
+                    {
+                        std::string _nv = {};
+                        for(const auto& itr : tim::delimit(_v, "\n\t=,; "))
+                            _nv += "," + itr;
+                        if(!_nv.empty())
+                            _nv = _nv.substr(1);
+                        _v = _nv;
+                    }
+                    val += "," + _v;
                 }
                 // if there was any fields, remove the leading comma
                 if(val.length() > 0)
@@ -1785,7 +1918,18 @@ settings::read(std::istream& ifs, std::string inp)
                 // TIMEMORY_PRINT_MIN   = $MYVAR
                 if(key.at(0) == '$')
                 {
-                    _variables.emplace(key, val);
+                    const char* _env_syntax = "$env:";
+                    auto        _pos        = key.find(_env_syntax);
+                    if(_pos == 0)
+                    {
+                        auto _v = key.substr(strlen(_env_syntax));
+                        set_env(_v, val, 0);
+                        _variables.emplace(std::string{ "$" } + _v, val);
+                    }
+                    else
+                    {
+                        _variables.emplace(key, val);
+                    }
                     continue;
                 }
 
@@ -1802,11 +1946,23 @@ settings::read(std::istream& ifs, std::string inp)
                         itr.second->set_config_updated(true);
                         itr.second->set_environ_updated(false);
                         itr.second->parse(val);
+                        if(itr.second->matches("config_file"))
+                        {
+                            auto _cfgs = tim::delimit(val, "; ");
+                            for(const auto& itr : _cfgs)
+                            {
+                                if(itr != inp)
+                                    read(itr);
+                            }
+                        }
                     }
                 }
 
                 if(incr == valid)
                 {
+                    if(get_strict_config())
+                        throw std::runtime_error(TIMEMORY_JOIN(
+                            "", "Unknown setting '", key, "' (value = '", val, "')"));
                     auto _key = key;
                     for(auto& itr : _key)
                         itr = std::toupper(itr);
@@ -1899,6 +2055,7 @@ TIMEMORY_SETTINGS_MEMBER_DEF(bool, suppress_parsing,
                              TIMEMORY_SETTINGS_KEY("SUPPRESS_PARSING"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, suppress_config,
                              TIMEMORY_SETTINGS_KEY("SUPPRESS_CONFIG"))
+TIMEMORY_SETTINGS_MEMBER_DEF(bool, strict_config, TIMEMORY_SETTINGS_KEY("STRICT_CONFIG"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, enabled, TIMEMORY_SETTINGS_KEY("ENABLED"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, auto_output, TIMEMORY_SETTINGS_KEY("AUTO_OUTPUT"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, cout_output, TIMEMORY_SETTINGS_KEY("COUT_OUTPUT"))
