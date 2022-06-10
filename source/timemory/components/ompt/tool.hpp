@@ -232,6 +232,7 @@ template <typename ApiT>
 struct context_handler
 {
     using api_type    = ApiT;
+    using this_type   = context_handler<api_type>;
     using bundle_type = typename trait::ompt_handle<api_type>::type;
     static constexpr size_t max_supported_threads =
         trait::max_threads<ApiT, context_handler<ApiT>>::value;
@@ -452,6 +453,7 @@ public:
     }
 
 protected:
+    bool        m_enabled = trait::runtime_enabled<this_type>::get();
     mode        m_mode;
     std::string m_key = {};
 

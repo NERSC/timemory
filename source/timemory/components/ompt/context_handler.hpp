@@ -29,6 +29,7 @@
 #include "timemory/components/ompt/macros.hpp"
 #include "timemory/components/ompt/tool.hpp"
 #include "timemory/components/user_bundle.hpp"
+#include "timemory/mpl/type_traits.hpp"
 #include "timemory/utility/type_list.hpp"
 
 #include <cstdlib>
@@ -84,6 +85,8 @@ template <typename ApiT>
 void
 context_handler<ApiT>::operator()(ompt_thread_t thread_type, ompt_data_t* thread_data)
 {
+    if(!m_enabled)
+        return;
     context_start(ompt_thread_type_labels[thread_type], get_data<thread_tag>(),
                   thread_data, thread_type, thread_data);
 }
@@ -95,6 +98,8 @@ template <typename ApiT>
 void
 context_handler<ApiT>::operator()(ompt_data_t* thread_data)
 {
+    if(!m_enabled)
+        return;
     context_stop("ompt_thread_end", get_data<thread_tag>(), thread_data);
 }
 
@@ -108,6 +113,8 @@ context_handler<ApiT>::operator()(ompt_data_t* task_data, const ompt_frame_t* ta
                                   unsigned int requested_parallelism, int flags,
                                   const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     context_start(join("", "ompt_parallel [parallelism=", requested_parallelism, ']'),
                   get_data<parallel_tag>(), task_data, task_data, task_frame,
                   parallel_data, requested_parallelism, flags, codeptr);
@@ -121,6 +128,8 @@ void
 context_handler<ApiT>::operator()(ompt_data_t* parallel_data, ompt_data_t* task_data,
                                   int flags, const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     context_stop("ompt_parallel_end", get_data<parallel_tag>(), task_data, parallel_data,
                  task_data, flags, codeptr);
 }
@@ -134,6 +143,8 @@ context_handler<ApiT>::operator()(ompt_scope_endpoint_t endpoint,
                                   ompt_data_t* parallel_data, ompt_data_t* task_data,
                                   const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     context_endpoint("ompt_master", get_data<master_tag>(), endpoint, task_data, endpoint,
                      parallel_data, task_data, codeptr);
 }
@@ -147,6 +158,8 @@ context_handler<ApiT>::operator()(ompt_scope_endpoint_t endpoint,
                                   ompt_data_t* parallel_data, ompt_data_t* task_data,
                                   unsigned int team_size, unsigned int thread_num)
 {
+    if(!m_enabled)
+        return;
     context_endpoint("ompt_implicit_task", get_data<task_tag>(), endpoint, task_data,
                      endpoint, parallel_data, task_data, team_size, thread_num);
 }
@@ -160,6 +173,8 @@ context_handler<ApiT>::operator()(ompt_sync_region_t kind, ompt_scope_endpoint_t
                                   ompt_data_t* parallel_data, ompt_data_t* task_data,
                                   const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     constexpr size_t N = ompt_sync_region_reduction + 1;
     context_endpoint(ompt_sync_region_type_labels[kind],
                      get_data<sync_region_tag, N>(threading::get_id(), kind), endpoint,
@@ -174,6 +189,8 @@ void
 context_handler<ApiT>::operator()(ompt_mutex_t kind, unsigned int hint, unsigned int impl,
                                   ompt_wait_id_t wait_id, const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     context_store<bundle_type>(ompt_mutex_type_labels[kind], kind, hint, impl, wait_id,
                                codeptr);
 }
@@ -187,6 +204,8 @@ void
 context_handler<ApiT>::operator()(ompt_mutex_t kind, ompt_wait_id_t wait_id,
                                   const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     ompt_scope_endpoint_t endpoint;
     switch(m_mode)
     {
@@ -214,6 +233,8 @@ void
 context_handler<ApiT>::operator()(ompt_scope_endpoint_t endpoint, ompt_wait_id_t wait_id,
                                   const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     ompt_data_t _task_data{};
     _task_data.value = wait_id;
     context_endpoint("ompt_nested_lock", get_data<mutex_tag>(), endpoint, &_task_data,
@@ -229,6 +250,8 @@ context_handler<ApiT>::operator()(ompt_data_t* task_data, const ompt_frame_t* ta
                                   ompt_data_t* new_task_data, int flags,
                                   int has_dependences, const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     context_construct("ompt_task", get_data<task_tag>(), new_task_data, task_data,
                       task_frame, new_task_data, flags, has_dependences, codeptr);
 }
@@ -242,6 +265,8 @@ context_handler<ApiT>::operator()(ompt_data_t*       prior_task_data,
                                   ompt_task_status_t prior_task_status,
                                   ompt_data_t*       next_task_data)
 {
+    if(!m_enabled)
+        return;
     if(prior_task_data)
     {
         switch(prior_task_status)
@@ -278,6 +303,8 @@ void
 context_handler<ApiT>::operator()(ompt_data_t* parallel_data, ompt_data_t* task_data,
                                   ompt_dispatch_t kind, ompt_data_t instance)
 {
+    if(!m_enabled)
+        return;
     context_store<bundle_type>(ompt_dispatch_type_labels[kind], parallel_data, task_data,
                                kind, instance);
 }
@@ -291,6 +318,8 @@ context_handler<ApiT>::operator()(ompt_work_t wstype, ompt_scope_endpoint_t endp
                                   ompt_data_t* parallel_data, ompt_data_t* task_data,
                                   uint64_t count, const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     context_endpoint(ompt_work_labels[wstype], get_data<work_tag>(), endpoint, task_data,
                      wstype, endpoint, parallel_data, task_data, count, codeptr);
 }
@@ -302,6 +331,8 @@ template <typename ApiT>
 void
 context_handler<ApiT>::operator()(ompt_data_t* thread_data, const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     context_store<bundle_type>("ompt_flush", thread_data, codeptr);
 }
 
@@ -313,6 +344,8 @@ void
 context_handler<ApiT>::operator()(ompt_data_t* thread_data, int flags,
                                   const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     context_store<bundle_type>("ompt_cancel", thread_data, flags, codeptr);
 }
 
@@ -325,6 +358,8 @@ context_handler<ApiT>::operator()(ompt_target_t kind, ompt_scope_endpoint_t endp
                                   int device_num, ompt_data_t* task_data,
                                   ompt_id_t target_id, const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     m_key = join('_', ompt_target_type_labels[kind], "dev", device_num);
     context_endpoint(m_key, get_data<target_tag>(), endpoint, task_data, kind, endpoint,
                      device_num, task_data, target_id, codeptr);
@@ -340,6 +375,8 @@ context_handler<ApiT>::operator()(ompt_id_t target_id, ompt_id_t host_op_id,
                                   int src_device_num, void* dest_addr,
                                   int dest_device_num, size_t bytes, const void* codeptr)
 {
+    if(!m_enabled)
+        return;
     m_key = join('_', ompt_target_data_op_labels[optype], "src", src_device_num, "dest",
                  dest_device_num);
     context_store<bundle_type>(m_key, target_id, host_op_id, optype, src_addr,
@@ -355,6 +392,8 @@ void
 context_handler<ApiT>::operator()(ompt_id_t target_id, ompt_id_t host_op_id,
                                   unsigned int requested_num_teams)
 {
+    if(!m_enabled)
+        return;
     context_store<bundle_type>("ompt_target_submit", target_id, host_op_id,
                                requested_num_teams);
 }
@@ -368,6 +407,8 @@ context_handler<ApiT>::operator()(ompt_id_t target_id, unsigned int nitems,
                                   void** host_addr, void** device_addr, size_t* bytes,
                                   unsigned int* mapping_flags)
 {
+    if(!m_enabled)
+        return;
     m_key = join('_', "ompt_target_mapping", target_id);
     context_store<bundle_type>(m_key, target_id, nitems, host_addr, device_addr, bytes,
                                mapping_flags);
@@ -382,6 +423,8 @@ context_handler<ApiT>::operator()(uint64_t device_num, const char* type,
                                   ompt_device_t* device, ompt_function_lookup_t lookup,
                                   const char* documentation)
 {
+    if(!m_enabled)
+        return;
     m_key = join('_', "ompt_device", device_num, type);
     context_store<bundle_type>(m_key, device_num, type, device, lookup, documentation);
 }
@@ -393,6 +436,8 @@ template <typename ApiT>
 void
 context_handler<ApiT>::operator()(uint64_t device_num)
 {
+    if(!m_enabled)
+        return;
     context_store<bundle_type>("ompt_device_finalize", device_num);
 }
 
@@ -405,6 +450,8 @@ context_handler<ApiT>::operator()(uint64_t device_num, const char* filename,
                                   int64_t offset_in_file, void* vma_in_file, size_t bytes,
                                   void* host_addr, void* device_addr, uint64_t module_id)
 {
+    if(!m_enabled)
+        return;
     m_key = join('_', "ompt_target_load", device_num, filename);
     context_store<bundle_type>(m_key, device_num, filename, offset_in_file, vma_in_file,
                                bytes, host_addr, device_addr, module_id);
@@ -417,6 +464,8 @@ template <typename ApiT>
 void
 context_handler<ApiT>::operator()(uint64_t device_num, uint64_t module_id)
 {
+    if(!m_enabled)
+        return;
     m_key = join('_', "ompt_target_unload", device_num);
     context_store<bundle_type>(m_key, device_num, module_id);
 }
