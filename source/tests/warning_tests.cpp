@@ -52,6 +52,7 @@ TEST_F(warning_tests, enabled)
     tim::set_env(TIMEMORY_SETTINGS_PREFIX "DISABLE_ALL_SIGNALS", "NO", 1);
 
     tim::settings::parse();
+    tim::settings::strict_config()         = false;
     tim::settings::debug()                 = false;
     tim::settings::verbose()               = 0;
     tim::settings::enabled()               = true;
