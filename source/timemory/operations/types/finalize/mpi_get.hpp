@@ -29,15 +29,68 @@
 
 #pragma once
 
+#include "timemory/backends/mpi.hpp"
+#include "timemory/mpl/concepts.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/operations/types/finalize/get.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/tpls/cereal/cereal/archives/binary.hpp"
+#include "timemory/tpls/cereal/cereal/archives/json.hpp"
+#include "timemory/tpls/cereal/cereal/details/helpers.hpp"
 #include "timemory/utility/demangle.hpp"
+
+#include <type_traits>
 
 namespace tim
 {
+namespace concepts
+{
+template <typename Tp>
+struct has_member_value_type
+{
+private:
+    // clang-format off
+    struct A { char a[1]; };
+    struct B { char b[2]; };
+    // clang-format on
+
+    template <typename Up>
+    static A query(typename Up::value_type*);
+
+    template <typename Up>
+    static B query(...);
+
+public:
+    static constexpr bool value = sizeof(query<Tp>(nullptr)) == sizeof(A);
+};
+
+template <typename Tp, bool>
+struct value_type_impl;
+
+template <typename Tp>
+struct value_type_impl<Tp, true>
+{
+    static constexpr bool value = true;
+    using type                  = typename Tp::value_type;
+};
+
+template <typename Tp>
+struct value_type_impl<Tp, false>
+{
+    static constexpr bool value = false;
+    using type                  = Tp;
+};
+
+template <typename Tp>
+struct value_type
+{
+    static constexpr bool value = has_member_value_type<Tp>::value;
+    using type                  = typename value_type_impl<Tp, value>::type;
+};
+}  // namespace concepts
+//
 namespace operation
 {
 namespace finalize
@@ -64,9 +117,28 @@ struct mpi_get<Type, true>
 
     static auto& plus(Type& lhs, const Type& rhs) { return (lhs += rhs); }
 
-    explicit TIMEMORY_COLD mpi_get(storage_type& _storage)
-    : m_storage(&_storage)
+    explicit TIMEMORY_COLD mpi_get(bool    _collapse   = settings::collapse_processes(),
+                                   int32_t _node_count = settings::node_count())
+    : m_collapse{ _collapse }
+    , m_node_count{ _node_count }
     {}
+
+    explicit TIMEMORY_COLD mpi_get(storage_type& _storage,
+                                   bool    _collapse   = settings::collapse_processes(),
+                                   int32_t _node_count = settings::node_count())
+    : m_collapse{ _collapse }
+    , m_node_count{ _node_count }
+    , m_storage{ &_storage }
+    {}
+
+    // this serializes a type (src) and adds it to dst, if !collapse_processes
+    // then it uses the adder to combine the data
+    TIMEMORY_COLD
+    mpi_get(std::vector<Type>& dst, const Type& src,
+            std::function<Type&(Type& lhs, const Type& rhs)>&& adder = this_type::plus)
+    {
+        (*this)(dst, src, std::move(adder));
+    }
 
     TIMEMORY_COLD distrib_type& operator()(distrib_type&);
     TIMEMORY_COLD basic_tree_vector_type& operator()(basic_tree_vector_type&);
@@ -75,14 +147,22 @@ struct mpi_get<Type, true>
     TIMEMORY_COLD enable_if_t<concepts::is_output_archive<Archive>::value, Archive&>
                   operator()(Archive&);
 
-    // this serializes a type (src) and adds it to dst, if !collapse_processes
-    // then it uses the adder to combine the data
     TIMEMORY_COLD
-    mpi_get(std::vector<Type>& dst, const Type& src,
-            std::function<Type&(Type& lhs, const Type& rhs)>&& adder = this_type::plus);
+    auto operator()(
+        std::vector<Type>& dst, const Type& src,
+        std::function<Type&(Type& lhs, const Type& rhs)>&& adder = this_type::plus) const;
+
+    this_type& set_comm(mpi::comm_t _comm) { return (m_comm = _comm, *this); }
+    this_type& set_debug(bool _v) { return (m_debug = _v, *this); }
+    this_type& set_verbose(int _v) { return (m_verbose = _v, *this); }
 
 private:
-    storage_type* m_storage = nullptr;
+    bool          m_debug      = settings::debug();
+    bool          m_collapse   = settings::collapse_processes();
+    int           m_verbose    = settings::verbose();
+    int32_t       m_node_count = settings::node_count();
+    mpi::comm_t   m_comm       = mpi::comm_world_v;  // NOLINT
+    storage_type* m_storage    = nullptr;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -91,13 +171,19 @@ template <typename Type>
 struct mpi_get<Type, false>
 {
     static constexpr bool value = false;
+    using this_type             = mpi_get<Type, false>;
     using storage_type          = impl::storage<Type, value>;
 
-    mpi_get(storage_type&) {}
+    explicit mpi_get(bool = false, int32_t = 0) {}
+    explicit mpi_get(storage_type&, bool = false, int32_t = 0) {}
 
-    template <typename Tp>
-    Tp& operator()(Tp&)
+    template <typename Tp, typename... Args>
+    Tp& operator()(Tp&, Args&&...)
     {}
+
+    this_type& set_comm(mpi::comm_t) { return *this; }
+    this_type& set_debug(bool) { return *this; }
+    this_type& set_verbose(int) { return *this; }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -111,23 +197,19 @@ mpi_get<Type, true>::operator()(distrib_type& results)
 
     auto& data = *m_storage;
 #if !defined(TIMEMORY_USE_MPI)
-    if(settings::debug())
+    if(m_debug)
         TIMEMORY_PRINT_HERE("%s", "timemory not using MPI");
 
     results = distrib_type{};
     results.emplace_back(std::move(data.get()));
 #else
-    if(settings::debug())
+    if(m_debug)
         TIMEMORY_PRINT_HERE("%s", "timemory using MPI");
 
-    // not yet implemented
-    // auto comm =
-    //    (settings::mpi_output_per_node()) ? mpi::get_node_comm() : mpi::comm_world_v;
-    auto comm = mpi::comm_world_v;
-    mpi::barrier(comm);
+    mpi::barrier(m_comm);
 
-    int comm_rank = mpi::rank(comm);
-    int comm_size = mpi::size(comm);
+    int comm_rank = mpi::rank(m_comm);
+    int comm_size = mpi::size(m_comm);
 
     //------------------------------------------------------------------------------//
     //  Used to convert a result to a serialization
@@ -168,7 +250,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
                                     "%s\n\t%s",
                                     demangle<Type>().c_str(), e.what(), _msg.c_str());
             }
-            if(settings::debug())
+            if(m_debug)
             {
                 printf("[RECV: %i]> data size: %lli\n", comm_rank,
                        (long long int) ret.size());
@@ -200,10 +282,10 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         for(int i = 1; i < comm_size; ++i)
         {
             std::string str;
-            if(settings::debug())
+            if(m_debug)
                 printf("[RECV: %i]> starting %i\n", comm_rank, i);
-            mpi::recv(str, i, 0, comm);
-            if(settings::debug())
+            mpi::recv(str, i, 0, m_comm);
+            if(m_debug)
                 printf("[RECV: %i]> completed %i\n", comm_rank, i);
             results[i] = recv_serialize(str);
         }
@@ -214,20 +296,20 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         //
         //  The non-root rank sends its data to the root rank and only reports own data
         //
-        if(settings::debug())
+        if(m_debug)
             printf("[SEND: %i]> starting\n", comm_rank);
-        mpi::send(str_ret, 0, 0, comm);
-        if(settings::debug())
+        mpi::send(str_ret, 0, 0, m_comm);
+        if(m_debug)
             printf("[SEND: %i]> completed\n", comm_rank);
         results = distrib_type{};
         results.emplace_back(std::move(ret));
     }
 
     // collapse into a single result
-    if(comm_rank == 0 && settings::collapse_processes() && settings::node_count() <= 1)
+    if(comm_rank == 0 && m_collapse && m_node_count <= 1)
     {
         auto init_size = get_num_records(results);
-        if(settings::debug() || settings::verbose() > 3)
+        if(m_debug || m_verbose > 3)
         {
             TIMEMORY_PRINT_HERE(
                 "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks",
@@ -255,7 +337,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         // assign results to collapsed entry
         results = std::move(_collapsed);
 
-        if(settings::debug() || settings::verbose() > 3)
+        if(m_debug || m_verbose > 3)
         {
             auto fini_size = get_num_records(results);
             TIMEMORY_PRINT_HERE(
@@ -265,21 +347,20 @@ mpi_get<Type, true>::operator()(distrib_type& results)
                 comm_rank, init_size, fini_size, comm_size);
         }
     }
-    else if(comm_rank == 0 && settings::collapse_processes() &&
-            settings::node_count() > 1)
+    else if(comm_rank == 0 && m_collapse && m_node_count > 1)
     {
         // calculate some size parameters
-        int32_t nmod  = comm_size % settings::node_count();
-        int32_t bsize = comm_size / settings::node_count() + ((nmod == 0) ? 0 : 1);
+        int32_t nmod  = comm_size % m_node_count;
+        int32_t bsize = comm_size / m_node_count + ((nmod == 0) ? 0 : 1);
         int32_t bins  = comm_size / bsize;
 
-        if(settings::debug() || settings::verbose() > 3)
+        if(m_debug || m_verbose > 3)
         {
             TIMEMORY_PRINT_HERE(
                 "[%s][pid=%i][rank=%i]> node_count = %i, comm_size = %i, bins = "
                 "%i, bin size = %i",
                 demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
-                comm_rank, settings::node_count(), comm_size, bins, bsize);
+                comm_rank, m_node_count, comm_size, bins, bsize);
         }
 
         // generate a map of the ranks to the node ids
@@ -288,7 +369,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         std::map<int32_t, std::set<int32_t>> binmap;
         for(int32_t i = 0; i < comm_size; ++i)
         {
-            if(settings::debug())
+            if(m_debug)
             {
                 TIMEMORY_PRINT_HERE("[%s][pid=%i][rank=%i]> adding rank %i to bin %i",
                                     demangle<mpi_get<Type, true>>().c_str(),
@@ -306,7 +387,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         }
 
         auto init_size = get_num_records(results);
-        if(settings::debug() || settings::verbose() > 3)
+        if(m_debug || m_verbose > 3)
         {
             TIMEMORY_PRINT_HERE(
                 "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks into "
@@ -315,7 +396,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
                 comm_rank, init_size, comm_size, (int) binmap.size());
         }
 
-        assert((int32_t) binmap.size() <= (int32_t) settings::node_count());
+        assert((int32_t) binmap.size() <= (int32_t) m_node_count);
 
         // the collapsed data
         auto _collapsed = distrib_type(binmap.size());
@@ -335,7 +416,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         // assign results to collapsed entry
         results = std::move(_collapsed);
 
-        if(settings::debug() || settings::verbose() > 3)
+        if(m_debug || m_verbose > 3)
         {
             auto fini_size = get_num_records(results);
             TIMEMORY_PRINT_HERE(
@@ -346,7 +427,7 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         }
     }
 
-    if(settings::debug() || settings::verbose() > 1)
+    if(m_debug || m_verbose > 1)
     {
         auto ret_size = get_num_records(results);
         TIMEMORY_PRINT_HERE("[%s][pid=%i]> %i total records on rank %i of %i",
@@ -404,25 +485,37 @@ mpi_get<Type, true>::operator()(Archive& ar)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
-                             std::function<Type&(Type& lhs, const Type& rhs)>&& functor)
+auto
+mpi_get<Type, true>::operator()(
+    std::vector<Type>& dst, const Type& inp,
+    std::function<Type&(Type& lhs, const Type& rhs)>&& functor) const
 {
 #if !defined(TIMEMORY_USE_MPI)
-    if(settings::debug())
+    if(m_debug)
         TIMEMORY_PRINT_HERE("%s", "timemory not using MPI");
-    consume_parameters(dst, inp, functor);
+    consume_parameters(inp, functor);
 #else
-    TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "%s", "timemory using MPI");
+    // if Type or the underlying type is a vector of an arithmetic type, then
+    // use the BinaryArchive types to avoid unnecessarily long serialization string
+    using underlying_type = typename concepts::value_type<Type>::type;
+    using inp_archive_t =
+        std::conditional_t<concepts::is_vector<Type>::value &&
+                               std::is_arithmetic<underlying_type>::value,
+                           cereal::BinaryInputArchive, cereal::JSONInputArchive>;
+    using out_archive_t =
+        std::conditional_t<concepts::is_vector<Type>::value &&
+                               std::is_arithmetic<underlying_type>::value,
+                           cereal::BinaryOutputArchive, cereal::MinimalJSONOutputArchive>;
 
-    auto comm = mpi::comm_world_v;
-    mpi::barrier(comm);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_debug, "%s", "timemory using MPI");
 
-    int comm_rank = mpi::rank(comm);
-    int comm_size = mpi::size(comm);
+    mpi::barrier(m_comm);
 
-    TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(),
-                                    "timemory using MPI [rank: %i, size: %i]", comm_rank,
-                                    comm_size);
+    int comm_rank = mpi::rank(m_comm);
+    int comm_size = mpi::size(m_comm);
+
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_debug, "timemory using MPI [rank: %i, size: %i]",
+                                    comm_rank, comm_size);
 
     //------------------------------------------------------------------------------//
     //  Used to convert a result to a serialization
@@ -430,12 +523,11 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
     auto send_serialize = [&](const Type& src) {
         std::stringstream ss;
         {
-            auto oa = policy::output_archive<cereal::MinimalJSONOutputArchive,
-                                             TIMEMORY_API>::get(ss);
+            auto oa = policy::output_archive<out_archive_t, TIMEMORY_API>::get(ss);
             (*oa)(cereal::make_nvp("data", src));
         }
-        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "sent data [rank: %i] :: %lu",
-                                        comm_rank, ss.str().length());
+        TIMEMORY_CONDITIONAL_PRINT_HERE(m_debug, "sent data [rank: %i] :: %lu", comm_rank,
+                                        ss.str().length());
         return ss.str();
     };
 
@@ -443,14 +535,13 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
     //  Used to convert the serialization to a result
     //
     auto recv_serialize = [&](const std::string& src) {
-        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "recv data [rank: %i] :: %lu",
-                                        comm_rank, src.length());
+        TIMEMORY_CONDITIONAL_PRINT_HERE(m_debug, "recv data [rank: %i] :: %lu", comm_rank,
+                                        src.length());
         Type              ret{};
         std::stringstream ss{};
         ss << src;
         {
-            auto ia =
-                policy::input_archive<cereal::JSONInputArchive, TIMEMORY_API>::get(ss);
+            auto ia = policy::input_archive<inp_archive_t, TIMEMORY_API>::get(ss);
             try
             {
                 (*ia)(cereal::make_nvp("data", ret));
@@ -479,7 +570,7 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
     dst.resize(comm_size);
     auto str_ret = send_serialize(inp);
 
-    mpi::barrier(comm);
+    mpi::barrier(m_comm);
 
     if(comm_rank == 0)
     {
@@ -489,10 +580,10 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         for(int i = 1; i < comm_size; ++i)
         {
             std::string str;
-            TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "[RECV: %i]> starting %i",
-                                            comm_rank, i);
-            mpi::recv(str, i, 0, comm);
-            TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "[RECV: %i]> completed %i",
+            TIMEMORY_CONDITIONAL_PRINT_HERE(m_debug, "[RECV: %i]> starting %i", comm_rank,
+                                            i);
+            mpi::recv(str, i, 0, m_comm);
+            TIMEMORY_CONDITIONAL_PRINT_HERE(m_debug, "[RECV: %i]> completed %i",
                                             comm_rank, i);
             dst.at(i) = recv_serialize(str);
         }
@@ -503,22 +594,20 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         //
         //  The non-root rank sends its data to the root rank
         //
-        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "[SEND: %i]> starting",
-                                        comm_rank);
-        mpi::send(str_ret, 0, 0, comm);
-        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "[SEND: %i]> completed",
-                                        comm_rank);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(m_debug, "[SEND: %i]> starting", comm_rank);
+        mpi::send(str_ret, 0, 0, m_comm);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(m_debug, "[SEND: %i]> completed", comm_rank);
         dst.clear();
     }
 
-    mpi::barrier(comm);
+    mpi::barrier(m_comm);
 
     // collapse into a single result
-    if(settings::collapse_processes() && comm_rank == 0)
+    if(m_collapse && comm_rank == 0)
     {
         auto init_size = get_num_records(dst);
         TIMEMORY_CONDITIONAL_PRINT_HERE(
-            settings::debug() || settings::verbose() > 3,
+            m_debug || m_verbose > 3,
             "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks",
             demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
             (int) comm_rank, (int) init_size, (int) comm_size);
@@ -540,26 +629,26 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         dst = _dst;
 
         TIMEMORY_CONDITIONAL_PRINT_HERE(
-            settings::debug() || settings::verbose() > 3,
+            m_debug || m_verbose > 3,
             "[%s][pid=%i][rank=%i]> collapsed %i records into %i records "
             "from %i ranks",
             demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
             (int) comm_rank, (int) init_size, (int) get_num_records(dst),
             (int) comm_size);
     }
-    else if(settings::node_count() > 0 && comm_rank == 0)
+    else if(m_node_count > 0 && comm_rank == 0)
     {
         // calculate some size parameters
-        int32_t nmod  = comm_size % settings::node_count();
-        int32_t bsize = comm_size / settings::node_count() + ((nmod == 0) ? 0 : 1);
+        int32_t nmod  = comm_size % m_node_count;
+        int32_t bsize = comm_size / m_node_count + ((nmod == 0) ? 0 : 1);
         int32_t bins  = comm_size / bsize;
 
         TIMEMORY_CONDITIONAL_PRINT_HERE(
-            settings::debug() || settings::verbose() > 3,
+            m_debug || m_verbose > 3,
             "[%s][pid=%i][rank=%i]> node_count = %i, comm_size = %i, bins = "
             "%i, bin size = %i",
             demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(), comm_rank,
-            settings::node_count(), comm_size, bins, bsize);
+            m_node_count, comm_size, bins, bsize);
 
         // generate a map of the ranks to the node ids
         int32_t                              ncnt = 0;  // current count
@@ -568,7 +657,7 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         for(int32_t i = 0; i < comm_size; ++i)
         {
             TIMEMORY_CONDITIONAL_PRINT_HERE(
-                settings::debug(), "[%s][pid=%i][rank=%i]> adding rank %i to bin %i",
+                m_debug, "[%s][pid=%i][rank=%i]> adding rank %i to bin %i",
                 demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
                 comm_rank, i, midx);
 
@@ -584,12 +673,12 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
 
         auto init_size = get_num_records(dst);
         TIMEMORY_CONDITIONAL_PRINT_HERE(
-            settings::debug() || settings::verbose() > 3,
+            m_debug || m_verbose > 3,
             "[%s][pid=%i][rank=%i]> collapsing %i records from %i ranks into %i bins",
             demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
             (int) comm_rank, (int) init_size, (int) comm_size, (int) binmap.size());
 
-        assert((int32_t) binmap.size() <= (int32_t) settings::node_count());
+        assert((int32_t) binmap.size() <= (int32_t) m_node_count);
 
         // the collapsed data
         auto _dst = std::vector<Type>(binmap.size());
@@ -610,7 +699,7 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
         dst = _dst;
 
         TIMEMORY_CONDITIONAL_PRINT_HERE(
-            settings::debug() || settings::verbose() > 3,
+            m_debug || m_verbose > 3,
             "[%s][pid=%i][rank=%i]> collapsed %i records into %i records "
             "and %i bins",
             demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
@@ -618,13 +707,12 @@ mpi_get<Type, true>::mpi_get(std::vector<Type>& dst, const Type& inp,
             (int) dst.size());
     }
 
-    TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug() || settings::verbose() > 1,
-                                    "[%s][pid=%i]> %i total records on rank %i of %i",
-                                    demangle<mpi_get<Type, true>>().c_str(),
-                                    (int) process::get_id(), (int) get_num_records(dst),
-                                    (int) comm_rank, (int) comm_size);
-
+    TIMEMORY_CONDITIONAL_PRINT_HERE(
+        m_debug || m_verbose > 1, "[%s][pid=%i]> %i total records on rank %i of %i",
+        demangle<mpi_get<Type, true>>().c_str(), (int) process::get_id(),
+        (int) get_num_records(dst), (int) comm_rank, (int) comm_size);
 #endif
+    return dst;
 }
 //
 //--------------------------------------------------------------------------------------//

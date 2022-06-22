@@ -609,12 +609,30 @@ inline void
 send(const std::string& str, int dest, int tag, comm_t comm = mpi::comm_world_v)
 {
 #if defined(TIMEMORY_USE_MPI)
-    unsigned long long len = str.size();
+    using ulli_t = unsigned long long;
+    ulli_t len   = str.size();
     TIMEMORY_MPI_ERROR_CHECK(MPI_Send(&len, 1, MPI_UNSIGNED_LONG_LONG, dest, tag, comm));
     if(len != 0)
     {
-        TIMEMORY_MPI_ERROR_CHECK(
-            PMPI_Send(const_cast<char*>(str.data()), len, MPI_CHAR, dest, tag, comm));
+        ulli_t _cmax = std::numeric_limits<int>::max();
+        if(len <= _cmax)
+        {
+            TIMEMORY_MPI_ERROR_CHECK(
+                PMPI_Send(const_cast<char*>(str.data()), len, MPI_CHAR, dest, tag, comm));
+        }
+        else
+        {
+            auto _len = str.length() / sizeof(long);
+            auto _rem = str.length() % sizeof(long);
+            auto _str = str;
+            if(_rem > 0)
+            {
+                _str.resize(_str.length() + _rem, '\0');
+                _len += 1;
+            }
+            TIMEMORY_MPI_ERROR_CHECK(PMPI_Send(const_cast<char*>(_str.data()), _len,
+                                               MPI_LONG, dest, tag, comm));
+        }
     }
 #else
     consume_parameters(str, dest, tag, comm);
@@ -627,15 +645,44 @@ inline void
 recv(std::string& str, int src, int tag, comm_t comm = mpi::comm_world_v)
 {
 #if defined(TIMEMORY_USE_MPI)
-    unsigned long long len;
-    MPI_Status         s;
+    using ulli_t   = unsigned long long;
+    ulli_t     len = 0;
+    MPI_Status s;
     TIMEMORY_MPI_ERROR_CHECK(
         PMPI_Recv(&len, 1, MPI_UNSIGNED_LONG_LONG, src, tag, comm, &s));
     if(len != 0)
     {
-        std::vector<char> tmp(len);
-        TIMEMORY_MPI_ERROR_CHECK(MPI_Recv(tmp.data(), len, MPI_CHAR, src, tag, comm, &s));
-        str.assign(tmp.begin(), tmp.end());
+        ulli_t _cmax = std::numeric_limits<int>::max();
+        if(len <= _cmax)
+        {
+            std::vector<char> tmp(len);
+            TIMEMORY_MPI_ERROR_CHECK(
+                MPI_Recv(tmp.data(), len, MPI_CHAR, src, tag, comm, &s));
+            str.assign(tmp.begin(), tmp.end());
+        }
+        else
+        {
+            auto _len = len / sizeof(long);
+            auto _rem = len % sizeof(long);
+            if(_rem > 0)
+                _len += 1;
+            std::vector<long> tmp(_len);
+            TIMEMORY_MPI_ERROR_CHECK(
+                MPI_Recv(tmp.data(), _len, MPI_LONG, src, tag, comm, &s));
+            std::vector<char> chars  = {};
+            auto              _ratio = sizeof(long) / sizeof(char);
+            chars.reserve(_len * _ratio);
+            for(auto& itr : tmp)
+            {
+                for(size_t i = 0; i < _ratio; ++i)
+                {
+                    chars.emplace_back(itr >> (i * sizeof(void*)));
+                    if(chars.size() == len)
+                        break;
+                }
+            }
+            str.assign(chars.begin(), chars.end());
+        }
     }
     else
     {
