@@ -25,7 +25,9 @@
 #pragma once
 
 #include "timemory/backends/device.hpp"
+#include "timemory/defines.h"
 #include "timemory/macros/os.hpp"
+#include "timemory/units.hpp"
 
 #if !defined(TIMEMORY_WINDOWS)
 #    define RESTRICT(TYPE) TYPE __restrict__
@@ -52,6 +54,14 @@
 #    include <malloc.h>
 #elif defined(TIMEMORY_MACOS)
 #    include <malloc/malloc.h>
+#endif
+
+#if defined(TIMEMORY_LINUX)
+#    include <sys/sysinfo.h>
+#endif
+
+#if defined(TIMEMORY_MACOS)
+#    include <sys/sysctl.h>
 #endif
 
 namespace tim
@@ -142,5 +152,108 @@ free_aligned(Tp* ptr)
     hidden::free_aligned<Tp, DeviceT>(ptr);
 }
 
+template <typename DeviceT = device::cpu>
+int64_t
+total_memory();
+
+template <typename DeviceT = device::cpu>
+int64_t
+free_memory();
+
+//--------------------------------------------------------------------------------------//
+///  total memory in bytes
+//
+template <>
+inline int64_t
+total_memory<device::cpu>()
+{
+#if defined(TIMEMORY_LINUX)
+    struct sysinfo _info
+    {};
+    if(sysinfo(&_info) == 0)
+    {
+        // sizes of the memory and swap fields are given as multiples of mem_unit bytes.
+        return _info.totalram * _info.mem_unit;
+    }
+    else
+    {
+        std::ifstream _ifs{ "/proc/meminfo" };
+        if(_ifs)
+        {
+            std::string _discard;
+            for(int i = 0; i < 1; ++i)
+                _ifs >> _discard;
+            int64_t _value = 0;
+            _ifs >> _value;
+            return _value * units::kilobyte;
+        }
+    }
+    return 0;
+#elif defined(TIMEMORY_MACOS)
+    int64_t count     = 0;
+    size_t  count_len = sizeof(count);
+    sysctlbyname("hw.memsize", &count, &count_len, nullptr, 0);
+    return count * units::byte;
+#elif defined(TIMEMORY_WINDOWS)
+    MEMORYSTATUSEX statex;
+    statex.dwLength = sizeof(statex);
+    GlobalMemoryStatusEx(&statex);
+
+    return statex.ullTotalPhys * units::byte;  // reports in bytes
+#else
+    static_assert(false, "OS not supported");
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+///  available memory in bytes
+//
+template <>
+inline int64_t
+free_memory<device::cpu>()
+{
+#if defined(TIMEMORY_LINUX)
+    struct sysinfo _info
+    {};
+    if(sysinfo(&_info) == 0)
+    {
+        // sizes of the memory and swap fields are given as multiples of mem_unit bytes.
+        return _info.freeram * _info.mem_unit;
+    }
+    else
+    {
+        std::ifstream _ifs{ "/proc/meminfo" };
+        if(_ifs)
+        {
+            std::string _discard;
+            for(int i = 0; i < 4; ++i)
+                _ifs >> _discard;
+            int64_t _value = 0;
+            _ifs >> _value;
+            return _value * units::kilobyte;
+        }
+    }
+    return 0;
+#elif defined(TIMEMORY_MACOS)
+    vm_statistics64_t stat;
+    unsigned int      count = HOST_VM_INFO64_COUNT;
+    if(host_statistics64(mach_host_self(), HOST_VM_INFO64, (host_info64_t) stat,
+                         &count) != KERN_SUCCESS)
+    {
+        fprintf(stderr, "[%s] failed to get statistics for free memory\n",
+                TIMEMORY_PROJECT_NAME);
+        return 0;
+    }
+    return stat.free_count * units::get_page_size();
+#elif defined(TIMEMORY_WINDOWS)
+    MEMORYSTATUSEX statex;
+    statex.dwLength = sizeof(statex);
+    GlobalMemoryStatusEx(&statex);
+
+    return statex.ullAvailPhys * units::byte;  // reports in bytes
+#else
+    static_assert(false, "OS not supported");
+#endif
+}
 }  // namespace memory
 }  // namespace tim
