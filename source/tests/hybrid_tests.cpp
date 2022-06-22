@@ -28,6 +28,7 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
+#include "timemory/components/papi/types.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/component_hybrid.hpp"
@@ -185,7 +186,7 @@ protected:
     {
 #if defined(TIMEMORY_USE_PAPI)
         papi_array_t::get_initializer() = []() {
-            return std::vector<std::string>{ "PAPI_TOT_CYC", "PAPI_LST_INS" };
+            return std::vector<std::string>{ "PAPI_TOT_CYC" };
         };
 #else
         static_assert(list_t::can_heap_init<papi_array_t>() == false,
@@ -224,10 +225,26 @@ TEST_F(hybrid_tests, type_check)
 
 TEST_F(hybrid_tests, hybrid)
 {
+    // warm up
+    {
+        namespace quirk = tim::quirk;
+        hybrid_t{ details::get_test_name(),
+                  quirk::config<quirk::explicit_push, quirk::explicit_pop>{} }
+            .start()
+            .stop();
+    }
+
     hybrid_t obj(details::get_test_name());
 
+    std::promise<void> _prom{};
+    auto               _consume = [&_prom](long _n) {
+        _prom.set_value();
+        details::consume(_n);
+    };
+    auto        _fut = _prom.get_future();
+    std::thread t(_consume, 1000);
+    _fut.wait();
     obj.start();
-    std::thread t(details::consume, 1000);
     details::do_sleep(500);
     details::consume(1500);
     t.join();
