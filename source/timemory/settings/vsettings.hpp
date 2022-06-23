@@ -138,7 +138,7 @@ struct vsettings
 
     template <typename Tp, enable_if_t<std::is_fundamental<decay_t<Tp>>::value> = 0>
     bool set(const Tp& _val);
-    void set(const std::string& _val) { parse(_val); }
+    bool set(const std::string& _val) { return parse(_val); }
 
     virtual parser_func_t get_action(TIMEMORY_API) = 0;
 
