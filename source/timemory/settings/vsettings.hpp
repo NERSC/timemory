@@ -106,6 +106,7 @@ struct vsettings
     const auto& get_count() const { return m_count; }
     const auto& get_max_count() const { return m_max_count; }
 
+    void set_hidden(bool _v) { m_hidden = _v; }
     void set_count(int32_t v) { m_count = v; }
     void set_max_count(int32_t v) { m_max_count = v; }
     void set_choices(const std::vector<std::string>& v) { m_choices = v; }
@@ -114,6 +115,7 @@ struct vsettings
     void set_config_updated(bool _v) { m_cfg_updated = _v; }
     void set_environ_updated(bool _v) { m_env_updated = _v; }
 
+    auto get_hidden() const { return m_hidden; }
     auto get_type_index() const { return m_type_index; }
     auto get_value_index() const { return m_value_index; }
     auto get_config_updated() const { return m_cfg_updated; }
@@ -168,10 +170,11 @@ protected:
     vsettings(std::string _name, std::string _env_name, std::string _descript,
               std::set<std::string> _categories, std::vector<std::string> _cmdline,
               int32_t _count, int32_t _max_count, std::vector<std::string> _choices,
-              bool _cfg_upd, bool _env_upd, bool _enabled);
+              bool _cfg_upd, bool _env_upd, bool _enabled, bool _hidden);
 
 protected:
     bool                     m_enabled     = true;
+    bool                     m_hidden      = false;
     bool                     m_cfg_updated = false;
     bool                     m_env_updated = false;
     std::type_index          m_type_index  = std::type_index(typeid(void));

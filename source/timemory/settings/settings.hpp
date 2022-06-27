@@ -193,7 +193,8 @@ struct setting_serialization<tsettings<Tp>, TagT>
     template <typename ArchiveT>
     void operator()(ArchiveT& _ar, value_type& _val) const
     {
-        _ar(cereal::make_nvp(_val.get_env_name(), _val));
+        if(!_val.get_hidden())
+            _ar(cereal::make_nvp(_val.get_env_name(), _val));
     }
 };
 }  // namespace operation
@@ -449,13 +450,22 @@ public:
     template <typename Tp, size_t Idx = 0>
     static int64_t indent_width(int64_t _w = indent_width<Idx>());
 
+private:
+    template <typename ItrT>
+    static auto get_next(ItrT _v, ItrT _e)
+    {
+        while(_v != _e && _v->second->get_hidden())
+            ++_v;
+        return _v;
+    }
+
 public:
     auto           ordering() const { return m_order; }
-    iterator       begin() { return m_data.begin(); }
+    iterator       begin() { return get_next(m_data.begin(), m_data.end()); }
     iterator       end() { return m_data.end(); }
-    const_iterator begin() const { return m_data.cbegin(); }
+    const_iterator begin() const { return get_next(m_data.cbegin(), m_data.cend()); }
     const_iterator end() const { return m_data.cend(); }
-    const_iterator cbegin() const { return m_data.cbegin(); }
+    const_iterator cbegin() const { return get_next(m_data.cbegin(), m_data.cend()); }
     const_iterator cend() const { return m_data.cend(); }
 
     template <typename Sp = string_t>

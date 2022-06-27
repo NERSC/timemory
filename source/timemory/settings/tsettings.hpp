@@ -315,7 +315,7 @@ tsettings<Tp, Vp>::clone()
         std::string{ m_description }, std::set<std::string>{ m_categories },
         std::vector<std::string>{ m_cmdline }, int32_t{ m_count }, int32_t{ m_max_count },
         std::vector<std::string>{ m_choices }, bool{ m_cfg_updated },
-        bool{ m_env_updated }, bool{ m_enabled });
+        bool{ m_env_updated }, bool{ m_enabled }, bool{ m_hidden });
 }
 //
 template <typename Tp, typename Vp>

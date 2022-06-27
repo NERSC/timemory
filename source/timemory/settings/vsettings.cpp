@@ -71,8 +71,9 @@ vsettings::vsettings(std::string _name, std::string _env_name, std::string _desc
                      std::set<std::string> _categories, std::vector<std::string> _cmdline,
                      int32_t _count, int32_t _max_count,
                      std::vector<std::string> _choices, bool _cfg_upd, bool _env_upd,
-                     bool _enabled)
+                     bool _enabled, bool _hidden)
 : m_enabled{ _enabled }
+, m_hidden{ _hidden }
 , m_cfg_updated{ _cfg_upd }
 , m_env_updated{ _env_upd }
 , m_count{ _count }
