@@ -36,7 +36,6 @@ environment:
     - CONDA: 38
       CPP: 17
       CONFIG: Release
-      EXAMPLES: "OFF"
       TOOLS: "OFF"
       WINSOCK: "OFF"
       USE_ARCH: "OFF"
@@ -45,11 +44,12 @@ environment:
       BUILD_SHARED: "ON"
       BUILD_STATIC: "OFF"
       BUILD_TESTING: "ON"
+      BUILD_EXAMPLES: "OFF"
+      RUN_EXAMPLES: "OFF"
       LINE_PROFILER: "ON"
     - PYTHON: 37
       CPP: 14
       CONFIG: Debug
-      EXAMPLES: "ON"
       TOOLS: "ON"
       WINSOCK: "OFF"
       USE_ARCH: "OFF"
@@ -59,6 +59,8 @@ environment:
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
       LINE_PROFILER: "OFF"
+      BUILD_EXAMPLES: "ON"
+      RUN_EXAMPLES: "OFF"
 
 install:
   # Configure environment
@@ -121,7 +123,7 @@ build_script:
     -DTIMEMORY_USE_PYTHON="%USE_PYTHON%"
     -DTIMEMORY_USE_ARCH="%USE_ARCH%"
     -DTIMEMORY_BUILD_C="%BUILD_C%"
-    -DTIMEMORY_BUILD_EXAMPLES="%EXAMPLES%"
+    -DTIMEMORY_BUILD_EXAMPLES="%BUILD_EXAMPLES%"
     -DTIMEMORY_BUILD_TESTING=OFF
     -DTIMEMORY_BUILD_MINIMAL_TESTING="%BUILD_TESTING%"
     -DTIMEMORY_BUILD_TOOLS="%TOOLS%"
@@ -137,7 +139,7 @@ build_script:
           iex "ctest --output-on-failure -j 2 -C $env:CONFIG"
       }
   - ps: |
-      if ($env:EXAMPLES -eq "ON") {
+      if ($env:RUN_EXAMPLES -eq "ON") {
         iex ".\outputs\runtime\$env:CONFIG\ex_optional_off.exe"
         iex ".\outputs\runtime\$env:CONFIG\ex_cxx_basic.exe"
         iex ".\outputs\runtime\$env:CONFIG\ex_optional_on.exe"
