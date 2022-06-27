@@ -678,7 +678,7 @@ extern "C"
         // configures the output path
         auto _configure_output_path = [&]() {
             static bool _performed_explicit = false;
-            if(_performed_explicit || tim::settings::output_path() != "timemory-output")
+            if(_performed_explicit || tim::settings::instance()->get_initialized())
                 return;
             if(read_command_line)
             {

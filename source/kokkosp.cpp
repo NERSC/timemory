@@ -145,7 +145,7 @@ extern "C"
                (unsigned long long) interfaceVer);
         printf("%s\n\n", kokkos_banner.c_str());
 
-        if(tim::settings::output_path() == "timemory-output")
+        if(!tim::settings::instance()->get_initialized())
         {
             // timemory_init is expecting some args so generate some
             std::array<char*, 1> cstr = { { strdup("kokkosp") } };
