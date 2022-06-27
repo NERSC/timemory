@@ -676,7 +676,7 @@ struct output_archive
 template <>
 struct output_archive<manager, TIMEMORY_API>
 {
-    using type = cereal::BaseJSONOutputArchive<cereal::PrettyJsonWriter>;
+    using type = cereal::PrettyJSONOutputArchive;
 };
 
 template <typename Api>
