@@ -42,6 +42,7 @@
 #include "timemory/variadic/macros.hpp"
 
 #include <cctype>
+#include <exception>
 #include <fstream>
 #include <initializer_list>
 #include <iterator>
@@ -82,7 +83,7 @@ TIMEMORY_SETTINGS_INLINE
 settings::strvector_t&
 settings::command_line()
 {
-    return instance()->get_environment();
+    return instance()->get_command_line();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -169,40 +170,35 @@ TIMEMORY_SETTINGS_INLINE
 std::string
 settings::get_global_output_prefix(bool _make_dir)
 {
-    static auto* _settings = instance();
+    using str_t = std::string;
 
-    auto _dir = (_settings)
-                    ? _settings->get_output_path()
-                    : get_env<std::string>(TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"), ".");
-    auto _prefix = (_settings)
-                       ? _settings->get_output_prefix()
-                       : get_env<std::string>(TIMEMORY_SETTINGS_KEY("OUTPUT_PREFIX"), "");
-    auto _time_output = (_settings)
-                            ? _settings->get_time_output()
-                            : get_env<bool>(TIMEMORY_SETTINGS_KEY("TIME_OUTPUT"), false);
+    auto _out_path =
+        get_with_env_fallback<str_t>(TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"), ".");
+    auto _out_prefix =
+        get_with_env_fallback<str_t>(TIMEMORY_SETTINGS_KEY("OUTPUT_PREFIX"), "");
     auto _time_format =
-        (_settings)
-            ? _settings->get_time_format()
-            : get_env<std::string>(TIMEMORY_SETTINGS_KEY("TIME_FORMAT"), "%F_%I.%M_%p");
+        get_with_env_fallback<str_t>(TIMEMORY_SETTINGS_KEY("TIME_FORMAT"), "%F_%I.%M_%p");
+    auto _time_output =
+        get_with_env_fallback<bool>(TIMEMORY_SETTINGS_KEY("TIME_OUTPUT"), false);
 
     if(_time_output)
     {
         // get the statically stored launch time
         auto* _launch_time    = get_launch_time(TIMEMORY_API{});
         auto  _local_datetime = get_local_datetime(_time_format.c_str(), _launch_time);
-        if(_dir.find(_local_datetime) == std::string::npos)
+        if(_out_path.find(_local_datetime) == std::string::npos)
         {
-            if(_dir.length() > 0 && _dir[_dir.length() - 1] != '/')
-                _dir += "/";
-            _dir += _local_datetime;
+            if(_out_path.length() > 0 && _out_path[_out_path.length() - 1] != '/')
+                _out_path += "/";
+            _out_path += _local_datetime;
         }
     }
 
     // always return zero if not making dir. if makedir failed, don't prefix with
     // directory
-    auto ret = (_make_dir) ? makedir(_dir) : 0;
-    return (ret == 0) ? filepath::osrepr(_dir + std::string("/") + _prefix)
-                      : filepath::osrepr(std::string("./") + _prefix);
+    auto ret = (_make_dir) ? makedir(_out_path) : 0;
+    return (ret == 0) ? filepath::osrepr(_out_path + std::string("/") + _out_prefix)
+                      : filepath::osrepr(std::string("./") + _out_prefix);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -211,25 +207,27 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::store_command_line(int argc, char** argv)
 {
-    auto& _cmdline = command_line();
-    _cmdline.clear();
+    auto& _v = command_line();
+    _v.clear();
     for(int i = 0; i < argc; ++i)
-        _cmdline.emplace_back(std::string(argv[i]));
+    {
+        _v.emplace_back(std::string(argv[i]));
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_SETTINGS_INLINE std::string
-                         settings::format(std::string _fpath, const std::string& _tag)
+TIMEMORY_SETTINGS_INLINE std::vector<std::pair<std::string, std::string>>
+                         settings::output_keys(const std::string& _tag)
 {
-    using strpair_t           = std::pair<std::string, std::string>;
-    auto        _cmdline      = command_line();
-    std::string _arg0_string  = {};    // only the first cmdline arg
-    std::string _argv_string  = {};    // entire argv cmd
-    std::string _args_string  = {};    // cmdline args
-    std::string _argt_string  = _tag;  // prefix + cmdline args
-    std::string _tag0_string  = _tag;  // only the basic prefix
-    auto        _argn_options = std::vector<strpair_t>{};
+    using strpair_t          = std::pair<std::string, std::string>;
+    auto        _cmdline     = command_line();
+    std::string _arg0_string = {};    // only the first cmdline arg
+    std::string _argv_string = {};    // entire argv cmd
+    std::string _args_string = {};    // cmdline args
+    std::string _argt_string = _tag;  // prefix + cmdline args
+    std::string _tag0_string = _tag;  // only the basic prefix
+    auto        _options     = std::vector<strpair_t>{};
 
     auto _replace = [](auto& _v, const strpair_t& itr) {
         auto pos = std::string::npos;
@@ -242,6 +240,7 @@ TIMEMORY_SETTINGS_INLINE std::string
 
     for(auto& itr : _cmdline)
     {
+        itr = argparse::helpers::trim(itr);
         _replace(itr, { "/", "_" });
         while(!itr.empty() && itr.at(0) == '.')
             itr = itr.substr(1);
@@ -255,21 +254,78 @@ TIMEMORY_SETTINGS_INLINE std::string
         _argv_string += _cmdline.at(0);
         for(size_t i = 1; i < _cmdline.size(); ++i)
         {
-            auto _v = std::string{ "_" } + _cmdline.at(i);
-            _argv_string += _v;
-            _argt_string += _v;
-            _args_string += _v;
-            _argn_options.emplace_back(TIMEMORY_JOIN("", "%arg", i, "%"), _v);
-            _argn_options.emplace_back(TIMEMORY_JOIN("", "%arg", i, "_hash%"),
-                                       md5::compute_md5(_v));
+            const auto _l = std::string{ "_" };
+            auto       _v = _cmdline.at(i);
+            _argv_string += _l + _v;
+            _argt_string += _l + _v;
+            _args_string += _l + _v;
+            _options.emplace_back(TIMEMORY_JOIN("", "%arg", i, "%"), _v);
+            _options.emplace_back(TIMEMORY_JOIN("", "%arg", i, "_hash%"),
+                                  md5::compute_md5(_v));
         }
     }
+
+    auto* _launch_time = get_launch_time(TIMEMORY_API{});
+    auto  _time_format = get_with_env_fallback<std::string>(
+        TIMEMORY_SETTINGS_KEY("TIME_FORMAT"), "%F_%I.%M_%p");
 
     auto _dmp_size      = TIMEMORY_JOIN("", dmp::size());
     auto _dmp_rank      = TIMEMORY_JOIN("", dmp::rank());
     auto _proc_id       = TIMEMORY_JOIN("", process::get_id());
+    auto _pwd_string    = get_env<std::string>("PWD", ".", false);
     auto _slurm_job_id  = get_env<std::string>("SLURM_JOB_ID", "0", false);
     auto _slurm_proc_id = get_env<std::string>("SLURM_PROCID", _dmp_rank, false);
+    auto _launch_string = get_local_datetime(_time_format.c_str(), _launch_time);
+
+#if defined(TIMEMORY_WINDOWS)
+    auto _parent_id = TIMEMORY_JOIN("", process::get_id());
+#else
+    auto _parent_id  = TIMEMORY_JOIN("", getppid());
+#endif
+
+    using strpairinit_t = std::initializer_list<std::pair<std::string, std::string>>;
+    for(auto&& itr : strpairinit_t{
+            { "%arg0%", _arg0_string },
+            { "%arg0_hash%", md5::compute_md5(_arg0_string) },
+            { "%argv%", _argv_string },
+            { "%argv_hash%", md5::compute_md5(_argv_string) },
+            { "%argt%", _argt_string },
+            { "%argt_hash%", md5::compute_md5(_argt_string) },
+            { "%args%", _args_string },
+            { "%args_hash%", md5::compute_md5(_args_string) },
+            { "%tag%", _tag0_string },
+            { "%tag_hash%", md5::compute_md5(_tag0_string) },
+            { "%pid%", _proc_id },
+            { "%ppid%", _parent_id },
+            { "%job%", _slurm_job_id },
+            { "%rank%", _slurm_proc_id },
+            { "%size%", _dmp_size },
+            { "%launch_time%", _launch_string },
+            { "%m", md5::compute_md5(_argt_string) },
+            { "%p", _proc_id },
+            { "%j", _slurm_job_id },
+            { "%r", _slurm_proc_id },
+            { "%s", _dmp_size },
+        })
+    {
+        _options.emplace_back(itr);
+    }
+
+    return _options;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_SETTINGS_INLINE std::string
+                         settings::format(std::string _fpath, const std::string& _tag)
+{
+    using strpair_t = std::pair<std::string, std::string>;
+
+    auto _replace = [](auto& _v, const strpair_t& itr) {
+        auto pos = std::string::npos;
+        while((pos = _v.find(itr.first)) != std::string::npos)
+            _v.replace(pos, itr.first.length(), itr.second);
+    };
 
     using strpairinit_t = std::initializer_list<std::pair<std::string, std::string>>;
     for(auto&& itr : strpairinit_t{ { "--", "-" }, { "__", "_" }, { "//", "/" } })
@@ -280,35 +336,45 @@ TIMEMORY_SETTINGS_INLINE std::string
     if(_fpath.find('%') == std::string::npos)
         return _fpath;
 
-    for(auto&& itr : strpairinit_t{ { "%arg0%", _arg0_string },
-                                    { "%arg0_hash%", md5::compute_md5(_arg0_string) },
-                                    { "%argv%", _argv_string },
-                                    { "%argv_hash%", md5::compute_md5(_argv_string) },
-                                    { "%argt%", _argt_string },
-                                    { "%argt_hash%", md5::compute_md5(_argt_string) },
-                                    { "%args%", _args_string },
-                                    { "%args_hash%", md5::compute_md5(_args_string) },
-                                    { "%tag%", _tag0_string },
-                                    { "%tag_hash%", md5::compute_md5(_tag0_string) },
-                                    { "%pid%", _proc_id },
-                                    { "%job%", _slurm_job_id },
-                                    { "%rank%", _slurm_proc_id },
-                                    { "%size%", _dmp_size },
-                                    { "%m", md5::compute_md5(_argt_string) },
-                                    { "%p", _proc_id },
-                                    { "%j", _slurm_job_id },
-                                    { "%r", _slurm_proc_id },
-                                    { "%s", _dmp_size } })
-    {
+    for(auto&& itr : output_keys(_tag))
         _replace(_fpath, itr);
+
+    auto _verbose = get_with_env_fallback(TIMEMORY_SETTINGS_KEY("VERBOSE"), 0);
+    auto _debug   = get_with_env_fallback(TIMEMORY_SETTINGS_KEY("DEBUG"), false);
+
+    // environment variables
+    try
+    {
+        std::regex _re{ "(.*)%(env|ENV)\\{([A-Z0-9_]+)\\}%(.*)" };
+        while(std::regex_search(_fpath, _re))
+        {
+            auto _env_var = std::regex_replace(_fpath, _re, "$3");
+            auto _env_val = get_env(_env_var, _env_var);
+            if(_debug || _verbose >= 2)
+                fprintf(stderr, "[%s] replacing %senv{%s}%s in %s with %s...\n",
+                        TIMEMORY_PROJECT_NAME, "%", _env_var.c_str(), "%", _fpath.c_str(),
+                        _env_val.c_str());
+            std::stringstream _repl{};
+            _repl << "$1" << _env_val << "$4";
+            _fpath = std::regex_replace(_fpath, _re, _repl.str());
+        }
+    } catch(std::exception& _e)
+    {
+        TIMEMORY_PRINT_HERE("Warning! settings::%s throw exception :: %s", __FUNCTION__,
+                            _e.what());
     }
 
-    for(auto&& itr : _argn_options)
-        _replace(_fpath, itr);
-
-    std::regex _re{ "(.*)%(arg[0-9]+|arg[0-9]+_hash)%([-/_]*)(.*)" };
-    while(std::regex_search(_fpath, _re))
-        _fpath = std::regex_replace(_fpath, _re, "$1$4");
+    // remove %arg<N>% and %arg<N>_hash% where N >= argc
+    try
+    {
+        std::regex _re{ "(.*)%(arg[0-9]+|arg[0-9]+_hash)%([-/_]*)(.*)" };
+        while(std::regex_search(_fpath, _re))
+            _fpath = std::regex_replace(_fpath, _re, "$1$4");
+    } catch(std::exception& _e)
+    {
+        TIMEMORY_PRINT_HERE("Warning! settings::%s threw exception :: %s", __FUNCTION__,
+                            _e.what());
+    }
 
     return _fpath;
 }
@@ -656,7 +722,7 @@ TIMEMORY_SETTINGS_INLINE
 void
 settings::initialize_core()
 {
-    auto homedir = get_env<string_t>("HOME");
+    const auto* homedir = "%env{HOME}%";
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, config_file, TIMEMORY_SETTINGS_KEY("CONFIG_FILE"),
@@ -878,7 +944,7 @@ settings::initialize_io()
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, output_path, TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"),
         "Explicitly specify the output folder for results",
-        TIMEMORY_PROJECT_NAME "-output",
+        TIMEMORY_PROJECT_NAME "-%tag%-output",
         TIMEMORY_ESC(strset_t{ "native", "io", "filename" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-output-path" }),
         1);  // folder
@@ -1571,8 +1637,17 @@ settings::initialize()
 //
 TIMEMORY_SETTINGS_INLINE
 bool
-settings::read(const string_t& inp)
+settings::read(std::string inp)
 {
+    auto _orig = inp;
+    inp        = format(inp, get_tag());
+
+    if(inp != _orig && (get_debug() || get_verbose() >= 1))
+    {
+        fprintf(stderr, "[%s][settings][%s]> '%s' was expanded to '%s'...\n",
+                TIMEMORY_PROJECT_NAME, __FUNCTION__, _orig.c_str(), inp.c_str());
+    }
+
 #if defined(TIMEMORY_UNIX)
     auto file_exists = [](const std::string& _fname) {
         struct stat _buffer;
@@ -1605,14 +1680,18 @@ TIMEMORY_SETTINGS_INLINE
 bool
 settings::read(std::istream& ifs, std::string inp)
 {
-    if(m_read_configs.find(inp) != m_read_configs.end())
+    inp = format(inp, get_tag());
+    if(!inp.empty())
     {
-        if(get_env<int>(TIMEMORY_SETTINGS_KEY("VERBOSE"), 0) > 0)
+        if(m_read_configs.find(inp) != m_read_configs.end())
         {
-            TIMEMORY_PRINT_HERE("Warning! Re-reading config file: %s", inp.c_str());
+            if(get_env<int>(TIMEMORY_SETTINGS_KEY("VERBOSE"), 0) >= 2)
+            {
+                TIMEMORY_PRINT_HERE("Warning! Re-reading config file: %s", inp.c_str());
+            }
         }
+        m_read_configs.emplace(inp);
     }
-    m_read_configs.emplace(inp);
 
     std::string _inp = inp;
     if(_inp.length() > 30)
@@ -2014,16 +2093,19 @@ settings::init_config(bool _search_default)
     if(get_debug() || get_verbose() > 3)
         TIMEMORY_PRINT_HERE("%s", "");
 
-    static const auto _homedir = get_env<string_t>("HOME");
-    static const auto _dcfgs =
-        std::set<std::string>{ _homedir + std::string("/." TIMEMORY_PROJECT_NAME ".cfg"),
-                               _homedir +
-                                   std::string("/." TIMEMORY_PROJECT_NAME ".json") };
+    static const auto* const _homedir = "%env{HOME}%";
+    const auto               _dcfgs   = std::set<std::string>{
+        format(_homedir + std::string("/." TIMEMORY_PROJECT_NAME ".cfg"), get_tag()),
+        format(_homedir + std::string("/." TIMEMORY_PROJECT_NAME ".json"), get_tag())
+    };
 
     auto _cfg   = get_config_file();
     auto _files = tim::delimit(_cfg, ",;:");
-    for(const auto& citr : _files)
+    for(auto citr : _files)
     {
+        // resolve any keys
+        citr = format(citr, get_tag());
+
         // a previous config file may have suppressed it
         if(get_suppress_config())
             break;

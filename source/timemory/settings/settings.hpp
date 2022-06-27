@@ -69,6 +69,135 @@ class manager;
 //
 //--------------------------------------------------------------------------------------//
 //
+namespace operation
+{
+/// \struct tim::operation::setting_serialization
+/// \brief this operation is used to customize how the setting are serialized.
+///
+/// \code{.cpp}
+///
+/// namespace
+/// {
+/// struct custom_setting_serializer
+/// {};
+/// }  // namespace
+///
+/// namespace tim
+/// {
+/// namespace operation
+/// {
+/// template <typename Tp>
+/// struct setting_serialization<Tp, custom_setting_serializer>
+/// {
+///     // discard any data, e.g. "environment" and "command_line"
+///     template <typename ArchiveT>
+///     void operator()(ArchiveT&, const char*, const Tp&) const
+///     {}
+///
+///     template <typename ArchiveT>
+///     void operator()(ArchiveT&, const char*, Tp&&) const
+///     {}
+/// };
+/// //
+/// template <typename Tp>
+/// struct setting_serialization<tsettings<Tp>, custom_setting_serializer>
+/// {
+///     using value_type = tsettings<Tp>;
+///
+///     template <typename ArchiveT>
+///     void operator()(ArchiveT& _ar, value_type& _val) const
+///     {
+///         // only serialize the value
+///         Tp _v = _val.get();
+///         _ar.setNextName(_val.get_env_name().c_str());
+///         _ar.startNode();
+///         _ar(cereal::make_nvp("value", _v));
+///         _ar.finishNode();
+///     }
+/// };
+/// }  // namespace operation
+/// }  // namespace tim
+///
+/// template <typename ArchiveT, typename... Types>
+/// void
+/// push()
+/// {
+///     tim::settings::push_serialize_map_callback<ArchiveT, custom_setting_serializer>();
+///     tim::settings::push_serialize_data_callback<ArchiveT, custom_setting_serializer>(
+///             tim::type_list<Types...>{}));
+/// }
+///
+/// template <typename ArchiveT, typename... Types>
+/// void
+/// pop()
+/// {
+///     tim::settings::pop_serialize_map_callback<ArchiveT, custom_setting_serializer>();
+///     tim::settings::pop_serialize_data_callback<ArchiveT, custom_setting_serializer>(
+///             tim::type_list<Types...>{}));
+/// }
+///
+/// void
+/// dump_config(std::string _config_file)
+/// {
+///     using json_t = tim::cereal::PrettyJSONOutputArchive;
+///
+///     // stores the original serializer behavior and
+///     // replaces it with the custom one
+///     push<json_t, std::vector<std::string>>();
+///
+///     auto _serialize = [](auto&& _ar) {
+///         auto _settings = tim::settings::shared_instance();
+///         _ar->setNextName(TIMEMORY_PROJECT_NAME);
+///         _ar->startNode();
+///         tim::settings::serialize_settings(*_ar);
+///         _ar->finishNode();
+///     };
+///
+///     std::stringstream _ss{};
+///     {
+///         json_t _ar{ _ss };
+///         _serialize(_ar);
+///     }
+///     std::ofstream ofs{ _config_file };
+///     ofs << _ss.str() << "n";
+///
+///     // restores the original serializer behavior
+///     pop<json_t, std::vector<std::string>>();
+/// }
+/// \endcode
+///
+template <typename Tp, typename TagT>
+struct setting_serialization
+{
+    using value_type = Tp;
+
+    template <typename ArchiveT>
+    void operator()(ArchiveT& _ar, const char* _name, const value_type& _data) const
+    {
+        _ar(cereal::make_nvp(_name, _data));
+    }
+
+    template <typename ArchiveT>
+    void operator()(ArchiveT& _ar, const char* _name, value_type&& _data) const
+    {
+        _ar(cereal::make_nvp(_name, std::forward<Tp>(_data)));
+    }
+};
+//
+/// \brief specialization for the templated settings type
+template <typename Tp, typename TagT>
+struct setting_serialization<tsettings<Tp>, TagT>
+{
+    using value_type = tsettings<Tp>;
+
+    template <typename ArchiveT>
+    void operator()(ArchiveT& _ar, value_type& _val) const
+    {
+        _ar(cereal::make_nvp(_val.get_env_name(), _val));
+    }
+};
+}  // namespace operation
+//
 struct TIMEMORY_VISIBILITY("default") settings
 {
     friend void timemory_init(int, char**, const std::string&, const std::string&);
@@ -285,6 +414,8 @@ public:
 
     static void parse(const std::shared_ptr<settings>&);
 
+    static std::vector<std::pair<std::string, std::string>> output_keys(
+        const std::string& _tag) TIMEMORY_VISIBILITY("hidden");
     static std::string format(std::string _fpath, const std::string& _tag)
         TIMEMORY_VISIBILITY("hidden");
     static std::string format(std::string _prefix, std::string _tag, std::string _suffix,
@@ -304,8 +435,8 @@ public:
     static void serialize_settings(ArchiveT&, settings&);
 
     /// read a configuration file
-    bool read(const string_t&);
-    bool read(std::istream&, string_t = "");
+    bool read(std::string);
+    bool read(std::istream&, std::string = {});
 
     void init_config(bool search_default = true);
 
@@ -389,31 +520,107 @@ public:
     template <typename Tag>
     static pointer_t pop();
 
-protected:
-    template <typename ArchiveT, typename Tp>
-    auto get_serialize_pair() const  // NOLINT
-    {
-        using serialize_func_t = std::function<void(ArchiveT&, value_type)>;
-        using serialize_pair_t = std::pair<std::type_index, serialize_func_t>;
+    /// \tparam Data Type
+    ///
+    /// \brief Try to retreive the setting by it's environment name if there is
+    /// a settings instance. If not, query enironment
+    template <typename Tp>
+    static Tp get_with_env_fallback(const std::string& _env, Tp _default,
+                                    const pointer_t& _settings = shared_instance());
 
+protected:
+    template <typename ArchiveT>
+    using serialize_func_t = std::function<void(ArchiveT&, value_type)>;
+    template <typename ArchiveT>
+    using serialize_map_t = std::map<std::type_index, serialize_func_t<ArchiveT>>;
+    template <typename ArchiveT>
+    using serialize_pair_t = std::pair<std::type_index, serialize_func_t<ArchiveT>>;
+
+    template <typename ArchiveT, typename Tp, typename TagT = void>
+    static auto get_serialize_pair()
+    {
         auto _func = [](ArchiveT& _ar, value_type _val) {
             using Up = tsettings<Tp>;
             if(!_val)
                 _val = std::make_shared<Up>();
-            _ar(cereal::make_nvp(_val->get_env_name(), *static_cast<Up*>(_val.get())));
+            operation::setting_serialization<Up, TagT>{}(_ar,
+                                                         *static_cast<Up*>(_val.get()));
         };
-        return serialize_pair_t{ std::type_index(typeid(Tp)), _func };
+        return serialize_pair_t<ArchiveT>{ std::type_index(typeid(Tp)), _func };
     }
 
-    template <typename ArchiveT, typename... Tail>
-    auto get_serialize_map(tim::type_list<Tail...>) const  // NOLINT
+    template <typename ArchiveT, typename TagT = void, typename... Tail>
+    static auto get_serialize_map(tim::type_list<Tail...>)
     {
-        using serialize_func_t = std::function<void(ArchiveT&, value_type)>;
-        using serialize_map_t  = std::map<std::type_index, serialize_func_t>;
-
-        serialize_map_t _val{};
-        TIMEMORY_FOLD_EXPRESSION(_val.insert(get_serialize_pair<ArchiveT, Tail>()));
+        serialize_map_t<ArchiveT> _val{};
+        TIMEMORY_FOLD_EXPRESSION(_val.insert(get_serialize_pair<ArchiveT, Tail, TagT>()));
         return _val;
+    }
+
+    template <typename ArchiveT, typename TagT = void, typename ArgT = data_type_list_t>
+    static auto& get_serialize_map_callback(ArgT = {})
+    {
+        using func_t     = serialize_map_t<ArchiveT> (*)();
+        static func_t _v = []() { return get_serialize_map<ArchiveT, TagT>(ArgT{}); };
+        return _v;
+    }
+
+    template <typename ArchiveT, typename TagT = void, typename ArgT>
+    static auto& get_serialize_data_callback(type_list<ArgT>)
+    {
+        using func_t     = void (*)(ArchiveT&, const char*, const ArgT&);
+        static func_t _v = [](ArchiveT& _ar, const char* _name, const ArgT& _data) {
+            return operation::setting_serialization<ArgT, TagT>{}(_ar, _name, _data);
+        };
+        return _v;
+    }
+
+    template <typename Tp>
+    struct internal_serialize_callback
+    {
+        struct impl
+        {};
+        using type = impl;
+    };
+
+public:
+    template <typename ArchiveT, typename Tp, typename ArgT = data_type_list_t>
+    static void push_serialize_map_callback(ArgT = {})
+    {
+        using internal_t = typename internal_serialize_callback<Tp>::type;
+        get_serialize_map_callback<ArchiveT, internal_t>(ArgT{}) = []() {
+            return get_serialize_map<ArchiveT, void>(ArgT{});
+        };
+
+        get_serialize_map_callback<ArchiveT, void>(ArgT{}) = []() {
+            return get_serialize_map<ArchiveT, Tp>(ArgT{});
+        };
+    }
+
+    template <typename ArchiveT, typename Tp, typename ArgT = data_type_list_t>
+    static void pop_serialize_map_callback(ArgT = {})
+    {
+        using internal_t = typename internal_serialize_callback<Tp>::type;
+        get_serialize_map_callback<ArchiveT, void>(ArgT{}) =
+            get_serialize_map_callback<ArchiveT, internal_t>(ArgT{});
+    }
+
+    template <typename ArchiveT, typename Tp, typename ArgT>
+    static void push_serialize_data_callback(type_list<ArgT>)
+    {
+        get_serialize_data_callback<ArchiveT, void>(type_list<ArgT>{}) =
+            [](ArchiveT& _ar, const char* _name, const ArgT& _data) {
+                return operation::setting_serialization<ArgT, Tp>{}(_ar, _name, _data);
+            };
+    }
+
+    template <typename ArchiveT, typename Tp, typename ArgT>
+    static void pop_serialize_data_callback(type_list<ArgT>)
+    {
+        get_serialize_data_callback<ArchiveT, void>(type_list<ArgT>{}) =
+            [](ArchiveT& _ar, const char* _name, const ArgT& _data) {
+                return operation::setting_serialization<ArgT, void>{}(_ar, _name, _data);
+            };
     }
 
 private:
@@ -586,7 +793,7 @@ void
 settings::serialize_settings(ArchiveT& ar)
 {
     if(settings::instance())
-        ar(cereal::make_nvp("settings", *settings::instance()));
+        serialize_settings<ArchiveT>(ar, *settings::instance());
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -609,7 +816,7 @@ settings::load(ArchiveT& ar, unsigned int)
     map_type _data;
     for(const auto& itr : m_data)
         _data.insert({ std::string{ itr.first }, itr.second->clone() });
-    auto _map             = get_serialize_map<ArchiveT>(data_type_list_t{});
+    auto _map             = get_serialize_map_callback<ArchiveT>(data_type_list_t{})();
     bool _print_exception = (get_verbose() > 2 || get_debug());
 
 #    define TIMEMORY_SETTINGS_TRY_LOAD(...)                                              \
@@ -668,15 +875,21 @@ settings::save(ArchiveT& ar, unsigned int) const
     for(const auto& itr : m_data)
         _data.insert({ std::string{ itr.first }, itr.second->clone() });
 
-    auto _map = get_serialize_map<ArchiveT>(data_type_list_t{});
+    auto _map = get_serialize_map_callback<ArchiveT>(data_type_list_t{})();
     for(const auto& itr : _data)
     {
         auto mitr = _map.find(itr.second->get_type_index());
         if(mitr != _map.end())
             mitr->second(ar, itr.second);
     }
-    ar(cereal::make_nvp("command_line", m_command_line),
-       cereal::make_nvp("environment", m_environment));
+
+    static_assert(std::is_same<decltype(m_command_line), decltype(m_environment)>::value,
+                  "Error! data types changed");
+    using data_callback_t  = type_list<std::decay_t<decltype(m_command_line)>>;
+    auto&& _data_serialize = get_serialize_data_callback<ArchiveT>(data_callback_t{});
+    _data_serialize(ar, "command_line", m_command_line);
+    _data_serialize(ar, "environment", m_environment);
+
 #else
     consume_parameters(ar);
 #endif
@@ -842,6 +1055,21 @@ settings::insert(tsetting_pointer_t<Tp, Vp> _ptr, Sp&& _env)
     }
 
     return std::make_pair(m_data.end(), false);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+Tp
+settings::get_with_env_fallback(const std::string& _env, Tp _default,
+                                const pointer_t& _settings)
+{
+    if(!_settings)
+        return get_env<Tp>(_env, _default);
+    auto itr = _settings->find(_env);
+    if(itr == _settings->end())
+        return get_env<Tp>(_env, _default);
+    return _settings->get<Tp>(_env);
 }
 //
 //--------------------------------------------------------------------------------------//

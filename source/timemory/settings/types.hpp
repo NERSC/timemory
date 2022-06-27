@@ -58,6 +58,12 @@ struct TIMEMORY_VISIBILITY("default") tsettings;
 //
 struct TIMEMORY_VISIBILITY("default") settings;
 //
+namespace operation
+{
+template <typename Tp, typename TagT = void>
+struct setting_serialization;
+}  // namespace operation
+//
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace tim
