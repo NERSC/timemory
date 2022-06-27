@@ -575,6 +575,8 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     {
         if(exists(itr.first))
             itr.second->execute_actions(*this);
+        else if(itr.second->m_default)
+            itr.second->execute_actions(*this);
     }
 
     return arg_result{};
