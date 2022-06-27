@@ -419,7 +419,7 @@ if(TARGET timemory-mpip-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-mpip-shared)
 else()
     timemory_inform_empty_interface(timemory-mpip-library
-                           "MPIP standalone instrumentation library")
+                                    "MPIP standalone instrumentation library")
     set(TIMEMORY_BUILD_MPIP_LIBRARY
         OFF
         PARENT_SCOPE)
@@ -431,7 +431,7 @@ if(_OMPT_LIB)
     target_link_libraries(timemory-ompt-library INTERFACE timemory-ompt ${_OMPT_LIB})
 else()
     timemory_inform_empty_interface(timemory-ompt-library
-                           "OpenMP stand-alone instrumentation library")
+                                    "OpenMP stand-alone instrumentation library")
     set(TIMEMORY_BUILD_OMPT_LIBRARY
         OFF
         PARENT_SCOPE)
@@ -444,7 +444,7 @@ if(TARGET timemory-ncclp-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-ncclp-shared)
 else()
     timemory_inform_empty_interface(timemory-ncclp-library
-                           "NCCLP standalone instrumentation library")
+                                    "NCCLP standalone instrumentation library")
     set(TIMEMORY_BUILD_NCCLP_LIBRARY
         OFF
         PARENT_SCOPE)
@@ -457,7 +457,7 @@ if(TARGET timemory-mallocp-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-mallocp-shared)
 else()
     timemory_inform_empty_interface(timemory-mallocp-library
-                           "MALLOCP standalone instrumentation library")
+                                    "MALLOCP standalone instrumentation library")
     set(TIMEMORY_BUILD_MALLOCP_LIBRARY
         OFF
         PARENT_SCOPE)
@@ -480,7 +480,7 @@ elseif(TARGET timemory-compiler-instrument-static)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-compiler-instrument-static)
 else()
     timemory_inform_empty_interface(timemory-compiler-instrument
-                           "Compiler instrumentation library")
+                                    "Compiler instrumentation library")
 endif()
 
 # ----------------------------------------------------------------------------------------#
