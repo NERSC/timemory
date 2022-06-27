@@ -457,7 +457,7 @@ TEST_F(mpi_tests, send_recv_overflow)
     using char_vec_t = std::vector<char>;
     using mpi_get_t  = tim::operation::finalize::mpi_get<char_vec_t, true>;
 
-    const int64_t required_gb = 12 + (6 * (mpi::size() - 1));
+    const int64_t required_gb = 13 + (6 * (mpi::size() - 1));
     if(tim::memory::free_memory() < required_gb * tim::units::gigabyte)
     {
         std::cerr << "Skipping test " << details::get_test_name()
