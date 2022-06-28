@@ -655,6 +655,7 @@ private:
     bool                   m_initialized     = false;
     data_type              m_data            = {};
     std::string            m_tag             = {};
+    strvector_t            m_config_stack    = {};
     strvector_t            m_order           = {};
     strvector_t            m_command_line    = {};
     strvector_t            m_environment     = get_global_environment();

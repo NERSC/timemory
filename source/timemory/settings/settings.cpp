@@ -39,6 +39,7 @@
 #include "timemory/utility/declaration.hpp"
 #include "timemory/utility/filepath.hpp"
 #include "timemory/utility/md5.hpp"
+#include "timemory/utility/types.hpp"
 #include "timemory/variadic/macros.hpp"
 
 #include <cctype>
@@ -350,10 +351,12 @@ TIMEMORY_SETTINGS_INLINE std::string
         {
             auto _env_var = std::regex_replace(_fpath, _re, "$3");
             auto _env_val = get_env(_env_var, _env_var);
-            if(_debug || _verbose >= 2)
-                fprintf(stderr, "[%s] replacing %senv{%s}%s in %s with %s...\n",
-                        TIMEMORY_PROJECT_NAME, "%", _env_var.c_str(), "%", _fpath.c_str(),
-                        _env_val.c_str());
+            if(_debug || _verbose >= 3)
+                fprintf(
+                    stderr,
+                    "[%s][settings][%s] replacing '%senv{%s}%s' in '%s' with '%s'...\n",
+                    TIMEMORY_PROJECT_NAME, __FUNCTION__, "%", _env_var.c_str(), "%",
+                    _fpath.c_str(), _env_val.c_str());
             std::stringstream _repl{};
             _repl << "$1" << _env_val << "$4";
             _fpath = std::regex_replace(_fpath, _re, _repl.str());
@@ -806,48 +809,49 @@ settings::initialize_components()
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, ompt_components, TIMEMORY_SETTINGS_KEY("OMPT_COMPONENTS"),
-        "A specification of components which will be added to structures containing the "
-        "'user_ompt_bundle'. Priority: TRACE_COMPONENTS -> PROFILER_COMPONENTS -> "
+        "A specification of components which will be added to structures containing "
+        "the 'user_ompt_bundle'. Priority: TRACE_COMPONENTS -> PROFILER_COMPONENTS -> "
         "COMPONENTS -> GLOBAL_COMPONENTS",
         "", TIMEMORY_ESC(strset_t{ "native", "component", "ompt", "gotcha" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-ompt-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, mpip_components, TIMEMORY_SETTINGS_KEY("MPIP_COMPONENTS"),
-        "A specification of components which will be added to structures containing the "
-        "'user_mpip_bundle'. Priority: TRACE_COMPONENTS -> PROFILER_COMPONENTS -> "
+        "A specification of components which will be added to structures containing "
+        "the 'user_mpip_bundle'. Priority: TRACE_COMPONENTS -> PROFILER_COMPONENTS -> "
         "COMPONENTS -> GLOBAL_COMPONENTS",
         "", TIMEMORY_ESC(strset_t{ "native", "component", "mpip", "gotcha" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-mpip-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, ncclp_components, TIMEMORY_SETTINGS_KEY("NCCLP_COMPONENTS"),
-        "A specification of components which will be added to structures containing the "
-        "'user_ncclp_bundle'. Priority: MPIP_COMPONENTS -> TRACE_COMPONENTS -> "
+        "A specification of components which will be added to structures containing "
+        "the 'user_ncclp_bundle'. Priority: MPIP_COMPONENTS -> TRACE_COMPONENTS -> "
         "PROFILER_COMPONENTS -> COMPONENTS -> GLOBAL_COMPONENTS",
         "", TIMEMORY_ESC(strset_t{ "native", "component", "ncclp", "gotcha" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-ncclp-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, trace_components, TIMEMORY_SETTINGS_KEY("TRACE_COMPONENTS"),
-        "A specification of components which will be used by the interfaces which are "
-        "designed for full profiling. These components will be subjected to throttling. "
+        "A specification of components which will be used by the interfaces which "
+        "are designed for full profiling. These components will be subjected to "
+        "throttling. "
         "Priority: COMPONENTS -> GLOBAL_COMPONENTS",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-trace-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, profiler_components, TIMEMORY_SETTINGS_KEY("PROFILER_COMPONENTS"),
-        "A specification of components which will be used by the interfaces which are "
-        "designed for full python profiling. This specification will be overridden by a "
-        "trace_components specification. Priority: COMPONENTS -> GLOBAL_COMPONENTS",
+        "A specification of components which will be used by the interfaces which "
+        "are designed for full python profiling. This specification will be overridden "
+        "by a trace_components specification. Priority: COMPONENTS -> GLOBAL_COMPONENTS",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-profiler-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         string_t, kokkos_components, TIMEMORY_SETTINGS_KEY("KOKKOS_COMPONENTS"),
-        "A specification of components which will be used by the interfaces which are "
-        "designed for kokkos profiling. Priority: TRACE_COMPONENTS -> "
+        "A specification of components which will be used by the interfaces which "
+        "are designed for kokkos profiling. Priority: TRACE_COMPONENTS -> "
         "PROFILER_COMPONENTS -> COMPONENTS -> GLOBAL_COMPONENTS",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-kokkos-components" }));
@@ -1128,8 +1132,8 @@ settings::initialize_parallel()
 
     TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(
         string_t, mpi_thread_type, TIMEMORY_SETTINGS_KEY("MPI_THREAD_TYPE"),
-        "MPI_Init_thread mode: 'single', 'serialized', 'funneled', or 'multiple' (see "
-        "also: MPI_INIT and MPI_THREAD)",
+        "MPI_Init_thread mode: 'single', 'serialized', 'funneled', or 'multiple' "
+        "(see also: MPI_INIT and MPI_THREAD)",
         mpi::use_mpi_thread_type(),
         TIMEMORY_ESC(strset_t{ "native", "parallelism", "mpi", "dmp" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-mpi-thread-type" }), 1, 1,
@@ -1144,14 +1148,15 @@ settings::initialize_parallel()
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, upcxx_finalize, TIMEMORY_SETTINGS_KEY("UPCXX_FINALIZE"),
-        "Enable/disable timemory calling upcxx::finalize() during timemory_finalize()",
+        "Enable/disable timemory calling upcxx::finalize() during "
+        "timemory_finalize()",
         false, TIMEMORY_ESC(strset_t{ "native", "parallelism", "upcxx", "dmp" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-upcxx-finalize" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         int32_t, node_count, TIMEMORY_SETTINGS_KEY("NODE_COUNT"),
-        "Total number of nodes used in application. Setting this value > 1 will result "
-        "in aggregating N processes into groups of N / NODE_COUNT",
+        "Total number of nodes used in application. Setting this value > 1 will "
+        "result in aggregating N processes into groups of N / NODE_COUNT",
         0, TIMEMORY_ESC(strset_t{ "native", "parallelism", "dmp" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-node-count" }), 1);
 }
@@ -1253,7 +1258,8 @@ settings::initialize_tpls()
 
     insert<bool>(
         TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_PER_LINE"), "cupti_pcsampling_per_line",
-        "Report the PC samples per-line or collapse into one entry for entire function",
+        "Report the PC samples per-line or collapse into one entry for entire "
+        "function",
         false,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
         strvector_t{ "--" TIMEMORY_PROJECT_NAME "-cupti-pcsampling-per-line" });
@@ -1261,7 +1267,8 @@ settings::initialize_tpls()
     insert<bool>(
         TIMEMORY_SETTINGS_KEY("CUPTI_PCSAMPLING_REGION_TOTALS"),
         "cupti_pcsampling_region_totals",
-        "When enabled, region markers will report total samples from all child functions",
+        "When enabled, region markers will report total samples from all child "
+        "functions",
         true,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti", "cupti_pcsampling" }),
         strvector_t{ "--" TIMEMORY_PROJECT_NAME "-cupti-pcsampling-region-totals" });
@@ -1473,7 +1480,8 @@ settings::initialize_ert()
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         uint64_t, ert_grid_size, TIMEMORY_SETTINGS_KEY("ERT_GRID_SIZE"),
-        "Configure the grid size (number of blocks) for ERT on GPU (0 == auto-compute)",
+        "Configure the grid size (number of blocks) for ERT on GPU (0 == "
+        "auto-compute)",
         0,
         TIMEMORY_ESC(
             strset_t{ "native", "ert", "parallelism", "roofline", "gpu_roofline" }));
@@ -1486,7 +1494,8 @@ settings::initialize_ert()
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
         uint64_t, ert_alignment, TIMEMORY_SETTINGS_KEY("ERT_ALIGNMENT"),
-        "Configure the alignment (in bits) when running ERT on CPU (0 == 8 * sizeof(T))",
+        "Configure the alignment (in bits) when running ERT on CPU (0 == 8 * "
+        "sizeof(T))",
         0, TIMEMORY_ESC(strset_t{ "native", "ert", "roofline" }));
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
@@ -1639,10 +1648,15 @@ TIMEMORY_SETTINGS_INLINE
 bool
 settings::read(std::string inp)
 {
+    auto _debug   = get_with_env_fallback(TIMEMORY_SETTINGS_KEY("DEBUG"), false);
+    auto _verbose = get_with_env_fallback(TIMEMORY_SETTINGS_KEY("VERBOSE"), 0);
+    if(_debug)
+        _verbose += 16;
+
     auto _orig = inp;
     inp        = format(inp, get_tag());
 
-    if(inp != _orig && (get_debug() || get_verbose() >= 1))
+    if(inp != _orig && _verbose >= 3)
     {
         fprintf(stderr, "[%s][settings][%s]> '%s' was expanded to '%s'...\n",
                 TIMEMORY_PROJECT_NAME, __FUNCTION__, _orig.c_str(), inp.c_str());
@@ -1680,18 +1694,44 @@ TIMEMORY_SETTINGS_INLINE
 bool
 settings::read(std::istream& ifs, std::string inp)
 {
+    auto _debug   = get_with_env_fallback(TIMEMORY_SETTINGS_KEY("DEBUG"), false);
+    auto _verbose = get_with_env_fallback(TIMEMORY_SETTINGS_KEY("VERBOSE"), 0);
+    if(_debug)
+        _verbose += 16;
+
     inp = format(inp, get_tag());
     if(!inp.empty())
     {
         if(m_read_configs.find(inp) != m_read_configs.end())
         {
-            if(get_env<int>(TIMEMORY_SETTINGS_KEY("VERBOSE"), 0) >= 2)
+            if(_verbose >= 2)
             {
                 TIMEMORY_PRINT_HERE("Warning! Re-reading config file: %s", inp.c_str());
             }
         }
         m_read_configs.emplace(inp);
     }
+
+    if(!inp.empty())
+    {
+        m_config_stack.emplace_back(inp);
+        for(auto& itr : m_config_stack)
+            if(itr == inp)
+            {
+                if(_verbose >= 2)
+                {
+                    TIMEMORY_PRINT_HERE("Config file '%s' is already being read. "
+                                        "Preventing recursion",
+                                        inp.c_str());
+                }
+                return false;
+            }
+    }
+
+    scope::destructor _dtor{ [this, inp]() {
+        if(!inp.empty() && !m_config_stack.empty())
+            m_config_stack.pop_back();
+    } };
 
     std::string _inp = inp;
     if(_inp.length() > 30)
@@ -1824,7 +1864,7 @@ settings::read(std::istream& ifs, std::string inp)
             if(_pos == std::string::npos)
                 return std::make_pair(_v, false);
 
-            if(get_debug() || get_verbose() >= 5)
+            if(_verbose >= 5)
                 fprintf(stderr,
                         "[%s][settings]['%s']> Resolving environment variables in '%s'\n",
                         TIMEMORY_PROJECT_NAME, _inp.c_str(), _v.c_str());
@@ -1833,7 +1873,8 @@ settings::read(std::istream& ifs, std::string inp)
             std::string _prefix = _v.substr(0, _pos);
             _v                  = _v.substr(_pos + strlen(_env_syntax));
 
-            // resolve any remaining variables or environment variables in the substring
+            // resolve any remaining variables or environment variables in the
+            // substring
             _v = _resolve(_v);
 
             auto _re  = std::regex{ "^([A-Z])([A-Z0-9_]+)" };
@@ -1860,14 +1901,14 @@ settings::read(std::istream& ifs, std::string inp)
             return std::make_pair(_prefix + _v, false);
         };
 
-        // replaces VAR in $VAR or ${VAR} with the value of the config defined variable
-        // or the settings value
+        // replaces VAR in $VAR or ${VAR} with the value of the config defined
+        // variable or the settings value
         auto _resolve_var = [&](std::string _v) -> std::pair<std::string, bool> {
             auto _pos = _v.find('$');
             if(_pos == std::string::npos)
                 return std::make_pair(_v, false);
 
-            if(get_debug() || get_verbose() >= 5)
+            if(_verbose >= 5)
                 fprintf(stderr, "[%s][settings]['%s']> Expanding settings in '%s'\n",
                         TIMEMORY_PROJECT_NAME, _inp.c_str(), _v.c_str());
 
@@ -1875,7 +1916,8 @@ settings::read(std::istream& ifs, std::string inp)
             std::string _prefix = _v.substr(0, _pos);
             _v                  = _v.substr(_pos + 1);
 
-            // resolve any remaining variables or environment variables in the substring
+            // resolve any remaining variables or environment variables in the
+            // substring
             _v = _resolve(_v);
 
             for(const auto& itr : _variables)
@@ -1899,9 +1941,8 @@ settings::read(std::istream& ifs, std::string inp)
                 {
                     std::stringstream _msg{};
                     _msg << "Error! evaluation of setting variable: syntax returned an "
-                            "empty string. "
-                            "Settings must consist solely of alphanumeric characters and "
-                            "'_' and do not begin with a digit :: "
+                            "empty string. Settings must consist solely of alphanumeric "
+                            "characters and '_' and do not begin with a digit :: "
                          << _v;
                     throw std::runtime_error(_msg.str());
                 }
@@ -1929,7 +1970,7 @@ settings::read(std::istream& ifs, std::string inp)
             if(_pos == std::string::npos)
                 return _results;
 
-            if(get_debug() || get_verbose() >= 5)
+            if(_verbose >= 5)
                 fprintf(stderr, "[%s][settings]['%s']> Resolving variables in '%s'\n",
                         TIMEMORY_PROJECT_NAME, _inp.c_str(), _v.c_str());
 
@@ -1953,7 +1994,7 @@ settings::read(std::istream& ifs, std::string inp)
                 continue;
             if(line.empty())
                 continue;
-            if(get_debug() || get_verbose() >= 5)
+            if(_verbose >= 5)
                 fprintf(stderr, "[%s][settings]['%s']> %s\n", TIMEMORY_PROJECT_NAME,
                         _inp.c_str(), line.c_str());
             if(_is_comment(line))
@@ -2017,7 +2058,7 @@ settings::read(std::istream& ifs, std::string inp)
                 {
                     if(itr.second->matches(key))
                     {
-                        if(get_debug() || get_verbose() >= 2)
+                        if(_verbose >= 2)
                             fprintf(stderr, "[%s][settings]['%s']> %-30s :: %s\n",
                                     TIMEMORY_PROJECT_NAME, _inp.c_str(), key.c_str(),
                                     val.c_str());
@@ -2027,11 +2068,24 @@ settings::read(std::istream& ifs, std::string inp)
                         itr.second->parse(val);
                         if(itr.second->matches("config_file"))
                         {
-                            auto _cfgs = tim::delimit(val, "; ");
+                            auto _cfgs = tim::delimit(val, ";,: ");
                             for(const auto& itr : _cfgs)
                             {
-                                if(itr != inp)
-                                    read(itr);
+                                if(format(itr, get_tag()) != format(inp, get_tag()))
+                                {
+                                    try
+                                    {
+                                        read(itr);
+                                    } catch(std::runtime_error& _e)
+                                    {
+                                        if(_verbose >= 0)
+                                            fprintf(stderr,
+                                                    "[%s][settings]['%s']> Error reading "
+                                                    "'%s' :: %s\n",
+                                                    TIMEMORY_PROJECT_NAME, _inp.c_str(),
+                                                    itr.c_str(), _e.what());
+                                    }
+                                }
                             }
                         }
                     }
@@ -2047,7 +2101,7 @@ settings::read(std::istream& ifs, std::string inp)
                         itr = std::toupper(itr);
                     if(_key.find(TIMEMORY_SETTINGS_PREFIX) == 0)
                     {
-                        if(get_debug() || get_verbose() >= 3)
+                        if(_verbose >= 3)
                         {
                             fprintf(stderr,
                                     "[%s][settings]['%s']> Unknown setting with "
@@ -2067,7 +2121,7 @@ settings::read(std::istream& ifs, std::string inp)
                     }
                     else
                     {
-                        if(get_debug() || get_verbose() >= 2)
+                        if(_verbose >= 2)
                         {
                             fprintf(stderr,
                                     "[%s][settings]['%s']> WARNING! Unknown setting "
