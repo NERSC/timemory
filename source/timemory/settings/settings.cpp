@@ -328,11 +328,7 @@ TIMEMORY_SETTINGS_INLINE std::string
             _v.replace(pos, itr.first.length(), itr.second);
     };
 
-    using strpairinit_t = std::initializer_list<std::pair<std::string, std::string>>;
-    for(auto&& itr : strpairinit_t{ { "--", "-" }, { "__", "_" }, { "//", "/" } })
-    {
-        _replace(_fpath, itr);
-    }
+    _fpath = filepath::canonical(_fpath);
 
     if(_fpath.find('%') == std::string::npos)
         return _fpath;
@@ -340,26 +336,65 @@ TIMEMORY_SETTINGS_INLINE std::string
     for(auto&& itr : output_keys(_tag))
         _replace(_fpath, itr);
 
-    auto _verbose = get_with_env_fallback(TIMEMORY_SETTINGS_KEY("VERBOSE"), 0);
-    auto _debug   = get_with_env_fallback(TIMEMORY_SETTINGS_KEY("DEBUG"), false);
+    auto _verbose =
+        get_with_env_fallback(TIMEMORY_SETTINGS_KEY("VERBOSE"), 0) +
+        (get_with_env_fallback(TIMEMORY_SETTINGS_KEY("DEBUG"), false) ? 16 : 0);
 
-    // environment variables
+    // environment and configuration variables
     try
     {
-        std::regex _re{ "(.*)%(env|ENV)\\{([A-Z0-9_]+)\\}%(.*)" };
-        while(std::regex_search(_fpath, _re))
+        for(auto _expr : { std::string{ "(.*)%(env|ENV)\\{([A-Z0-9_]+)\\}%(.*)" },
+                           std::string{ "(.*)\\$(env|ENV)\\{([A-Z0-9_]+)\\}(.*)" },
+                           std::string{ "(.*)%(cfg|CFG)\\{([A-Z0-9_]+)\\}%(.*)" },
+                           std::string{ "(.*)\\$(cfg|CFG)\\{([A-Z0-9_]+)\\}(.*)" } })
         {
-            auto _env_var = std::regex_replace(_fpath, _re, "$3");
-            auto _env_val = get_env(_env_var, _env_var);
-            if(_debug || _verbose >= 3)
-                fprintf(
-                    stderr,
-                    "[%s][settings][%s] replacing '%senv{%s}%s' in '%s' with '%s'...\n",
-                    TIMEMORY_PROJECT_NAME, __FUNCTION__, "%", _env_var.c_str(), "%",
-                    _fpath.c_str(), _env_val.c_str());
-            std::stringstream _repl{};
-            _repl << "$1" << _env_val << "$4";
-            _fpath = std::regex_replace(_fpath, _re, _repl.str());
+            std::regex  _re{ _expr };
+            std::string _cbeg   = (_expr.find("(.*)%") == 0) ? "%" : "$";
+            std::string _cend   = (_expr.find("(.*)%") == 0) ? "}%" : "}";
+            bool        _is_env = (_expr.find("(env|ENV)") != std::string::npos);
+            _cbeg += (_is_env) ? "env{" : "cfg{";
+            while(std::regex_search(_fpath, _re))
+            {
+                auto        _var = std::regex_replace(_fpath, _re, "$3");
+                std::string _val = {};
+                if(_is_env)
+                {
+                    _val = get_env<std::string>(_var, "");
+                }
+                else
+                {
+                    auto _settings = shared_instance();
+                    if(_settings)
+                    {
+                        auto _cfg = _settings->find(_var);
+                        if(_cfg != _settings->end())
+                        {
+                            _val = _cfg->second->as_string();
+                            _replace(_val, strpair_t{ ",", "-" });
+                        }
+                    }
+                }
+                if(_verbose >= 1 && _val.empty())
+                    fprintf(stderr,
+                            "[%s][settings][%s] '%s' not found! Removing '%s%s%s' from "
+                            "'%s'...\n",
+                            TIMEMORY_PROJECT_NAME, __FUNCTION__, _var.c_str(),
+                            _cbeg.c_str(), _var.c_str(), _cend.c_str(), _fpath.c_str());
+                else if(_verbose >= 4 && !_val.empty())
+                    fprintf(
+                        stderr,
+                        "[%s][settings][%s] replacing '%s%s%s' in '%s' with '%s'...\n",
+                        TIMEMORY_PROJECT_NAME, __FUNCTION__, _cbeg.c_str(), _var.c_str(),
+                        _cend.c_str(), _fpath.c_str(), _val.c_str());
+                auto _beg = std::regex_replace(_fpath, _re, "$1");
+                auto _end = std::regex_replace(_fpath, _re, "$4");
+                _fpath    = _beg + _val + _end;
+                if(_verbose >= 3)
+                    fprintf(stderr,
+                            "[%s][settings][%s] replacing '%s%s%s' resulted in '%s'...\n",
+                            TIMEMORY_PROJECT_NAME, __FUNCTION__, _cbeg.c_str(),
+                            _var.c_str(), _cend.c_str(), _fpath.c_str());
+            }
         }
     } catch(std::exception& _e)
     {
