@@ -1717,7 +1717,7 @@ settings::read(std::string inp)
         }
         else
         {
-            TIMEMORY_EXCEPTION(string_t("Error reading configuration file: ") + inp)
+            TIMEMORY_EXCEPTION("Error reading configuration file: " << inp)
         }
     }
     return false;
@@ -1749,8 +1749,8 @@ settings::read(std::istream& ifs, std::string inp)
 
     if(!inp.empty())
     {
-        m_config_stack.emplace_back(inp);
         for(auto& itr : m_config_stack)
+        {
             if(itr == inp)
             {
                 if(_verbose >= 2)
@@ -1761,6 +1761,8 @@ settings::read(std::istream& ifs, std::string inp)
                 }
                 return false;
             }
+        }
+        m_config_stack.emplace_back(inp);
     }
 
     scope::destructor _dtor{ [this, inp]() {
@@ -2185,7 +2187,8 @@ settings::init_config(bool _search_default)
     static const auto* const _homedir = "%env{HOME}%";
     const auto               _dcfgs   = std::set<std::string>{
         format(_homedir + std::string("/." TIMEMORY_PROJECT_NAME ".cfg"), get_tag()),
-        format(_homedir + std::string("/." TIMEMORY_PROJECT_NAME ".json"), get_tag())
+        format(_homedir + std::string("/." TIMEMORY_PROJECT_NAME ".json"), get_tag()),
+        format(_homedir + std::string("/." TIMEMORY_PROJECT_NAME ".xml"), get_tag())
     };
 
     auto _cfg   = get_config_file();
