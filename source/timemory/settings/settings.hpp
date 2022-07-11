@@ -521,13 +521,13 @@ public:
     /// any settings accessed through static methods or the non-templated instance method.
     /// E.g. `tim::settings::enabled()` will not be affected by changes to settings
     /// instance returned by this method.
-    template <typename Tag>
+    template <typename Tag = TIMEMORY_API>
     static pointer_t push();
 
     /// \tparam API Tagged type
     ///
     /// \brief Restore the settings from a previous push operations.
-    template <typename Tag>
+    template <typename Tag = TIMEMORY_API>
     static pointer_t pop();
 
     /// \tparam Data Type

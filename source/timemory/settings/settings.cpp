@@ -571,6 +571,7 @@ TIMEMORY_SETTINGS_INLINE
 settings::settings()
 : m_data(data_type{})
 {
+    m_order.reserve(get_env<size_t>("TIMEMORY_TOTAL_SETTINGS", 4096));
     initialize();
 }
 //
@@ -578,11 +579,17 @@ settings::settings()
 //
 TIMEMORY_SETTINGS_INLINE
 settings::settings(const settings& rhs)
-: m_data(data_type{})
+: m_initialized(rhs.m_initialized)
+, m_data(data_type{})
+, m_tag(rhs.m_tag)
+, m_config_stack(rhs.m_config_stack)
 , m_order(rhs.m_order)
 , m_command_line(rhs.m_command_line)
 , m_environment(rhs.m_environment)
+, m_read_configs(rhs.m_read_configs)
+, m_unknown_configs(rhs.m_unknown_configs)
 {
+    m_order.reserve(rhs.m_order.capacity());
     for(const auto& itr : rhs.m_data)
         m_data.emplace(itr.first, itr.second->clone());
     for(auto& itr : m_order)
@@ -592,7 +599,24 @@ settings::settings(const settings& rhs)
             auto ritr = rhs.m_data.find(itr);
             if(ritr == rhs.m_data.end())
             {
-                TIMEMORY_EXCEPTION(string_t("Error! Missing ordered entry: ") + itr)
+                std::stringstream _sorder;
+                {
+                    std::set<std::string> _v = {};
+                    for(auto ditr : m_data)
+                        _v.emplace(ditr.first);
+                    for(auto ditr : _v)
+                        _sorder << "\n    " << ditr;
+                }
+                {
+                    _sorder << "\n  ORIGINAL:";
+                    std::set<std::string> _v = {};
+                    for(auto ditr : rhs.m_data)
+                        _v.emplace(ditr.first);
+                    for(auto ditr : _v)
+                        _sorder << "\n    " << ditr;
+                }
+                TIMEMORY_EXCEPTION("Error! Missing ordered entry: " << itr << ". Known: "
+                                                                    << _sorder.str());
             }
             else
             {
@@ -613,9 +637,15 @@ settings::operator=(const settings& rhs)
 
     for(const auto& itr : rhs.m_data)
         m_data[itr.first] = itr.second->clone();
-    m_order        = rhs.m_order;
-    m_command_line = rhs.m_command_line;
-    m_environment  = rhs.m_environment;
+    m_initialized     = rhs.m_initialized;
+    m_tag             = rhs.m_tag;
+    m_config_stack    = rhs.m_config_stack;
+    m_order           = rhs.m_order;
+    m_command_line    = rhs.m_command_line;
+    m_environment     = rhs.m_environment;
+    m_read_configs    = rhs.m_read_configs;
+    m_unknown_configs = rhs.m_unknown_configs;
+    m_order.reserve(rhs.m_order.capacity());
     for(auto& itr : m_order)
     {
         if(m_data.find(itr) == m_data.end())
@@ -2100,9 +2130,6 @@ settings::read(std::istream& ifs, std::string inp)
                                     TIMEMORY_PROJECT_NAME, _inp.c_str(), key.c_str(),
                                     val.c_str());
                         ++valid;
-                        itr.second->set_config_updated(true);
-                        itr.second->set_environ_updated(false);
-                        itr.second->parse(val);
                         if(itr.second->matches("config_file"))
                         {
                             auto _cfgs = tim::delimit(val, ";,: ");
@@ -2124,6 +2151,12 @@ settings::read(std::istream& ifs, std::string inp)
                                     }
                                 }
                             }
+                        }
+                        else
+                        {
+                            itr.second->set_config_updated(true);
+                            itr.second->set_environ_updated(false);
+                            itr.second->parse(val);
                         }
                     }
                 }
