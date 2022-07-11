@@ -170,13 +170,13 @@ public:
         value_type _tmp;
         GetMetricGpuValue(chipName, counterDataImage, metricNames, _data);
         if(settings::verbose() > 0)
-            PRINT_HERE("METRIC_GPU_VALUE size: %li", (long int) _data.size());
+            TIMEMORY_PRINT_HERE("METRIC_GPU_VALUE size: %li", (long int) _data.size());
         for(const auto& itr : _data)
         {
             auto _prefix = itr.metricName + ".";
             if(settings::verbose() > 0)
-                PRINT_HERE("    METRIC[%s] size: %li", itr.metricName.c_str(),
-                           (long int) itr.rangeNameMetricValueMap.size());
+                TIMEMORY_PRINT_HERE("    METRIC[%s] size: %li", itr.metricName.c_str(),
+                                    (long int) itr.rangeNameMetricValueMap.size());
             for(const auto& vitr : itr.rangeNameMetricValueMap)
                 _tmp[_prefix + vitr.first] = vitr.second;
         }

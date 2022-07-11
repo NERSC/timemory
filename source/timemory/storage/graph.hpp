@@ -165,13 +165,12 @@ public:
         // public member functions
         /// When called, the next increment/decrement skips children of this
         /// node.
-        void skip_children();
-        void skip_children(bool skip);
+        void skip_children(bool skip = true);
         /// Number of children of the node pointed to by the iterator.
-        TIMEMORY_NODISCARD unsigned int number_of_children() const;
+        unsigned int number_of_children() const;
 
-        TIMEMORY_NODISCARD sibling_iterator begin() const;
-        TIMEMORY_NODISCARD sibling_iterator end() const;
+        sibling_iterator begin() const;
+        sibling_iterator end() const;
 
     public:
         // public data member
@@ -208,10 +207,6 @@ public:
         pre_order_iterator& operator+=(unsigned int);
         pre_order_iterator& operator-=(unsigned int);
         pre_order_iterator  operator+(unsigned int);
-
-    public:
-        // public member functions
-        pre_order_iterator& next_skip_children();
     };
 
     /// The default iterator types throughout the graph class.
@@ -248,8 +243,8 @@ public:
 
     public:
         // public member functions
-        TIMEMORY_NODISCARD graph_node* range_first() const;
-        TIMEMORY_NODISCARD graph_node* range_last() const;
+        graph_node* range_first() const;
+        graph_node* range_last() const;
 
     public:
         // public data member
@@ -260,10 +255,10 @@ public:
     };
 
     /// Return iterator to the beginning of the graph.
-    TIMEMORY_NODISCARD inline pre_order_iterator begin() const;
+    inline pre_order_iterator begin() const;
 
     /// Return iterator to the end of the graph.
-    TIMEMORY_NODISCARD inline pre_order_iterator end() const;
+    inline pre_order_iterator end() const;
 
     /// Return sibling iterator to the first child of given node.
     static sibling_iterator begin(const iterator_base&);
@@ -463,9 +458,8 @@ public:
 
     /// Extract a new graph formed by the range of siblings plus all their
     /// children.
-    TIMEMORY_NODISCARD inline graph subgraph(sibling_iterator from,
-                                             sibling_iterator to) const;
-    inline void subgraph(graph&, sibling_iterator from, sibling_iterator to) const;
+    inline graph subgraph(sibling_iterator from, sibling_iterator to) const;
+    inline void  subgraph(graph&, sibling_iterator from, sibling_iterator to) const;
 
     /// Exchange the node (plus subgraph) with its sibling node (do nothing if
     /// no sibling present).
@@ -476,11 +470,50 @@ public:
     /// the graph.
     inline void swap(iterator, iterator);
 
+    template <typename IterT, typename FuncT, typename ExecT, typename WaitT>
+    inline void sort(IterT _beg, IterT _end, FuncT&& _functor, ExecT&& _exec,
+                     WaitT&& _wait);
+
+    template <typename FuncT, typename ExecT, typename WaitT>
+    inline void sort(FuncT&& _func, ExecT&& _exec, WaitT&& _wait)
+    {
+        sort(begin(), end(), std::forward<FuncT>(_func), std::forward<ExecT>(_exec),
+             std::forward<WaitT>(_wait));
+    }
+
+    template <typename IterT, typename FuncT, typename ExecT, typename WaitT>
+    inline void sort(IterT itr, FuncT&& _func, ExecT&& _exec, WaitT&& _wait)
+    {
+        sort(itr, IterT{ next_sibling(itr) }, std::forward<FuncT>(_func),
+             std::forward<ExecT>(_exec), std::forward<WaitT>(_wait));
+    }
+
+    template <typename IterT, typename FuncT>
+    inline void sort(IterT itr, FuncT&& _func)
+    {
+        sort(
+            itr, std::forward<FuncT>(_func), [](auto _f) { _f(); }, []() {});
+    }
+
+    template <typename IterT, typename FuncT>
+    inline void sort(IterT _beg, IterT _end, FuncT&& _func)
+    {
+        sort(
+            _beg, _end, std::forward<FuncT>(_func), [](auto _f) { _f(); }, []() {});
+    }
+
+    template <typename FuncT>
+    inline void sort(FuncT&& _func)
+    {
+        sort(
+            begin(), end(), std::forward<FuncT>(_func), [](auto _f) { _f(); }, []() {});
+    }
+
     /// Count the total number of nodes.
-    TIMEMORY_NODISCARD inline size_t size() const;
+    inline size_t size() const;
 
     /// Check if graph is empty.
-    TIMEMORY_NODISCARD inline bool empty() const;
+    inline bool empty() const;
 
     /// Compute the depth to the root or to a fixed other iterator.
     static int depth(const iterator_base&);
@@ -488,28 +521,27 @@ public:
 
     /// Determine the maximal depth of the graph. An empty graph has
     /// max_depth=-1.
-    TIMEMORY_NODISCARD inline int max_depth() const;
+    inline int max_depth() const;
 
     /// Determine the maximal depth of the graph with top node at the given
     /// position.
-    TIMEMORY_NODISCARD inline int max_depth(const iterator_base&) const;
+    inline int max_depth(const iterator_base&) const;
 
     /// Count the number of children of node at position.
     static unsigned int number_of_children(const iterator_base&);
 
     /// Count the number of siblings (left and right) of node at iterator. Total
     /// nodes at this level is +1.
-    TIMEMORY_NODISCARD inline unsigned int number_of_siblings(const iterator_base&) const;
+    inline unsigned int number_of_siblings(const iterator_base&) const;
 
     /// Determine whether node at position is in the subgraphs with root in the
     /// range.
-    TIMEMORY_NODISCARD inline bool is_in_subgraph(const iterator_base& position,
-                                                  const iterator_base& begin,
-                                                  const iterator_base& end) const;
+    inline bool is_in_subgraph(const iterator_base& position, const iterator_base& begin,
+                               const iterator_base& end) const;
 
     /// Determine whether the iterator is an 'end' iterator and thus not
     /// actually pointing to a node.
-    TIMEMORY_NODISCARD inline bool is_valid(const iterator_base&) const;
+    inline bool is_valid(const iterator_base&) const;
 
     /// Determine whether the iterator is one of the 'head' nodes at the top
     /// level, i.e. has no parent.
@@ -517,14 +549,13 @@ public:
 
     /// Determine the index of a node in the range of siblings to which it
     /// belongs.
-    TIMEMORY_NODISCARD inline unsigned int index(sibling_iterator it) const;
+    inline unsigned int index(sibling_iterator it) const;
 
     /// Inverse of 'index': return the n-th child of the node at position.
     static sibling_iterator child(const iterator_base& position, unsigned int);
 
     /// Return iterator to the sibling indicated by index
-    TIMEMORY_NODISCARD inline sibling_iterator sibling(const iterator_base& position,
-                                                       unsigned int) const;
+    inline sibling_iterator sibling(const iterator_base& position, unsigned int) const;
 
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
@@ -2309,6 +2340,42 @@ graph<T, AllocatorT>::swap(iterator one, iterator two)
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename AllocatorT>
+template <typename IterT, typename FuncT, typename ExecT, typename WaitT>
+void
+graph<T, AllocatorT>::sort(IterT _beg, IterT _end, FuncT&& _func, ExecT&& _exec,
+                           WaitT&& _wait)
+{
+    auto _selection_sort = [&](IterT root) {
+        long n   = number_of_children(root);
+        long idx = 0;
+        // One by one move boundary of unsorted subarray
+        for(long i = 0; i < n - 1; ++i)
+        {
+            // Find the minimum element in unsorted array
+            idx = i;
+            for(long j = i + 1; j < n; ++j)
+            {
+                auto lhs = child(root, j);
+                auto rhs = child(root, idx);
+                if(_func(*lhs, *rhs))
+                    idx = j;
+            }
+            // Swap the found minimum element with the first element
+            auto lhs = child(root, idx);
+            auto rhs = child(root, i);
+            swap(lhs, rhs);
+        }
+    };
+
+    for(IterT itr = _beg; itr != _end; ++itr)
+        _exec([itr, &_selection_sort]() { _selection_sort(itr); });
+
+    _wait();
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename AllocatorT>
 bool
 graph<T, AllocatorT>::is_valid(const iterator_base& it) const
 {
@@ -2523,15 +2590,6 @@ graph<T, AllocatorT>::iterator_base::end() const
     sibling_iterator ret(nullptr);
     ret.m_parent = node;
     return ret;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-void
-graph<T, AllocatorT>::iterator_base::skip_children()
-{
-    m_skip_current_children = true;
 }
 
 //--------------------------------------------------------------------------------------//

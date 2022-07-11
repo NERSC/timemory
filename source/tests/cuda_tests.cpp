@@ -42,7 +42,7 @@ using namespace tim::component;
 
 static constexpr int     nitr     = 10;
 static constexpr int     nstreams = 4;
-static constexpr int64_t N        = 50 * (1 << 23);
+static constexpr int64_t N        = 50 * (1 << 22);
 using default_device              = tim::device::default_device;
 
 //--------------------------------------------------------------------------------------//

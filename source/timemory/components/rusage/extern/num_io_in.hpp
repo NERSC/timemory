@@ -28,4 +28,4 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/components/rusage/components.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(num_io_in, true, int64_t)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(num_io_in, true, int64_t)

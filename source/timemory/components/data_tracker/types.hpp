@@ -71,6 +71,10 @@ struct component_apis<component::data_tracker<InpT, Tag>>
     using type = type_list<TIMEMORY_API, category::logger, os::agnostic>;
 };
 //
+template <typename InpT, typename Tag>
+struct assignable_units<component::data_tracker<InpT, Tag>> : true_type
+{};
+//
 #if defined(TIMEMORY_COMPILER_INSTRUMENTATION)
 template <typename InpT, typename Tag>
 struct is_available<component::data_tracker<InpT, Tag>> : std::false_type

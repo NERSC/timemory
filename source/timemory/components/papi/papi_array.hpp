@@ -24,11 +24,13 @@
 
 #pragma once
 
+#include "timemory/backends/papi.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/papi/backends.hpp"
 #include "timemory/components/papi/papi_common.hpp"
 #include "timemory/components/papi/types.hpp"
 #include "timemory/mpl/policy.hpp"
+#include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 
@@ -60,8 +62,9 @@ struct papi_array
     using get_initializer_t = std::function<event_list()>;
     using common_type       = void;
 
-    static const short precision = 3;
-    static const short width     = 8;
+    static constexpr size_t event_count_max = MaxNumEvents;
+    static const short      precision       = 3;
+    static const short      width           = 8;
 
     template <typename Tp>
     using array_t = std::array<Tp, MaxNumEvents>;
@@ -77,7 +80,7 @@ struct papi_array
     static auto& get_initializer() { return papi_common::get_initializer<common_type>(); }
     static void  configure()
     {
-        if(!is_configured<common_type>())
+        if(trait::runtime_enabled<this_type>::get() && !is_configured<common_type>())
             papi_common::initialize<common_type>();
     }
     static void initialize() { configure(); }
@@ -90,7 +93,7 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    papi_array() { events = get_events<common_type>(); }
+    papi_array();
     ~papi_array()                     = default;
     papi_array(const papi_array&)     = default;
     papi_array(papi_array&&) noexcept = default;
@@ -221,17 +224,15 @@ public:
 
     static std::string label()
     {
-        return "papi_array" + std::to_string((event_set<common_type>() < 0)
-                                                 ? 0
-                                                 : event_set<common_type>());
+        auto _event_set = event_set<common_type>();
+        if(_event_set > 0)
+            return "papi_array" + std::to_string(_event_set);
+        return "papi_array";
     }
 
     static std::string description() { return "Fixed-size array of PAPI HW counters"; }
 
-    TIMEMORY_NODISCARD entry_type get_display(int evt_type) const
-    {
-        return accum.at(evt_type);
-    }
+    entry_type get_display(int evt_type) const { return accum.at(evt_type); }
 
     //----------------------------------------------------------------------------------//
     // serialization
@@ -260,11 +261,15 @@ public:
     //----------------------------------------------------------------------------------//
     // array of descriptions
     //
-    TIMEMORY_NODISCARD std::vector<std::string> label_array() const
+    std::vector<std::string> label_array() const
     {
-        std::vector<std::string> arr(events.size());
+        std::vector<std::string> arr = events;
         for(size_type i = 0; i < events.size(); ++i)
-            arr[i] = papi::get_event_info(events[i]).short_descr;
+        {
+            papi::event_info_t _info = papi::get_event_info(events.at(i));
+            if(!_info.modified_short_descr)
+                arr.at(i) = _info.short_descr;
+        }
 
         for(auto& itr : arr)
         {
@@ -296,7 +301,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    TIMEMORY_NODISCARD std::vector<std::string> description_array() const
+    std::vector<std::string> description_array() const
     {
         std::vector<std::string> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)
@@ -307,7 +312,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit
     //
-    TIMEMORY_NODISCARD std::vector<std::string> display_unit_array() const
+    std::vector<std::string> display_unit_array() const
     {
         std::vector<std::string> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)
@@ -318,7 +323,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit values
     //
-    TIMEMORY_NODISCARD std::vector<int64_t> unit_array() const
+    std::vector<int64_t> unit_array() const
     {
         std::vector<int64_t> arr(events.size());
         for(size_type i = 0; i < events.size(); ++i)
@@ -328,7 +333,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    TIMEMORY_NODISCARD string_t get_display() const
+    string_t get_display() const
     {
         if(events.size() == 0)
             return "";
@@ -395,5 +400,12 @@ public:
         return os;
     }
 };
+
+template <size_t MaxNumEvents>
+papi_array<MaxNumEvents>::papi_array()
+{
+    if(trait::runtime_enabled<this_type>::get())
+        events = get_events<common_type>();
+}
 }  // namespace component
 }  // namespace tim

@@ -32,115 +32,82 @@
 
 #if defined(TIMEMORY_USE_MPI)
 
+#    if !defined(TIMEMORY_MPI_INIT)
+#        define TIMEMORY_MPI_INIT 0
+#    endif
+
+#    if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_MPI_INIT_EXTERN)
+#        define TIMEMORY_USE_MPI_INIT_EXTERN 1
+#    endif
+
 #    include "timemory/backends/mpi.hpp"
 #    include "timemory/config.hpp"
+#    include "timemory/defines.h"
 #    include "timemory/manager/declaration.hpp"
 #    include "timemory/settings/declaration.hpp"
 
-#    if defined(TIMEMORY_USE_TAU)
-#        define TAU_ENABLED
-#        define TAU_DOT_H_LESS_HEADERS
-#        include "TAU.h"
-#    endif
-
-//--------------------------------------------------------------------------------------//
-//
-#    if !defined(TAU_INIT)
-#        if defined(TIMEMORY_USE_TAU)
-#            define TAU_INIT(...) Tau_init(__VA_ARGS__)
-#        else
-#            define TAU_INIT(...)
-#        endif
-#    endif
-//
-//--------------------------------------------------------------------------------------//
-
-#    if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_MPI_INIT_EXTERN)
-#        define TIMEMORY_USE_MPI_INIT_EXTERN
+#    if !defined(TIMEMORY_USE_MPI_INIT_EXTERN) && TIMEMORY_MPI_INIT > 0
+#        include "timemory/components/tau_marker/backends.hpp"
 #    endif
 
 //--------------------------------------------------------------------------------------//
 //
 #    if defined(TIMEMORY_MPI_INIT_SOURCE)
 #        define TIMEMORY_MPI_INIT_LINKAGE(...) __VA_ARGS__
-#    elif !defined(TIMEMORY_USE_MPI_INIT_EXTERN)
-#        define TIMEMORY_MPI_INIT_LINKAGE(...) inline __VA_ARGS__
-#    else
+#    elif defined(TIMEMORY_USE_MPI_INIT_EXTERN)
 #        define TIMEMORY_MPI_INIT_LINKAGE(...) extern __VA_ARGS__
+#    else
+#        define TIMEMORY_MPI_INIT_LINKAGE(...) inline __VA_ARGS__
 #    endif
-//
-//--------------------------------------------------------------------------------------//
 
 //--------------------------------------------------------------------------------------//
 //
 extern "C"
 {
-    //
-    //----------------------------------------------------------------------------------//
-    //
-#    if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_MPI_INIT_EXTERN)
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    extern void timemory_MPI_Comm_set_attr(void);
-    extern void timemory_MPI_Init(int* argc, char*** argv);
-    extern int  MPI_Init(int* argc, char*** argv);
-#        if !defined(TIMEMORY_MPI_INIT) || (TIMEMORY_MPI_INIT > 0)
-    extern int MPI_Init_thread(int* argc, char*** argv, int required, int* provided);
-#        endif
-#    else
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    static int& timemory_MPI_Comm_key()
-    {
-        static int comm_key = -1;
-        return comm_key;
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    static int timemory_MPI_Copy(MPI_Comm, int, void*, void*, void*, int*)
-    {
-        return MPI_SUCCESS;
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    static int timemory_MPI_Finalize(MPI_Comm, int, void*, void*)
-    {
-        if(tim::settings::debug())
-        {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Finalize!\n", __FUNCTION__,
-                   __FILE__, __LINE__);
-        }
-        auto manager = tim::timemory_manager_master_instance();
-        if(manager)
-            manager->finalize();
-        ::tim::dmp::set_finalized(true);
-        if(tim::settings::debug())
-        {
-            printf("[%s@%s:%i]> timemory MPI_Finalize completed!\n", __FUNCTION__,
-                   __FILE__, __LINE__);
-        }
-        return MPI_SUCCESS;
-    }
-    //
+    TIMEMORY_MPI_INIT_LINKAGE(void) timemory_MPI_Comm_set_attr(void);
+    TIMEMORY_MPI_INIT_LINKAGE(void) timemory_MPI_Init(const int* argc, char*** argv);
+#    if TIMEMORY_MPI_INIT > 0
+    TIMEMORY_MPI_INIT_LINKAGE(int) MPI_Init(int* argc, char*** argv);
+    TIMEMORY_MPI_INIT_LINKAGE(int) MPI_Init_thread(int*, char***, int, int*);
+#    endif
+
+#    if !defined(TIMEMORY_USE_MPI_INIT_EXTERN)
+
     //----------------------------------------------------------------------------------//
     //
     TIMEMORY_MPI_INIT_LINKAGE(void) timemory_MPI_Comm_set_attr(void)
     {
-        if(timemory_MPI_Comm_key() < 0)
+        static int comm_key = -1;
+        if(comm_key < 0)
         {
-            MPI_Comm_create_keyval(&timemory_MPI_Copy, &timemory_MPI_Finalize,
-                                   &timemory_MPI_Comm_key(), nullptr);
-            MPI_Comm_set_attr(MPI_COMM_SELF, timemory_MPI_Comm_key(), nullptr);
+            static auto _copy = [](MPI_Comm, int, void*, void*, void*, int*) {
+                return MPI_SUCCESS;
+            };
+            static auto _fini = [](MPI_Comm, int, void*, void*) {
+                if(tim::settings::debug())
+                {
+                    printf("[%s][%s@%s:%i]> intercepted MPI_Finalize!\n",
+                           TIMEMORY_PROJECT_NAME, __FUNCTION__, __FILE__, __LINE__);
+                }
+                auto* manager = tim::timemory_manager_master_instance();
+                if(manager)
+                    manager->finalize();
+                ::tim::dmp::set_finalized(true);
+                if(tim::settings::debug())
+                {
+                    printf("[%s][%s@%s:%i]> MPI_Finalize completed!\n",
+                           TIMEMORY_PROJECT_NAME, __FUNCTION__, __FILE__, __LINE__);
+                }
+                return MPI_SUCCESS;
+            };
+            PMPI_Comm_create_keyval(_copy, _fini, &comm_key, nullptr);
+            PMPI_Comm_set_attr(MPI_COMM_SELF, comm_key, nullptr);
         }
 
-        static auto _manager = tim::timemory_manager_master_instance();
+        static auto* _manager = tim::timemory_manager_master_instance();
         tim::consume_parameters(_manager);
     }
-    //
+
     //----------------------------------------------------------------------------------//
     //
     TIMEMORY_MPI_INIT_LINKAGE(void) timemory_MPI_Init(const int* argc, char*** argv)
@@ -148,50 +115,42 @@ extern "C"
         timemory_MPI_Comm_set_attr();
         ::tim::timemory_init(*argc, *argv);
     }
-    //
+
     //----------------------------------------------------------------------------------//
     //
-#        if !defined(TIMEMORY_MPI_INIT) || (TIMEMORY_MPI_INIT > 0)
-    //
+#        if TIMEMORY_MPI_INIT > 0
+
     //----------------------------------------------------------------------------------//
     //
     int MPI_Init(int* argc, char*** argv)
     {
         if(tim::settings::debug())
         {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Init!\n", __FUNCTION__, __FILE__,
-                   __LINE__);
+            printf("[%s][%s@%s:%i]> intercepted MPI_Init!\n", TIMEMORY_PROJECT_NAME,
+                   __FUNCTION__, __FILE__, __LINE__);
         }
-        TAU_INIT(argc, argv);
+        TIMEMORY_TAU_INIT(argc, argv);
         auto ret = PMPI_Init(argc, argv);
         timemory_MPI_Init(argc, argv);
         return ret;
     }
-    //
+
     //----------------------------------------------------------------------------------//
     //
     int MPI_Init_thread(int* argc, char*** argv, int req, int* prov)
     {
         if(tim::settings::debug())
         {
-            printf("[%s@%s:%i]> timemory intercepted MPI_Init_thread!\n", __FUNCTION__,
-                   __FILE__, __LINE__);
+            printf("[%s][%s@%s:%i]> intercepted MPI_Init_thread!\n",
+                   TIMEMORY_PROJECT_NAME, __FUNCTION__, __FILE__, __LINE__);
         }
-        TAU_INIT(argc, argv);
+        TIMEMORY_TAU_INIT(argc, argv);
         auto ret = PMPI_Init_thread(argc, argv, req, prov);
         timemory_MPI_Init(argc, argv);
         return ret;
     }
-    //
-    //----------------------------------------------------------------------------------//
-    //
 #        endif
 #    endif
-    //
-    //----------------------------------------------------------------------------------//
-    //
 }
-//
-//--------------------------------------------------------------------------------------//
-//
+
 #endif  // defined(TIMEMORY_USE_MPI)

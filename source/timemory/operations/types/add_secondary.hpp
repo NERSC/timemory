@@ -33,6 +33,9 @@
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/demangle.hpp"
+
+#include <stdexcept>
 
 namespace tim
 {
@@ -223,7 +226,8 @@ private:
         using value_type       = typename map_type::mapped_type;
         using secondary_data_t = std::tuple<Iterator, const string_t&, value_type>;
         for(const auto& _data : _rhs.get_secondary())
-            _storage->append(secondary_data_t{ _itr, _data.first, _data.second });
+            storage_append_sfinae(_storage, 0,
+                                  secondary_data_t{ _itr, _data.first, _data.second });
     }
 
     //----------------------------------------------------------------------------------//
@@ -251,6 +255,23 @@ private:
     //
     template <typename Up, typename... Args>
     void sfinae(Up&, long, Args&&...) const
+    {}
+
+    //----------------------------------------------------------------------------------//
+    //  If the storage can append secondary data
+    //
+    template <typename Storage, typename DataT>
+    auto storage_append_sfinae(Storage* _storage, int, DataT&& _data) const
+        -> decltype(_storage->append(std::forward<DataT>(_data)))
+    {
+        return _storage->append(std::forward<DataT>(_data));
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  If the storage can NOT append secondary data
+    //
+    template <typename Storage, typename DataT>
+    void storage_append_sfinae(Storage*, long, DataT&&) const
     {}
 };
 //
@@ -309,6 +330,35 @@ struct add_secondary
     template <typename... Args>
     add_secondary(std::nullptr_t, Args...)
     {}
+
+    //----------------------------------------------------------------------------------//
+    // add_secondary function call operator
+    //
+    template <typename Storage, typename... Args>
+    auto operator()(Storage* _storage, Args&&... _args) const
+    {
+        return base_type::operator()(_storage, std::forward<Args>(_args)...);
+    }
+
+    template <typename... Args>
+    auto operator()(std::nullptr_t, Args...)
+    {}
+
+    template <typename... Args>
+    auto operator()(type& _rhs, Args&&... _args) const
+    {
+        return base_type::operator()(_rhs, std::forward<Args>(_args)...);
+    }
+
+    template <typename... Args>
+    auto operator()(type* _rhs, Args&&... _args) const
+    {
+        using return_type =
+            decltype(base_type::operator()(*_rhs, std::forward<Args>(_args)...));
+        if(_rhs)
+            return base_type::operator()(*_rhs, std::forward<Args>(_args)...);
+        return return_type();
+    }
 };
 //
 //--------------------------------------------------------------------------------------//

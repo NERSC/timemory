@@ -133,41 +133,41 @@ public:
     /// nbytes is passed to malloc
     void audit(audit::incoming, size_t nbytes)
     {
-        DEBUG_PRINT_HERE("%s(%i)", m_prefix, (int) nbytes);
+        TIMEMORY_DEBUG_PRINT_HERE("%s(%i)", m_prefix, (int) nbytes);
         // malloc
         value = (nbytes);
-        DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+        TIMEMORY_DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
     }
 
     /// nmemb and size is passed to calloc
     void audit(audit::incoming, size_t nmemb, size_t size)
     {
-        DEBUG_PRINT_HERE("%s(%i, %i)", m_prefix, (int) nmemb, (int) size);
+        TIMEMORY_DEBUG_PRINT_HERE("%s(%i, %i)", m_prefix, (int) nmemb, (int) size);
         // calloc
         value = (nmemb * size);
-        DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+        TIMEMORY_DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
     }
 
     /// void* is returned from malloc and calloc
     void audit(audit::outgoing, void* ptr)
     {
-        DEBUG_PRINT_HERE("%s(%p)", m_prefix, ptr);
+        TIMEMORY_DEBUG_PRINT_HERE("%s(%p)", m_prefix, ptr);
         if(ptr)
         {
             get_allocation_map()[ptr] = value;
-            DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+            TIMEMORY_DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
         }
     }
 
     /// void* is passed to free
     void audit(audit::incoming, void* ptr)
     {
-        DEBUG_PRINT_HERE("%s(%p)", m_prefix, ptr);
+        TIMEMORY_DEBUG_PRINT_HERE("%s(%p)", m_prefix, ptr);
         auto itr = get_allocation_map().find(ptr);
         if(itr != get_allocation_map().end())
         {
             value = itr->second;
-            DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+            TIMEMORY_DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
             get_allocation_map().erase(itr);
         }
         else
@@ -189,11 +189,11 @@ public:
     // hipMalloc, hipMallocHost
     void audit(audit::incoming, void** devPtr, size_t size)
     {
-        DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
+        TIMEMORY_DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
         // malloc
         value       = (size);
         m_last_addr = devPtr;
-        DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+        TIMEMORY_DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
     }
 
     //----------------------------------------------------------------------------------//
@@ -201,10 +201,10 @@ public:
     // hipHostAlloc / hipMallocManaged
     void audit(audit::incoming, void** hostPtr, size_t size, unsigned int flags)
     {
-        DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
+        TIMEMORY_DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
         value       = (size);
         m_last_addr = hostPtr;
-        DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
+        TIMEMORY_DEBUG_PRINT_HERE("value: %12.8f, accum: %12.8f", value, accum);
         consume_parameters(flags);
     }
 
@@ -219,8 +219,8 @@ public:
             get_allocation_map()[ptr] = value;
             if(err != gpu::success_v && (settings::debug() || settings::verbose() > 1))
             {
-                PRINT_HERE("%s did not return success, values may be corrupted",
-                           m_prefix);
+                TIMEMORY_PRINT_HERE("%s did not return success, values may be corrupted",
+                                    m_prefix);
             }
         }
     }

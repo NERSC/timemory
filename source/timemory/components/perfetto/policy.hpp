@@ -22,4 +22,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/components/timing/extern.hpp"
+#pragma once
+
+namespace tim
+{
+namespace trait
+{
+template <typename ApiT>
+struct perfetto_category;
+}
+
+namespace policy
+{
+template <typename ApiT>
+struct perfetto_category
+{
+    constexpr decltype(auto) operator()() const
+    {
+        return trait::perfetto_category<ApiT>::value;
+    }
+};
+}  // namespace policy
+}  // namespace tim

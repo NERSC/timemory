@@ -23,3 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/components/gotcha/extern.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(malloc_gotcha, true, double)
+TIMEMORY_EXTERN_COMPONENT(memory_allocations, false, void)
+TIMEMORY_EXTERN_STORAGE(tim::alias::malloc_gotcha_type)

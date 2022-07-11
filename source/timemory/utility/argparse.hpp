@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/mpl/concepts.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
@@ -37,6 +38,7 @@
 #include <iosfwd>
 #include <list>
 #include <map>
+#include <memory>
 #include <numeric>
 #include <regex>
 #include <set>
@@ -55,7 +57,7 @@ namespace helpers
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline bool
+inline bool
 not_is_space(int ch)
 {
     return std::isspace(ch) == 0;
@@ -63,7 +65,7 @@ not_is_space(int ch)
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline uint64_t
+inline uint64_t
 lcount(const std::string& s, bool (*f)(int) = not_is_space)
 {
     uint64_t c = 0;
@@ -77,7 +79,7 @@ lcount(const std::string& s, bool (*f)(int) = not_is_space)
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline std::string
+inline std::string
 ltrim(std::string s, bool (*f)(int) = not_is_space)
 {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), f));
@@ -86,7 +88,7 @@ ltrim(std::string s, bool (*f)(int) = not_is_space)
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline std::string
+inline std::string
 rtrim(std::string s, bool (*f)(int) = not_is_space)
 {
     s.erase(std::find_if(s.rbegin(), s.rend(), f).base(), s.end());
@@ -95,7 +97,7 @@ rtrim(std::string s, bool (*f)(int) = not_is_space)
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline std::string
+inline std::string
 trim(std::string s, bool (*f)(int) = not_is_space)
 {
     ltrim(s, f);
@@ -105,7 +107,7 @@ trim(std::string s, bool (*f)(int) = not_is_space)
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline char*
+inline char*
 strdup(const char* s)
 {
     auto  slen   = strlen(s);
@@ -122,7 +124,7 @@ strdup(const char* s)
 //--------------------------------------------------------------------------------------//
 //
 template <typename InputIt>
-static inline std::string
+inline std::string
 join(InputIt begin, InputIt end, const std::string& separator = " ")
 {
     std::ostringstream ss;
@@ -140,7 +142,7 @@ join(InputIt begin, InputIt end, const std::string& separator = " ")
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline bool
+inline bool
 is_numeric(const std::string& arg)
 {
     auto _nidx = arg.find_first_of("0123456789");
@@ -160,7 +162,7 @@ is_numeric(const std::string& arg)
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline int
+inline int
 find_equiv(const std::string& s)
 {
     for(size_t i = 0; i < s.length(); ++i)
@@ -186,7 +188,7 @@ find_equiv(const std::string& s)
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline size_t
+inline size_t
 find_punct(const std::string& s)
 {
     size_t i;
@@ -441,27 +443,28 @@ struct argument_parser
         template <typename T>
         argument& set_default(const T& val)
         {
-            m_found        = true;
-            m_default_tidx = std::type_index{ typeid(decay_t<T>) };
-            m_callback     = [&](void*& obj) {
-                m_destroy(obj);
+            using type =
+                std::conditional_t<concepts::is_string_type<T>::value, std::string, T>;
+            m_default_tidx = std::type_index{ typeid(decay_t<type>) };
+            auto _val      = std::make_shared<type>(val);
+            m_callback     = [_val](void*& obj) {
                 if(!obj)
-                    obj = (void*) new T{};
-                (*static_cast<T*>(obj)) = val;
+                    obj = (void*) new type{};
+                (*static_cast<type*>(obj)) = type{ *_val };
             };
-            m_destroy = [](void*& obj) {
-                if(obj)
-                    delete static_cast<T*>(obj);
-            };
+            m_destroy = [](void*& obj) { delete static_cast<type*>(obj); };
             return *this;
         }
 
         template <typename T>
         argument& set_default(T& val)
         {
-            m_found        = true;
-            m_default_tidx = std::type_index{ typeid(decay_t<T>) };
+            using type =
+                std::conditional_t<concepts::is_string_type<T>::value, std::string, T>;
+            m_default_tidx = std::type_index{ typeid(decay_t<type>) };
             m_callback     = [&](void*& obj) { obj = (void*) &val; };
+            if(m_actions.empty())
+                m_actions.emplace_back([this](argument_parser&) { get<T>(); });
             return *this;
         }
 
@@ -503,6 +506,9 @@ struct argument_parser
         template <typename T>
         std::enable_if_t<helpers::is_container<T>::value, T> get()
         {
+            if(m_values.empty() && m_default &&
+               m_default_tidx == std::type_index{ typeid(T) })
+                return (*static_cast<T*>(m_default));
             T                      t = T{};
             typename T::value_type vt;
             for(auto& s : m_values)
@@ -511,9 +517,6 @@ struct argument_parser
                 in >> vt;
                 t.insert(t.end(), vt);
             }
-            if(m_values.empty() && m_default &&
-               m_default_tidx == std::type_index{ typeid(T) })
-                t = (*static_cast<T*>(m_default));
             return t;
         }
 
@@ -522,18 +525,22 @@ struct argument_parser
             !helpers::is_container<T>::value && !std::is_same<T, bool>::value, T>
         get()
         {
-            auto               inp = get<std::string>();
+            auto inp = get<std::string>();
+            if(inp.empty() && m_default && m_default_tidx == std::type_index{ typeid(T) })
+                return (*static_cast<T*>(m_default));
             std::istringstream iss{ inp };
             T                  t = T{};
             iss >> t >> std::ws;
-            if(inp.empty() && m_default && m_default_tidx == std::type_index{ typeid(T) })
-                t = (*static_cast<T*>(m_default));
             return t;
         }
 
         template <typename T>
         std::enable_if_t<std::is_same<T, bool>::value, T> get()
         {
+            if(m_count == 0 && m_default &&
+               m_default_tidx == std::type_index{ typeid(T) })
+                return (*static_cast<T*>(m_default));
+
             if(m_count == 0)
                 return found();
 
@@ -606,6 +613,7 @@ struct argument_parser
         }
 
         friend struct argument_parser;
+        bool                       m_is_default   = false;
         int                        m_position     = Position::IgnoreArgument;
         int                        m_count        = Count::ANY;
         int                        m_min_count    = Count::ANY;
@@ -984,6 +992,10 @@ struct argument_parser
     //----------------------------------------------------------------------------------//
     //
     void set_help_width(int _v) { m_width = _v; }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void set_description_width(int _v) { m_desc_width = _v; }
 
 private:
     //
@@ -1076,6 +1088,7 @@ private:
     bool                       m_help_enabled   = false;
     int                        m_current        = -1;
     int                        m_width          = 30;
+    size_t                     m_desc_width     = 90;
     std::string                m_desc           = {};
     std::string                m_bin            = {};
     error_func_t               m_error_func     = [](this_type&, const result_type&) {};

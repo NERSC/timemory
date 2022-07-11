@@ -33,5 +33,5 @@
 #include "timemory/components/likwid/components.hpp"
 #include "timemory/components/macros.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(likwid_marker, false, void)
-TIMEMORY_EXTERN_COMPONENT(likwid_nvmarker, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(likwid_marker, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(likwid_nvmarker, false, void)

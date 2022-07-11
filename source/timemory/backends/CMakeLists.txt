@@ -5,7 +5,7 @@ file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 if(TIMEMORY_USE_MPI_INIT)
 
-    build_intermediate_library(
+    timemory_build_intermediate_library(
         NAME mpi_init
         TARGET common
         CATEGORY GLOBAL
@@ -21,7 +21,7 @@ foreach(_category header source)
     list(REMOVE_ITEM ${_category}_files ${mpi_${_category}_files})
 endforeach()
 
-build_intermediate_library(
+timemory_build_intermediate_library(
     USE_INTERFACE INSTALL_SOURCES
     NAME backends
     TARGET common

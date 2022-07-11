@@ -86,9 +86,10 @@ extern "C"
                 char*  _buff = static_cast<char*>(::malloc(_size));
                 if(_buff == nullptr)
                 {
-                    PRINT_HERE("timemory_mallocp was started but malloc(%i) returned a "
-                               "nullptr. Disabling timemory_mallocp",
-                               static_cast<int>(_size));
+                    TIMEMORY_PRINT_HERE(
+                        "timemory_mallocp was started but malloc(%i) returned a "
+                        "nullptr. Disabling timemory_mallocp",
+                        static_cast<int>(_size));
                     _handle->stop();
                     return global_cnt;
                 }

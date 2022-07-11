@@ -30,7 +30,6 @@
 #include "timemory/settings/declaration.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/transient_function.hpp"
-#include "timemory/utility/utility.hpp"
 #include "timemory/variadic/component_bundle.hpp"
 #include "timemory/variadic/macros.hpp"
 #include "timemory/variadic/types.hpp"

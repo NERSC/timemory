@@ -32,12 +32,19 @@
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/demangle.hpp"
 #include "timemory/variadic/types.hpp"
 
 #include <memory>
 #include <set>
 #include <string>
 #include <unordered_map>
+
+#if !defined(TIMEMORY_USE_MPI) && defined(TIMEMORY_USE_MPI_HEADERS) &&                   \
+    !defined(OMPI_SKIP_MPICXX)
+#    define TIMEMORY_UNDEFINE_OMPI_SKIP_MPICXX 1
+#    define OMPI_SKIP_MPICXX 1
+#endif
 
 #if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_MPI_HEADERS)
 #    include <mpi.h>
@@ -56,8 +63,8 @@ namespace component
 //
 template <typename Toolset, typename Tag>
 TIMEMORY_VISIBILITY("default")
-TIMEMORY_NOINLINE void configure_mpip(std::set<std::string> permit = {},
-                                      std::set<std::string> reject = {});
+TIMEMORY_NOINLINE void configure_mpip(const std::set<std::string>& permit = {},
+                                      const std::set<std::string>& reject = {});
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -182,7 +189,7 @@ tim::component::activate_mpip()
             ss << "timemory-mpip-" << demangle<Toolset>() << "-" << demangle<Tag>();
             return ss.str();
         }();
-        DEBUG_PRINT_HERE("Adding cleanup for %s", _label.c_str());
+        TIMEMORY_DEBUG_PRINT_HERE("Adding cleanup for %s", _label.c_str());
         tim::manager::instance()->add_cleanup(_label, cleanup_functor);
         return 1;
     }
@@ -206,7 +213,7 @@ tim::component::deactivate_mpip(uint64_t id)
             ss << "timemory-mpip-" << demangle<Toolset>() << "-" << demangle<Tag>();
             return ss.str();
         }();
-        DEBUG_PRINT_HERE("Removing cleanup for %s", _label.c_str());
+        TIMEMORY_DEBUG_PRINT_HERE("Removing cleanup for %s", _label.c_str());
         tim::manager::instance()->cleanup(_label);
         return 0;
     }
@@ -219,14 +226,16 @@ tim::component::deactivate_mpip(uint64_t id)
     (!defined(TIMEMORY_USE_MPI) && !defined(TIMEMORY_USE_MPI_HEADERS))
 //
 template <typename Toolset, typename Tag>
-void tim::component::configure_mpip(std::set<std::string>, std::set<std::string>)
+void
+tim::component::configure_mpip(const std::set<std::string>&, const std::set<std::string>&)
 {}
 //
 #else
 //
 template <typename Toolset, typename Tag>
 void
-tim::component::configure_mpip(std::set<std::string> permit, std::set<std::string> reject)
+tim::component::configure_mpip(const std::set<std::string>& permit,
+                               const std::set<std::string>& reject)
 {
     static constexpr size_t mpip_wrapper_count = NUM_TIMEMORY_MPIP_WRAPPERS;
     static bool             is_initialized     = false;
@@ -288,14 +297,14 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 48, MPI_Comm_group);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 49, MPI_Comm_idup);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 50, MPI_Comm_join);
-            TIMEMORY_C_GOTCHA(mpip_gotcha_t, 51, MPI_Comm_rank);
+            // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 51, MPI_Comm_rank);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 52, MPI_Comm_remote_group);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 53, MPI_Comm_remote_size);
             // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 54, MPI_Comm_set_attr);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 55, MPI_Comm_set_errhandler);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 56, MPI_Comm_set_info);
             TIMEMORY_C_GOTCHA(mpip_gotcha_t, 57, MPI_Comm_set_name);
-            TIMEMORY_C_GOTCHA(mpip_gotcha_t, 58, MPI_Comm_size);
+            // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 58, MPI_Comm_size);
             // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 59, MPI_Comm_spawn);
             // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 60, MPI_Comm_spawn_multiple);
             // TIMEMORY_C_GOTCHA(mpip_gotcha_t, 61, MPI_Comm_split);
@@ -489,7 +498,8 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
         mpip_gotcha_t::get_reject_list() = [reject]() {
             auto _reject = reject;
             // check environment
-            auto reject_list = tim::get_env<std::string>("TIMEMORY_MPIP_REJECT_LIST", "");
+            auto reject_list = tim::get_env<std::string>(
+                TIMEMORY_SETTINGS_PREFIX "MPIP_REJECT_LIST", "");
             // add environment setting
             for(const auto& itr : tim::delimit(reject_list))
                 _reject.insert(itr);
@@ -500,7 +510,8 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
         mpip_gotcha_t::get_permit_list() = [permit]() {
             auto _permit = permit;
             // check environment
-            auto permit_list = tim::get_env<std::string>("TIMEMORY_MPIP_PERMIT_LIST", "");
+            auto permit_list = tim::get_env<std::string>(
+                TIMEMORY_SETTINGS_PREFIX "MPIP_PERMIT_LIST", "");
             // add environment setting
             for(const auto& itr : tim::delimit(permit_list))
                 _permit.insert(itr);
@@ -515,3 +526,7 @@ tim::component::configure_mpip(std::set<std::string> permit, std::set<std::strin
 //
 //======================================================================================//
 //
+
+#if defined(TIMEMORY_UNDEFINE_OMPI_SKIP_MPICXX) && TIMEMORY_UNDEFINE_OMPI_SKIP_MPICXX
+#    undef OMPI_SKIP_MPICXX
+#endif

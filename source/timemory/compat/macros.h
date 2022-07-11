@@ -24,22 +24,48 @@
 
 #pragma once
 
-#define _TIM_STRINGIZE(X) _TIM_STRINGIZE2(X)
-#define _TIM_STRINGIZE2(X) #X
-#define _TIM_VAR_NAME_COMBINE(X, Y) X##Y
-#define _TIM_VARIABLE(Y) _TIM_VAR_NAME_COMBINE(timemory_variable_, Y)
-#define _TIM_SCOPE_DTOR(Y) _TIM_VAR_NAME_COMBINE(timemory_scoped_dtor_, Y)
-#define _TIM_TYPEDEF(Y) _TIM_VAR_NAME_COMBINE(timemory_typedef_, Y)
-#define _TIM_STORAGE_INIT(Y) _TIM_VAR_NAME_COMBINE(timemory_storage_initializer_, Y)
+#if !defined(TIMEMORY_STRINGIZE)
+#    define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
+#endif
 
-#define _TIM_LINESTR _TIM_STRINGIZE(__LINE__)
+#if !defined(TIMEMORY_STRINGIZE2)
+#    define TIMEMORY_STRINGIZE2(X) #    X
+#endif
 
-#if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
-#    define _TIM_FUNC __PRETTY_FUNCTION__
-#elif defined(TIMEMORY_PRETTY_FUNCTION) && defined(_WINDOWS)
-#    define _TIM_FUNC __FUNCSIG__
-#else
-#    define _TIM_FUNC __FUNCTION__
+#if !defined(TIMEMORY_VAR_NAME_COMBINE)
+#    define TIMEMORY_VAR_NAME_COMBINE(X, Y) X##Y
+#endif
+
+#if !defined(TIMEMORY_VARIABLE)
+#    define TIMEMORY_VARIABLE(Y) TIMEMORY_VAR_NAME_COMBINE(timemory_variable_, Y)
+#endif
+
+#if !defined(TIMEMORY_TYPEDEF_VARIABLE)
+#    define TIMEMORY_TYPEDEF_VARIABLE(Y) TIMEMORY_VAR_NAME_COMBINE(timemory_typedef_, Y)
+#endif
+
+#if !defined(TIMEMORY_STORAGE_INIT_VARIABLE)
+#    define TIMEMORY_STORAGE_INIT_VARIABLE(Y)                                            \
+        TIMEMORY_VAR_NAME_COMBINE(timemory_storage_initializer_, Y)
+#endif
+
+#if !defined(TIMEMORY_PREINIT_VARIABLE)
+#    define TIMEMORY_PREINIT_VARIABLE(Y)                                                 \
+        TIMEMORY_VAR_NAME_COMBINE(timemory_preinitializer_, Y)
+#endif
+
+#if !defined(TIMEMORY_LINESTR)
+#    define TIMEMORY_LINESTR TIMEMORY_STRINGIZE(__LINE__)
+#endif
+
+#if !defined(TIMEMORY_FUNC)
+#    if defined(TIMEMORY_USE_PRETTY_FUNCTION) && !defined(_WINDOWS)
+#        define TIMEMORY_FUNC __PRETTY_FUNCTION__
+#    elif defined(TIMEMORY_USE_PRETTY_FUNCTION) && defined(_WINDOWS)
+#        define TIMEMORY_FUNC __FUNCSIG__
+#    else
+#        define TIMEMORY_FUNC __FUNCTION__
+#    endif
 #endif
 
 #if defined(DISABLE_TIMEMORY) || defined(TIMEMORY_DISABLED)
@@ -170,20 +196,35 @@
 //
 //======================================================================================//
 
-#if !defined(TIMEMORY_VISIBILITY)
-#    if !defined(_MSC_VER)
-#        define TIMEMORY_VISIBILITY(mode) TIMEMORY_ATTRIBUTE(visibility(mode))
-#    else
+#if !defined(TIMEMORY_USE_VISIBILITY) ||                                                 \
+    (defined(TIMEMORY_USE_VISIBILITY) && TIMEMORY_USE_VISIBILITY > 0)
+#    if !defined(TIMEMORY_VISIBILITY)
+#        if !defined(_MSC_VER)
+#            define TIMEMORY_VISIBILITY(mode) TIMEMORY_ATTRIBUTE(visibility(mode))
+#        else
+#            define TIMEMORY_VISIBILITY(mode)
+#        endif
+#    endif
+
+#    if !defined(TIMEMORY_VISIBLE)
+#        define TIMEMORY_VISIBLE TIMEMORY_VISIBILITY("default")
+#    endif
+
+#    if !defined(TIMEMORY_HIDDEN)
+#        define TIMEMORY_HIDDEN TIMEMORY_VISIBILITY("hidden")
+#    endif
+#else
+#    if !defined(TIMEMORY_VISIBILITY)
 #        define TIMEMORY_VISIBILITY(mode)
 #    endif
-#endif
 
-#if !defined(TIMEMORY_VISIBLE)
-#    define TIMEMORY_VISIBLE TIMEMORY_VISIBILITY("default")
-#endif
+#    if !defined(TIMEMORY_VISIBLE)
+#        define TIMEMORY_VISIBLE
+#    endif
 
-#if !defined(TIMEMORY_HIDDEN)
-#    define TIMEMORY_HIDDEN TIMEMORY_VISIBILITY("hidden")
+#    if !defined(TIMEMORY_HIDDEN)
+#        define TIMEMORY_HIDDEN
+#    endif
 #endif
 
 //======================================================================================//

@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "test_macros.hpp"
+#include "timemory/units.hpp"
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
@@ -188,8 +189,9 @@ allocate()
 
 namespace
 {
-bool _memory_units_init = (tim::set_env("TIMEMORY_MEMORY_UNITS", "B", 1), true);
-}
+bool _memory_units_init =
+    (tim::set_env(TIMEMORY_SETTINGS_PREFIX "MEMORY_UNITS", "B", 1), true);
+}  // namespace
 
 namespace trait = ::tim::trait;
 
@@ -319,6 +321,16 @@ print_rusage_cache(const tim::rusage_cache& _rusage)
     if(tim::settings::debug() || tim::settings::verbose() > 0)
         std::cerr << _msg.str() << std::endl;
     return _msg.str();
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cache_tests, units)
+{
+    EXPECT_EQ(peak_rss::get_unit(), tim::units::byte);
+    EXPECT_EQ(page_rss::get_unit(), tim::units::byte);
+    EXPECT_EQ(peak_rss::get_display_unit(), "byte");
+    EXPECT_EQ(page_rss::get_display_unit(), "byte");
 }
 
 //--------------------------------------------------------------------------------------//

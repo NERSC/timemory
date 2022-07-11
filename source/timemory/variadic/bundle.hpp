@@ -29,6 +29,7 @@
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/utility/demangle.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/transient_function.hpp"
 #include "timemory/variadic/base_bundle.hpp"
@@ -385,34 +386,36 @@ public:
     static void init_storage();
 
     /// tells each component to push itself into the call-stack hierarchy
-    this_type& push();
+    this_type& push(int64_t _tid = threading::get_id());
 
     /// tells each component to pop itself off of the call-stack hierarchy
-    this_type& pop();
+    this_type& pop(int64_t _tid = threading::get_id());
 
     /// selective push
     template <typename... Tp>
-    this_type& push(mpl::piecewise_select<Tp...>);
+    this_type& push(mpl::piecewise_select<Tp...>, int64_t _tid = threading::get_id());
 
     /// selective push
     template <typename... Tp>
-    this_type& push(mpl::piecewise_ignore<Tp...>);
+    this_type& push(mpl::piecewise_ignore<Tp...>, int64_t _tid = threading::get_id());
 
     /// selective push with scope configuration
     template <typename... Tp>
-    this_type& push(mpl::piecewise_select<Tp...>, scope::config);
+    this_type& push(mpl::piecewise_select<Tp...>, scope::config,
+                    int64_t _tid = threading::get_id());
 
     /// selective push with scope configuration
     template <typename... Tp>
-    this_type& push(mpl::piecewise_ignore<Tp...>, scope::config);
+    this_type& push(mpl::piecewise_ignore<Tp...>, scope::config,
+                    int64_t _tid = threading::get_id());
 
     /// selective pop
     template <typename... Tp>
-    this_type& pop(mpl::piecewise_select<Tp...>);
+    this_type& pop(mpl::piecewise_select<Tp...>, int64_t _tid = threading::get_id());
 
     /// selective pop
     template <typename... Tp>
-    this_type& pop(mpl::piecewise_ignore<Tp...>);
+    this_type& pop(mpl::piecewise_ignore<Tp...>, int64_t _tid = threading::get_id());
 
     /// requests each component record a measurment
     template <typename... Args>
@@ -471,6 +474,7 @@ public:
     using bundle_type::prefix;
     using bundle_type::size;
     using bundle_type::store;
+    using bundle_type::tid;
 
     /// query the number of (compile-time) fixed components
     static constexpr uint64_t fixed_count();

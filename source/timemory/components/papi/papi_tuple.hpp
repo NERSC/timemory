@@ -76,7 +76,9 @@ struct papi_tuple
     using tracker_type = policy::instance_tracker<papi_tuple<EventTypes...>>;
     using common_type  = this_type;
 
-    static const size_type num_events = sizeof...(EventTypes);
+    static constexpr size_type num_events      = sizeof...(EventTypes);
+    static constexpr size_type event_count_max = num_events;
+
     template <typename Tp>
     using array_t = std::array<Tp, num_events>;
 
@@ -94,9 +96,9 @@ public:
         if(!is_configured<common_type>())
         {
             papi_common::get_initializer<common_type>() = []() {
-                return std::vector<int>({ EventTypes... });
+                return std::vector<int>{ EventTypes... };
             };
-            papi_common::get_events<common_type>() = { EventTypes... };
+            papi_common::get_events<common_type>() = std::vector<int>{ EventTypes... };
             papi_common::initialize<common_type>();
         }
     }
@@ -252,7 +254,7 @@ public:
 
     entry_type get_display(int evt_type) const { return accum[evt_type]; }
 
-    TIMEMORY_NODISCARD string_t get_display() const
+    string_t get_display() const
     {
         auto val          = load();
         auto _get_display = [&](std::ostream& os, size_type idx) {

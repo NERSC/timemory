@@ -33,6 +33,7 @@
 #include "timemory/components/types.hpp"
 #include "timemory/enum.h"
 #include "timemory/environment/declaration.hpp"
+#include "timemory/macros/language.hpp"
 #include "timemory/runtime/macros.hpp"
 
 #include <initializer_list>
@@ -205,10 +206,13 @@ void
 configure(Tp& obj, int idx, Arg&&, Args&&... args);
 //
 int
-enumerate(const std::string& key);
+enumerate(tim::string_view_cref_t key);
 //
-int
-enumerate(const char* key);
+component::info
+get_info(int);
+//
+component::info
+get_info(tim::string_view_cref_t key);
 //
 template <typename Tp>
 void

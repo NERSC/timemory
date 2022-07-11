@@ -236,7 +236,7 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static std::string label() { return "minor_page_flts"; }
+    static std::string label() { return "minor_page_faults"; }
     static std::string description()
     {
         return "Number of page faults serviced without any I/O activity via 'reclaiming' "
@@ -285,7 +285,7 @@ struct num_major_page_faults : public base<num_major_page_faults>
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static std::string label() { return "major_page_flts"; }
+    static std::string label() { return "major_page_faults"; }
     static std::string description()
     {
         return "Number of page faults serviced that required I/O activity";
@@ -463,7 +463,7 @@ struct user_mode_time : public base<user_mode_time, int64_t>
     using this_type  = user_mode_time;
     using base_type  = base<this_type, value_type>;
 
-    static std::string label() { return "user_mode"; }
+    static std::string label() { return "user_mode_time"; }
     static std::string description()
     {
         return "CPU time spent executing in user mode (via rusage)";
@@ -514,7 +514,7 @@ struct kernel_mode_time : public base<kernel_mode_time, int64_t>
     using this_type  = kernel_mode_time;
     using base_type  = base<this_type, value_type>;
 
-    static std::string label() { return "kernel_mode"; }
+    static std::string label() { return "kernel_mode_time"; }
     static std::string description()
     {
         return "CPU time spent executing in kernel mode (via rusage)";

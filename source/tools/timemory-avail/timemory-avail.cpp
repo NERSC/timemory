@@ -87,9 +87,6 @@ dump_log()
     }
 }
 
-static std::tuple<int32_t, std::string>
-get_window_columns();
-
 template <typename IntArrayT, typename BoolArrayT>
 static IntArrayT
 compute_max_columns(IntArrayT _widths, BoolArrayT _using);
@@ -175,7 +172,7 @@ main(int argc, char** argv)
     array_t<bool, 6>     use_mark = {};
 
     std::string cols_via{};
-    std::tie(num_cols, cols_via) = get_window_columns();
+    std::tie(num_cols, cols_via) = tim::utility::console::get_columns();
     std::string col_msg =
         "(default: " + std::to_string(num_cols) + " [via " + cols_via + "])";
 
@@ -1023,26 +1020,6 @@ remove(string_t inp, const std::set<string_t>& entries)
         }
     }
     return inp;
-}
-
-//--------------------------------------------------------------------------------------//
-
-std::tuple<int32_t, std::string>
-get_window_columns()
-{
-    using return_type = std::tuple<int32_t, std::string>;
-#if defined(TIMEMORY_UNIX)
-    struct winsize size;
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &size);
-    return return_type{ size.ws_col - 1, "ioctl" };
-#elif defined(TIMEMORY_WINDOWS)
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-    return return_type{ csbi.srWindow.Right - csbi.srWindow.Left,
-                        "GetConsoleScreenBufferInfo" };
-#else
-    return return_type{ 0, "none" };
-#endif
 }
 
 //--------------------------------------------------------------------------------------//

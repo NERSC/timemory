@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/io/extern/read_bytes.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(read_bytes, true, std::pair<int64_t, int64_t>)

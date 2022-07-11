@@ -39,5 +39,6 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(report_count, component::trip_count, true_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(report_mean, component::trip_count, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(report_self, component::trip_count, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(report_units, component::trip_count, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(report_statistics, component::trip_count, false_type)
 //
 TIMEMORY_PROPERTY_SPECIALIZATION(trip_count, TIMEMORY_TRIP_COUNT, "trip_count", "")

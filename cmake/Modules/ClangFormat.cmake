@@ -161,6 +161,7 @@ if(TIMEMORY_CMAKE_FORMATTER)
         ${PROJECT_SOURCE_DIR}/examples/*/CMakeLists.txt)
 
     list(INSERT CMAKE_FORMAT_FILES 0 ${PROJECT_SOURCE_DIR}/CMakeLists.txt
+         ${PROJECT_SOURCE_DIR}/source/CMakeLists.txt
          ${PROJECT_SOURCE_DIR}/external/CMakeLists.txt)
 
     add_custom_target(

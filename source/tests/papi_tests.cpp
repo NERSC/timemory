@@ -270,6 +270,8 @@ TEST_F(papi_tests, vector_single_precision_ops)
 
 //--------------------------------------------------------------------------------------//
 
+#if !defined(DISABLE_DP) || (defined(DISABLE_DP) && DISABLE_DP == 0)
+
 TEST_F(papi_tests, tuple_double_precision_ops)
 {
     using test_type = papi_tuple<PAPI_DP_OPS>;
@@ -329,6 +331,8 @@ TEST_F(papi_tests, vector_double_precision_ops)
                             "PAPI double ops");
     EXPECT_NEAR(total_measured, total_expected, ops_tolerance);
 }
+
+#endif  // !defined(DISABLE_DP) || (defined(DISABLE_DP) && DISABLE_DP == 0)
 
 //--------------------------------------------------------------------------------------//
 

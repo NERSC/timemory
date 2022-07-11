@@ -146,7 +146,7 @@ if(CMAKE_CUDA_COMPILER)
 endif()
 
 if(_BUILD_SHARED_CXX)
-    build_library(
+    timemory_build_library(
         PIC
         TYPE SHARED
         TARGET_NAME timemory-cxx-shared
@@ -197,7 +197,7 @@ endif()
 
 if(_BUILD_STATIC_CXX)
 
-    build_library(
+    timemory_build_library(
         TYPE STATIC
         TARGET_NAME timemory-cxx-static
         OUTPUT_NAME timemory
@@ -259,7 +259,7 @@ endif()
 if(TIMEMORY_BUILD_C)
 
     if(_BUILD_SHARED_CXX)
-        build_library(
+        timemory_build_library(
             PIC
             TYPE SHARED
             TARGET_NAME timemory-c-shared
@@ -290,7 +290,7 @@ if(TIMEMORY_BUILD_C)
 
     if(_BUILD_STATIC_CXX)
 
-        build_library(
+        timemory_build_library(
             TYPE STATIC
             TARGET_NAME timemory-c-static
             OUTPUT_NAME ctimemory
@@ -327,7 +327,7 @@ endif()
 if(TIMEMORY_BUILD_FORTRAN)
 
     if(_BUILD_SHARED_CXX)
-        build_library(
+        timemory_build_library(
             PIC
             TYPE SHARED
             TARGET_NAME timemory-fortran-shared
@@ -353,7 +353,7 @@ if(TIMEMORY_BUILD_FORTRAN)
 
     if(_BUILD_STATIC_CXX)
 
-        build_library(
+        timemory_build_library(
             TYPE STATIC
             TARGET_NAME timemory-fortran-static
             OUTPUT_NAME ftimemory
@@ -418,8 +418,8 @@ if(TARGET timemory-mpip-shared)
     target_link_libraries(timemory-mpip-library INTERFACE timemory-mpip-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-mpip-shared)
 else()
-    inform_empty_interface(timemory-mpip-library
-                           "MPIP standalone instrumentation library")
+    timemory_inform_empty_interface(timemory-mpip-library
+                                    "MPIP standalone instrumentation library")
     set(TIMEMORY_BUILD_MPIP_LIBRARY
         OFF
         PARENT_SCOPE)
@@ -430,8 +430,8 @@ if(_OMPT_LIB)
                                         TIMEMORY_USE_OMPT_LIBRARY)
     target_link_libraries(timemory-ompt-library INTERFACE timemory-ompt ${_OMPT_LIB})
 else()
-    inform_empty_interface(timemory-ompt-library
-                           "OpenMP stand-alone instrumentation library")
+    timemory_inform_empty_interface(timemory-ompt-library
+                                    "OpenMP stand-alone instrumentation library")
     set(TIMEMORY_BUILD_OMPT_LIBRARY
         OFF
         PARENT_SCOPE)
@@ -443,8 +443,8 @@ if(TARGET timemory-ncclp-shared)
     target_link_libraries(timemory-ncclp-library INTERFACE timemory-ncclp-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-ncclp-shared)
 else()
-    inform_empty_interface(timemory-ncclp-library
-                           "NCCLP standalone instrumentation library")
+    timemory_inform_empty_interface(timemory-ncclp-library
+                                    "NCCLP standalone instrumentation library")
     set(TIMEMORY_BUILD_NCCLP_LIBRARY
         OFF
         PARENT_SCOPE)
@@ -456,8 +456,8 @@ if(TARGET timemory-mallocp-shared)
     target_link_libraries(timemory-mallocp-library INTERFACE timemory-mallocp-shared)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-mallocp-shared)
 else()
-    inform_empty_interface(timemory-mallocp-library
-                           "MALLOCP standalone instrumentation library")
+    timemory_inform_empty_interface(timemory-mallocp-library
+                                    "MALLOCP standalone instrumentation library")
     set(TIMEMORY_BUILD_MALLOCP_LIBRARY
         OFF
         PARENT_SCOPE)
@@ -479,8 +479,8 @@ elseif(TARGET timemory-compiler-instrument-static)
                           INTERFACE timemory-compiler-instrument-static)
     list(APPEND TIMEMORY_TOOL_LIBRARIES timemory-compiler-instrument-static)
 else()
-    inform_empty_interface(timemory-compiler-instrument
-                           "Compiler instrumentation library")
+    timemory_inform_empty_interface(timemory-compiler-instrument
+                                    "Compiler instrumentation library")
 endif()
 
 # ----------------------------------------------------------------------------------------#

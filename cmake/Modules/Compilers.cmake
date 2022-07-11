@@ -31,8 +31,8 @@ if("${LIBNAME}" STREQUAL "")
     string(TOLOWER "${PROJECT_NAME}" LIBNAME)
 endif()
 
-add_interface_library(${LIBNAME}-compile-options
-                      "Adds the standard set of compiler flags used by timemory")
+timemory_add_interface_library(${LIBNAME}-compile-options
+                               "Adds the standard set of compiler flags used by timemory")
 
 # ----------------------------------------------------------------------------------------#
 # macro converting string to list
@@ -457,6 +457,9 @@ endfunction()
 # ----------------------------------------------------------------------------------------#
 function(TIMEMORY_TARGET_COMPILE_DEFINITIONS _TARG _VIS)
     foreach(_DEF ${ARGN})
+        if(NOT "${_DEF}" MATCHES "[A-Za-z_]+=.*" AND "${_DEF}" MATCHES "^TIMEMORY_")
+            set(_DEF "${_DEF}=1")
+        endif()
         target_compile_definitions(${_TARG} ${_VIS} $<$<COMPILE_LANGUAGE:CXX>:${_DEF}>)
         if(CMAKE_CUDA_COMPILER_IS_NVIDIA)
             target_compile_definitions(${_TARG} ${_VIS}

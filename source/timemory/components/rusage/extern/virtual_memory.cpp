@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/rusage/extern/virtual_memory.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(virtual_memory, true, int64_t)

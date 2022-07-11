@@ -30,6 +30,7 @@
 #include "timemory/settings/vsettings.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/argparse.hpp"
+#include "timemory/utility/demangle.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <cstdlib>
@@ -104,12 +105,13 @@ public:
     Tp          get_value(const std::string& val) const;
     std::string as_string() const override;
 
-    void set(Tp);
-    void reset() final;
-    void parse() final;
-    void parse(const std::string& v) final;
-    void clone(std::shared_ptr<vsettings> rhs) final;
+    bool set(Tp);
+    bool reset() final;
+    bool parse() final;
+    bool parse(const std::string& v) final;
+    bool is_updated() final { return (m_value != m_init); }
     void add_argument(argparse::argument_parser& p) final;
+    void clone(const std::shared_ptr<vsettings>& rhs) final;
 
     vpointer_t    clone() final;
     parser_func_t get_action(TIMEMORY_API) override;
@@ -151,6 +153,7 @@ private:
         TIMEMORY_VISIBILITY("hidden");
 
 private:
+    using base_type::m_categories;
     using base_type::m_count;
     using base_type::m_description;
     using base_type::m_env_name;
@@ -216,12 +219,12 @@ tsettings<Tp, Vp>::get_value(const std::string& val) const
 }
 //
 template <typename Tp, typename Vp>
-void
+bool
 tsettings<Tp, Vp>::set(Tp _value)
 {
     auto _old = m_value;
     m_value   = std::move(_value);
-    report_change(std::move(_old), m_value);
+    return report_change(std::move(_old), m_value);
 }
 //
 template <typename Tp, typename Vp>
@@ -235,36 +238,45 @@ tsettings<Tp, Vp>::as_string() const
 }
 //
 template <typename Tp, typename Vp>
-void
+bool
 tsettings<Tp, Vp>::reset()
 {
-    set(m_init);
+    return set(m_init);
 }
 //
 template <typename Tp, typename Vp>
-void
+bool
 tsettings<Tp, Vp>::parse()
 {
     if(!m_env_name.empty())
     {
         char* c_env_val = std::getenv(m_env_name.c_str());
         if(c_env_val)
-            parse(std::string{ c_env_val });
+        {
+            auto _updated = parse(std::string{ c_env_val });
+            if(_updated)
+            {
+                set_config_updated(false);
+                set_environ_updated(true);
+            }
+            return _updated;
+        }
     }
+    return false;
 }
 //
 template <typename Tp, typename Vp>
-void
+bool
 tsettings<Tp, Vp>::parse(const std::string& v)
 {
-    set(std::move(get_value<decay_t<Tp>>(v)));
+    return set(std::move(get_value<decay_t<Tp>>(v)));
 }
 //
 template <typename Tp, typename Vp>
 void
 tsettings<Tp, Vp>::add_argument(argparse::argument_parser& p)
 {
-    if(!m_cmdline.empty())
+    if(!m_cmdline.empty() && m_enabled)
     {
         if(std::is_same<Tp, bool>::value)
             m_max_count = 1;
@@ -278,8 +290,10 @@ tsettings<Tp, Vp>::add_argument(argparse::argument_parser& p)
 //
 template <typename Tp, typename Vp>
 void
-tsettings<Tp, Vp>::clone(std::shared_ptr<vsettings> rhs)
+tsettings<Tp, Vp>::clone(const std::shared_ptr<vsettings>& rhs)
 {
+    if(!rhs)
+        return;
     vsettings::clone(rhs);
     if(dynamic_cast<tsettings<Tp>*>(rhs.get()))
     {
@@ -298,9 +312,10 @@ tsettings<Tp, Vp>::clone()
     using Up = decay_t<Tp>;
     return std::make_shared<tsettings<Up>>(
         noparse{}, Up{ m_value }, std::string{ m_name }, std::string{ m_env_name },
-        std::string{ m_description }, std::vector<std::string>{ m_cmdline },
-        int32_t{ m_count }, int32_t{ m_max_count },
-        std::vector<std::string>{ m_choices });
+        std::string{ m_description }, std::set<std::string>{ m_categories },
+        std::vector<std::string>{ m_cmdline }, int32_t{ m_count }, int32_t{ m_max_count },
+        std::vector<std::string>{ m_choices }, bool{ m_cfg_updated },
+        bool{ m_env_updated }, bool{ m_enabled }, bool{ m_hidden });
 }
 //
 template <typename Tp, typename Vp>
@@ -343,15 +358,19 @@ tsettings<Tp, Vp>::save(Archive& ar, const unsigned int,
     ar(cereal::make_nvp("count", m_count));
     ar(cereal::make_nvp("max_count", m_max_count));
     ar(cereal::make_nvp("cmdline", m_cmdline));
+    ar(cereal::make_nvp("categories", m_categories));
     ar(cereal::make_nvp("data_type", _dtype));
     ar(cereal::make_nvp("initial", m_init));
     ar(cereal::make_nvp("value", m_value));
+    ar(cereal::make_nvp("config_updated", m_cfg_updated));
+    ar(cereal::make_nvp("environ_updated", m_env_updated));
+    ar(cereal::make_nvp("enabled", m_enabled));
 }
 //
 template <typename Tp, typename Vp>
 template <typename Archive>
 void
-tsettings<Tp, Vp>::load(Archive& ar, const unsigned int)
+tsettings<Tp, Vp>::load(Archive& ar, const unsigned int ver)
 {
     try
     {
@@ -364,9 +383,13 @@ tsettings<Tp, Vp>::load(Archive& ar, const unsigned int)
         ar(cereal::make_nvp("cmdline", m_cmdline));
         ar(cereal::make_nvp("data_type", _dtype));
         ar(cereal::make_nvp("initial", m_init));
+        if(ver > 0)
+            ar(cereal::make_nvp("categories", m_categories));
     } catch(...)
     {}
     ar(cereal::make_nvp("value", m_value));
+    if(m_value != m_init)
+        set_config_updated(true);
 }
 //
 template <typename Tp, typename Vp>

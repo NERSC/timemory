@@ -24,19 +24,21 @@
 
 #pragma once
 
-#include <functional>
-#include <map>
-#include <set>
-#include <string>
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_PAPI_EXTERN) &&                \
+    !defined(TIMEMORY_CMAKE)
+#    define TIMEMORY_USE_PAPI_EXTERN
+#endif
 
-namespace tim
-{
-namespace runtime
-{
-struct user_components
-{
-    using enum_key_map_t = std::map<int, std::set<std::string>>;
-};
+#if defined(TIMEMORY_PAPI_SOURCE)
+#    define TIMEMORY_PAPI_INLINE
+#elif defined(TIMEMORY_USE_PAPI_EXTERN)
+#    define TIMEMORY_PAPI_INLINE
+#else
+#    define TIMEMORY_PAPI_INLINE inline
+#endif
 
-}  // namespace runtime
-}  // namespace tim
+#if !defined(TIMEMORY_PAPI_SOURCE) && !defined(TIMEMORY_USE_PAPI_EXTERN)
+#    if !defined(TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE)
+#        define TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE 1
+#    endif
+#endif

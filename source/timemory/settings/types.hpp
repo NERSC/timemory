@@ -58,9 +58,30 @@ struct TIMEMORY_VISIBILITY("default") tsettings;
 //
 struct TIMEMORY_VISIBILITY("default") settings;
 //
+namespace operation
+{
+template <typename Tp, typename TagT = void>
+struct setting_serialization;
+}  // namespace operation
+//
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace tim
 
 TIMEMORY_SET_CLASS_VERSION(2, ::tim::settings)
-TIMEMORY_SET_CLASS_VERSION(0, ::tim::vsettings)
+TIMEMORY_SET_CLASS_VERSION(1, ::tim::vsettings)
+
+namespace tim
+{
+namespace cereal
+{
+namespace detail
+{
+template <typename Tp, typename Vp>
+struct StaticVersion<tsettings<Tp, Vp>>
+{
+    static constexpr std::uint32_t version = 1;
+};
+}  // namespace detail
+}  // namespace cereal
+}  // namespace tim

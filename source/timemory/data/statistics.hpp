@@ -306,8 +306,77 @@ public:
            cereal::make_nvp("count", m_cnt));
     }
 };
+//
+template <>
+struct statistics<std::tuple<>>
+{
+public:
+    using value_type   = std::tuple<>;
+    using this_type    = statistics<std::tuple<>>;
+    using compute_type = math::compute<std::tuple<>, std::tuple<>>;
+    template <typename Vp>
+    using compute_value_t = math::compute<std::tuple<>, Vp>;
 
-//======================================================================================//
+public:
+    inline statistics()                      = default;
+    inline ~statistics()                     = default;
+    inline statistics(const statistics&)     = default;
+    inline statistics(statistics&&) noexcept = default;
+    inline statistics& operator=(const statistics&) = default;
+    inline statistics& operator=(statistics&&) noexcept = default;
+
+    inline explicit statistics(const value_type&) {}
+    inline explicit statistics(value_type&&) {}
+
+    statistics& operator=(const value_type&) { return *this; }
+
+public:
+    // Accumulated values
+    static inline int64_t    get_count() { return 0; }
+    static inline value_type get_min() { return value_type{}; }
+    static inline value_type get_max() { return value_type{}; }
+    static inline value_type get_sum() { return value_type{}; }
+    static inline value_type get_sqr() { return value_type{}; }
+    static inline value_type get_mean() { return value_type{}; }
+    static inline value_type get_variance() { return value_type{}; }
+    static inline value_type get_stddev() { return value_type{}; }
+    static inline void       reset() {}
+
+public:
+    // Operators (value_type)
+    inline statistics& operator+=(const value_type&) { return *this; }
+    inline statistics& operator-=(const value_type&) { return *this; }
+    inline statistics& operator*=(const value_type&) { return *this; }
+    inline statistics& operator/=(const value_type&) { return *this; }
+
+public:
+    // Operators (this_type)
+    inline statistics& operator+=(const statistics&) { return *this; }
+    inline statistics& operator-=(const statistics&) { return *this; }
+
+public:
+    // friend operator for output
+    friend std::ostream& operator<<(std::ostream& os, const statistics&) { return os; }
+
+    // friend operator for addition
+    friend statistics operator+(const statistics&, const statistics&)
+    {
+        return statistics{};
+    }
+
+    friend statistics operator-(const statistics&, const statistics&)
+    {
+        return statistics{};
+    }
+
+    template <typename Archive>
+    void save(Archive&, const unsigned int) const
+    {}
+
+    template <typename Archive>
+    void load(Archive&, const unsigned int)
+    {}
+};
 
 }  // namespace tim
 

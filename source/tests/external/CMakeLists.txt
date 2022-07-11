@@ -2,6 +2,8 @@ if(NOT TIMEMORY_BUILD_GOOGLE_TEST)
     return()
 endif()
 
+set(CMAKE_CXX_VISIBILITY_PRESET "default")
+
 set(_EXCLUDE)
 if(NOT TIMEMORY_BUILD_TESTING
    OR NOT timemory_MAIN_PROJECT
@@ -62,5 +64,10 @@ if(_LIB_TAG AND _LIB_TYPE)
 endif()
 
 if(TIMEMORY_USE_NCCL AND TIMEMORY_BUILD_NCCLP_LIBRARY)
+    timemory_checkout_git_submodule(
+        RELATIVE_PATH source/tests/external/nccl-tests
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://github.com/jrmadsen/nccl-tests.git
+        REPO_BRANCH timemory)
     add_subdirectory(nccl-tests)
 endif()

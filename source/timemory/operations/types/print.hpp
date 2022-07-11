@@ -149,7 +149,7 @@ struct print
                 utility::write_entry(_os, "SUM", _empty_data);
             if(trait::report<type>::mean())
                 utility::write_entry(_os, "MEAN", _empty_data);
-            if(trait::report<type>::stats())
+            if(trait::report<type>::stats() && print_statistics<Tp>{}(_stats))
             {
                 if(trait::report<type>::min())
                     utility::write_entry(_os, "MIN", _empty_data);

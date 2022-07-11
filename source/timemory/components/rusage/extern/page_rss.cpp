@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/rusage/extern/page_rss.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(page_rss, true, int64_t)

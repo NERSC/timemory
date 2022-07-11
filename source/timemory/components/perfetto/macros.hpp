@@ -26,6 +26,12 @@
 
 #include "timemory/mpl/types.hpp"
 
+#if !defined(TIMEMORY_COMPONENT_SOURCE) && !defined(TIMEMORY_USE_PERFETTO_EXTERN)
+#    if !defined(TIMEMORY_COMPONENT_PERFETTO_HEADER_ONLY_MODE)
+#        define TIMEMORY_COMPONENT_PERFETTO_HEADER_ONLY_MODE 1
+#    endif
+#endif
+
 #if !defined(TIMEMORY_PERFETTO_CATEGORY_NAME)
 #    define TIMEMORY_PERFETTO_CATEGORY_NAME(TYPE, NAME)                                  \
         namespace tim                                                                    \

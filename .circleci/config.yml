@@ -12,7 +12,7 @@ jobs:
           name: apt-fixes
           command: >
             apt-get update &&
-            apt-get install -y git ssh
+            apt-get install -y git ssh autoconf libtool
       - checkout
       - run:
           name: build
@@ -39,7 +39,7 @@ jobs:
           name: apt-fixes
           command: >
             apt-get update &&
-            apt-get install -y git ssh
+            apt-get install -y git ssh autoconf libtool
       - checkout
       - run:
           name: conda-installation
@@ -48,7 +48,7 @@ jobs:
             bash ${HOME}/miniconda.sh -b -p ${HOME}/miniconda &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             conda config --set always_yes yes &&
-            conda create -c conda-forge -c defaults -n timemory-ci python=3.7 scikit-build ninja cython matplotlib pillow six pandas pydot multiprocess pip &&
+            conda create -c defaults -c conda-forge -n timemory-ci python=3.7 scikit-build ninja cython matplotlib pillow six pandas pydot multiprocess pip &&
             source activate timemory-ci &&
             python -m pip install -r requirements.txt
       - run:
@@ -81,7 +81,7 @@ jobs:
             --disable-build-caliper
             --disable-build-gotcha
             --cxx-standard=17
-            -- -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=OFF -DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF -DTIMEMORY_UNITY_BUILD=OFF -- -j1 &&
+            -- -DTIMEMORY_REQUIRE_PACKAGES=OFF -DTIMEMORY_BUILD_COMPILER_INSTRUMENTATION=OFF -DTIMEMORY_BUILD_KOKKOS_CONFIG=OFF -DTIMEMORY_UNITY_BUILD=OFF -DTIMEMORY_USE_LIBUNWIND=OFF -- -j1 &&
             rm -f .hold &&
             SUBPACKAGES="api bundle common component hardware_counters mpi bundle options plotting profiler region roofline settings signals trace units util";
             python -c "import timemory";
@@ -96,7 +96,7 @@ jobs:
           name: apt-fixes
           command: >
             apt-get update &&
-            apt-get install -y git ssh
+            apt-get install -y git ssh autoconf libtool
       - checkout
       - run:
           name: conda-installation
@@ -110,7 +110,7 @@ jobs:
       - run:
           name: build
           command: >
-            export CONTINUOUS_INTEGRATION=true
+            export CONTINUOUS_INTEGRATION=true &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&
@@ -141,7 +141,7 @@ jobs:
           name: apt-fixes
           command: >
             apt-get update &&
-            apt-get install -y git ssh
+            apt-get install -y git ssh autoconf libtool
       - checkout
       - run:
           name: conda-installation
@@ -155,26 +155,30 @@ jobs:
       - run:
           name: build
           command: >
-            export CONTINUOUS_INTEGRATION=true
+            export CTEST_PARALLEL_LEVEL=2 &&
+            export CONTINUOUS_INTEGRATION=true &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&
-            python ./pyctest-runner.py -SF --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -j 1
+            python ./pyctest-runner.py -F --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -T Start Update Configure
             --build-libs shared
             --mpi
-            --papi
             --gotcha
             --tools mpip mallocp dyninst
             --cxx-standard=17
-            --compile-time-perf ${HOME}/ctp
-            -- -V --output-on-failure
-            -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install
+            -- -VV
+            -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install &&
+            cmake --build build-timemory/Linux --target all --parallel 2 &&
+            pushd build-timemory/Linux &&
+            ctest --output-on-failure &&
+            popd
       - run:
           name: install
           command: >
             cmake --build build-timemory/Linux --target install --parallel 2 &&
             export CMAKE_PREFIX_PATH=${HOME}/timemory-install:${CMAKE_PREFIX_PATH} &&
             cmake -B build-examples -DUSE_MPI=ON examples
+    resource_class: large
   gpu-dev-build:
     docker:
       - image: jrmadsen/timemory:dev-gpu
@@ -183,7 +187,7 @@ jobs:
           name: apt-fixes
           command: >
             apt-get update &&
-            apt-get install -y git ssh
+            apt-get install -y git ssh autoconf libtool
       - checkout
       - run:
           name: conda-installation
@@ -197,8 +201,9 @@ jobs:
       - run:
           name: build
           command: >
-            export CONTINUOUS_INTEGRATION=true
+            export CONTINUOUS_INTEGRATION=true &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
+            $(spack load --sh cuda) &&
             source activate &&
             conda activate pyctest &&
             export CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}:$(dirname $(dirname $(find /opt/software/ | grep 'cuda-' | grep 'cuda\.h$')))" &&
@@ -236,7 +241,7 @@ jobs:
       - run:
           name: build
           command: >
-            export CONTINUOUS_INTEGRATION=true
+            export CONTINUOUS_INTEGRATION=true &&
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&

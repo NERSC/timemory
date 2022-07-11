@@ -243,7 +243,8 @@ endif()
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(CpuArch_INPUT
         "/proc/cpuinfo"
-        CACHE FILEPATH "File used to get CpuArch features")
+        CACHE INTERNAL "File used to get CpuArch features")
+    mark_as_advanced(CpuArch_INPUT)
 endif()
 
 # ----------------------------------------------------------------------------------------#

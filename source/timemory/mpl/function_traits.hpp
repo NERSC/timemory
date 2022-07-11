@@ -33,8 +33,9 @@
 #    pragma GCC diagnostic ignored "-Wignored-attributes"
 #endif
 
+#include "timemory/utility/type_list.hpp"
+
 #include <functional>
-#include <tuple>
 #include <type_traits>
 
 namespace tim
@@ -57,7 +58,7 @@ struct function_traits<std::function<R(Args...)>>
     static constexpr bool   is_const  = false;
     static constexpr size_t nargs     = sizeof...(Args);
     using result_type                 = R;
-    using args_type                   = std::tuple<Args...>;
+    using args_type                   = type_list<Args...>;
     using call_type                   = args_type;
 };
 
@@ -68,7 +69,7 @@ struct function_traits<R (*)(Args...)>
     static constexpr bool   is_const  = false;
     static constexpr size_t nargs     = sizeof...(Args);
     using result_type                 = R;
-    using args_type                   = std::tuple<Args...>;
+    using args_type                   = type_list<Args...>;
     using call_type                   = args_type;
 };
 
@@ -79,7 +80,7 @@ struct function_traits<R(Args...)>
     static constexpr bool   is_const  = false;
     static constexpr size_t nargs     = sizeof...(Args);
     using result_type                 = R;
-    using args_type                   = std::tuple<Args...>;
+    using args_type                   = type_list<Args...>;
     using call_type                   = args_type;
 };
 
@@ -91,8 +92,8 @@ struct function_traits<R (C::*)(Args...)>
     static constexpr bool   is_const  = false;
     static constexpr size_t nargs     = sizeof...(Args);
     using result_type                 = R;
-    using args_type                   = std::tuple<Args...>;
-    using call_type                   = std::tuple<C&, Args...>;
+    using args_type                   = type_list<Args...>;
+    using call_type                   = type_list<C&, Args...>;
 };
 
 // const member function pointer
@@ -103,8 +104,8 @@ struct function_traits<R (C::*)(Args...) const>
     static constexpr bool   is_const  = true;
     static constexpr size_t nargs     = sizeof...(Args);
     using result_type                 = R;
-    using args_type                   = std::tuple<Args...>;
-    using call_type                   = std::tuple<C&, Args...>;
+    using args_type                   = type_list<Args...>;
+    using call_type                   = type_list<C&, Args...>;
 };
 
 // member object pointer
@@ -115,8 +116,8 @@ struct function_traits<R(C::*)>
     static constexpr bool is_const  = false;
     static const size_t   nargs     = 0;
     using result_type               = R;
-    using args_type                 = std::tuple<>;
-    using call_type                 = std::tuple<C&>;
+    using args_type                 = type_list<>;
+    using call_type                 = type_list<C&>;
 };
 
 #if __cplusplus >= 201703L
@@ -128,7 +129,7 @@ struct function_traits<std::function<R(Args...) noexcept>>
     static constexpr bool   is_const  = false;
     static constexpr size_t nargs     = sizeof...(Args);
     using result_type                 = R;
-    using args_type                   = std::tuple<Args...>;
+    using args_type                   = type_list<Args...>;
     using call_type                   = args_type;
 };
 
@@ -139,7 +140,7 @@ struct function_traits<R (*)(Args...) noexcept>
     static constexpr bool   is_const  = false;
     static constexpr size_t nargs     = sizeof...(Args);
     using result_type                 = R;
-    using args_type                   = std::tuple<Args...>;
+    using args_type                   = type_list<Args...>;
     using call_type                   = args_type;
 };
 
@@ -150,7 +151,7 @@ struct function_traits<R(Args...) noexcept>
     static constexpr bool   is_const  = false;
     static constexpr size_t nargs     = sizeof...(Args);
     using result_type                 = R;
-    using args_type                   = std::tuple<Args...>;
+    using args_type                   = type_list<Args...>;
     using call_type                   = args_type;
 };
 
@@ -162,8 +163,8 @@ struct function_traits<R (C::*)(Args...) noexcept>
     static constexpr bool   is_const  = false;
     static constexpr size_t nargs     = sizeof...(Args);
     using result_type                 = R;
-    using args_type                   = std::tuple<Args...>;
-    using call_type                   = std::tuple<C&, Args...>;
+    using args_type                   = type_list<Args...>;
+    using call_type                   = type_list<C&, Args...>;
 };
 
 // const member function pointer
@@ -174,8 +175,8 @@ struct function_traits<R (C::*)(Args...) const noexcept>
     static constexpr bool   is_const  = true;
     static constexpr size_t nargs     = sizeof...(Args);
     using result_type                 = R;
-    using args_type                   = std::tuple<Args...>;
-    using call_type                   = std::tuple<C&, Args...>;
+    using args_type                   = type_list<Args...>;
+    using call_type                   = type_list<C&, Args...>;
 };
 
 #endif

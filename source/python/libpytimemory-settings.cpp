@@ -27,6 +27,7 @@
 #endif
 
 #include "libpytimemory-components.hpp"
+#include "timemory/defines.h"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/filepath.hpp"
@@ -256,14 +257,14 @@ generate(py::module& _pymod)
             }
         }
 
-        DEBUG_PRINT_HERE("%s", "starting loop");
+        TIMEMORY_DEBUG_PRINT_HERE("%s", "starting loop");
         for(const auto& itr : _obj->ordering())
         {
-            DEBUG_PRINT_HERE("searching for %s", itr.c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("searching for %s", itr.c_str());
             auto sitr = _obj->find(itr);
             if(sitr != _obj->end() && sitr->second)
             {
-                DEBUG_PRINT_HERE("adding args for %s", sitr->first.data());
+                TIMEMORY_DEBUG_PRINT_HERE("adding args for %s", sitr->first.data());
                 bool _add = true;
                 if(!fields.empty())
                 {
@@ -301,7 +302,7 @@ generate(py::module& _pymod)
                 auto vec = tim::delimit(str, " \t;:");
                 for(auto itr : vec)
                 {
-                    DEBUG_PRINT_HERE("Processing: %s", itr.c_str());
+                    TIMEMORY_DEBUG_PRINT_HERE("Processing: %s", itr.c_str());
                     auto _pos = itr.find('=');
                     auto _key = itr.substr(0, _pos);
                     auto _val = (_pos == std::string::npos) ? "" : itr.substr(_pos + 1);
@@ -370,8 +371,9 @@ generate(py::module& _pymod)
             if(!tim::filepath::open(_ofs, _fname))
                 throw std::runtime_error("Error opening " + _fname + " for output");
             if(tim::settings::verbose() > 0)
-                printf("[%s]|%i> Outputting '%s'...\n", "settings", tim::dmp::rank(),
-                       _fname.c_str());
+                fprintf(stderr, "[%s][%s]|%i> Outputting '%s'...\n",
+                        TIMEMORY_PROJECT_NAME, "settings", tim::dmp::rank(),
+                        _fname.c_str());
             _ofs << _ss.str() << "\n";
         }
         return py::module::import("json").attr("loads")(_ss.str());

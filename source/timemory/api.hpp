@@ -46,16 +46,27 @@ TIMEMORY_DECLARE_NS_API(device, gpu)  // collects data on GPU
 //
 // Category APIs
 //
-TIMEMORY_DEFINE_NS_API(category, debugger)          // provided debugging utilities
-TIMEMORY_DEFINE_NS_API(category, decorator)         // decorates external profiler
-TIMEMORY_DEFINE_NS_API(category, external)          // relies on external package
-TIMEMORY_DEFINE_NS_API(category, io)                // collects I/O data
-TIMEMORY_DEFINE_NS_API(category, logger)            // logs generic data or messages
-TIMEMORY_DEFINE_NS_API(category, hardware_counter)  // collects HW counter data
-TIMEMORY_DEFINE_NS_API(category, memory)            // collects memory data
-TIMEMORY_DEFINE_NS_API(category, resource_usage)    // collects resource usage data
-TIMEMORY_DEFINE_NS_API(category, timing)            // collects timing data
-TIMEMORY_DEFINE_NS_API(category, visualization)     // related to viz (currently unused)
+TIMEMORY_DEFINE_NS_API(category, debugger)            // provided debugging utilities
+TIMEMORY_DEFINE_NS_API(category, decorator)           // decorates external profiler
+TIMEMORY_DEFINE_NS_API(category, external)            // relies on external package
+TIMEMORY_DEFINE_NS_API(category, gotcha_manager)      // manages a set of gotcha bindings
+TIMEMORY_DEFINE_NS_API(category, gotcha_replace)      // replaces function(s) via gotcha
+TIMEMORY_DEFINE_NS_API(category, gotcha_wrapper)      // wraps function(s) via gotcha
+TIMEMORY_DEFINE_NS_API(category, interrupt_sampling)  // samples via software interrupts
+TIMEMORY_DEFINE_NS_API(category, io)                  // collects I/O data
+TIMEMORY_DEFINE_NS_API(category, logger)              // logs generic data or messages
+TIMEMORY_DEFINE_NS_API(category, hardware_counter)    // collects HW counter data
+TIMEMORY_DEFINE_NS_API(category, memory)              // collects memory data
+TIMEMORY_DEFINE_NS_API(category, power)               // collects power data
+TIMEMORY_DEFINE_NS_API(category, resource_usage)      // collects resource usage data
+TIMEMORY_DEFINE_NS_API(category, sampling)            // collects via sampling intervals
+TIMEMORY_DEFINE_NS_API(category, temperature)         // collects temperature data
+TIMEMORY_DEFINE_NS_API(category, thread_sampling)     // samples in background thread
+TIMEMORY_DEFINE_NS_API(category, timing)              // collects timing data
+TIMEMORY_DEFINE_NS_API(category, utilization)         // collects utilization data
+TIMEMORY_DEFINE_NS_API(category, visualization)       // related to viz (unused)
+TIMEMORY_DEFINE_NS_API(
+    category, dynamic_instrumentation)  // invoked through dynamic instrumentation
 //
 // External Third-party library APIs
 //
@@ -70,6 +81,7 @@ TIMEMORY_DEFINE_NS_API(tpls, nvidia)
 TIMEMORY_DEFINE_NS_API(tpls, openmp)
 TIMEMORY_DEFINE_NS_API(tpls, rocm)
 TIMEMORY_DEFINE_NS_API(tpls, papi)
+TIMEMORY_DEFINE_NS_API(tpls, perfetto)
 TIMEMORY_DEFINE_NS_API(tpls, tau)
 //
 // OS-specific APIs
@@ -88,11 +100,25 @@ TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, project::python, true_
 TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::debugger, true_type)
 TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::decorator, true_type)
 TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::external, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::gotcha_manager,
+                                 true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::gotcha_replace,
+                                 true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::gotcha_wrapper,
+                                 true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::interrupt_sampling,
+                                 true_type)
 TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::io, true_type)
 TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::logger, true_type)
 TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::hardware_counter,
                                  true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::power, true_type)
 TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::resource_usage,
+                                 true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::sampling, true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::temperature,
+                                 true_type)
+TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::thread_sampling,
                                  true_type)
 TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::timing, true_type)
 TIMEMORY_DEFINE_CONCRETE_CONCEPT(is_runtime_configurable, category::visualization,

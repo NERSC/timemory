@@ -33,6 +33,7 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/utility/demangle.hpp"
 
 namespace tim
 {
@@ -68,12 +69,12 @@ record_statistics<CompT, Tp>::operator()(statistics<Tp>& _stats, const CompT& _o
         }
         else
         {
-            CONDITIONAL_PRINT_HERE(settings::debug(),
-                                   "Updating statistics<%s> skipped for %s. Laps: %lu > "
-                                   "1",
-                                   demangle<Tp>().c_str(),
-                                   demangle<component_type>().c_str(),
-                                   (unsigned long) _obj.get_laps());
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                settings::debug(),
+                "Updating statistics<%s> skipped for %s. Laps: %lu > "
+                "1",
+                demangle<Tp>().c_str(), demangle<component_type>().c_str(),
+                (unsigned long) _obj.get_laps());
         }
     }
     else
@@ -149,7 +150,7 @@ struct add_statistics
     template <typename StatsT, typename U = type>
     TIMEMORY_INLINE void operator()(
         const U& rhs, StatsT& stats, bool _last = false,
-        enable_if_t<enabled_statistics<U, StatsT>::value, int> = 0) const;
+        enable_if_t<stats_enabled<U, StatsT>::value, int> = 0) const;
 
     //----------------------------------------------------------------------------------//
     // if statistics is not enabled
@@ -157,7 +158,7 @@ struct add_statistics
     template <typename StatsT, typename U = type>
     TIMEMORY_INLINE void operator()(
         const U&, StatsT&, bool = true,
-        enable_if_t<!enabled_statistics<U, StatsT>::value, int> = 0) const
+        enable_if_t<!stats_enabled<U, StatsT>::value, int> = 0) const
     {}
 
 private:
@@ -192,9 +193,8 @@ private:
 template <typename T>
 template <typename StatsT, typename U>
 void
-add_statistics<T>::operator()(
-    const U& rhs, StatsT& stats, bool _last,
-    enable_if_t<enabled_statistics<U, StatsT>::value, int>) const
+add_statistics<T>::operator()(const U& rhs, StatsT& stats, bool _last,
+                              enable_if_t<stats_enabled<U, StatsT>::value, int>) const
 {
     // for type comparison
     using incoming_t = decay_t<typename StatsT::value_type>;
@@ -209,8 +209,8 @@ add_statistics<T>::operator()(
                   "implicit conversion, set trait::permissive_statistics "
                   "to true_type for component");
     using stats_policy_type = policy::record_statistics<U>;
-    DEBUG_PRINT_HERE("%s :: updating %s (accum: %s)", demangle<U>().c_str(),
-                     demangle<StatsT>().c_str(), (_last) ? "y" : "n");
+    TIMEMORY_DEBUG_PRINT_HERE("%s :: updating %s (accum: %s)", demangle<U>().c_str(),
+                              demangle<StatsT>().c_str(), (_last) ? "y" : "n");
     stats_policy_type{}(stats, rhs, _last);
 }
 //

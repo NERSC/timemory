@@ -62,6 +62,57 @@ from_string(const char* cstr)
 //--------------------------------------------------------------------------------------//
 //  delimit a string into a set
 //
+namespace utility
+{
+template <typename ContainerT, typename... Args>
+inline auto
+emplace_impl(ContainerT& _c, int, Args&&... _args)
+    -> decltype(_c.emplace_back(std::forward<Args>(_args)...))
+{
+    return _c.emplace_back(std::forward<Args>(_args)...);
+}
+
+template <typename ContainerT, typename... Args>
+inline auto
+emplace_impl(ContainerT& _c, long, Args&&... _args)
+    -> decltype(_c.emplace(std::forward<Args>(_args)...))
+{
+    return _c.emplace(std::forward<Args>(_args)...);
+}
+
+template <typename ContainerT, typename... Args>
+inline auto
+emplace(ContainerT& _c, Args&&... _args)
+{
+    return emplace_impl(_c, 0, std::forward<Args>(_args)...);
+}
+
+template <typename ContainerT, typename ArgT>
+inline auto
+reserve_impl(ContainerT& _c, int, ArgT _arg) -> decltype(_c.reserve(_arg), bool())
+{
+    _c.reserve(_arg);
+    return true;
+}
+
+template <typename ContainerT, typename ArgT>
+inline auto
+reserve_impl(ContainerT&, long, ArgT)
+{
+    return false;
+}
+
+template <typename ContainerT, typename ArgT>
+inline auto
+reserve(ContainerT& _c, ArgT _arg)
+{
+    return reserve_impl(_c, 0, _arg);
+}
+}  // namespace utility
+//
+//--------------------------------------------------------------------------------------//
+//  delimit a string into a set
+//
 template <typename ContainerT = std::vector<std::string>,
           typename PredicateT = std::function<std::string(const std::string&)>>
 inline ContainerT
@@ -69,9 +120,19 @@ delimit(
     const std::string& line, const std::string& delimiters = "\"',;: ",
     PredicateT&& predicate = [](const std::string& s) -> std::string { return s; })
 {
-    ContainerT _result{};
     size_t     _beginp = 0;  // position that is the beginning of the new string
     size_t     _delimp = 0;  // position of the delimiter in the string
+    ContainerT _result = {};
+    if(utility::reserve(_result, 0))
+    {
+        size_t _nmax = 0;
+        for(char itr : line)
+        {
+            if(delimiters.find(itr) != std::string::npos)
+                ++_nmax;
+        }
+        utility::reserve(_result, _nmax);
+    }
     while(_beginp < line.length() && _delimp < line.length())
     {
         // find the first character (starting at _delimp) that is not a delimiter
@@ -96,7 +157,7 @@ delimit(
         // don't add empty strings
         if(!_tmp.empty())
         {
-            _result.insert(_result.end(), predicate(_tmp));
+            utility::emplace(_result, std::forward<PredicateT>(predicate)(_tmp));
         }
     }
     return _result;

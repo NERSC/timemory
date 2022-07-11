@@ -19,8 +19,8 @@ endif()
 
 add_library(timem-libexplain INTERFACE)
 
-add_option(TIMEMORY_BUILD_TOOLS_LIBEXPLAIN "Enable using libexplain to diagnose errors"
-           OFF NO_FEATURE)
+timemory_add_option(TIMEMORY_BUILD_TOOLS_LIBEXPLAIN
+                    "Enable using libexplain to diagnose errors" OFF NO_FEATURE)
 if(TIMEMORY_BUILD_TOOLS_LIBEXPLAIN)
 
     find_path(

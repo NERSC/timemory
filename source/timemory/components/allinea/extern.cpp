@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/allinea/extern.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(allinea_map, false, void)

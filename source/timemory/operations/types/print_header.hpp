@@ -34,6 +34,8 @@
 #include "timemory/operations/types.hpp"
 #include "timemory/operations/types/print_statistics.hpp"
 
+#include <iomanip>
+
 namespace tim
 {
 namespace operation
@@ -63,11 +65,6 @@ struct print_header : public common_utils
             return;
 
         auto _labels = get_labels(_obj);
-        // auto _display = get_display_units(_obj);
-        // std::cout << "[" << demangle<Tp>() << "]> labels: ";
-        // for(const auto& itr : _labels)
-        //    std::cout << "'" << itr << "' ";
-        // std::cout << "\n";
 
         _os.set_prefix_begin();
         utility::write_header(_os, "LABEL");
@@ -78,10 +75,6 @@ struct print_header : public common_utils
         if(trait::report<type>::depth())
             utility::write_header(_os, "DEPTH");
         _os.set_prefix_end();
-
-        // auto _opzip = [](const std::string& _lhs, const std::string& _rhs) {
-        //    return tim::mpl::apply<std::string>::join("", _lhs, " [", _rhs, "]");
-        // };
 
         auto ios_fixed = std::ios_base::fixed;
         auto ios_dec   = std::ios_base::dec;

@@ -42,7 +42,7 @@ if(TIMEMORY_BUILD_PORTABLE)
         set(dl_LIBRARY)
     endif()
 elseif(dl_LIBRARY)
-    add_rpath(${dl_LIBRARY})
+    timemory_add_rpath(${dl_LIBRARY})
 endif()
 
 if(dl_LIBRARY)
@@ -56,7 +56,7 @@ if(TIMEMORY_BUILD_PORTABLE)
         set(rt_LIBRARY)
     endif()
 elseif(rt_LIBRARY)
-    add_rpath(${rt_LIBRARY})
+    timemory_add_rpath(${rt_LIBRARY})
 endif()
 
 # ----------------------------------------------------------------------------------------#
@@ -96,7 +96,7 @@ endif()
 # ----------------------------------------------------------------------------------------#
 # extra flags for debug information in debug or optimized binaries
 #
-add_interface_library(
+timemory_add_interface_library(
     timemory-compile-debuginfo
     "Attempts to set best flags for more expressive profiling information in debug or optimized binaries"
     )
@@ -136,7 +136,7 @@ endif()
 # ----------------------------------------------------------------------------------------#
 # non-debug optimizations
 #
-add_interface_library(timemory-compile-extra "Extra optimization flags")
+timemory_add_interface_library(timemory-compile-extra "Extra optimization flags")
 if(NOT TIMEMORY_USE_COVERAGE)
     add_target_flag_if_avail(
         timemory-compile-extra "-finline-functions" "-funroll-loops" "-ftree-vectorize"
@@ -179,14 +179,14 @@ timemory_save_variables(FLTO VARIABLES CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
 set(CMAKE_C_FLAGS "-flto=thin ${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "-flto=thin ${CMAKE_CXX_FLAGS}")
 
-add_interface_library(timemory-lto "Adds link-time-optimization flags")
+timemory_add_interface_library(timemory-lto "Adds link-time-optimization flags")
 add_target_flag_if_avail(timemory-lto "-flto=thin")
 if(NOT cxx_timemory_lto_flto_thin)
     set(CMAKE_C_FLAGS "-flto ${CMAKE_C_FLAGS}")
     set(CMAKE_CXX_FLAGS "-flto ${CMAKE_CXX_FLAGS}")
     add_target_flag_if_avail(timemory-lto "-flto")
     if(NOT cxx_timemory_lto_flto)
-        add_disabled_interface(timemory-lto)
+        timemory_add_disabled_interface(timemory-lto)
         set(TIMEMORY_BUILD_LTO OFF)
     else()
         target_link_options(timemory-lto INTERFACE -flto)
@@ -204,8 +204,8 @@ timemory_restore_variables(FLTO VARIABLES CMAKE_C_FLAGS CMAKE_CXX_FLAGS)
 # ----------------------------------------------------------------------------------------#
 # print compilation timing reports (Clang compiler)
 #
-add_interface_library(timemory-compile-timing
-                      "Adds compiler flags which report compilation timing metrics")
+timemory_add_interface_library(
+    timemory-compile-timing "Adds compiler flags which report compilation timing metrics")
 if(CMAKE_CXX_COMPILER_IS_CLANG)
     add_target_flag_if_avail(timemory-compile-timing "-ftime-trace")
     if(NOT cxx_timemory_compile_timing_ftime_trace)
@@ -221,29 +221,30 @@ endif()
 
 if(NOT cxx_timemory_compile_timing_ftime_report
    AND NOT cxx_timemory_compile_timing_ftime_trace)
-    add_disabled_interface(timemory-compile-timing)
+    timemory_add_disabled_interface(timemory-compile-timing)
 endif()
 
 # ----------------------------------------------------------------------------------------#
 # use xray instrumentation
 #
-add_interface_library(timemory-xray
-                      "Adds compiler flags to enable xray-instrumentation (Clang only)")
+timemory_add_interface_library(
+    timemory-xray "Adds compiler flags to enable xray-instrumentation (Clang only)")
 if(CMAKE_CXX_COMPILER_IS_CLANG)
     add_target_flag_if_avail(timemory-xray "-fxray-instrument"
                              "-fxray-instruction-threshold=1")
     if(NOT cxx_timemory_xray_fxray_instrument)
-        add_disabled_interface(timemory-xray)
+        timemory_add_disabled_interface(timemory-xray)
     endif()
 else()
-    add_disabled_interface(timemory-xray)
+    timemory_add_disabled_interface(timemory-xray)
 endif()
 
 # ----------------------------------------------------------------------------------------#
 # use compiler instrumentation
 #
-add_interface_library(timemory-instrument-functions
-                      "Adds compiler flags to enable compile-time instrumentation")
+timemory_add_interface_library(
+    timemory-instrument-functions
+    "Adds compiler flags to enable compile-time instrumentation")
 
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/compiler-instr.cpp.in
                ${PROJECT_BINARY_DIR}/compile-tests/compiler-instr.c COPYONLY)
@@ -309,7 +310,7 @@ elseif(c_timemory_instrument_finstrument_functions
                   $<$<COMPILE_LANGUAGE:CXX>:-finstrument-functions>)
 else()
     set(TIMEMORY_BUILD_COMPILER_INSTRUMENTATION OFF)
-    add_disabled_interface(timemory-instrument-functions)
+    timemory_add_disabled_interface(timemory-instrument-functions)
 endif()
 
 if(TIMEMORY_BUILD_COMPILER_INSTRUMENTATION)
@@ -320,7 +321,7 @@ endif()
 # ----------------------------------------------------------------------------------------#
 # developer build flags
 #
-add_interface_library(timemory-develop-options "Adds developer compiler flags")
+timemory_add_interface_library(timemory-develop-options "Adds developer compiler flags")
 if(TIMEMORY_BUILD_DEVELOPER)
     add_target_flag_if_avail(
         timemory-develop-options
@@ -331,17 +332,23 @@ endif()
 # ----------------------------------------------------------------------------------------#
 # visibility build flags
 #
-add_interface_library(timemory-default-visibility
-                      "Adds -fvisibility=default compiler flag")
-add_interface_library(timemory-hidden-visibility "Adds -fvisibility=hidden compiler flag")
+timemory_add_interface_library(timemory-use-visibility
+                               "Defines whether to use visibility attributes")
+timemory_add_interface_library(timemory-default-visibility
+                               "Adds -fvisibility=default compiler flag")
+timemory_add_interface_library(timemory-hidden-visibility
+                               "Adds -fvisibility=hidden compiler flag")
 
+timemory_target_compile_definitions(
+    timemory-use-visibility INTERFACE
+    TIMEMORY_USE_VISIBILITY=$<BOOL:${TIMEMORY_USE_VISIBILITY}>)
 add_target_flag_if_avail(timemory-default-visibility "-fvisibility=default")
 add_target_flag_if_avail(timemory-hidden-visibility "-fvisibility=hidden"
                          "-fvisibility-inlines-hidden")
 
 foreach(_TYPE default hidden)
     if(NOT cxx_timemory_${_TYPE}_visibility_fvisibility_${_TYPE})
-        add_disabled_interface(timemory-${_TYPE}-visibility)
+        timemory_add_disabled_interface(timemory-${_TYPE}-visibility)
     endif()
 endforeach()
 
@@ -358,10 +365,10 @@ endif()
 # ----------------------------------------------------------------------------------------#
 # architecture optimizations
 #
-add_interface_library(
+timemory_add_interface_library(
     timemory-vector
     "Adds pre-processor definition of the max vectorization width in bytes")
-add_interface_library(timemory-arch "Adds architecture-specific compiler flags")
+timemory_add_interface_library(timemory-arch "Adds architecture-specific compiler flags")
 target_link_libraries(timemory-compile-options INTERFACE timemory-vector)
 
 set(VECTOR_DEFINITION TIMEMORY_VEC)
@@ -370,7 +377,7 @@ set(ARCH_INTERFACE_TARGET timemory-arch)
 
 include(ConfigCpuArch)
 
-add_cmake_defines(TIMEMORY_VEC VALUE)
+timemory_add_cmake_defines(TIMEMORY_VEC VALUE)
 
 # ----------------------------------------------------------------------------------------#
 # sanitizer
@@ -386,9 +393,9 @@ set(TIMEMORY_SANITIZER_TYPES
     bounds
     alignment)
 set_property(CACHE TIMEMORY_SANITIZER_TYPE PROPERTY STRINGS "${TIMEMORY_SANITIZER_TYPES}")
-add_interface_library(timemory-sanitizer-compile-options
-                      "Adds compiler flags for sanitizers")
-add_interface_library(
+timemory_add_interface_library(timemory-sanitizer-compile-options
+                               "Adds compiler flags for sanitizers")
+timemory_add_interface_library(
     timemory-sanitizer
     "Adds compiler flags to enable ${TIMEMORY_SANITIZER_TYPE} sanitizer (-fsanitizer=${TIMEMORY_SANITIZER_TYPE})"
     )
@@ -399,8 +406,9 @@ add_target_flag(timemory-sanitizer-compile-options ${COMMON_SANITIZER_FLAGS})
 
 foreach(_TYPE ${TIMEMORY_SANITIZER_TYPES})
     set(_FLAG "-fsanitize=${_TYPE}")
-    add_interface_library(timemory-${_TYPE}-sanitizer
-                          "Adds compiler flags to enable ${_TYPE} sanitizer (${_FLAG})")
+    timemory_add_interface_library(
+        timemory-${_TYPE}-sanitizer
+        "Adds compiler flags to enable ${_TYPE} sanitizer (${_FLAG})")
     add_target_flag(timemory-${_TYPE}-sanitizer ${_FLAG})
     target_link_libraries(timemory-${_TYPE}-sanitizer
                           INTERFACE timemory-sanitizer-compile-options)
@@ -423,7 +431,8 @@ if(TIMEMORY_USE_SANITIZER)
     endforeach()
 else()
     set(TIMEMORY_USE_SANITIZER OFF)
-    inform_empty_interface(timemory-sanitizer "${TIMEMORY_SANITIZER_TYPE} sanitizer")
+    timemory_inform_empty_interface(timemory-sanitizer
+                                    "${TIMEMORY_SANITIZER_TYPE} sanitizer")
 endif()
 
 if(MSVC)

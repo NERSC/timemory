@@ -2,19 +2,16 @@
 #
 include(CMakeParseArguments)
 
-#
-# find_static_library(...) finds the static library version
-#
-function(FIND_STATIC_LIBRARY _VAR)
+function(TIMEMORY_FIND_STATIC_LIBRARY)
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
-    find_library(${_VAR} ${ARGN})
+    find_library(${ARGN})
 endfunction()
 
 #
 # find_root_hints(...) get the realpath to certain files and then walks up the directory
 # tree
 #
-function(FIND_ROOT_PATH _OUTPUT_VAR _FNAME)
+function(TIMEMORY_FIND_ROOT_PATH _OUTPUT_VAR _FNAME)
 
     if(DEFINED ${_OUTPUT_VAR} AND ${_OUTPUT_VAR})
         return()

@@ -41,9 +41,11 @@ RUN cd /tmp && \
     apt-get update && \
     apt-get dist-upgrade -y && \
     apt-get install -y wget gpg software-properties-common && \
-    wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | apt-key add - && \
+    wget -O kitware-archive.sh https://apt.kitware.com/kitware-archive.sh && \
+    chmod 755 ./kitware-archive.sh && \
     DISTRIB_CODENAME=$(cat /etc/lsb-release | grep DISTRIB_CODENAME | awk -F '=' '{print $NF}') && \
-    apt-add-repository "deb https://apt.kitware.com/ubuntu/ ${DISTRIB_CODENAME} main" && \
+    ./kitware-archive.sh --release ${DISTRIB_CODENAME} && \
+    rm -f ./kitware-archive.sh && \
     apt-get update && \
     apt-get install -y cmake build-essential ninja-build && \
     apt-get -y autoclean

@@ -164,7 +164,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     if(user_trace_bundle::bundle_size() == 0)
     {
         if(_config.verbose > 1)
-            PRINT_HERE("%s", "Tracer bundle is empty");
+            TIMEMORY_PRINT_HERE("%s", "Tracer bundle is empty");
         return py::none{};
     }
 
@@ -178,7 +178,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     if(what < 0)
     {
         if(_config.verbose > 2)
-            PRINT_HERE("%s :: %s", "Ignoring what != {LINE,CALL,RETURN}", swhat);
+            TIMEMORY_PRINT_HERE("%s :: %s", "Ignoring what != {LINE,CALL,RETURN}", swhat);
         return py::none{};
     }
 
@@ -201,7 +201,8 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     if(_iscall && _sdepth > _config.max_stack_depth)
     {
         if(_config.verbose > 1)
-            PRINT_HERE("skipping %i > %i", (int) _sdepth, (int) _config.max_stack_depth);
+            TIMEMORY_PRINT_HERE("skipping %i > %i", (int) _sdepth,
+                                (int) _config.max_stack_depth);
         return py::none{};
     }
 
@@ -271,7 +272,8 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
                 inspect.attr("formatargvalues")(*inspect.attr("getargvalues")(pframe)));
         } catch(py::error_already_set& _exc)
         {
-            CONDITIONAL_PRINT_HERE(_config.verbose > 1, "Error! %s", _exc.what());
+            TIMEMORY_CONDITIONAL_PRINT_HERE(_config.verbose > 1, "Error! %s",
+                                            _exc.what());
             if(!_exc.matches(PyExc_AttributeError))
                 throw;
         }
@@ -323,19 +325,19 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     if(!_only_funcs.empty() && !_find_matching(_only_funcs, _func))
     {
         if(_config.verbose > 1)
-            PRINT_HERE("Skipping non-included function: %s", _func.c_str());
+            TIMEMORY_PRINT_HERE("Skipping non-included function: %s", _func.c_str());
         return py::none{};
     }
 
     if(_find_matching(_skip_funcs, _func))
     {
         if(_config.verbose > 1)
-            PRINT_HERE("Skipping designated function: '%s'", _func.c_str());
+            TIMEMORY_PRINT_HERE("Skipping designated function: '%s'", _func.c_str());
         auto _manager = tim::manager::instance();
         if(!_manager || _manager->is_finalized() || _func == "_shutdown")
         {
             if(_config.verbose > 1)
-                PRINT_HERE("Shutdown detected: %s", _func.c_str());
+                TIMEMORY_PRINT_HERE("Shutdown detected: %s", _func.c_str());
             _disable       = true;
             auto sys       = py::module::import("sys");
             auto threading = py::module::import("threading");
@@ -353,21 +355,21 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
        strncmp(_full.c_str(), _mpath.c_str(), _mpath.length()) == 0)
     {
         if(_config.verbose > 2)
-            PRINT_HERE("Skipping internal function: %s", _func.c_str());
+            TIMEMORY_PRINT_HERE("Skipping internal function: %s", _func.c_str());
         return py::none{};
     }
 
     if(!_only_files.empty() && !_find_matching(_only_files, _full))
     {
         if(_config.verbose > 2)
-            PRINT_HERE("Skipping non-included file: %s", _full.c_str());
+            TIMEMORY_PRINT_HERE("Skipping non-included file: %s", _full.c_str());
         return py::none{};
     }
 
     if(_find_matching(_skip_files, _full))
     {
         if(_config.verbose > 2)
-            PRINT_HERE("Skipping non-included file: %s", _full.c_str());
+            TIMEMORY_PRINT_HERE("Skipping non-included file: %s", _full.c_str());
         return py::none{};
     }
 
@@ -379,9 +381,10 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     } catch(std::exception& e)
     {
         if(_config.verbose > -1)
-            PRINT_HERE("Exception thrown when retrieving lines for file '%s'. Functions "
-                       "in this file will not be traced:\n%s",
-                       _full.c_str(), e.what());
+            TIMEMORY_PRINT_HERE(
+                "Exception thrown when retrieving lines for file '%s'. Functions "
+                "in this file will not be traced:\n%s",
+                _full.c_str(), e.what());
         _file_lskip.insert(_full);
         return py::none{};
     }
@@ -389,7 +392,8 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     if(!_plines)
     {
         if(_config.verbose > 3)
-            PRINT_HERE("No source code lines for '%s'. Returning", _full.c_str());
+            TIMEMORY_PRINT_HERE("No source code lines for '%s'. Returning",
+                                _full.c_str());
         return py::none{};
     }
 
@@ -421,8 +425,8 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
             _rem = std::max<int64_t>(_rem, 0);
             _slabel << std::setw(_rem) << std::right << "" << ' ' << _prefix;
             auto _label = _slabel.str();
-            DEBUG_PRINT_HERE("%8s | %s%s | %s", swhat, _func.c_str(), _get_args().c_str(),
-                             _label.c_str());
+            TIMEMORY_DEBUG_PRINT_HERE("%8s | %s%s | %s", swhat, _func.c_str(),
+                                      _get_args().c_str(), _label.c_str());
             // create a tracer for the line
             _tvec.emplace(i, tracer_t{ _label, _config.tracer_scope });
         }
@@ -595,7 +599,8 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     tim::consume_parameters(arg);
 
     if(_config.verbose > 3)
-        PRINT_HERE("Returning trace function for %s of '%s'", swhat, _func.c_str());
+        TIMEMORY_PRINT_HERE("Returning trace function for %s of '%s'", swhat,
+                            _func.c_str());
 
     return py::cpp_function{ &tracer_function };
 }
@@ -633,7 +638,7 @@ generate(py::module& _pymod)
 
     auto _init = []() {
         auto _verbose = get_config().verbose;
-        CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Initializing trace");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Initializing trace");
         try
         {
             auto _file = py::module::import("timemory").attr("__file__").cast<string_t>();
@@ -647,12 +652,13 @@ generate(py::module& _pymod)
 
         if(get_config().is_running)
         {
-            CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Trace already running");
+            TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Trace already running");
             return;
         }
-        CONDITIONAL_PRINT_HERE(_verbose < 2 && _verbose > 0, "%s", "Initializing trace");
-        CONDITIONAL_PRINT_HERE(_verbose > 0, "%s",
-                               "Resetting trace state for initialization");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose < 2 && _verbose > 0, "%s",
+                                        "Initializing trace");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose > 0, "%s",
+                                        "Resetting trace state for initialization");
         get_config().records.clear();
         get_config().functions.clear();
         get_config().is_running = true;
@@ -660,21 +666,24 @@ generate(py::module& _pymod)
 
     auto _fini = []() {
         auto _verbose = get_config().verbose;
-        CONDITIONAL_PRINT_HERE(_verbose > 2, "%s", "Finalizing trace");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose > 2, "%s", "Finalizing trace");
         if(!get_config().is_running)
         {
-            CONDITIONAL_PRINT_HERE(_verbose > 2, "%s", "Trace already finalized");
+            TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose > 2, "%s",
+                                            "Trace already finalized");
             return;
         }
-        CONDITIONAL_PRINT_HERE(_verbose > 0 && _verbose < 3, "%s", "Finalizing trace");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose > 0 && _verbose < 3, "%s",
+                                        "Finalizing trace");
         get_config().is_running = false;
-        CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Popping records from call-stack");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose > 1, "%s",
+                                        "Popping records from call-stack");
         for(auto& ritr : get_config().records)
         {
             for(auto& itr : ritr.second)
                 itr.second.pop();
         }
-        CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Destroying records");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose > 1, "%s", "Destroying records");
         get_config().records.clear();
         get_config().functions.clear();
     };

@@ -26,7 +26,7 @@ available_tools = {
     "dyninst": "TIMEMORY_BUILD_DYNINST_TOOLS",
     "mpip": "TIMEMORY_BUILD_MPIP_LIBRARY",
     "ompt": "TIMEMORY_BUILD_OMPT_LIBRARY",
-    "ncclp": "TIMEMORY_BUILD_NCCLP_LIBRARY",
+    "ncclp": ["TIMEMORY_BUILD_NCCLP_LIBRARY", "TIMEMORY_USE_NCCL"],
     "mallocp": "TIMEMORY_BUILD_MALLOCP_LIBRARY",
     "compiler": "TIMEMORY_BUILD_COMPILER_INSTRUMENTATION",
     "ert": "TIMEMORY_BUILD_ERT",
@@ -205,6 +205,12 @@ def configure():
     parser.add_argument(
         "--cupti",
         help="TIMEMORY_USE_CUPTI=ON",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--hip",
+        help="TIMEMORY_USE_HIP=ON",
         default=False,
         action="store_true",
     )
@@ -549,6 +555,7 @@ def run_pyctest():
         "TIMEMORY_USE_CTP": "ON"
         if args.compile_time_perf is not None
         else "OFF",
+        "TIMEMORY_USE_HIP": "ON" if args.hip else "OFF",
         "TIMEMORY_USE_MPI": "ON" if args.mpi else "OFF",
         "TIMEMORY_USE_TAU": "ON" if args.tau else "OFF",
         "TIMEMORY_USE_ARCH": "ON" if args.arch else "OFF",
@@ -594,7 +601,11 @@ def run_pyctest():
         args.tools.append("avail")
 
     for key, opt in available_tools.items():
-        build_opts[opt] = "ON" if (key in args.tools) else "OFF"
+        if isinstance(opt, list):
+            for itr in opt:
+                build_opts[itr] = "ON" if (key in args.tools) else "OFF"
+        else:
+            build_opts[opt] = "ON" if (key in args.tools) else "OFF"
 
     if "dyninst" in args.tools:
         build_opts["TIMEMORY_USE_DYNINST"] = "ON"
@@ -1295,10 +1306,43 @@ def run_pyctest():
             },
         )
 
-        if args.cuda:
+        if args.cuda or args.hip:
             pyct.test(
-                construct_name("ex-cuda-event"),
-                ["./ex_cuda_event"],
+                construct_name("ex-gpu-event"),
+                ["./ex_gpu_event"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "120",
+                    "ENVIRONMENT": test_env,
+                },
+            )
+
+            pyct.test(
+                construct_name("ex-gpu-kernel-instrument-v1"),
+                ["./ex_kernel_instrument"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "120",
+                    "ENVIRONMENT": test_env,
+                },
+            )
+
+            pyct.test(
+                construct_name("ex-gpu-kernel-instrument-v2"),
+                ["./ex_kernel_instrument_v2"],
+                {
+                    "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
+                    "LABELS": pyct.PROJECT_NAME,
+                    "TIMEOUT": "120",
+                    "ENVIRONMENT": test_env,
+                },
+            )
+
+            pyct.test(
+                construct_name("ex-gpu-kernel-instrument-v3"),
+                ["./ex_kernel_instrument_v3"],
                 {
                     "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
                     "LABELS": pyct.PROJECT_NAME,
@@ -1479,7 +1523,8 @@ def run_pyctest():
                 pyct.test(
                     construct_name("ex-python-caliper"),
                     construct_command(
-                        [sys.executable, "./ex_python_caliper", "10"], args
+                        [sys.executable, "./ex_python_caliper", "-n", "10"],
+                        args,
                     ),
                     {
                         "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,

@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/backends/threading.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
@@ -64,32 +65,37 @@ struct push_node
 
     TIMEMORY_DEFAULT_OBJECT(push_node)
 
-    TIMEMORY_HOT push_node(type& obj, scope::config _scope, hash_value_t _hash)
+    TIMEMORY_INLINE push_node(type& obj, scope::config _scope, hash_value_t _hash,
+                              int64_t _tid = threading::get_id())
     {
-        (*this)(obj, _scope, _hash);
+        (*this)(obj, _scope, _hash, _tid);
     }
 
-    TIMEMORY_HOT push_node(type& obj, scope::config _scope, string_view_cref_t _key)
+    TIMEMORY_INLINE push_node(type& obj, scope::config _scope, string_view_cref_t _key,
+                              int64_t _tid = threading::get_id())
     : push_node(obj, _scope, get_hash_id(_key))
-    {}
+    {
+        (*this)(obj, _scope, get_hash_id(_key), _tid);
+    }
 
-    TIMEMORY_HOT auto operator()(type& obj, scope::config _scope,
-                                 hash_value_t _hash) const
+    TIMEMORY_INLINE auto operator()(type& obj, scope::config _scope, hash_value_t _hash,
+                                    int64_t _tid = threading::get_id()) const
     {
         init_storage<Tp>::init();
-        return sfinae(obj, 0, 0, 0, _scope, _hash);
+        return sfinae(obj, 0, 0, 0, _scope, _hash, _tid);
     }
 
-    TIMEMORY_HOT auto operator()(type& obj, scope::config _scope,
-                                 string_view_cref_t _key) const
+    TIMEMORY_INLINE auto operator()(type& obj, scope::config _scope,
+                                    string_view_cref_t _key,
+                                    int64_t            _tid = threading::get_id()) const
     {
-        return (*this)(obj, _scope, get_hash_id(_key));
+        return (*this)(obj, _scope, get_hash_id(_key), _tid);
     }
 
 private:
     //  typical resolution: variadic bundle of components, component
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, int, Args&&... args) const
+    TIMEMORY_INLINE auto sfinae(Up& obj, int, int, int, Args&&... args) const
         -> decltype(obj.push(std::forward<Args>(args)...))
     {
         return obj.push(std::forward<Args>(args)...);
@@ -97,7 +103,8 @@ private:
 
     //  typical resolution: variadic bundle of components, component
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, long, Args&&...) const -> decltype(obj.push())
+    TIMEMORY_INLINE auto sfinae(Up& obj, int, int, long, Args&&...) const
+        -> decltype(obj.push())
     {
         return obj.push();
     }
@@ -106,9 +113,9 @@ private:
     template <typename Up, typename Vp = typename Up::value_type,
               typename StorageT = storage<Up, Vp>,
               enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
-    TIMEMORY_HOT auto sfinae(Up& _obj, int, long, long, scope::config _scope,
-                             hash_value_t _hash,
-                             enable_if_t<!storage_is_nullptr_t<Up>(), int> = 0) const
+    TIMEMORY_INLINE auto sfinae(Up& _obj, int, long, long, scope::config _scope,
+                                hash_value_t _hash, int64_t _tid,
+                                enable_if_t<!storage_is_nullptr_t<Up>(), int> = 0) const
         -> decltype(_obj.get_iterator())
     {
         using storage_type          = StorageT;
@@ -121,6 +128,11 @@ private:
             operation::set_is_flat<type>{}(_obj, _scope.is_flat() || force_flat_v);
 
             auto _storage = operation::get_storage<type>{}(_obj);
+
+            // set the storage pointer
+            if(threading::get_id() == _tid)
+                operation::set_storage<type>{}(_storage, _tid);
+
             // if storage is a nullptr, iterator is stale
             if(!_storage)
                 return nullptr;
@@ -139,7 +151,8 @@ private:
             }
             // assign iterator to the insertion point in storage
             operation::set_iterator<type>{}(
-                _obj, operation::insert<storage_type>{}(*_storage, _scope, _obj, _hash));
+                _obj,
+                operation::insert<storage_type>{}(*_storage, _scope, _obj, _hash, _tid));
             // get the new depth
             auto _end_depth = operation::get_depth<storage_type>{}(*_storage);
             // configure the depth change state
@@ -154,7 +167,7 @@ private:
 
     //  no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
-    void sfinae(Up&, long, long, long, Args&&...) const
+    TIMEMORY_INLINE void sfinae(Up&, long, long, long, Args&&...) const
     {}
 };
 //
@@ -170,20 +183,38 @@ struct pop_node
 
     TIMEMORY_DEFAULT_OBJECT(pop_node)
 
-    TIMEMORY_HOT explicit pop_node(type& obj) { (*this)(obj); }
+    TIMEMORY_INLINE explicit pop_node(type& obj, int64_t _tid = threading::get_id())
+    {
+        (*this)(obj, _tid);
+    }
 
-    template <typename Arg, typename... Args>
-    TIMEMORY_HOT explicit pop_node(type& obj, Arg&& arg, Args&&... args)
+    template <typename Arg, typename... Args, enable_if_t<(sizeof...(Args) > 0), int> = 0>
+    TIMEMORY_INLINE explicit pop_node(type& obj, Arg&& arg, Args&&... args)
     {
         (*this)(obj, std::forward<Arg>(arg), std::forward<Args>(args)...);
     }
 
-    TIMEMORY_HOT auto operator()(type& obj) const { return sfinae(obj, 0, 0, 0); }
+    TIMEMORY_INLINE auto operator()(type& obj, int64_t _tid = threading::get_id()) const
+    {
+        return sfinae(obj, 0, 0, 0, _tid);
+    }
 
-    template <typename Arg, typename... Args>
-    TIMEMORY_HOT auto operator()(type& obj, Arg&& arg, Args&&... args) const
+    // call this overload if tid + extra args
+    template <typename Arg, typename... Args,
+              enable_if_t<(sizeof...(Args) > 0 && std::is_integral<decay_t<Arg>>::value),
+                          int> = 0>
+    TIMEMORY_INLINE auto operator()(type& obj, Arg&& arg, Args&&... args) const
     {
         return sfinae(obj, 0, 0, 0, std::forward<Arg>(arg), std::forward<Args>(args)...);
+    }
+
+    // call this overload if tid is not provided
+    template <typename Arg, typename... Args,
+              enable_if_t<!std::is_integral<decay_t<Arg>>::value, int> = 0>
+    TIMEMORY_INLINE auto operator()(type& obj, Arg&& arg, Args&&... args) const
+    {
+        return sfinae(obj, 0, 0, 0, threading::get_id(), std::forward<Arg>(arg),
+                      std::forward<Args>(args)...);
     }
 
 private:
@@ -206,7 +237,7 @@ private:
     template <typename Up, typename Vp = typename Up::value_type,
               typename StorageT = storage<Up, Vp>,
               enable_if_t<trait::uses_value_storage<Up, Vp>::value, int> = 0>
-    TIMEMORY_HOT auto sfinae(Up& _obj, int, long, long,
+    TIMEMORY_HOT auto sfinae(Up& _obj, int, long, long, int64_t _tid,
                              enable_if_t<!storage_is_nullptr_t<Up>(), int> = 0) const
         -> decltype(_obj.get_iterator())
     {
@@ -218,7 +249,7 @@ private:
 
         if(operation::get_is_on_stack<type, true>{}(_obj) && _obj.get_iterator())
         {
-            auto _storage = operation::get_storage<type>{}(_obj);
+            auto _storage = operation::get_storage<type>{}(_obj, _tid);
             assert(_storage != nullptr);
 
             // if storage is null, iterator is stale which means targ and stats are too

@@ -206,21 +206,15 @@ struct check_record_type
 template <typename Up, typename Vp>
 struct stats_enabled
 {
-    using EmptyT = std::tuple<>;
-
     static constexpr bool value =
         (trait::record_statistics<Up>::value && !concepts::is_null_type<Vp>::value);
 };
 //
-//--------------------------------------------------------------------------------------//
-//
-template <typename U, typename StatsT>
-struct enabled_statistics
+template <typename Up, typename Vp>
+struct stats_enabled<Up, statistics<Vp>>
 {
-    using EmptyT = std::tuple<>;
-
     static constexpr bool value =
-        (trait::record_statistics<U>::value && !std::is_same<StatsT, EmptyT>::value);
+        (trait::record_statistics<Up>::value && !concepts::is_null_type<Vp>::value);
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -277,7 +271,12 @@ struct set_prefix;
 //--------------------------------------------------------------------------------------//
 //
 template <typename T>
-struct set_scope;
+struct TIMEMORY_VISIBLE set_scope;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename T>
+struct set_data;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -668,7 +667,7 @@ private:
 ///
 /// \brief This operation attempts to call a member function which provides whether or not
 /// the component is in a valid state for data access and updates.
-template <typename T, bool DefaultValue>
+template <typename T = void, bool DefaultValue = false>
 struct get_is_invalid
 {
     TIMEMORY_DEFAULT_OBJECT(get_is_invalid)
@@ -692,6 +691,20 @@ private:
     static auto sfinae(const Up&, ...) -> bool
     {
         return DefaultValue;
+    }
+};
+//
+template <>
+struct get_is_invalid<void, false>
+{
+    TIMEMORY_DEFAULT_OBJECT(get_is_invalid)
+
+    template <typename Up>
+    TIMEMORY_INLINE auto operator()(Up&& obj) const
+    {
+        using Tp = decay_t<Up>;
+        static_assert(!std::is_void<Tp>::value, "Infinite recursion");
+        return get_is_invalid<Tp, false>{}(std::forward<Up>(obj));
     }
 };
 //
@@ -781,6 +794,45 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename T>
+struct get_storage;
+//
+/// \struct tim::operation::set_storage
+/// \tparam T Component type
+///
+/// \brief This operation attempts to call a member function which provides a pointer to
+/// the data storage structure for a component which should be updated for
+/// aggregation/logging.
+template <typename T>
+struct set_storage
+{
+    friend struct get_storage<T>;
+    static constexpr size_t max_threads = 4096;
+    using type                          = T;
+    using storage_array_t               = std::array<storage<type>*, max_threads>;
+
+    TIMEMORY_DEFAULT_OBJECT(set_storage)
+
+    TIMEMORY_INLINE auto operator()(storage<type>* _storage, size_t _idx) const
+    {
+        get().at(_idx) = static_cast<storage<type>*>(_storage);
+    }
+
+    TIMEMORY_INLINE auto operator()(type& _obj, size_t _idx) const
+    {
+        get().at(_idx) = static_cast<storage<type>*>(_obj.get_storage());
+    }
+
+private:
+    static storage_array_t& get()
+    {
+        static storage_array_t _v = { nullptr };
+        return _v;
+    }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 /// \struct tim::operation::get_storage
 /// \tparam T Component type
 ///
@@ -794,10 +846,23 @@ struct get_storage
 
     TIMEMORY_DEFAULT_OBJECT(get_storage)
 
-    TIMEMORY_INLINE auto operator()(type& obj) const
+    TIMEMORY_INLINE auto operator()() const
+    {
+        type _obj{};
+        return (*this)(_obj);
+    }
+
+    TIMEMORY_INLINE auto operator()(const type& obj) const
     {
         return static_cast<storage<type>*>(obj.get_storage());
     }
+
+    TIMEMORY_INLINE auto operator()(size_t _idx) const
+    {
+        return operation::set_storage<T>::get().at(_idx);
+    }
+
+    TIMEMORY_INLINE auto operator()(type&, size_t _idx) const { return (*this)(_idx); }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -1238,7 +1303,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return m_settings->get_dart_output();
@@ -1247,7 +1312,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return m_settings->get_file_output();
@@ -1256,7 +1321,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return m_settings->get_cout_output();
@@ -1265,7 +1330,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return (m_settings->get_tree_output() || json_forced) &&
@@ -1275,7 +1340,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return (m_settings->get_json_output() || json_forced) &&
@@ -1285,7 +1350,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return m_settings->get_text_output() && m_settings->get_file_output();
@@ -1294,7 +1359,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return m_settings->get_plot_output() && m_settings->get_json_output() &&
@@ -1304,7 +1369,7 @@ struct print
     {
         if(!m_settings)
         {
-            PRINT_HERE("%s", "Null pointer to settings! Disabling");
+            TIMEMORY_PRINT_HERE("%s", "Null pointer to settings! Disabling");
             return false;
         }
         return m_settings->get_flamegraph_output() && m_settings->get_file_output();
@@ -1411,7 +1476,8 @@ struct print<Tp, true> : public base::print
         }
         else
         {
-            printf("\n");
+            if(!m_settings || m_settings->get_verbose() >= 0)
+                fprintf(stderr, "\n");
         }
 
         if(dart_output())
@@ -1439,7 +1505,8 @@ struct print<Tp, true> : public base::print
             }
             else
             {
-                printf("\n");
+                if(!m_settings || m_settings->get_verbose() >= 0)
+                    fprintf(stderr, "\n");
             }
         }
 

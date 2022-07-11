@@ -25,12 +25,14 @@
 #pragma once
 
 #include "timemory/components/base/types.hpp"
+#include "timemory/math/compute.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <array>
 #include <cassert>
+#include <cstring>
 #include <nvml.h>
 #include <ostream>
 #include <sys/types.h>

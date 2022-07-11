@@ -29,9 +29,12 @@
 #include "timemory/settings/declaration.hpp"
 
 #include <algorithm>
+#include <fstream>
 #include <initializer_list>
+#include <iostream>
 #include <sstream>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
@@ -89,14 +92,14 @@ plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_fil
     if(std::is_same<typename Tp::value_type, void>::value)
     {
         if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("%s", "");
+            TIMEMORY_PRINT_HERE("%s", "");
         return;
     }
 
     if(!settings::json_output() && !trait::requires_json<Tp>::value)
     {
         if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("%s", "");
+            TIMEMORY_PRINT_HERE("%s", "");
         return;
     }
 

@@ -25,10 +25,12 @@
 #pragma once
 
 #include "timemory/compat/macros.h"
+#include "timemory/macros/arch.hpp"
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/compiler.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/mpl/macros.hpp"
 #include "timemory/utility/macros.hpp"
 
 //======================================================================================//
@@ -98,103 +100,6 @@
         struct NAME;                                                                     \
         }                                                                                \
         }
-#endif
-
-//======================================================================================//
-//
-//      GENERIC TYPE-TRAIT SPECIALIZATION (for true_type/false_type traits)
-//
-//======================================================================================//
-
-#if !defined(TIMEMORY_DEFINE_CONCRETE_TRAIT)
-#    define TIMEMORY_DEFINE_CONCRETE_TRAIT(TRAIT, COMPONENT, VALUE)                      \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <>                                                                      \
-        struct TRAIT<COMPONENT> : VALUE                                                  \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-#if !defined(TIMEMORY_DEFINE_TEMPLATE_TRAIT)
-#    define TIMEMORY_DEFINE_TEMPLATE_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TYPE T>                                                                \
-        struct TRAIT<COMPONENT<T>> : VALUE                                               \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-#if !defined(TIMEMORY_DEFINE_VARIADIC_TRAIT)
-#    define TIMEMORY_DEFINE_VARIADIC_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TYPE... T>                                                             \
-        struct TRAIT<COMPONENT<T...>> : VALUE                                            \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-
-//======================================================================================//
-//
-//      GENERIC TYPE-TRAIT SPECIALIZATION (for defining ::type traits)
-//
-//======================================================================================//
-
-#if !defined(TIMEMORY_TRAIT_TYPE)
-#    define TIMEMORY_TRAIT_TYPE(TRAIT, COMPONENT, ...)                                   \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <>                                                                      \
-        struct TRAIT<COMPONENT>                                                          \
-        {                                                                                \
-            using type = __VA_ARGS__;                                                    \
-        };                                                                               \
-        }                                                                                \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_TEMPLATE_TRAIT_TYPE)
-#    define TIMEMORY_TEMPLATE_TRAIT_TYPE(TRAIT, COMPONENT, TEMPLATE_PARAM, TEMPLATE_ARG, \
-                                         ...)                                            \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TEMPLATE_PARAM>                                                        \
-        struct TRAIT<COMPONENT<TEMPLATE_ARG>>                                            \
-        {                                                                                \
-            using type = __VA_ARGS__;                                                    \
-        };                                                                               \
-        }                                                                                \
-        }
-#endif
-//
-//--------------------------------------------------------------------------------------//
-//
-#if !defined(TIMEMORY_VARIADIC_TRAIT_TYPE)
-#    define TIMEMORY_VARIADIC_TRAIT_TYPE(TRAIT, COMPONENT, TEMPLATE_PARAM, TEMPLATE_ARG, \
-                                         ...)                                            \
-        TIMEMORY_TEMPLATE_TRAIT_TYPE(TRAIT, COMPONENT, TIMEMORY_ESC(TEMPLATE_PARAM),     \
-                                     TIMEMORY_ESC(TEMPLATE_ARG), __VA_ARGS__)
 #endif
 
 //======================================================================================//
@@ -762,25 +667,6 @@
 //
 //--------------------------------------------------------------------------------------//
 //
-#endif
-
-//======================================================================================//
-//
-//                              OPENMP TOOLS (OMPT)
-//
-//======================================================================================//
-//
-#if !defined(TIMEMORY_OMPT_API_TAG)
-#    define TIMEMORY_OMPT_API_TAG TIMEMORY_API
-#endif
-
-// for callback declarations
-#if !defined(TIMEMORY_OMPT_CBDECL)
-#    if defined(TIMEMORY_USE_OMPT)
-#        define TIMEMORY_OMPT_CBDECL(NAME) (ompt_callback_t) & NAME
-#    else
-#        define TIMEMORY_OMPT_CBDECL(...)
-#    endif
 #endif
 
 //======================================================================================//

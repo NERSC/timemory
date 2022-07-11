@@ -58,9 +58,10 @@ struct component_apis<component::gotcha<Nt, ComponentsT, DiffT>>
 }  // namespace tim
 //
 TIMEMORY_SET_COMPONENT_API(component::malloc_gotcha, tpls::gotcha, category::external,
-                           category::memory, os::supports_linux)
+                           category::memory, category::gotcha_wrapper, os::supports_linux)
 TIMEMORY_SET_COMPONENT_API(component::memory_allocations, tpls::gotcha,
-                           category::external, category::memory, os::supports_linux)
+                           category::external, category::memory, category::gotcha_manager,
+                           os::supports_linux)
 //
 //--------------------------------------------------------------------------------------//
 //

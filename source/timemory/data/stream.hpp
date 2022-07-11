@@ -32,8 +32,8 @@
 
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/demangle.hpp"
 #include "timemory/utility/types.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -736,8 +736,9 @@ public:
             }
             if(!found)
             {
-                PRINT_HERE("Warning! Expected header tag '%s' not found when sorting",
-                           itr.c_str());
+                TIMEMORY_PRINT_HERE(
+                    "Warning! Expected header tag '%s' not found when sorting",
+                    itr.c_str());
             }
         }
 

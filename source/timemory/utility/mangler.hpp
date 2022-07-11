@@ -32,8 +32,8 @@
 
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/function_traits.hpp"
+#include "timemory/utility/delimit.hpp"
 #include "timemory/utility/type_id.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <string>
 #include <tuple>
@@ -86,7 +86,7 @@ struct mangler
 //--------------------------------------------------------------------------------------//
 
 template <typename... Args>
-struct mangler<std::tuple<Args...>>
+struct mangler<type_list<Args...>>
 {
     static std::string mangle(const std::string& func, bool is_memfun, bool is_const,
                               bool nsp = false)
@@ -105,10 +105,10 @@ template <typename FuncT, typename TraitsT = mpl::function_traits<FuncT>>
 std::string
 mangle(const std::string& func)
 {
-    using _Tuple             = typename TraitsT::args_type;
+    using args_type          = typename TraitsT::args_type;
     constexpr bool is_memfun = TraitsT::is_memfun;
     constexpr bool is_const  = TraitsT::is_const;
-    return impl::mangler<_Tuple>::mangle(func, is_memfun, is_const);
+    return impl::mangler<args_type>::mangle(func, is_memfun, is_const);
 }
 
 //--------------------------------------------------------------------------------------//

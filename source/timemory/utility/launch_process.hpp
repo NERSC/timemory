@@ -37,6 +37,6 @@ launch_process(const char* cmd, const std::string& extra = "",
                std::ostream* os = nullptr);
 }  // namespace tim
 
-#if defined(TIMEMORY_UTILITY_HEADER_ONLY) && TIMEMORY_UTILITY_HEADER_ONLY > 0
+#if defined(TIMEMORY_UTILITY_HEADER_MODE) && TIMEMORY_UTILITY_HEADER_MODE > 0
 #    include "timemory/utility/launch_process.cpp"
 #endif

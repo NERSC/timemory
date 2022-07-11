@@ -35,7 +35,7 @@ emit-separator "Executing instrumented run"
 
 emit-separator "Analyzing results in ${TIMEMORY_OUTPUT_PATH}"
 
-WALL_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-wall.txt"
+WALL_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-wall_clock.txt"
 
 if [ ! -f "${WALL_FILE}" ]; then
     echo -e "Missing wall-clock output file: \"${WALL_FILE}\""
@@ -64,7 +64,7 @@ emit-separator "Executing instrumented run"
 # run
 ./@TEST_NAME@.inst.second
 
-for i in "wall" "cpu_util" "peak_rss"
+for i in "wall_clock" "cpu_util" "peak_rss"
 do
     emit-separator "Analyzing ${i} results in ${TIMEMORY_OUTPUT_PATH}"
     FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-${i}.txt"

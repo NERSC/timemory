@@ -29,18 +29,16 @@
 
 #pragma once
 
-#include "timemory/components/macros.hpp"
+#include "timemory/macros/attributes.hpp"
+#include "timemory/math/minus.hpp"
 #include "timemory/mpl/concepts.hpp"
-#include "timemory/mpl/math.hpp"
-#include "timemory/mpl/quirks.hpp"
-#include "timemory/utility/types.hpp"
 
 #include <type_traits>
 
-//======================================================================================//
-//
 namespace tim
 {
+//======================================================================================//
+
 namespace trait
 {
 template <typename Tp>
@@ -50,26 +48,13 @@ template <typename Tp>
 using data_t = typename data<Tp>::type;
 }  // namespace trait
 
+//======================================================================================//
+
 namespace component
 {
-//
-// generic static polymorphic base class
-template <typename Tp,
-          typename ValueType = conditional_t<concepts::is_empty<trait::data_t<Tp>>::value,
-                                             int64_t, trait::data_t<Tp>>>
-struct base;
-//
-//--------------------------------------------------------------------------------------//
-//
 namespace operators
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-//         the operator- is used very, very often in stop() of components
-//
-//--------------------------------------------------------------------------------------//
-//
+// operator- is used very, very often in stop() of components
 template <typename Tp>
 Tp
 operator-(Tp lhs, const Tp& rhs)
@@ -77,33 +62,44 @@ operator-(Tp lhs, const Tp& rhs)
     math::minus(lhs, rhs);
     return lhs;
 }
-//
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace operators
+}  // namespace component
+
+//======================================================================================//
+
+namespace component
+{
 //
-//--------------------------------------------------------------------------------------//
+struct TIMEMORY_VISIBLE empty_base;
 //
-struct empty_base;
+struct TIMEMORY_VISIBLE empty_storage;
 //
-struct empty_storage;
+struct TIMEMORY_VISIBLE dynamic_base;
 //
-struct dynamic_base;
+struct TIMEMORY_VISIBLE base_state;
 //
-template <typename Tp, typename Value>
-struct base;
+template <typename Tp>
+struct TIMEMORY_VISIBLE base_format;
 //
-//--------------------------------------------------------------------------------------//
+template <typename Tp, size_t Sz>
+struct TIMEMORY_VISIBLE base_data;
+//
+template <typename Tp, typename ValueT>
+struct TIMEMORY_VISIBLE base_units;
+//
+// generic static polymorphic base class
+template <typename Tp,
+          typename ValueType = std::conditional_t<
+              concepts::is_empty<trait::data_t<Tp>>::value, int64_t, trait::data_t<Tp>>>
+struct TIMEMORY_VISIBLE base;
 //
 template <typename Tp>
 struct base<Tp, void>;
 //
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace component
-//
-//----------------------------------------------------------------------------------//
-//
+
+//======================================================================================//
+
 namespace trait
 {
 /// \struct tim::trait::dynamic_base
@@ -117,19 +113,16 @@ struct dynamic_base : std::false_type
 };
 //
 }  // namespace trait
-//
-//----------------------------------------------------------------------------------//
-//
-}  // namespace tim
-//
+
 //======================================================================================//
 
-namespace tim
-{
 namespace cereal
 {
 namespace detail
 {
+template <typename Tp>
+struct StaticVersion;
+
 template <typename Tp, typename Vp>
 struct StaticVersion<tim::component::base<Tp, Vp>>
 {

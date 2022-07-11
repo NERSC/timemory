@@ -230,9 +230,8 @@ struct filter_if_true<Predicate, std::tuple<Ts...>>
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_true<Predicate, type_list<Ts...>>
 {
-    using type = convert_t<tuple_concat_t<conditional_t<Predicate<Ts>::value,
-                                                        std::tuple<>, std::tuple<Ts>>...>,
-                           type_list<>>;
+    using type =
+        type_concat_t<conditional_t<Predicate<Ts>::value, type_list<>, type_list<Ts>>...>;
 };
 
 template <template <typename> class Predicate, typename Sequence>

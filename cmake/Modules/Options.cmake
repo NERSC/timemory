@@ -14,7 +14,7 @@ set(TIMEMORY_REQUIRE_PACKAGES
     ON
     CACHE BOOL "Disable auto-detection and explicitly require packages")
 
-# advanced options not using the "add_option" macro
+# advanced options not using the "timemory_add_option" macro
 option(SPACK_BUILD "Tweak some installation directories when building via spack" OFF)
 option(TIMEMORY_CI "Timemory continuous integration" OFF)
 option(TIMEMORY_SOURCE_GROUP "Enable source_group" OFF)
@@ -47,6 +47,7 @@ set(_USE_COVERAGE OFF)
 set(_BUILD_OPT OFF)
 set(_BUILD_GOTCHA OFF)
 set(_BUILD_CALIPER ON)
+set(_BUILD_LIBUNWIND ON)
 set(_BUILD_FORTRAN ON)
 set(_NON_APPLE_UNIX OFF)
 set(_UNIX_OS ${UNIX})
@@ -118,6 +119,7 @@ endif()
 
 if(WIN32)
     set(_BUILD_CALIPER OFF)
+    set(_BUILD_LIBUNWIND OFF)
 endif()
 
 # intel compiler has had issues with rapidxml library in past so default to off
@@ -125,7 +127,11 @@ if(CMAKE_CXX_COMPILER_IS_INTEL)
     set(_USE_XML OFF)
 endif()
 
-timemory_test_find_package(libunwind _USE_LIBUNWIND)
+if(NOT TIMEMORY_BUILD_LIBUNWIND)
+    timemory_test_find_package(libunwind _USE_LIBUNWIND)
+else()
+    set(_USE_LIBUNWIND ON)
+endif()
 
 set(_REQUIRE_LIBUNWIND OFF)
 set(_HATCHET ${_UNIX_OS})
@@ -205,22 +211,24 @@ endif()
 string(TOUPPER "${CMAKE_BUILD_TYPE}" _CONFIG)
 
 # CMake options
-add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)"
-            DOC)
-add_feature(CMAKE_INSTALL_PREFIX "Installation prefix" DOC)
-add_feature(CMAKE_C_STANDARD "C language standard" DOC)
-add_feature(CMAKE_CXX_STANDARD "C++ language standard" DOC)
-add_feature(CMAKE_CUDA_STANDARD "CUDA language standard" DOC)
-add_feature(CMAKE_C_FLAGS "C build flags")
-add_feature(CMAKE_CXX_FLAGS "C++ build flags")
-add_feature(CMAKE_CUDA_FLAGS "CUDA build flags")
-add_feature(CMAKE_C_FLAGS_${_CONFIG} "C optimization type build flags")
-add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ optimization type build flags")
-add_feature(CMAKE_CUDA_FLAGS_${_CONFIG} "CUDA optimization type build flags")
+timemory_add_feature(CMAKE_BUILD_TYPE
+                     "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)" DOC)
+timemory_add_feature(CMAKE_INSTALL_PREFIX "Installation prefix" DOC)
+timemory_add_feature(CMAKE_C_STANDARD "C language standard" DOC)
+timemory_add_feature(CMAKE_CXX_STANDARD "C++ language standard" DOC)
+timemory_add_feature(CMAKE_CUDA_STANDARD "CUDA language standard" DOC)
+timemory_add_feature(CMAKE_C_FLAGS "C build flags")
+timemory_add_feature(CMAKE_CXX_FLAGS "C++ build flags")
+timemory_add_feature(CMAKE_CUDA_FLAGS "CUDA build flags")
+timemory_add_feature(CMAKE_C_FLAGS_${_CONFIG} "C optimization type build flags")
+timemory_add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ optimization type build flags")
+timemory_add_feature(CMAKE_CUDA_FLAGS_${_CONFIG} "CUDA optimization type build flags")
 
-add_option(BUILD_SHARED_LIBS "Build shared libraries" ${_DEFAULT_BUILD_SHARED})
-add_option(BUILD_STATIC_LIBS "Build static libraries" ${_DEFAULT_BUILD_STATIC})
-add_option(TIMEMORY_SKIP_BUILD "Disable building any libraries" OFF)
+timemory_add_option(BUILD_SHARED_LIBS "Build shared libraries" ${_DEFAULT_BUILD_SHARED}
+                    CMAKE_DEFINE)
+timemory_add_option(BUILD_STATIC_LIBS "Build static libraries" ${_DEFAULT_BUILD_STATIC}
+                    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_SKIP_BUILD "Disable building any libraries" OFF)
 
 if(TIMEMORY_SKIP_BUILD)
     # local override
@@ -283,9 +291,9 @@ if(${PROJECT_NAME}_MAIN_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     endif()
 
     # standard required
-    add_option(CMAKE_C_STANDARD_REQUIRED "Require C language standard" ON)
-    add_option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ language standard" ON)
-    add_option(CMAKE_CUDA_STANDARD_REQUIRED "Require C++ language standard" ON)
+    timemory_add_option(CMAKE_C_STANDARD_REQUIRED "Require C language standard" ON)
+    timemory_add_option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ language standard" ON)
+    timemory_add_option(CMAKE_CUDA_STANDARD_REQUIRED "Require C++ language standard" ON)
 
     # compiling with Clang + NVCC will produce many warnings w/o GCC extensions
     set(_CXX_EXT OFF)
@@ -294,16 +302,18 @@ if(${PROJECT_NAME}_MAIN_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     endif()
 
     # extensions
-    add_option(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)" OFF)
-    add_option(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++14)" ${_CXX_EXT})
-    add_option(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++14)" OFF)
+    timemory_add_option(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)"
+                        OFF)
+    timemory_add_option(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++14)"
+                        ${_CXX_EXT})
+    timemory_add_option(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++14)" OFF)
 else()
-    add_feature(CMAKE_C_STANDARD_REQUIRED "Require C language standard")
-    add_feature(CMAKE_CXX_STANDARD_REQUIRED "Require C++ language standard")
-    add_feature(CMAKE_CUDA_STANDARD_REQUIRED "Require C++ language standard")
-    add_feature(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)")
-    add_feature(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++14)")
-    add_feature(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++14)")
+    timemory_add_feature(CMAKE_C_STANDARD_REQUIRED "Require C language standard")
+    timemory_add_feature(CMAKE_CXX_STANDARD_REQUIRED "Require C++ language standard")
+    timemory_add_feature(CMAKE_CUDA_STANDARD_REQUIRED "Require C++ language standard")
+    timemory_add_feature(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)")
+    timemory_add_feature(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++14)")
+    timemory_add_feature(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++14)")
 
     if(NOT DEFINED CMAKE_CXX_STANDARD)
         timemory_message(
@@ -314,7 +324,7 @@ else()
     endif()
 endif()
 
-add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
+timemory_add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 
 set(_INSTALL_PYTHON auto)
 if(SKBUILD)
@@ -324,10 +334,12 @@ elseif(SPACK_BUILD)
 endif()
 
 # Install settings
-add_option(TIMEMORY_INSTALL_HEADERS "Install the header files" ON)
-add_option(TIMEMORY_INSTALL_CONFIG
-           "Install the cmake package config files, i.e. timemory-config.cmake, etc." ON)
-add_option(
+timemory_add_option(TIMEMORY_INSTALL_HEADERS "Install the header files" ON)
+timemory_add_option(
+    TIMEMORY_INSTALL_CONFIG
+    "Install the cmake package config files, i.e. timemory-config.cmake, etc." ON)
+timemory_add_option(TIMEMORY_INSTALL_LIBRARIES "Install the libraries" ON)
+timemory_add_option(
     TIMEMORY_INSTALL_ALL
     "'install' target depends on 'all' target. Set to OFF to only install artifacts which were explicitly built"
     ON)
@@ -347,61 +359,74 @@ if(NOT "${TIMEMORY_INSTALL_PYTHON}" IN_LIST TIMEMORY_INSTALL_PYTHON_OPTIONS)
     message("")
     message(FATAL_ERROR "TIMEMORY_INSTALL_PYTHON set to invalid option. See guide above")
 endif()
-add_feature(TIMEMORY_INSTALL_PYTHON
-            "Installation mode for python (${TIMEMORY_INSTALL_PYTHON_OPTIONS})")
+timemory_add_feature(TIMEMORY_INSTALL_PYTHON
+                     "Installation mode for python (${TIMEMORY_INSTALL_PYTHON_OPTIONS})")
 
 if(NOT TIMEMORY_INSTALL_ALL)
     set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY ON)
     set(_BUILD_CALIPER OFF)
     set(_BUILD_GOTCHA OFF)
+    set(_BUILD_LIBUNWIND OFF)
 endif()
 
 # Build settings
-add_option(TIMEMORY_BUILD_DOCS "Make a `doc` make target" OFF)
-add_option(TIMEMORY_BUILD_TESTING "Enable testing" OFF)
-add_option(TIMEMORY_BUILD_GOOGLE_TEST "Enable GoogleTest" ${TIMEMORY_BUILD_TESTING})
-add_option(TIMEMORY_BUILD_EXAMPLES "Build the examples" ${TIMEMORY_BUILD_TESTING})
-add_option(TIMEMORY_BUILD_C "Build the C compatible library" ON)
-add_option(TIMEMORY_BUILD_FORTRAN "Build the Fortran compatible library"
-           ${_BUILD_FORTRAN})
-add_option(TIMEMORY_BUILD_PORTABLE
-           "Disable arch flags which may cause portability issues (e.g. AVX-512)" OFF)
-add_option(TIMEMORY_BUILD_PYTHON "Build Python bindings with internal pybind11" ON)
-add_option(TIMEMORY_BUILD_PYTHON_LINE_PROFILER "Build customized Python line-profiler" ON)
-add_option(TIMEMORY_BUILD_PYTHON_HATCHET "Build internal Hatchet distribution" ON)
-add_option(TIMEMORY_BUILD_LTO "Enable link-time optimizations in build" OFF)
-add_option(TIMEMORY_BUILD_TOOLS "Enable building tools" ON)
-add_option(TIMEMORY_BUILD_COMPILER_INSTRUMENTATION
-           "Enable building compiler instrumentation libraries" ${TIMEMORY_BUILD_TOOLS})
-add_option(TIMEMORY_INLINE_COMPILER_INSTRUMENTATION
-           "Insert compiler instrumentation around inlined function calls" OFF NO_FEATURE)
-add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS "Add extra optimization flags"
-           ${_BUILD_OPT})
-add_option(
+timemory_add_option(TIMEMORY_BUILD_DOCS "Make a `doc` make target" OFF)
+timemory_add_option(TIMEMORY_BUILD_TESTING "Enable testing" OFF)
+timemory_add_option(TIMEMORY_BUILD_GOOGLE_TEST "Enable GoogleTest"
+                    ${TIMEMORY_BUILD_TESTING})
+timemory_add_option(TIMEMORY_BUILD_EXAMPLES "Build the examples"
+                    ${TIMEMORY_BUILD_TESTING})
+timemory_add_option(TIMEMORY_BUILD_C "Build the C compatible library" ON)
+timemory_add_option(TIMEMORY_BUILD_FORTRAN "Build the Fortran compatible library"
+                    ${_BUILD_FORTRAN})
+timemory_add_option(
+    TIMEMORY_BUILD_PORTABLE
+    "Disable arch flags which may cause portability issues (e.g. AVX-512)" OFF)
+timemory_add_option(TIMEMORY_BUILD_PYTHON "Build Python bindings with internal pybind11"
+                    ON)
+timemory_add_option(TIMEMORY_BUILD_PYTHON_LINE_PROFILER
+                    "Build customized Python line-profiler" ON)
+timemory_add_option(TIMEMORY_BUILD_PYTHON_HATCHET "Build internal Hatchet distribution"
+                    ON)
+timemory_add_option(TIMEMORY_BUILD_LTO "Enable link-time optimizations in build" OFF)
+timemory_add_option(TIMEMORY_BUILD_TOOLS "Enable building tools" ON)
+timemory_add_option(
+    TIMEMORY_BUILD_COMPILER_INSTRUMENTATION
+    "Enable building compiler instrumentation libraries" ${TIMEMORY_BUILD_TOOLS})
+timemory_add_option(
+    TIMEMORY_INLINE_COMPILER_INSTRUMENTATION
+    "Insert compiler instrumentation around inlined function calls" OFF NO_FEATURE)
+timemory_add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS "Add extra optimization flags"
+                    ${_BUILD_OPT})
+timemory_add_option(
     TIMEMORY_BUILD_CALIPER "Enable building Caliper submodule (set to OFF for external)"
     ${_BUILD_CALIPER})
-add_option(TIMEMORY_BUILD_OMPT "Enable building OpenMP-Tools from submodule" OFF)
-add_option(TIMEMORY_BUILD_DYNINST
-           "Enable building Dyninst submodule (set to OFF for external)" OFF)
-add_option(
+timemory_add_option(TIMEMORY_BUILD_OMPT "Enable building OpenMP-Tools from submodule" OFF)
+timemory_add_option(TIMEMORY_BUILD_DYNINST
+                    "Enable building Dyninst submodule (set to OFF for external)" OFF)
+timemory_add_option(
     TIMEMORY_BUILD_DYNINST_TPLS
     "Enable building Dyninst third-party library dependencies (TBB, Boost, elfutils, libiberty). See also: DYNINST_BUILD_<TPL> options"
     OFF)
-add_option(TIMEMORY_BUILD_DEVELOPER "Enable building with developer flags" OFF)
-add_option(TIMEMORY_FORCE_GPERFTOOLS_PYTHON
-           "Enable gperftools + Python (may cause termination errors)" ON)
-add_option(TIMEMORY_BUILD_QUIET "Disable verbose messages" OFF NO_FEATURE)
-add_option(TIMEMORY_REQUIRE_PACKAGES "All find_package(...) use REQUIRED" ON)
-add_option(TIMEMORY_BUILD_GOTCHA "Enable building GOTCHA (set to OFF for external)"
-           ${_BUILD_GOTCHA})
-add_option(TIMEMORY_UNITY_BUILD
-           "Same as CMAKE_UNITY_BUILD but is not propagated to submodules" ON)
-add_option(
+timemory_add_option(
+    TIMEMORY_BUILD_LIBUNWIND
+    "Enable building libunwind submodule (set to OFF for external)" ${_BUILD_LIBUNWIND})
+timemory_add_option(TIMEMORY_BUILD_DEVELOPER "Enable building with developer flags" OFF)
+timemory_add_option(TIMEMORY_FORCE_GPERFTOOLS_PYTHON
+                    "Enable gperftools + Python (may cause termination errors)" ON)
+timemory_add_option(TIMEMORY_BUILD_QUIET "Disable verbose messages" OFF NO_FEATURE)
+timemory_add_option(TIMEMORY_REQUIRE_PACKAGES "All find_package(...) use REQUIRED" ON)
+timemory_add_option(TIMEMORY_BUILD_GOTCHA
+                    "Enable building GOTCHA (set to OFF for external)" ${_BUILD_GOTCHA})
+timemory_add_option(TIMEMORY_UNITY_BUILD
+                    "Same as CMAKE_UNITY_BUILD but is not propagated to submodules" ON)
+timemory_add_option(
     TIMEMORY_BUILD_EXCLUDE_FROM_ALL
     "When timemory is a subproject, ensure only your timemory target dependencies are built"
     OFF)
 if(NOT CMAKE_VERSION VERSION_LESS 3.16)
-    add_option(TIMEMORY_PRECOMPILE_HEADERS "Pre-compile headers where possible" OFF)
+    timemory_add_option(TIMEMORY_PRECOMPILE_HEADERS "Pre-compile headers where possible"
+                        OFF)
 else()
     set(TIMEMORY_PRECOMPILE_HEADERS OFF)
 endif()
@@ -437,9 +462,9 @@ endif()
 
 # Features
 if(${PROJECT_NAME}_MAIN_PROJECT)
-    add_feature(${PROJECT_NAME}_C_FLAGS "C compiler flags")
-    add_feature(${PROJECT_NAME}_CXX_FLAGS "C++ compiler flags")
-    add_feature(${PROJECT_NAME}_CUDA_FLAGS "CUDA compiler flags")
+    timemory_add_feature(${PROJECT_NAME}_C_FLAGS "C compiler flags")
+    timemory_add_feature(${PROJECT_NAME}_CXX_FLAGS "C++ compiler flags")
+    timemory_add_feature(${PROJECT_NAME}_CUDA_FLAGS "CUDA compiler flags")
 endif()
 
 define_default_option(_MPI ON)
@@ -463,52 +488,72 @@ define_default_option(_NCCL ${_USE_CUDA})
 define_default_option(_LIKWID_NVMON ${_LIKWID} ${_NON_APPLE_UNIX} ${_CUDA})
 
 # timemory options
-add_option(TIMEMORY_USE_DEPRECATED "Enable deprecated code" OFF CMAKE_DEFINE)
-add_option(TIMEMORY_USE_STATISTICS "Enable statistics by default" ON CMAKE_DEFINE)
-add_option(TIMEMORY_USE_MPI "Enable MPI usage" ${_MPI} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_MPI_INIT "Enable MPI_Init and MPI_Init_thread wrappers" OFF
-           CMAKE_DEFINE)
-add_option(TIMEMORY_USE_UPCXX "Enable UPCXX usage (MPI support takes precedence)"
-           ${_UPCXX} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_SANITIZER "Enable -fsanitize flag (=${TIMEMORY_SANITIZER_TYPE})"
-           OFF)
-add_option(TIMEMORY_USE_TAU "Enable TAU marking API" ${_TAU} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_PAPI "Enable PAPI" ${_PAPI} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_CLANG_TIDY "Enable running clang-tidy" OFF)
-add_option(TIMEMORY_USE_COVERAGE "Enable code-coverage" ${_USE_COVERAGE})
-add_option(TIMEMORY_USE_GPERFTOOLS "Enable gperftools" ${_GPERFTOOLS} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_ARCH "Enable architecture flags" OFF CMAKE_DEFINE)
-add_option(TIMEMORY_USE_VTUNE "Enable VTune marking API" ${_VTUNE} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_CUDA "Enable CUDA option for GPU measurements" ${_CUDA}
-           CMAKE_DEFINE)
-add_option(TIMEMORY_USE_NVTX "Enable NVTX marking API" ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_CUPTI "Enable CUPTI profiling for NVIDIA GPUs"
-           ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_NVML "Enable support for NVIDIA Management Library"
-           ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_NCCL "Enable NCCL support for NVIDIA GPUs" ${_NCCL} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_HIP "Enable HIP option for GPU roofline" ${_HIP} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_CALIPER "Enable Caliper" ${_CALIPER} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_PERFETTO "Enable Perfetto" ${_PERFETTO} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_PYTHON "Enable Python" ${_PYTHON} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_COMPILE_TIMING "Enable -ftime-report for compilation times" OFF)
-add_option(TIMEMORY_USE_DYNINST "Enable dynamic instrumentation" ${_DYNINST})
-add_option(TIMEMORY_USE_ALLINEA_MAP "Enable control for AllineaMAP sampler"
-           ${_ALLINEA_MAP} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_CRAYPAT "Enable CrayPAT support" ${_CRAYPAT} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_OMPT "Enable OpenMP tooling" ${_OMPT} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_LIKWID "Enable LIKWID marker forwarding" ${_LIKWID} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_LIKWID_PERFMON "Enable LIKWID support for perf (CPU)"
-           ${TIMEMORY_USE_LIKWID} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_LIKWID_NVMON "Enable LIKWID support for nvidia (GPU)"
-           ${_LIKWID_NVMON} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_GOTCHA "Enable GOTCHA" ${_GOTCHA} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_XML "Enable XML serialization support" ${_USE_XML} CMAKE_DEFINE)
-add_option(TIMEMORY_USE_LIBUNWIND "Enable libunwind" ${_USE_LIBUNWIND} CMAKE_DEFINE)
-add_option(TIMEMORY_BUILD_ERT "Build ERT library" ON)
+timemory_add_option(TIMEMORY_USE_VISIBILITY "Enable visibility attributes" ON
+                    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_DEPRECATED "Enable deprecated code" OFF CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_STATISTICS "Enable statistics by default" ON
+                    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_MPI "Enable MPI usage" ${_MPI} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_MPI_INIT "Enable MPI_Init and MPI_Init_thread wrappers"
+                    OFF CMAKE_DEFINE)
+timemory_add_option(
+    TIMEMORY_USE_UPCXX "Enable UPCXX usage (MPI support takes precedence)" ${_UPCXX}
+    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_SANITIZER
+                    "Enable -fsanitize flag (=${TIMEMORY_SANITIZER_TYPE})" OFF)
+timemory_add_option(TIMEMORY_USE_TAU "Enable TAU marking API" ${_TAU} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_PAPI "Enable PAPI" ${_PAPI} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_CLANG_TIDY "Enable running clang-tidy" OFF)
+timemory_add_option(TIMEMORY_USE_COVERAGE "Enable code-coverage" ${_USE_COVERAGE})
+timemory_add_option(TIMEMORY_USE_GPERFTOOLS "Enable gperftools" ${_GPERFTOOLS}
+                    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_ARCH "Enable architecture flags" OFF CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_VTUNE "Enable VTune marking API" ${_VTUNE} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_CUDA "Enable CUDA option for GPU measurements" ${_CUDA}
+                    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_NVTX "Enable NVTX marking API" ${TIMEMORY_USE_CUDA}
+                    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_CUPTI "Enable CUPTI profiling for NVIDIA GPUs"
+                    ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_NVML "Enable support for NVIDIA Management Library"
+                    ${TIMEMORY_USE_CUDA} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_NCCL "Enable NCCL support for NVIDIA GPUs" ${_NCCL}
+                    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_HIP "Enable HIP option for GPU roofline" ${_HIP}
+                    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_CALIPER "Enable Caliper" ${_CALIPER} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_PERFETTO "Enable Perfetto" ${_PERFETTO} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_PYTHON "Enable Python" ${_PYTHON} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_COMPILE_TIMING
+                    "Enable -ftime-report for compilation times" OFF)
+timemory_add_option(TIMEMORY_USE_DYNINST "Enable dynamic instrumentation" ${_DYNINST})
+timemory_add_option(TIMEMORY_USE_ALLINEA_MAP "Enable control for AllineaMAP sampler"
+                    ${_ALLINEA_MAP} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_CRAYPAT "Enable CrayPAT support" ${_CRAYPAT}
+                    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_OMPT "Enable OpenMP tooling" ${_OMPT} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_LIKWID "Enable LIKWID marker forwarding" ${_LIKWID}
+                    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_LIKWID_PERFMON "Enable LIKWID support for perf (CPU)"
+                    ${TIMEMORY_USE_LIKWID} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_LIKWID_NVMON "Enable LIKWID support for nvidia (GPU)"
+                    ${_LIKWID_NVMON} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_GOTCHA "Enable GOTCHA" ${_GOTCHA} CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_XML "Enable XML serialization support" ${_USE_XML}
+                    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_LIBUNWIND "Enable libunwind" ${_USE_LIBUNWIND}
+                    CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_BUILD_ERT "Build ERT library" ON)
 if(CMAKE_CXX_COMPILER_IS_CLANG OR TIMEMORY_BUILD_DOCS)
-    add_option(TIMEMORY_USE_XRAY "Enable XRay instrumentation" OFF CMAKE_DEFINE)
+    timemory_add_option(TIMEMORY_USE_XRAY "Enable XRay instrumentation" OFF CMAKE_DEFINE)
 endif()
+
+set(TIMEMORY_MAX_THREADS
+    2048
+    CACHE STRING "Maximum number of statically allocated thread-local statics")
+timemory_add_feature(TIMEMORY_MAX_THREADS
+                     "Maximum number of statically allocated thread-local statics")
+timemory_add_cmake_defines(TIMEMORY_MAX_THREADS VALUE DEFAULT)
 
 if(TIMEMORY_BUILD_EXAMPLES
    AND TIMEMORY_USE_COVERAGE
@@ -529,11 +574,11 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 endif()
 
 if(${PROJECT_NAME}_MAIN_PROJECT)
-    add_feature(TIMEMORY_gperftools_COMPONENTS "gperftool components" DOC)
+    timemory_add_feature(TIMEMORY_gperftools_COMPONENTS "gperftool components" DOC)
 endif()
 
 if(TIMEMORY_USE_CUDA OR TIMEMORY_BUILD_DOCS)
-    add_option(TIMEMORY_USE_CUDA_HALF "Enable half/half2 if CUDA_ARCH >= 60" OFF)
+    timemory_add_option(TIMEMORY_USE_CUDA_HALF "Enable half/half2 if CUDA_ARCH >= 60" OFF)
 endif()
 
 set(_DYNINST OFF)
@@ -563,16 +608,19 @@ if(_TIMEM AND WIN32)
     set(_TIMEM OFF)
 endif()
 
-add_option(TIMEMORY_BUILD_AVAIL "Build the timemory-avail tool" ${TIMEMORY_BUILD_TOOLS})
-add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ${_TIMEM})
-add_option(TIMEMORY_BUILD_KOKKOS_TOOLS "Build the kokkos-tools libraries" OFF)
-add_option(TIMEMORY_BUILD_KOKKOS_CONFIG "Build various connector configurations" OFF)
-add_option(TIMEMORY_BUILD_DYNINST_TOOLS
-           "Build the timemory-run dynamic instrumentation tool" ${_DYNINST})
-add_option(TIMEMORY_BUILD_MPIP_LIBRARY "Build the mpiP library" ${_MPIP})
-add_option(TIMEMORY_BUILD_OMPT_LIBRARY "Build the OMPT library" ${_OMPT})
-add_option(TIMEMORY_BUILD_NCCLP_LIBRARY "Build the ncclP library" ${_NCCLP})
-add_option(TIMEMORY_BUILD_MALLOCP_LIBRARY "Build the mallocP library" ${_MALLOCP})
+timemory_add_option(TIMEMORY_BUILD_AVAIL "Build the timemory-avail tool"
+                    ${TIMEMORY_BUILD_TOOLS})
+timemory_add_option(TIMEMORY_BUILD_TIMEM "Build the timem tool" ${_TIMEM})
+timemory_add_option(TIMEMORY_BUILD_KOKKOS_TOOLS "Build the kokkos-tools libraries" OFF)
+timemory_add_option(TIMEMORY_BUILD_KOKKOS_CONFIG "Build various connector configurations"
+                    OFF)
+timemory_add_option(TIMEMORY_BUILD_DYNINST_TOOLS
+                    "Build the timemory-run dynamic instrumentation tool" ${_DYNINST})
+timemory_add_option(TIMEMORY_BUILD_MPIP_LIBRARY "Build the mpiP library" ${_MPIP})
+timemory_add_option(TIMEMORY_BUILD_OMPT_LIBRARY "Build the OMPT library" ${_OMPT})
+timemory_add_option(TIMEMORY_BUILD_NCCLP_LIBRARY "Build the ncclP library" ${_NCCLP})
+timemory_add_option(TIMEMORY_BUILD_MALLOCP_LIBRARY "Build the mallocP library"
+                    ${_MALLOCP})
 
 unset(_MPIP)
 unset(_OMPT)
@@ -628,14 +676,29 @@ if(NOT BUILD_SHARED_LIBS
         CACHE BOOL "Build the kokkos-tools libraries" FORCE)
 endif()
 
+timemory_set_if_empty(TIMEMORY_SETTINGS_PREFIX "TIMEMORY_")
+timemory_set_if_empty(TIMEMORY_PROJECT_NAME "timemory")
+
+timemory_add_cmake_defines(TIMEMORY_SETTINGS_PREFIX VALUE QUOTE DEFAULT)
+timemory_add_cmake_defines(TIMEMORY_PROJECT_NAME VALUE QUOTE DEFAULT)
+
+if(NOT timemory_MAIN_PROJECT)
+    timemory_add_feature(
+        TIMEMORY_SETTINGS_PREFIX
+        "timemory settings will be prefixed with \"${TIMEMORY_SETTINGS_PREFIX}\"")
+    timemory_add_feature(TIMEMORY_PROJECT_NAME
+                         "timemory settings config will use \"${TIMEMORY_PROJECT_NAME}\"")
+endif()
+
 # cereal options
-add_option(WITH_WERROR "Compile with '-Werror' C++ compiler flag" OFF NO_FEATURE)
-add_option(THREAD_SAFE "Compile Cereal with THREAD_SAFE option" ON NO_FEATURE)
-add_option(JUST_INSTALL_CEREAL "Skip testing of Cereal" ON NO_FEATURE)
-add_option(SKIP_PORTABILITY_TEST "Skip Cereal portability test" ON NO_FEATURE)
+timemory_add_option(WITH_WERROR "Compile with '-Werror' C++ compiler flag" OFF NO_FEATURE)
+timemory_add_option(THREAD_SAFE "Compile Cereal with THREAD_SAFE option" ON NO_FEATURE)
+timemory_add_option(JUST_INSTALL_CEREAL "Skip testing of Cereal" ON NO_FEATURE)
+timemory_add_option(SKIP_PORTABILITY_TEST "Skip Cereal portability test" ON NO_FEATURE)
 
 if(TIMEMORY_BUILD_DOCS)
-    add_option(TIMEMORY_BUILD_DOXYGEN "Include `doc` make target in all" OFF NO_FEATURE)
+    timemory_add_option(TIMEMORY_BUILD_DOXYGEN "Include `doc` make target in all" OFF
+                        NO_FEATURE)
     mark_as_advanced(TIMEMORY_BUILD_DOXYGEN)
 endif()
 
@@ -653,7 +716,7 @@ endif()
 macro(_TIMEMORY_ACTIVATE_CLANG_TIDY)
     if(TIMEMORY_USE_CLANG_TIDY)
         find_program(CLANG_TIDY_COMMAND NAMES clang-tidy)
-        add_feature(CLANG_TIDY_COMMAND "Path to clang-tidy command")
+        timemory_add_feature(CLANG_TIDY_COMMAND "Path to clang-tidy command")
         if(NOT CLANG_TIDY_COMMAND)
             timemory_message(WARNING
                              "TIMEMORY_USE_CLANG_TIDY is ON but clang-tidy is not found!")

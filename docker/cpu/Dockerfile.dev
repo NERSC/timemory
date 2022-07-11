@@ -7,23 +7,11 @@ ARG CLANG_VERSION=11
 ARG ENABLE_DISPLAY=0
 
 # Install the software, remove unecessary deps
-RUN cd /tmp && \
-    apt-get update && \
-    apt-get dist-upgrade -y && \
-    apt-get install -y wget gpg software-properties-common && \
-    wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | apt-key add - && \
-    DISTRIB_CODENAME=$(cat /etc/lsb-release | grep DISTRIB_CODENAME | awk -F '=' '{print $NF}') && \
-    apt-add-repository "deb https://apt.kitware.com/ubuntu/ ${DISTRIB_CODENAME} main" && \
-    apt-get update && \
-    apt-get install -y cmake build-essential ninja-build && \
-    apt-get -y autoclean
-
 COPY ./apt.sh /tmp/apt.sh
 RUN cd /tmp && /tmp/apt.sh
 
 ARG COMPILER_SPEC=gcc@9.3.0
 ARG VERSION=develop
-ARG PYTHON_VERSION=3.7
 
 # What we want to install and how we want to install it
 # is specified in a manifest file (spack.yaml)
@@ -36,13 +24,6 @@ RUN mkdir /opt/environment \
     &&   echo "  - dyninst" \
     &&   echo "  - caliper~papi" \
     &&   echo "  - gperftools" \
-    &&   echo "  - python@${PYTHON_VERSION}" \
-    &&   echo "  - py-numpy" \
-    &&   echo "  - py-cython" \
-    &&   echo "  - py-pillow" \
-    &&   echo "  - py-matplotlib" \
-    &&   echo "  - py-mpi4py" \
-    &&   echo "  - py-pip" \
     &&   echo "  concretization: together" \
     &&   echo "  config:" \
     &&   echo "    install_tree: /opt/software" \

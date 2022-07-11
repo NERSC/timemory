@@ -8,7 +8,7 @@ if(TIMEMORY_USE_CUDA AND CMAKE_CUDA_COMPILER)
                                                            LINKER_LANGUAGE CUDA)
 endif()
 
-build_intermediate_library(
+timemory_build_intermediate_library(
     USE_INTERFACE
     NAME ${NAME}
     TARGET ${NAME}-component

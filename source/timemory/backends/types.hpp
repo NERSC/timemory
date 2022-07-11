@@ -24,5 +24,6 @@
 
 #pragma once
 
+#include "timemory/backends/defines.hpp"
 #include "timemory/backends/types/cupti.hpp"
 #include "timemory/backends/types/papi.hpp"

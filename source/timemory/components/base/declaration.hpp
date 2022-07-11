@@ -24,7 +24,10 @@
 
 #pragma once
 
-#include "timemory/components/base/data.hpp"
+#include "timemory/components/base/base_data.hpp"
+#include "timemory/components/base/base_format.hpp"
+#include "timemory/components/base/base_state.hpp"
+#include "timemory/components/base/base_units.hpp"
 #include "timemory/components/base/types.hpp"
 #include "timemory/components/opaque/types.hpp"
 #include "timemory/components/properties.hpp"
@@ -94,6 +97,8 @@ struct base
 : public trait::dynamic_base<Tp>::type
 , private base_state
 , private base_data_t<Tp, Value>
+, private base_units<Tp, Value>
+, private base_format<Tp>
 , public concepts::component
 {
     using EmptyT = std::tuple<>;
@@ -104,6 +109,8 @@ public:
     static constexpr bool is_component = true;
     using Type                         = Tp;
     using value_type                   = Value;
+    using format_type                  = base_format<Tp>;
+    using units_type                   = base_units<Tp, Value>;
     using data_type                    = base_data_t<Tp, Value>;
     using accum_type                   = typename data_type::accum_type;
     using last_type                    = typename data_type::last_type;
@@ -296,42 +303,19 @@ protected:
     using data_type::value;
 
 public:
-    static constexpr bool timing_category_v = trait::is_timing_category<Type>::value;
-    static constexpr bool memory_category_v = trait::is_memory_category<Type>::value;
-    static constexpr bool timing_units_v    = trait::uses_timing_units<Type>::value;
-    static constexpr bool memory_units_v    = trait::uses_memory_units<Type>::value;
-    static constexpr bool percent_units_v   = trait::uses_percent_units<Type>::value;
-    static constexpr auto ios_fixed         = std::ios_base::fixed;
-    static constexpr auto ios_decimal       = std::ios_base::dec;
-    static constexpr auto ios_showpoint     = std::ios_base::showpoint;
-    static const fmtflags format_flags      = ios_fixed | ios_decimal | ios_showpoint;
+    using format_type::get_format_flags;
+    using format_type::get_precision;
+    using format_type::get_width;
+    using format_type::set_format_flags;
+    using format_type::set_precision;
+    using format_type::set_width;
+    using units_type::display_unit;
+    using units_type::get_display_unit;
+    using units_type::get_unit;
+    using units_type::set_display_unit;
+    using units_type::set_unit;
+    using units_type::unit;
 
-#if !defined(DOXYGEN_SHOULD_SKIP_THIS)
-    static const short precision = percent_units_v ? 1 : 3;
-    static const short width     = percent_units_v ? 6 : 8;
-#endif
-
-    template <typename Up = Type, typename UnitT = typename trait::units<Up>::type,
-              enable_if_t<std::is_same<UnitT, int64_t>::value, int> = 0>
-    static int64_t unit();
-
-    template <typename Up    = Type,
-              typename UnitT = typename trait::units<Up>::display_type,
-              enable_if_t<std::is_same<UnitT, std::string>::value, int> = 0>
-    static std::string display_unit();
-
-    template <typename Up = Type, typename UnitT = typename trait::units<Up>::type,
-              enable_if_t<std::is_same<UnitT, int64_t>::value, int> = 0>
-    static int64_t get_unit();
-
-    template <typename Up    = Type,
-              typename UnitT = typename trait::units<Up>::display_type,
-              enable_if_t<std::is_same<UnitT, std::string>::value, int> = 0>
-    static std::string get_display_unit();
-
-    static short       get_width();
-    static short       get_precision();
-    static fmtflags    get_format_flags();
     static std::string label();
     static std::string description();
     static std::string get_label();

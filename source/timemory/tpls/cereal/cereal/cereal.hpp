@@ -36,8 +36,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <functional>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -1062,10 +1064,32 @@ private:
             return lookupResult->second;
         }  // need to load
 
-        std::uint32_t version = 0;
+        std::uint32_t       version          = 0;
+        const std::uint32_t _current_version = detail::StaticVersion<T>::version;
 
 #if !defined(TIMEMORY_DISABLE_CEREAL_CLASS_VERSION)
-        process(make_nvp<ArchiveType>("cereal_class_version", version));
+        try
+        {
+            process(make_nvp<ArchiveType>("cereal_class_version", version));
+        } catch(cereal::Exception& _e)
+        {
+            char* _v       = getenv("CEREAL_VERBOSE");
+            int   _verbose = 1;
+            if(_v)
+            {
+                std::stringstream _ss{};
+                _ss << _v;
+                _ss >> _verbose;
+            }
+            if(_verbose > 0)
+                fprintf(stderr,
+                        "[cereal] Warning! %s :: assuming version %u for %s (suppress "
+                        "with CEREAL_VERBOSE=0)\n",
+                        _e.what(), _current_version, typeid(T).name());
+            version = _current_version;
+        }
+#else
+        (void) _current_version;
 #endif
         itsVersionedTypes.emplace_hint(lookupResult, hash, version);
 

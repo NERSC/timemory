@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/rusage/extern/user_mode_time.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(user_mode_time, true, int64_t)

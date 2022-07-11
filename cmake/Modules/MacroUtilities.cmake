@@ -18,11 +18,21 @@ unset(${PROJECT_NAME_UC}_COMPILED_LIBRARIES CACHE)
 unset(${PROJECT_NAME_UC}_INTERFACE_LIBRARIES CACHE)
 
 # -----------------------------------------------------------------------
+# timemory_set_if_empty: same as set(...) except only performed if the variable is
+# undefined or empty
+#
+macro(TIMEMORY_SET_IF_EMPTY _VARIABLE _VALUE)
+    if(NOT DEFINED ${_VARIABLE} OR "${${_VARIABLE}}" STREQUAL "")
+        set(${_VARIABLE} "${_VALUE}" ${ARGN})
+    endif()
+endmacro()
+
+# -----------------------------------------------------------------------
 # message which handles TIMEMORY_QUIET_CONFIG settings
 # -----------------------------------------------------------------------
 #
 function(TIMEMORY_MESSAGE TYPE)
-    if(NOT TIMEMORY_QUIET_CONFIG)
+    if("${TYPE}" MATCHES "ERROR|WARNING" OR NOT TIMEMORY_QUIET_CONFIG)
         message(${TYPE} "[timemory] ${ARGN}")
     endif()
 endfunction()
@@ -30,6 +40,7 @@ endfunction()
 # -----------------------------------------------------------------------
 # Save a set of variables with the given prefix
 # -----------------------------------------------------------------------
+#
 macro(TIMEMORY_SAVE_VARIABLES _PREFIX)
     # parse args
     cmake_parse_arguments(
@@ -38,6 +49,9 @@ macro(TIMEMORY_SAVE_VARIABLES _PREFIX)
         "CONDITION" # single value args
         "VARIABLES" # multiple value args
         ${ARGN})
+    if(NOT SAVE_VARIABLES)
+        message(FATAL_ERROR "Error! timemory_save_variables used incorrectly")
+    endif()
     if(DEFINED SAVE_CONDITION AND NOT "${SAVE_CONDITION}" STREQUAL "")
         if(${SAVE_CONDITION})
             foreach(_VAR ${SAVE_VARIABLES})
@@ -60,6 +74,7 @@ endmacro()
 # -----------------------------------------------------------------------
 # Restore a set of variables with the given prefix
 # -----------------------------------------------------------------------
+#
 macro(TIMEMORY_RESTORE_VARIABLES _PREFIX)
     # parse args
     cmake_parse_arguments(
@@ -68,6 +83,9 @@ macro(TIMEMORY_RESTORE_VARIABLES _PREFIX)
         "CONDITION" # single value args
         "VARIABLES" # multiple value args
         ${ARGN})
+    if(NOT RESTORE_VARIABLES)
+        message(FATAL_ERROR "Error! timemory_restore_variables used incorrectly")
+    endif()
     if(DEFINED RESTORE_CONDITION AND NOT "${RESTORE_CONDITION}" STREQUAL "")
         if(${RESTORE_CONDITION})
             foreach(_VAR ${RESTORE_VARIABLES})
@@ -92,10 +110,8 @@ endmacro()
 # -----------------------------------------------------------------------
 # CACHED LIST
 # -----------------------------------------------------------------------
-# macro set_ifnot(<var> <value>) If variable var is not set, set its value to that
-# provided
 #
-macro(CACHE_LIST _OP _LIST)
+function(TIMEMORY_CACHE_LIST _OP _LIST)
     set(_TMP_CACHE_LIST ${${_LIST}})
     # apply operation on list
     list(${_OP} _TMP_CACHE_LIST ${ARGN})
@@ -103,35 +119,11 @@ macro(CACHE_LIST _OP _LIST)
     set(${_LIST}
         "${_TMP_CACHE_LIST}"
         CACHE INTERNAL "" FORCE)
-endmacro()
-
-# -----------------------------------------------------------------------
-# CMAKE EXTENSIONS
-# -----------------------------------------------------------------------
-# macro set_ifnot(<var> <value>) If variable var is not set, set its value to that
-# provided
-#
-macro(SET_IFNOT _var _value)
-    if(NOT DEFINED ${_var})
-        set(${_var} ${_value} ${ARGN})
-    endif()
-endmacro()
-
-# -----------------------------------------------------------------------
-# macro safe_remove_duplicates(<list>) ensures remove_duplicates is only called if list
-# has values
-#
-macro(SAFE_REMOVE_DUPLICATES _list)
-    if(NOT "${${_list}}" STREQUAL "")
-        list(REMOVE_DUPLICATES ${_list})
-    endif(NOT "${${_list}}" STREQUAL "")
-endmacro()
+endfunction()
 
 # -----------------------------------------------------------------------
 # function - capitalize - make a string capitalized (first letter is capital) usage:
-# capitalize("SHARED" CShared) message(STATUS "-- CShared is \"${CShared}\"") $ -- CShared
-# is "Shared"
-function(CAPITALIZE str var)
+function(TIMEMORY_CAPITALIZE str var)
     # make string lower
     string(TOLOWER "${str}" str)
     string(SUBSTRING "${str}" 0 1 _first)
@@ -144,41 +136,16 @@ function(CAPITALIZE str var)
 endfunction()
 
 # -----------------------------------------------------------------------
-# macro set_ifnot_match(<var> <value>) If variable var is not set, set its value to that
-# provided
+# function timemory_add_enabled_interface(<NAME>) Mark an interface library as enabled
 #
-macro(SET_IFNOT_MATCH VAR APPEND)
-    if(NOT "${APPEND}" STREQUAL "")
-        string(REGEX MATCH "${APPEND}" _MATCH "${${VAR}}")
-        if(NOT "${_MATCH}" STREQUAL "")
-            set(${VAR} "${${VAR}} ${APPEND}")
-        endif()
-    endif()
-endmacro()
-
-# -----------------------------------------------------------------------
-# macro cache_ifnot(<var> <value>) If variable var is not set, set its value to that
-# provided and cache it
-#
-macro(CACHE_IFNOT _var _value _type _doc)
-    if(NOT ${_var} OR NOT ${CACHE_VARIABLES} MATCHES ${_var})
-        set(${_var}
-            ${_value}
-            CACHE ${_type} "${_doc}")
-    endif()
-endmacro()
-
-# -----------------------------------------------------------------------
-# function add_enabled_interface(<NAME>) Mark an interface library as enabled
-#
-function(ADD_ENABLED_INTERFACE _var)
+function(TIMEMORY_ADD_ENABLED_INTERFACE _var)
     set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_ENABLED_INTERFACES ${_var})
 endfunction()
 
 # -----------------------------------------------------------------------
-# function add_disabled_interface(<NAME>) Mark an interface as disabled
+# function timemory_add_disabled_interface(<NAME>) Mark an interface as disabled
 #
-function(ADD_DISABLED_INTERFACE _var)
+function(TIMEMORY_ADD_DISABLED_INTERFACE _var)
     get_property(_DISABLED GLOBAL PROPERTY ${PROJECT_NAME}_DISABLED_INTERFACES)
     if(NOT ${_var} IN_LIST _DISABLED)
         set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_DISABLED_INTERFACES ${_var})
@@ -186,9 +153,9 @@ function(ADD_DISABLED_INTERFACE _var)
 endfunction()
 
 # ------------------------------------------------------------------------------#
-# macro for creating a library target
+# function for creating a library target
 #
-function(CREATE_EXECUTABLE)
+function(TIMEMORY_CREATE_EXECUTABLE)
     # for include dirs, compile flags, definitions, etc. --> use INTERFACE libs and add
     # them to "LINK_LIBRARIES" list of arguments taking multiple values
     set(multival_args HEADERS SOURCES PROPERTIES LINK_LIBRARIES INSTALL_DESTINATION)
@@ -230,11 +197,11 @@ function(CREATE_EXECUTABLE)
 endfunction()
 
 # ------------------------------------------------------------------------------#
-# function add_timemory_test_target()
+# function timemory_add_timemory_test_target()
 #
 # Creates a target which runs ctest but depends on all the tests being built.
 #
-function(ADD_TIMEMORY_TEST_TARGET)
+function(TIMEMORY_ADD_TIMEMORY_TEST_TARGET)
     if(NOT TARGET timemory-test)
         add_custom_target(
             timemory-test
@@ -245,12 +212,12 @@ function(ADD_TIMEMORY_TEST_TARGET)
 endfunction()
 
 # ------------------------------------------------------------------------------#
-# macro add_googletest()
+# function timemory_add_google_test()
 #
 # Adds a unit test and links against googletest. Additional arguments are linked against
 # the test.
 #
-function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
+function(TIMEMORY_ADD_GOOGLE_TEST TEST_NAME)
     if(NOT TIMEMORY_BUILD_GOOGLE_TEST)
         return()
     endif()
@@ -258,14 +225,27 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     if(NOT TIMEMORY_BUILD_TESTING)
         set(_OPTS EXCLUDE_FROM_ALL)
     endif()
-    add_timemory_test_target()
+    timemory_add_timemory_test_target()
+
     include(GoogleTest)
+
+    # list of arguments taking zero values
+    set(option_args DISCOVER_TESTS ADD_TESTS MPI RUN_SERIAL)
+    # list of arguments taking single value
+    set(single_args NPROCS TIMEOUT TARGET)
     # list of arguments taking multiple values
-    set(multival_args SOURCES DEPENDS PROPERTIES DEFINITIONS LINK_LIBRARIES COMMAND
-                      OPTIONS ENVIRONMENT)
+    set(multiv_args
+        SOURCES
+        DEPENDS
+        PROPERTIES
+        DEFINITIONS
+        LINK_LIBRARIES
+        COMMAND
+        OPTIONS
+        ENVIRONMENT
+        LABELS)
     # parse args
-    cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS;MPI" "NPROCS;TIMEOUT;TARGET"
-                          "${multival_args}" ${ARGN})
+    cmake_parse_arguments(TEST "${option_args}" "${single_args}" "${multiv_args}" ${ARGN})
 
     if(NOT TARGET google-test-debug-options)
         add_library(google-test-debug-options INTERFACE)
@@ -279,12 +259,16 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     endif()
     list(APPEND TEST_LINK_LIBRARIES google-test-debug-options)
 
+    if(TEST_RUN_SERIAL)
+        list(APPEND TEST_PROPERTIES RUN_SERIAL ON)
+    endif()
+
     if(NOT TEST_TARGET)
         set(TEST_TARGET ${TEST_NAME})
     endif()
 
     if(TEST_SOURCES AND NOT TARGET ${TEST_TARGET})
-        create_executable(
+        timemory_create_executable(
             ${_OPTS}
             TARGET_NAME ${TEST_TARGET} OUTPUT_NAME ${TEST_TARGET}
             SOURCES ${TEST_SOURCES}
@@ -315,6 +299,10 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             set(TEST_NPROCS 2)
         endif()
         set(TEST_LAUNCHER ${MPIEXEC_EXECUTABLE} -n ${TEST_NPROCS})
+        list(APPEND TEST_LABELS "MPI")
+        if(NOT TEST_RUN_SERIAL)
+            list(APPEND TEST_PROPERTIES RUN_SERIAL ON)
+        endif()
     endif()
 
     if("${TEST_COMMAND}" STREQUAL "")
@@ -344,6 +332,8 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
         list(INSERT TEST_ENVIRONMENT 0 "TIMEMORY_DEBUG=ON" "TIMEMORY_VERBOSE=6")
     endif()
 
+    list(APPEND TEST_LABELS "minimal")
+
     if(TEST_DISCOVER_TESTS)
         string(REPLACE ";" "\\\\\\\\\\\\\\\\\\;" TEST_ENVIRONMENT "${TEST_ENVIRONMENT}")
         gtest_discover_tests(
@@ -351,22 +341,25 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
             TEST_LIST ${TEST_NAME}_TESTS ${TEST_OPTIONS} DISCOVERY_TIMEOUT 15
             WORKING_DIRECTORY ${WORKING_DIR}
             PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}"
-            TIMEOUT ${TEST_TIMEOUT})
+            TIMEOUT ${TEST_TIMEOUT} LABELS "${TEST_LABELS}" ${TEST_PROPERTIES})
     elseif(TEST_ADD_TESTS)
         gtest_add_tests(
             TARGET ${TEST_TARGET}
             TEST_LIST ${TEST_NAME}_TESTS ${TEST_OPTIONS}
             WORKING_DIRECTORY ${WORKING_DIR})
         set_tests_properties(
-            ${${TEST_NAME}_TESTS} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}" TIMEOUT
-                                             ${TEST_TIMEOUT})
+            ${${TEST_NAME}_TESTS}
+            PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}" TIMEOUT ${TEST_TIMEOUT} LABELS
+                       "${TEST_LABELS}" ${TEST_PROPERTIES})
     else()
         add_test(
             NAME ${TEST_NAME}
             COMMAND ${TEST_COMMAND}
             WORKING_DIRECTORY ${WORKING_DIR} ${TEST_OPTIONS})
-        set_tests_properties(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}"
-                                                     TIMEOUT ${TEST_TIMEOUT})
+        set_tests_properties(
+            ${TEST_NAME}
+            PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}" TIMEOUT ${TEST_TIMEOUT} LABELS
+                       "${TEST_LABELS}" ${TEST_PROPERTIES})
     endif()
 
     if(TEST_DEPENDS)
@@ -379,7 +372,7 @@ function(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
 endfunction()
 
 # ----------------------------------------------------------------------------------------#
-# macro CHECKOUT_GIT_SUBMODULE()
+# function TIMEMORY_CHECKOUT_GIT_SUBMODULE()
 #
 # Run "git submodule update" if a file in a submodule does not exist
 #
@@ -388,7 +381,7 @@ endfunction()
 # value) -- (default: PROJECT_SOURCE_DIR) TEST_FILE (one value) -- file to check for
 # (default: CMakeLists.txt) ADDITIONAL_CMDS (many value) -- any addition commands to pass
 #
-function(CHECKOUT_GIT_SUBMODULE)
+function(TIMEMORY_CHECKOUT_GIT_SUBMODULE)
     # parse args
     cmake_parse_arguments(
         CHECKOUT "RECURSIVE"
@@ -457,7 +450,7 @@ function(CHECKOUT_GIT_SUBMODULE)
         if(RET GREATER 0)
             set(_CMD "${GIT_EXECUTABLE} submodule update --init ${_RECURSE}
                 ${CHECKOUT_ADDITIONAL_CMDS} ${CHECKOUT_RELATIVE_PATH}")
-            message(STATUS "function(CHECKOUT_GIT_SUBMODULE) failed.")
+            message(STATUS "function(TIMEMORY_CHECKOUT_GIT_SUBMODULE) failed.")
             message(FATAL_ERROR "Command: \"${_CMD}\"")
         else()
             set(_TEST_FILE_EXISTS ON)
@@ -497,7 +490,7 @@ function(CHECKOUT_GIT_SUBMODULE)
                 "${GIT_EXECUTABLE} clone -b ${CHECKOUT_REPO_BRANCH}
                 ${CHECKOUT_ADDITIONAL_CMDS} ${CHECKOUT_REPO_URL} ${CHECKOUT_RELATIVE_PATH}"
                 )
-            message(STATUS "function(CHECKOUT_GIT_SUBMODULE) failed.")
+            message(STATUS "function(TIMEMORY_CHECKOUT_GIT_SUBMODULE) failed.")
             message(FATAL_ERROR "Command: \"${_CMD}\"")
         else()
             set(_TEST_FILE_EXISTS ON)
@@ -535,16 +528,16 @@ endfunction()
 # ----------------------------------------------------------------------------------------#
 # macro to add an interface lib
 #
-macro(ADD_INTERFACE_LIBRARY _TARGET)
+macro(TIMEMORY_ADD_INTERFACE_LIBRARY _TARGET)
     add_library(${_TARGET} INTERFACE)
     add_library(${PROJECT_NAME}::${_TARGET} ALIAS ${_TARGET})
-    cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES ${_TARGET})
+    timemory_cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES ${_TARGET})
     install(
         TARGETS ${_TARGET}
         DESTINATION ${CMAKE_INSTALL_LIBDIR}
         EXPORT ${PROJECT_NAME}-library-depends
         OPTIONAL)
-    add_enabled_interface(${_TARGET})
+    timemory_add_enabled_interface(${_TARGET})
     if(NOT "${ARGN}" STREQUAL "")
         set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_INTERFACE_DOC
                                             "${PROJECT_NAME}::${_TARGET}` | ${ARGN} |")
@@ -557,7 +550,7 @@ endmacro()
 #
 # ----------------------------------------------------------------------------------------#
 
-function(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
+function(TIMEMORY_INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
     if(NOT TARGET ${_TARGET})
         timemory_message(
             AUTHOR_WARNING
@@ -572,10 +565,16 @@ function(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
             ${TIMEMORY_EMPTY_INTERFACE_LIBRARIES} ${_TARGET}
             PARENT_SCOPE)
     endif()
-    add_disabled_interface(${_TARGET})
+    timemory_add_disabled_interface(${_TARGET})
 endfunction()
 
-function(ADD_RPATH)
+# ----------------------------------------------------------------------------------------#
+#
+# Add to RPATH
+#
+# ----------------------------------------------------------------------------------------#
+
+function(TIMEMORY_ADD_RPATH)
     set(_DIRS)
     foreach(_ARG ${ARGN})
         if(EXISTS "${_ARG}" AND IS_DIRECTORY "${_ARG}")
@@ -599,7 +598,7 @@ endfunction()
 # ----------------------------------------------------------------------------------------#
 # macro to build a library of type: shared, static, object
 #
-function(BUILD_LIBRARY)
+function(TIMEMORY_BUILD_LIBRARY)
 
     # options
     set(_options PIC NO_CACHE_LIST EXCLUDE_FROM_ALL)
@@ -670,6 +669,9 @@ function(BUILD_LIBRARY)
         set(_ENABLE_CUSTOM_COMMAND ON)
         add_library(${LIBRARY_TARGET_NAME} ${LIBRARY_TYPE} ${_EXCLUDE} ${LIBRARY_SOURCES})
         add_library(${PROJECT_NAME}::${LIBRARY_TARGET_NAME} ALIAS ${LIBRARY_TARGET_NAME})
+        if(TARGET libunwind-external)
+            add_dependencies(${LIBRARY_TARGET_NAME} libunwind-external)
+        endif()
     else()
         target_sources(${LIBRARY_TARGET_NAME} PRIVATE ${LIBRARY_SOURCES})
     endif()
@@ -737,8 +739,8 @@ function(BUILD_LIBRARY)
     if(NOT LIBRARY_NO_CACHE_LIST)
         # add to cached list of compiled libraries
         if("${LIBRARY_TYPE}" IN_LIST COMPILED_TYPES)
-            cache_list(APPEND ${PROJECT_NAME_UC}_COMPILED_LIBRARIES
-                       ${LIBRARY_TARGET_NAME})
+            timemory_cache_list(APPEND ${PROJECT_NAME_UC}_COMPILED_LIBRARIES
+                                ${LIBRARY_TARGET_NAME})
         endif()
     endif()
     unset(COMPILED_TYPES)
@@ -857,7 +859,7 @@ endfunction()
 # ----------------------------------------------------------------------------------------#
 # require variable
 #
-function(CHECK_REQUIRED VAR)
+function(TIMEMORY_CHECK_REQUIRED VAR)
     if(NOT DEFINED ${VAR} OR "${${VAR}}" STREQUAL "")
         message(FATAL_ERROR "Variable '${VAR}' must be defined and not empty")
     endif()
@@ -939,17 +941,22 @@ function(TIMEMORY_INSTALL_LIBRARIES)
         # add to list of export targets
         set_property(GLOBAL APPEND PROPERTY TIMEMORY_EXPORTED_LIBRARIES ${_LIB})
 
-        install(
-            TARGETS ${_LIB} ${_dst}
-            EXPORT ${PROJECT_NAME}-library-depends
-            OPTIONAL)
-
-        if(WIN32 AND "${_LIB}" IN_LIST SHARED_LIBS)
-            # for windows install pdb files too
+        get_target_property(_LIB_TYPE ${_LIB} TYPE)
+        if(NOT "${_LIB_TYPE}" STREQUAL "OBJECT_LIBRARY"
+           AND (TIMEMORY_INSTALL_LIBRARIES OR "${_LIB_TYPE}" MATCHES
+                                              "(MODULE|SHARED|INTERFACE)_LIBRARY"))
             install(
-                FILES $<TARGET_PDB_FILE:${_LIB}>
-                DESTINATION ${CMAKE_INSTALL_BINDIR}
+                TARGETS ${_LIB} ${_dst}
+                EXPORT ${PROJECT_NAME}-library-depends
                 OPTIONAL)
+
+            if(WIN32 AND "${_LIB}" IN_LIST SHARED_LIBS)
+                # for windows install pdb files too
+                install(
+                    FILES $<TARGET_PDB_FILE:${_LIB}>
+                    DESTINATION ${CMAKE_INSTALL_BINDIR}
+                    OPTIONAL)
+            endif()
         endif()
 
         if(TIMEMORY_USE_PYTHON AND ${_LIB} IN_LIST SHARED_LIBS)
@@ -1044,9 +1051,9 @@ function(TIMEMORY_TARGET_PRECOMPILE_HEADERS _TARG)
 endfunction()
 
 # ----------------------------------------------------------------------------------------#
-# macro to build a library of type: shared, static, object
+# function to build a library of type: shared, static, object
 #
-function(BUILD_INTERMEDIATE_LIBRARY)
+function(TIMEMORY_BUILD_INTERMEDIATE_LIBRARY)
 
     # options
     set(_options USE_INTERFACE USE_CATEGORY INSTALL_SOURCE FORCE_OBJECT FORCE_SHARED
@@ -1059,10 +1066,10 @@ function(BUILD_INTERMEDIATE_LIBRARY)
 
     cmake_parse_arguments(COMP "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
 
-    check_required(COMP_NAME)
-    check_required(COMP_TARGET)
-    check_required(COMP_CATEGORY)
-    check_required(COMP_FOLDER)
+    timemory_check_required(COMP_NAME)
+    timemory_check_required(COMP_TARGET)
+    timemory_check_required(COMP_CATEGORY)
+    timemory_check_required(COMP_FOLDER)
 
     if(NOT COMP_VISIBILITY)
         set(COMP_VISIBILITY default)
@@ -1153,7 +1160,7 @@ function(BUILD_INTERMEDIATE_LIBRARY)
         # message(STATUS "Building ${TARGET_NAME}") message(STATUS "[-------]
         # ${TARGET_NAME} :: ${DEPENDS}")
 
-        build_library(
+        timemory_build_library(
             NO_CACHE_LIST ${${LINK}_OPTIONS}
             TARGET_NAME ${TARGET_NAME}
             OUTPUT_NAME timemory-${COMP_TARGET}
@@ -1208,7 +1215,7 @@ function(BUILD_INTERMEDIATE_LIBRARY)
 
         if("${LINK}" STREQUAL "OBJECT")
             if(NOT TARGET timemory-${LC_CATEGORY}-${LINK})
-                add_interface_library(timemory-${LC_CATEGORY}-${LINK})
+                timemory_add_interface_library(timemory-${LC_CATEGORY}-${LINK})
             endif()
             if(NOT "timemory-${LC_CATEGORY}-${LINK}" STREQUAL "${TARGET_NAME}")
                 target_sources(timemory-${LC_CATEGORY}-${LINK}
@@ -1216,7 +1223,7 @@ function(BUILD_INTERMEDIATE_LIBRARY)
             endif()
         else()
             if(NOT TARGET timemory-${LC_CATEGORY}-${LINK})
-                add_interface_library(timemory-${LC_CATEGORY}-${LINK})
+                timemory_add_interface_library(timemory-${LC_CATEGORY}-${LINK})
             endif()
 
             if(NOT "timemory-${LC_CATEGORY}-${LINK}" STREQUAL "${TARGET_NAME}")
@@ -1243,13 +1250,13 @@ function(BUILD_INTERMEDIATE_LIBRARY)
     endif()
 
     if(NOT TARGET timemory-${COMP_TARGET})
-        add_interface_library(timemory-${COMP_TARGET})
+        timemory_add_interface_library(timemory-${COMP_TARGET})
         target_link_libraries(timemory-${COMP_TARGET}
                               INTERFACE timemory-${COMP_TARGET}-${_LIB_DEFAULT_TYPE})
     endif()
 
     if(NOT TARGET timemory-${LC_CATEGORY})
-        add_interface_library(timemory-${LC_CATEGORY})
+        timemory_add_interface_library(timemory-${LC_CATEGORY})
         target_link_libraries(timemory-${LC_CATEGORY}
                               INTERFACE timemory-${LC_CATEGORY}-${_LIB_DEFAULT_TYPE})
     endif()
@@ -1262,7 +1269,10 @@ function(BUILD_INTERMEDIATE_LIBRARY)
 
 endfunction()
 
-function(ADD_CMAKE_DEFINES _VAR)
+# ----------------------------------------------------------------------------------------#
+# function to add a definition to defines.h
+#
+function(TIMEMORY_ADD_CMAKE_DEFINES _VAR)
     # parse args
     cmake_parse_arguments(DEF "VALUE;QUOTE;DEFAULT" "" "" ${ARGN})
     if(DEF_VALUE)
@@ -1295,11 +1305,11 @@ function(ADD_CMAKE_DEFINES _VAR)
 endfunction()
 
 # -----------------------------------------------------------------------
-# function add_feature(<NAME> <DOCSTRING>) Add a project feature, whose activation is
-# specified by the existence of the variable <NAME>, to the list of enabled/disabled
-# features, plus a docstring describing the feature
+# function timemory_add_feature(<NAME> <DOCSTRING>) Add a project feature, whose
+# activation is specified by the existence of the variable <NAME>, to the list of
+# enabled/disabled features, plus a docstring describing the feature
 #
-function(ADD_FEATURE _var _description)
+function(TIMEMORY_ADD_FEATURE _var _description)
     set(EXTRA_DESC "")
     foreach(currentArg ${ARGN})
         if(NOT "${currentArg}" STREQUAL "${_var}"
@@ -1328,15 +1338,15 @@ function(ADD_FEATURE _var _description)
 endfunction()
 
 # ----------------------------------------------------------------------------------------#
-# function add_option(<OPTION_NAME> <DOCSRING> <DEFAULT_SETTING> [NO_FEATURE]) Add an
-# option and add as a feature if NO_FEATURE is not provided
+# function timemory_add_option(<OPTION_NAME> <DOCSRING> <DEFAULT_SETTING> [NO_FEATURE])
+# Add an option and add as a feature if NO_FEATURE is not provided
 #
-function(ADD_OPTION _NAME _MESSAGE _DEFAULT)
+function(TIMEMORY_ADD_OPTION _NAME _MESSAGE _DEFAULT)
     option(${_NAME} "${_MESSAGE}" ${_DEFAULT})
     if("NO_FEATURE" IN_LIST ARGN)
         mark_as_advanced(${_NAME})
     else()
-        add_feature(${_NAME} "${_MESSAGE}")
+        timemory_add_feature(${_NAME} "${_MESSAGE}")
         if(TIMEMORY_BUILD_DOCS)
             set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_CMAKE_OPTIONS_DOC
                                                 "${_NAME}` | ${_MESSAGE} |")
@@ -1351,9 +1361,10 @@ function(ADD_OPTION _NAME _MESSAGE _DEFAULT)
 endfunction()
 
 # ----------------------------------------------------------------------------------------#
-# function print_enabled_features() Print enabled  features plus their docstrings.
+# function timemory_print_enabled_features() Print enabled  features plus their
+# docstrings.
 #
-function(PRINT_ENABLED_FEATURES)
+function(TIMEMORY_PRINT_ENABLED_FEATURES)
     set(_basemsg "The following features are defined/enabled (+):")
     set(_currentFeatureText "${_basemsg}")
     get_property(_features GLOBAL PROPERTY ${PROJECT_NAME}_FEATURES)
@@ -1377,7 +1388,7 @@ function(PRINT_ENABLED_FEATURES)
                     string(REGEX REPLACE "^${PROJECT_NAME}_USE_" "" _feature_tmp
                                          "${_feature}")
                     string(TOLOWER "${_feature_tmp}" _feature_tmp_l)
-                    capitalize("${_feature_tmp}" _feature_tmp_c)
+                    timemory_capitalize("${_feature_tmp}" _feature_tmp_c)
                     foreach(_var _feature _feature_tmp _feature_tmp_l _feature_tmp_c)
                         set(_ver "${${${_var}}_VERSION}")
                         if(NOT "${_ver}" STREQUAL "")
@@ -1399,9 +1410,10 @@ function(PRINT_ENABLED_FEATURES)
 endfunction()
 
 # ----------------------------------------------------------------------------------------#
-# function print_disabled_features() Print disabled features plus their docstrings.
+# function timemory_print_disabled_features() Print disabled features plus their
+# docstrings.
 #
-function(PRINT_DISABLED_FEATURES)
+function(TIMEMORY_PRINT_DISABLED_FEATURES)
     set(_basemsg "The following features are NOT defined/enabled (-):")
     set(_currentFeatureText "${_basemsg}")
     get_property(_features GLOBAL PROPERTY ${PROJECT_NAME}_FEATURES)
@@ -1428,10 +1440,10 @@ function(PRINT_DISABLED_FEATURES)
 endfunction()
 
 # ----------------------------------------------------------------------------------------#
-# function print_enabled_interfaces() Print enabled INTERFACE libraries plus their
-# docstrings.
+# function timemory_print_enabled_interfaces() Print enabled INTERFACE libraries plus
+# their docstrings.
 #
-function(PRINT_ENABLED_INTERFACES)
+function(TIMEMORY_PRINT_ENABLED_INTERFACES)
     set(_basemsg "The following INTERFACE libraries are enabled:")
     set(_currentFeatureText "${_basemsg}")
     get_property(_enabled GLOBAL PROPERTY ${PROJECT_NAME}_ENABLED_INTERFACES)
@@ -1456,9 +1468,10 @@ function(PRINT_ENABLED_INTERFACES)
 endfunction()
 
 # ----------------------------------------------------------------------------------------#
-# function print_disabled_interfaces() Print disabled interfaces plus their docstrings.
+# function timemory_print_disabled_interfaces() Print disabled interfaces plus their
+# docstrings.
 #
-function(PRINT_DISABLED_INTERFACES)
+function(TIMEMORY_PRINT_DISABLED_INTERFACES)
     set(_basemsg
         "The following INTERFACE libraries are NOT enabled (empty INTERFACE libraries):")
     set(_currentFeatureText "${_basemsg}")
@@ -1477,15 +1490,15 @@ function(PRINT_DISABLED_INTERFACES)
 endfunction()
 
 # ----------------------------------------------------------------------------------------#
-# function print_features() Print all features plus their docstrings.
+# function timemory_print_features() Print all features plus their docstrings.
 #
-function(PRINT_FEATURES)
+function(TIMEMORY_PRINT_FEATURES)
     message(STATUS "")
-    print_enabled_features()
-    print_disabled_features()
+    timemory_print_enabled_features()
+    timemory_print_disabled_features()
     message(STATUS "")
-    print_enabled_interfaces()
-    print_disabled_interfaces()
+    timemory_print_enabled_interfaces()
+    timemory_print_disabled_interfaces()
 endfunction()
 
 # ----------------------------------------------------------------------------------------#

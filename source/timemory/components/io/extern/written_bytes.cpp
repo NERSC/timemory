@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/io/extern/written_bytes.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(written_bytes, true, std::array<int64_t, 2>)

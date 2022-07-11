@@ -28,9 +28,12 @@
 
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/hash/types.hpp"
+#include "timemory/operations/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/storage/graph.hpp"
 #include "timemory/storage/types.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -90,34 +93,35 @@ public:
     graph_data(const this_type&) = delete;
     graph_data& operator=(const this_type&) = delete;
 
-    TIMEMORY_NODISCARD bool has_head() const { return m_has_head; }
-    TIMEMORY_NODISCARD auto dummy_count() const { return m_dummies.size(); }
-    TIMEMORY_NODISCARD bool at_sea_level() const { return (m_depth == m_sea_level); }
+    bool has_head() const { return m_has_head; }
+    auto dummy_count() const { return m_dummies.size(); }
+    bool at_sea_level() const { return (m_depth == m_sea_level); }
 
-    int64_t&                   depth() { return m_depth; }
-    TIMEMORY_NODISCARD int64_t depth() const { return m_depth; }
-    int64_t&                   sea_level() { return m_sea_level; }
-    TIMEMORY_NODISCARD int64_t sea_level() const { return m_sea_level; }
+    int64_t& depth() { return m_depth; }
+    int64_t  depth() const { return m_depth; }
+    int64_t& sea_level() { return m_sea_level; }
+    int64_t  sea_level() const { return m_sea_level; }
 
-    graph_t&                 graph() { return m_graph; }
-    TIMEMORY_NODISCARD const graph_t& graph() const { return m_graph; }
+    graph_t&       graph() { return m_graph; }
+    const graph_t& graph() const { return m_graph; }
 
     iterator& head() { return m_head; }
     iterator& current() { return m_current; }
 
-    iterator                          begin() { return m_graph.begin(); }
-    iterator                          end() { return m_graph.end(); }
-    TIMEMORY_NODISCARD const_iterator begin() const { return m_graph.begin(); }
-    TIMEMORY_NODISCARD const_iterator end() const { return m_graph.end(); }
+    iterator       begin() { return m_graph.begin(); }
+    iterator       end() { return m_graph.end(); }
+    const_iterator begin() const { return m_graph.begin(); }
+    const_iterator end() const { return m_graph.end(); }
 
     inline void sync_sea_level()
     {
         if(m_master)
         {
-            DEBUG_PRINT_HERE("[%s][%i]> synchronizing sea-level for depth = %i, master "
-                             "depth = %i",
-                             demangle<NodeT>().c_str(), (int) threading::get_id(),
-                             (int) depth(), (int) m_master->depth());
+            TIMEMORY_DEBUG_PRINT_HERE(
+                "[%s][%i]> synchronizing sea-level for depth = %i, master "
+                "depth = %i",
+                demangle<NodeT>().c_str(), (int) threading::get_id(), (int) depth(),
+                (int) m_master->depth());
             add_dummy();
         }
     }
@@ -146,16 +150,19 @@ public:
         if(depth() == m_master->depth())
             return;
 
-        DEBUG_PRINT_HERE("[%s][%i]> Adding dummy for depth = %i, master depth = %i",
-                         demangle<NodeT>().c_str(), (int) threading::get_id(),
-                         (int) depth(), (int) m_master->depth());
+        TIMEMORY_DEBUG_PRINT_HERE(
+            "[%s][%i]> Adding dummy for depth = %i, master depth = %i",
+            demangle<NodeT>().c_str(), (int) threading::get_id(), (int) depth(),
+            (int) m_master->depth());
 
         auto _current = m_master->current();
-        auto _id      = _current->id();
+        auto _hash    = _current->hash();
         auto _depth   = _current->depth();
 
-        NodeT node(_id, NodeT::get_dummy(), _depth, threading::get_id(),
-                   process::get_id(), true);
+        NodeT node{
+            _hash, NodeT::get_dummy(), _depth, threading::get_id(), process::get_id(),
+            true
+        };
         m_depth     = _depth;
         m_sea_level = _depth;
         m_current   = m_graph.insert_after(m_head, std::move(node));
@@ -186,36 +193,41 @@ public:
         return m_current;
     }
 
-    TIMEMORY_NODISCARD inline iterator find(iterator itr) const
+    inline iterator find(iterator itr) const
     {
         if(!itr)
             return end();
 
+        auto _equal = [](auto _lhs, auto _rhs) {
+            return (_lhs->hash() == _rhs->hash()) && (_lhs->depth() == _rhs->depth());
+        };
+
         for(pre_order_iterator fitr = begin(); fitr != end(); ++fitr)
         {
-            if(fitr && *itr == *fitr && get_rolling_hash(itr) == get_rolling_hash(fitr))
+            if(fitr && _equal(itr, fitr))
                 return fitr;
             sibling_iterator entry = fitr;
-            for(auto sitr = entry.begin(); sitr != entry.end(); ++sitr)
+            for(auto eitr = entry.begin(); eitr != entry.end(); ++eitr)
             {
-                if(sitr && *itr == *sitr &&
-                   get_rolling_hash(itr) == get_rolling_hash(sitr))
-                    return sitr;
+                if(eitr && _equal(itr, eitr))
+                    return eitr;
             }
         }
         return end();
     }
 
-    TIMEMORY_NODISCARD inline int64_t get_rolling_hash(iterator itr) const
+    static inline hash_value_t get_rolling_hash(iterator itr)
     {
-        int64_t _accum = 0;
-        if(itr)
+        hash_value_t _accum = 0;
+        if(!itr)
             return _accum;
         _accum += itr->id();
         auto _parent = graph_t::parent(itr);
+        // using Tp     = std::decay_t<decltype(std::declval<iterator>()->data())>;
         while(_parent)
         {
-            _accum += _parent->id();
+            // if(!operation::get_is_invalid<Tp, false>{}(_parent->data()))
+            _accum += _parent->hash();
             _parent = graph_t::parent(_parent);
             if(!_parent)
                 break;
@@ -250,11 +262,12 @@ public:
         return m_graph.append_child(_itr, std::move(node));
     }
 
-    TIMEMORY_NODISCARD inverse_insert_t get_inverse_insert() const
+    inverse_insert_t get_inverse_insert() const
     {
-        inverse_insert_t ret;
+        inverse_insert_t ret{};
+        ret.reserve(m_dummies.size());
         for(const auto& itr : m_dummies)
-            ret.push_back({ itr.first, itr.second });
+            ret.emplace_back(itr.first, itr.second);
         std::reverse(ret.begin(), ret.end());
         return ret;
     }

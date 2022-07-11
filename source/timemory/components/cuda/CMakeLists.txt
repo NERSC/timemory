@@ -6,7 +6,7 @@ if(TIMEMORY_USE_CUDA)
     file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
          ${CMAKE_CURRENT_SOURCE_DIR}/*.cu)
 
-    build_intermediate_library(
+    timemory_build_intermediate_library(
         USE_INTERFACE
         NAME ${NAME}
         TARGET ${NAME}-component

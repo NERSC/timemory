@@ -35,7 +35,6 @@
 #include "timemory/macros.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <array>
 #include <cstdint>
@@ -74,7 +73,6 @@ inline bool
 check(error_t err)
 {
     TIMEMORY_HIP_RUNTIME_CHECK_ERROR(err);
-    // print_demangled_backtrace<32, 1>();
     return (err == success_v);
 }
 

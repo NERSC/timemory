@@ -30,6 +30,7 @@
 #pragma once
 
 #include "timemory/config/macros.hpp"
+#include "timemory/defines.h"
 #include "timemory/utility/types.hpp"
 
 #include <string>
@@ -55,35 +56,38 @@ struct argument_parser;
 /// initialization (creates manager and configures output path)
 //
 void
-timemory_init(int argc, char** argv, const std::string& _prefix = "timemory-",
+timemory_init(int argc, char** argv,
+              const std::string& _prefix = TIMEMORY_PROJECT_NAME "-",
               const std::string& _suffix = "-output");
 //
 //--------------------------------------------------------------------------------------//
 //
 /// initialization (creates manager and configures output path)
 void
-timemory_init(const std::string& exe_name, const std::string& _prefix = "timemory-",
+timemory_init(const std::string& exe_name,
+              const std::string& _prefix = TIMEMORY_PROJECT_NAME "-",
               const std::string& _suffix = "-output");
 //
 //--------------------------------------------------------------------------------------//
 //
 /// initialization (creates manager, configures output path, mpi_init)
 void
-timemory_init(int* argc, char*** argv, const std::string& _prefix = "timemory-",
+timemory_init(int* argc, char*** argv,
+              const std::string& _prefix = TIMEMORY_PROJECT_NAME "-",
               const std::string& _suffix = "-output");
 //
 //--------------------------------------------------------------------------------------//
 //
 void
 timemory_init(int* argc, char*** argv, argparse::argument_parser& parser,
-              const std::string& _prefix = "timemory-",
+              const std::string& _prefix = TIMEMORY_PROJECT_NAME "-",
               const std::string& _suffix = "-output");
 //
 //--------------------------------------------------------------------------------------//
 //
 void
 timemory_init(std::vector<std::string>&, argparse::argument_parser& parser,
-              const std::string& _prefix = "timemory-",
+              const std::string& _prefix = TIMEMORY_PROJECT_NAME "-",
               const std::string& _suffix = "-output");
 //
 //--------------------------------------------------------------------------------------//

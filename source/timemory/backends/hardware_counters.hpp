@@ -24,11 +24,13 @@
 
 #pragma once
 
+#include "timemory/backends/defines.hpp"
 #include "timemory/backends/types/papi.hpp"
 #include "timemory/macros/attributes.hpp"
 
 #include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace tim
@@ -47,11 +49,36 @@ struct api
     };
 };
 //
-struct info
-: public std::tuple<bool, int, int32_t, int32_t, string_t, string_t, string_t, string_t>
+struct qualifier
 {
-    using base_type =
-        std::tuple<bool, int, int32_t, int32_t, string_t, string_t, string_t, string_t>;
+    qualifier()                 = default;
+    ~qualifier()                = default;
+    qualifier(qualifier&&)      = default;
+    qualifier(const qualifier&) = default;
+
+    qualifier& operator=(qualifier&&) = default;
+    qualifier& operator=(const qualifier&) = default;
+
+    qualifier(bool _avail, int _code, string_t _sym, string_t _desc)
+    : available{ _avail }
+    , event_code{ _code }
+    , symbol{ std::move(_sym) }
+    , description{ std::move(_desc) }
+    {}
+
+    bool     available   = false;
+    int      event_code  = 0;
+    string_t symbol      = {};
+    string_t description = {};
+};
+//
+using qualifier_vec_t   = std::vector<qualifier>;
+using base_info_tuple_t = std::tuple<bool, int, int32_t, int32_t, string_t, string_t,
+                                     string_t, string_t, string_t, qualifier_vec_t>;
+//
+struct info : public base_info_tuple_t
+{
+    using base_type = base_info_tuple_t;
 
     info()            = default;
     ~info()           = default;
@@ -69,9 +96,19 @@ struct info
     : base_type(std::forward<base_type>(rhs))
     {}
 
-    info(bool _avail, int _cat, int32_t _idx, int32_t _off, const string_t& _sym,
-         const string_t& _pysym, const string_t& _short, const string_t& _long)
-    : base_type(_avail, _cat, _idx, _off, _sym, _pysym, _short, _long)
+    info(bool _avail, int _cat, int32_t _idx, int32_t _off, string_t _sym,
+         string_t _pysym, string_t _short, string_t _long, string_t _units = {},
+         qualifier_vec_t _qualifiers = {})
+    : base_type{ _avail,
+                 _cat,
+                 _idx,
+                 _off,
+                 std::move(_sym),
+                 std::move(_pysym),
+                 std::move(_short),
+                 std::move(_long),
+                 std::move(_units),
+                 std::move(_qualifiers) }
     {}
 
 #define TIMEMORY_HWCOUNTER_INFO_ACCESSOR(NAME, INDEX)                                    \
@@ -86,10 +123,26 @@ struct info
     TIMEMORY_HWCOUNTER_INFO_ACCESSOR(python_symbol, 5)
     TIMEMORY_HWCOUNTER_INFO_ACCESSOR(short_description, 6)
     TIMEMORY_HWCOUNTER_INFO_ACCESSOR(long_description, 7)
+    TIMEMORY_HWCOUNTER_INFO_ACCESSOR(units, 8)
+    TIMEMORY_HWCOUNTER_INFO_ACCESSOR(qualifiers, 9)
     //
 #undef TIMEMORY_HWCOUNTER_INFO_ACCESSOR
 
-    TIMEMORY_NODISCARD auto id() const { return (this->index() | this->offset()); }
+    auto id() const { return (this->index() | this->offset()); }
+
+    bool operator==(const info& rhs) const
+    {
+        return std::tie(available(), iface(), index(), offset(), symbol(),
+                        python_symbol(), short_description(), long_description(),
+                        units()) == std::tie(rhs.available(), rhs.iface(), rhs.index(),
+                                             rhs.offset(), rhs.symbol(),
+                                             rhs.python_symbol(), rhs.short_description(),
+                                             rhs.long_description(), rhs.units());
+    }
+
+    bool operator!=(const info& rhs) const { return !(*this == rhs); }
+
+    bool operator<(const info& rhs) const { return (id() < rhs.id()); }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -99,7 +152,7 @@ using info_vec_t = std::vector<info>;
 inline info_vec_t&
 get_info()
 {
-    static info_vec_t _instance;
+    static info_vec_t _instance{};
     return _instance;
 }
 //

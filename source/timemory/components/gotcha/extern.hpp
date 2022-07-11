@@ -34,8 +34,8 @@
 #include "timemory/components/gotcha/memory_allocations.hpp"
 #include "timemory/components/macros.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(malloc_gotcha, true, double)
-TIMEMORY_EXTERN_COMPONENT(memory_allocations, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(malloc_gotcha, true, double)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(memory_allocations, false, void)
 
 namespace tim
 {
@@ -48,4 +48,4 @@ using malloc_gotcha_type = component::gotcha<component::malloc_gotcha::data_size
 }  // namespace alias
 }  // namespace tim
 
-TIMEMORY_EXTERN_STORAGE(tim::alias::malloc_gotcha_type)
+TIMEMORY_DECLARE_EXTERN_STORAGE(tim::alias::malloc_gotcha_type)

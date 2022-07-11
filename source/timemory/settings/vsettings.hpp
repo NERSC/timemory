@@ -29,12 +29,14 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/environment/types.hpp"
 #include "timemory/settings/types.hpp"
+#include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <cstdint>
 #include <iomanip>
 #include <map>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <string>
 #include <typeindex>
@@ -61,10 +63,19 @@ struct vsettings
     struct noparse
     {};
 
-    vsettings(std::string _name = "", std::string _env_name = "",
-              std::string _descript = "", std::vector<std::string> _cmdline = {},
+    // vsettings() = default;
+
+    vsettings() = default;
+
+    vsettings(std::string _name, std::string _env_name, std::string _descript,
+              std::set<std::string> _categories, std::vector<std::string> _cmdline = {},
               int32_t _count = -1, int32_t _max_count = -1,
               std::vector<std::string> _choices = {});
+
+    vsettings(std::string _name, std::string _env_name, std::string _descript,
+              std::vector<std::string> _cmdline = {}, int32_t _count = -1,
+              int32_t _max_count = -1, std::vector<std::string> _choices = {},
+              std::set<std::string> _categories = {});
 
     virtual ~vsettings() = default;
 
@@ -75,12 +86,13 @@ struct vsettings
     vsettings& operator=(vsettings&&) = default;
 
     virtual std::string                as_string() const                        = 0;
-    virtual void                       reset()                                  = 0;
-    virtual void                       parse()                                  = 0;
-    virtual void                       parse(const std::string&)                = 0;
+    virtual bool                       reset()                                  = 0;
+    virtual bool                       parse()                                  = 0;
+    virtual bool                       parse(const std::string&)                = 0;
+    virtual bool                       is_updated()                             = 0;
     virtual void                       add_argument(argparse::argument_parser&) = 0;
     virtual std::shared_ptr<vsettings> clone()                                  = 0;
-    virtual void                       clone(std::shared_ptr<vsettings> rhs);
+    virtual void                       clone(const std::shared_ptr<vsettings>& rhs);
 
     virtual display_map_t get_display(std::ios::fmtflags fmt = {}, int _w = -1,
                                       int _p = -1);
@@ -90,18 +102,35 @@ struct vsettings
     const auto& get_description() const { return m_description; }
     const auto& get_command_line() const { return m_cmdline; }
     const auto& get_choices() const { return m_choices; }
+    const auto& get_categories() const { return m_categories; }
     const auto& get_count() const { return m_count; }
     const auto& get_max_count() const { return m_max_count; }
 
+    void set_hidden(bool _v) { m_hidden = _v; }
     void set_count(int32_t v) { m_count = v; }
     void set_max_count(int32_t v) { m_max_count = v; }
     void set_choices(const std::vector<std::string>& v) { m_choices = v; }
     void set_command_line(const std::vector<std::string>& v) { m_cmdline = v; }
+    void set_categories(const std::set<std::string>& v) { m_categories = v; }
+    void set_config_updated(bool _v) { m_cfg_updated = _v; }
+    void set_environ_updated(bool _v) { m_env_updated = _v; }
 
+    auto get_hidden() const { return m_hidden; }
     auto get_type_index() const { return m_type_index; }
     auto get_value_index() const { return m_value_index; }
+    auto get_config_updated() const { return m_cfg_updated; }
+    auto get_environ_updated() const { return m_env_updated; }
 
-    virtual bool matches(const std::string&, bool exact = true) const;
+    // enabled = true/false does not affect the return value, it is provided
+    // so that is can be specified to various tools, e.g. timemory-avail, whether
+    // or not the setting is relevant in the context of the current build/configuration
+    // or whether it should be added as a command-line option, etc.
+    void set_enabled(bool _v) { m_enabled = _v; }
+    auto get_enabled() const { return m_enabled; }
+
+    virtual bool matches(const std::string&, bool&& exact = true) const;
+    virtual bool matches(const std::string&, const std::string&, bool exact = true) const;
+    virtual bool matches(const std::string&, const char*, bool _exact = true) const;
 
     template <typename Tp>
     std::pair<bool, Tp> get() const;
@@ -111,7 +140,7 @@ struct vsettings
 
     template <typename Tp, enable_if_t<std::is_fundamental<decay_t<Tp>>::value> = 0>
     bool set(const Tp& _val);
-    void set(const std::string& _val) { parse(_val); }
+    bool set(const std::string& _val) { return parse(_val); }
 
     virtual parser_func_t get_action(TIMEMORY_API) = 0;
 
@@ -130,24 +159,34 @@ struct vsettings
 protected:
     static int get_debug()
     {
-        static bool _bool_val = get_env("TIMEMORY_DEBUG_SETTINGS", false);
-        static int  _int_val  = get_env("TIMEMORY_DEBUG_SETTINGS", 0);
+        static bool _bool_val = get_env(TIMEMORY_SETTINGS_PREFIX "DEBUG_SETTINGS", false);
+        static int  _int_val  = get_env(TIMEMORY_SETTINGS_PREFIX "DEBUG_SETTINGS", 0);
         return (_bool_val) ? _int_val : 0;
     }
 
     template <typename Tp>
-    void report_change(Tp _old, const Tp& _new);
+    bool report_change(Tp _old, const Tp& _new);
+
+    vsettings(std::string _name, std::string _env_name, std::string _descript,
+              std::set<std::string> _categories, std::vector<std::string> _cmdline,
+              int32_t _count, int32_t _max_count, std::vector<std::string> _choices,
+              bool _cfg_upd, bool _env_upd, bool _enabled, bool _hidden);
 
 protected:
-    std::type_index          m_type_index  = std::type_index(typeid(void));  // NOLINT
-    std::type_index          m_value_index = std::type_index(typeid(void));  // NOLINT
-    int32_t                  m_count       = -1;                             // NOLINT
-    int32_t                  m_max_count   = -1;                             // NOLINT
-    std::string              m_name        = "";                             // NOLINT
-    std::string              m_env_name    = "";                             // NOLINT
-    std::string              m_description = "";                             // NOLINT
-    std::vector<std::string> m_cmdline     = {};                             // NOLINT
-    std::vector<std::string> m_choices     = {};                             // NOLINT
+    bool                     m_enabled     = true;
+    bool                     m_hidden      = false;
+    bool                     m_cfg_updated = false;
+    bool                     m_env_updated = false;
+    std::type_index          m_type_index  = std::type_index(typeid(void));
+    std::type_index          m_value_index = std::type_index(typeid(void));
+    int32_t                  m_count       = -1;
+    int32_t                  m_max_count   = -1;
+    std::string              m_name        = {};
+    std::string              m_env_name    = {};
+    std::string              m_description = {};
+    std::vector<std::string> m_cmdline     = {};
+    std::vector<std::string> m_choices     = {};
+    std::set<std::string>    m_categories  = {};
 };
 //
 template <typename Tp>
@@ -199,13 +238,10 @@ vsettings::set(const Tp& _val)
 }
 //
 template <typename Tp>
-void
+bool
 vsettings::report_change(Tp _old, const Tp& _new)
 {
-    if(get_debug() < 1)
-        return;
-
-    if(_old != _new)
+    if(get_debug() >= 1 && _old != _new)
     {
         std::ostringstream oss;
         oss << std::boolalpha;
@@ -213,10 +249,11 @@ vsettings::report_change(Tp _old, const Tp& _new)
             << ") changed: " << _old << " --> " << _new << "\n";
         if(get_debug() > 1)
         {
-            print_demangled_backtrace<6, 3>(oss);
+            timemory_print_demangled_backtrace<6, 3>(oss);
         }
         std::cerr << oss.str() << std::flush;
     }
+    return (_old != _new);
 }
 //
 }  // namespace tim

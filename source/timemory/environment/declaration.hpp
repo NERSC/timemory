@@ -29,12 +29,14 @@
 #include "timemory/macros/compiler.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
+#include "timemory/utility/locking.hpp"
 #include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
 
+#include <atomic>
 #include <cassert>
 #include <cstdlib>
 #include <functional>
+#include <iomanip>
 #include <iosfwd>
 #include <map>
 #include <mutex>

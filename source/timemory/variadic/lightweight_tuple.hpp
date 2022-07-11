@@ -167,26 +167,36 @@ public:
     // public member functions
     //
     /// generic push into storage
-    this_type& push();
+    this_type& push(int64_t _tid = threading::get_id());
 
     /// generic pop out of storage
-    this_type& pop();
+    this_type& pop(int64_t _tid = threading::get_id());
 
     /// selective push
     template <typename... Tp>
-    this_type& push(mpl::piecewise_select<Tp...>);
+    this_type& push(mpl::piecewise_select<Tp...>, int64_t _tid = threading::get_id());
 
     /// selective push
     template <typename... Tp>
-    this_type& push(mpl::piecewise_ignore<Tp...>);
+    this_type& push(mpl::piecewise_ignore<Tp...>, int64_t _tid = threading::get_id());
+
+    /// selective push with scope configuration
+    template <typename... Tp>
+    this_type& push(mpl::piecewise_select<Tp...>, scope::config,
+                    int64_t _tid = threading::get_id());
+
+    /// selective push with scope configuration
+    template <typename... Tp>
+    this_type& push(mpl::piecewise_ignore<Tp...>, scope::config,
+                    int64_t _tid = threading::get_id());
 
     /// selective pop
     template <typename... Tp>
-    this_type& pop(mpl::piecewise_select<Tp...>);
+    this_type& pop(mpl::piecewise_select<Tp...>, int64_t _tid = threading::get_id());
 
     /// selective pop
     template <typename... Tp>
-    this_type& pop(mpl::piecewise_ignore<Tp...>);
+    this_type& pop(mpl::piecewise_ignore<Tp...>, int64_t _tid = threading::get_id());
 
     /// start all applicable components
     template <typename... Args>
@@ -624,8 +634,9 @@ public:
             auto _hash = add_hash_id(_key);
             if(_hash != m_hash)
             {
-                PRINT_HERE("Warning! Hash for '%s' (%llu) != %llu", _key.c_str(),
-                           (unsigned long long) _hash, (unsigned long long) m_hash);
+                TIMEMORY_PRINT_HERE("Warning! Hash for '%s' (%llu) != %llu", _key.c_str(),
+                                    (unsigned long long) _hash,
+                                    (unsigned long long) m_hash);
             }
         }
 

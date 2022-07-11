@@ -150,10 +150,10 @@ timemory_trace_mpi_finalize(MPI_Comm, int, void*, void*)
     once = true;
     // do finalization
     if(tim::settings::debug() || tim::settings::verbose() > 1)
-        PRINT_HERE("%s", "comm keyval finalization started");
+        TIMEMORY_PRINT_HERE("%s", "comm keyval finalization started");
     timemory_trace_finalize();
     if(tim::settings::debug() || tim::settings::verbose() > 1)
-        PRINT_HERE("%s", "comm keyval finalization complete");
+        TIMEMORY_PRINT_HERE("%s", "comm keyval finalization complete");
     return MPI_SUCCESS;
 }
 
@@ -241,10 +241,10 @@ struct mpi_trace_gotcha : tim::component::base<mpi_trace_gotcha, void>
             }
         }
         if(tim::settings::debug())
-            PRINT_HERE("%s", "finalizing trace");
+            TIMEMORY_PRINT_HERE("%s", "finalizing trace");
         timemory_trace_mpi_finalize(MPI_COMM_WORLD, 0, nullptr, nullptr);
         if(tim::settings::debug())
-            PRINT_HERE("%s", "finalizing MPI");
+            TIMEMORY_PRINT_HERE("%s", "finalizing MPI");
 
         auto ret    = MPI_Finalize();
         recursive() = false;
@@ -459,7 +459,7 @@ extern "C"
         {
 #if defined(DEBUG) || !defined(NDEBUG)
             if(tim::settings::debug())
-                PRINT_HERE("Tracing is locked: %s", (lk) ? "Y" : "N");
+                TIMEMORY_PRINT_HERE("Tracing is locked: %s", (lk) ? "Y" : "N");
 #endif
             return;
         }
@@ -468,10 +468,11 @@ extern "C"
         {
 #if defined(DEBUG) || !defined(NDEBUG)
             if(tim::settings::debug())
-                PRINT_HERE("Invalid library state: init = %s, fini = %s, enabled = %s",
-                           (get_library_state()[0]) ? "Y" : "N",
-                           (get_library_state()[1]) ? "Y" : "N",
-                           (tim::settings::enabled()) ? "Y" : "N");
+                TIMEMORY_PRINT_HERE(
+                    "Invalid library state: init = %s, fini = %s, enabled = %s",
+                    (get_library_state()[0]) ? "Y" : "N",
+                    (get_library_state()[1]) ? "Y" : "N",
+                    (tim::settings::enabled()) ? "Y" : "N");
 #endif
             return;
         }
@@ -480,7 +481,7 @@ extern "C"
         {
 #if defined(DEBUG) || !defined(NDEBUG)
             if(tim::settings::debug())
-                PRINT_HERE("trace %llu is throttled", (unsigned long long) id);
+                TIMEMORY_PRINT_HERE("trace %llu is throttled", (unsigned long long) id);
 #endif
             return;
         }
@@ -614,9 +615,9 @@ extern "C"
         {
             tim::trace::lock<tim::trace::library> lk{};
             if(tim::settings::debug())
-                PRINT_HERE("rank = %i, pid = %i, thread = %i, name = %s",
-                           tim::dmp::rank(), (int) tim::process::get_id(),
-                           (int) tim::threading::get_id(), name);
+                TIMEMORY_PRINT_HERE("rank = %i, pid = %i, thread = %i, name = %s",
+                                    tim::dmp::rank(), (int) tim::process::get_id(),
+                                    (int) tim::threading::get_id(), name);
 
             if(!get_library_state()[0] || get_library_state()[1] ||
                !tim::settings::enabled())
@@ -796,8 +797,8 @@ extern "C"
         else
         {
             if(tim::settings::debug())
-                PRINT_HERE("trace already initialized: %s",
-                           (get_library_state()[0]) ? "Y" : "N");
+                TIMEMORY_PRINT_HERE("trace already initialized: %s",
+                                    (get_library_state()[0]) ? "Y" : "N");
 
             _configure_components();
         }
@@ -818,34 +819,35 @@ extern "C"
 
         auto _debug = _settings->get_debug();
         if(_settings->get_verbose() > 1 || _settings->get_debug())
-            PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
-                       (int) tim::process::get_id(), (int) tim::threading::get_id());
+            TIMEMORY_PRINT_HERE("rank = %i, pid = %i, thread = %i", tim::dmp::rank(),
+                                (int) tim::process::get_id(),
+                                (int) tim::threading::get_id());
 
-        CONDITIONAL_PRINT_HERE(_debug, "%s", "getting count");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s", "getting count");
         // do the finalization
         auto _count = --library_trace_count;
 
         if(_count > 0)
         {
-            CONDITIONAL_PRINT_HERE(_debug, "%s", "positive count");
+            TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s", "positive count");
             // have the manager finalize
             if(tim::manager::instance())
                 tim::manager::instance()->finalize();
-            CONDITIONAL_PRINT_HERE(_debug, "%s", "returning");
+            TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s", "returning");
             return;
         }
 
-        CONDITIONAL_PRINT_HERE(_debug, "%s", "secondary lock");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s", "secondary lock");
         tim::auto_lock_t lock(tim::type_mutex<TIMEMORY_API>());
 
-        CONDITIONAL_PRINT_HERE(_debug, "%s", "setting state");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s", "setting state");
         // tim::settings::enabled() = false;
         get_library_state()[1] = true;
 
-        CONDITIONAL_PRINT_HERE(_debug, "%s", "barrier");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s", "barrier");
         tim::mpi::barrier();
 
-        CONDITIONAL_PRINT_HERE(_debug, "%s", "resetting");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s", "resetting");
         // reset traces just in case
         user_trace_bundle::reset();
 
@@ -857,7 +859,7 @@ extern "C"
         // clean up any remaining entries
         if(!_skip_stop)
         {
-            CONDITIONAL_PRINT_HERE(_debug, "%s", "cleaning trace map");
+            TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s", "cleaning trace map");
             for(auto& itr : get_trace_map())
             {
                 for(auto& eitr : itr.second)
@@ -865,21 +867,21 @@ extern "C"
                 // delete all the records
                 itr.second.clear();
             }
-            CONDITIONAL_PRINT_HERE(_debug, "%s", "clearing trace map");
+            TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s", "clearing trace map");
             // delete all the records
             get_trace_map().clear();
         }
 
-        CONDITIONAL_PRINT_HERE(_debug, "%s", "resetting mpi gotcha");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s", "resetting mpi gotcha");
         // deactivate the gotcha wrappers
         if(use_mpi_gotcha)
             mpi_gotcha_handle.reset();
 
-        CONDITIONAL_PRINT_HERE(_debug, "%s", "finalizing library");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s", "finalizing library");
         // finalize the library
         timemory_finalize_library();
 
-        CONDITIONAL_PRINT_HERE(_debug, "%s", "finalized trace");
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s", "finalized trace");
     }
     //
     //----------------------------------------------------------------------------------//

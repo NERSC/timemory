@@ -29,6 +29,7 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <vector>
 
 #if __cplusplus >= 201703L  // C++17
 #    include <string_view>
@@ -90,6 +91,9 @@ struct quirk_type;
 //
 template <typename Tp>
 struct statistics;
+//
+template <typename... Tp>
+struct type_list;
 //
 namespace audit
 {
@@ -163,6 +167,14 @@ struct is_null_type<Tuple<>> : true_type
 {};
 
 template <>
+struct is_null_type<std::tuple<>> : true_type
+{};
+
+template <>
+struct is_null_type<type_list<>> : true_type
+{};
+
+template <>
 struct is_null_type<void> : true_type
 {};
 
@@ -176,6 +188,14 @@ struct is_null_type<::tim::null_type> : true_type
 
 template <template <typename...> class Tuple>
 struct is_null_type<statistics<Tuple<>>> : true_type
+{};
+
+template <>
+struct is_null_type<statistics<std::tuple<>>> : true_type
+{};
+
+template <>
+struct is_null_type<statistics<type_list<>>> : true_type
 {};
 
 template <>
@@ -395,6 +415,55 @@ template <>
 struct is_string_type<std::string_view> : true_type
 {};
 #endif
+
+template <typename Tp>
+struct is_string_type<const Tp> : is_string_type<std::decay_t<Tp>>
+{};
+
+template <typename Tp>
+struct is_string_type<Tp&> : is_string_type<std::decay_t<Tp>>
+{};
+
+template <typename Tp>
+struct is_string_type<volatile Tp> : is_string_type<std::decay_t<Tp>>
+{};
+
+template <typename Tp, size_t N>
+struct is_string_type<Tp[N]> : is_string_type<std::decay_t<Tp[N]>>
+{};
+
+template <typename Tp, size_t N>
+struct is_string_type<const Tp[N]> : is_string_type<std::decay_t<Tp[N]>>
+{};
+
+template <typename Tp, size_t N>
+struct is_string_type<volatile Tp[N]> : is_string_type<std::decay_t<Tp[N]>>
+{};
+
+#if defined(TIMEMORY_INTERNAL_TESTING) || defined(TIMEMORY_TESTING)
+static_assert(is_string_type<const char*>::value, "Issue with is_string_type");
+static_assert(is_string_type<const std::string>::value, "Issue with is_string_type");
+static_assert(is_string_type<const std::string&>::value, "Issue with is_string_type");
+static_assert(is_string_type<char[4]>::value, "Issue with is_string_type");
+static_assert(is_string_type<const char[4]>::value, "Issue with is_string_type");
+static_assert(is_string_type<volatile char[4]>::value, "Issue with is_string_type");
+static_assert(!is_string_type<const int*>::value, "Issue with is_string_type");
+static_assert(!is_string_type<const int>::value, "Issue with is_string_type");
+static_assert(!is_string_type<const int&>::value, "Issue with is_string_type");
+static_assert(!is_string_type<int[4]>::value, "Issue with is_string_type");
+static_assert(!is_string_type<const int[4]>::value, "Issue with is_string_type");
+static_assert(!is_string_type<volatile int[4]>::value, "Issue with is_string_type");
+#endif
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_vector
+/// \brief concept that specifies that a type is a C++ vector
+///
+TIMEMORY_IMPL_IS_CONCEPT(vector)
+
+template <typename Tp, typename... Tail>
+struct is_vector<std::vector<Tp, Tail...>> : true_type
+{};
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::has_gotcha

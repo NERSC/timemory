@@ -30,6 +30,8 @@
 #include "timemory/components/properties.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/enum.h"
+#include "timemory/macros/language.hpp"
+#include "timemory/runtime/info.hpp"
 #include "timemory/runtime/macros.hpp"
 #include "timemory/settings/settings.hpp"
 #include "timemory/variadic/definition.hpp"
@@ -57,14 +59,6 @@ using component_match_set_t    = std::set<std::string>;
 using component_match_vector_t = std::vector<bool (*)(const char*)>;
 using component_match_index_t  = std::vector<TIMEMORY_COMPONENT>;
 using opaque_pair_t            = std::pair<component::opaque, std::set<size_t>>;
-//
-//--------------------------------------------------------------------------------------//
-//
-static inline size_t
-get_hash(std::string&& key)
-{
-    return ::tim::get_hash(std::forward<std::string>(key));
-}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -121,8 +115,7 @@ do_enumerator_init(Tp&, int, Args&&...)
 //
 template <int I>
 inline void
-do_enumerator_enumerate(component_match_vector_t& _vec, component_match_index_t& _idx,
-                        component_match_set_t& _set)
+do_enumerator_enumerate()
 {
     using type            = component::enumerator_t<I>;
     constexpr auto _is_ph = concepts::is_placeholder<type>::value;
@@ -133,11 +126,19 @@ do_enumerator_enumerate(component_match_vector_t& _vec, component_match_index_t&
         {
             using match_func_t = bool (*)(const char*);
             match_func_t _func = &component::properties<type>::matches;
-            _vec.emplace_back(_func);
-            _idx.emplace_back(I);
-            _set.insert(_id);
-            for(const auto& itr : component::properties<type>::ids())
-                _set.insert(itr);
+            auto         itr   = runtime::info::find(I);
+            if(itr != runtime::info::end())
+            {
+                // append the static info to identifier
+                itr->second(_id, component::properties<type>::ids(), _func);
+            }
+            else
+            {
+                std::set<std::string> _ids{};
+                for(auto&& iitr : component::properties<type>::ids())
+                    _ids.insert(iitr);
+                runtime::info::emplace(I, component::info{ I, _id, _ids, _func });
+            }
         }
     }
 }
@@ -201,11 +202,9 @@ enumerator_configure(Tp& obj, int idx, int_sequence<Ints...>, Args&&... args)
 //--------------------------------------------------------------------------------------//
 //
 template <int... Ints>
-void
-enumerator_enumerate(component_match_vector_t& _vec, component_match_index_t& _idx,
-                     component_match_set_t& _set, int_sequence<Ints...>)
+void enumerator_enumerate(int_sequence<Ints...>)
 {
-    TIMEMORY_FOLD_EXPRESSION(do_enumerator_enumerate<Ints>(_vec, _idx, _set));
+    TIMEMORY_FOLD_EXPRESSION(do_enumerator_enumerate<Ints>());
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -254,53 +253,48 @@ configure(Tp& obj, int idx, Arg&& arg, Args&&... args)
 //
 //--------------------------------------------------------------------------------------//
 //
-inline int
-enumerate(const std::string& key)
+inline void
+enumerate_info()
 {
-    using data_t      = std::tuple<component_match_vector_t, component_match_index_t,
-                              std::function<void(const char*)>>;
-    static auto _data = []() {
-        component_match_vector_t _vec;
-        component_match_index_t  _idx;
-        component_match_set_t    _set;
-        enumerator_enumerate(_vec, _idx, _set,
-                             make_int_sequence<TIMEMORY_COMPONENTS_END>{});
-        std::stringstream ss;
-        ss << "Valid choices are: [";
-        for(auto itr = _set.begin(); itr != _set.end(); ++itr)
-        {
-            ss << "'" << (*itr) << "'";
-            size_t _dist = std::distance(_set.begin(), itr);
-            if(_dist + 1 < _set.size())
-                ss << ", ";
-        }
-        ss << ']';
-        auto _choices = ss.str();
-        auto _msg     = [_choices](const char* itr) {
-            fprintf(stderr, "Unknown component: '%s'. %s\n", itr, _choices.c_str());
-        };
-        return data_t(_vec, _idx, _msg);
-    }();
-
-    auto& _vec  = std::get<0>(_data);
-    auto& _enum = std::get<1>(_data);
-    auto  _key  = settings::tolower(key);
-    for(size_t i = 0; i < _vec.size(); ++i)
-    {
-        if(_vec[i](_key.c_str()))
-            return _enum[i];
-    }
-
-    std::get<2>(_data)(key.c_str());
-    return TIMEMORY_COMPONENTS_END;
+    static bool _once =
+        (enumerator_enumerate(make_int_sequence<TIMEMORY_COMPONENTS_END>{}), true);
+    (void) _once;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 inline int
-enumerate(const char* key)
+enumerate(tim::string_view_cref_t key)
 {
-    return enumerate(std::string(key));
+    enumerate_info();
+
+    auto&& itr = runtime::info::find(key);
+
+    if(!itr.second && settings::verbose() >= 0)
+        runtime::info::error_message(key);
+
+    return itr.first.index;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline component::info
+get_info(tim::string_view_cref_t _v)
+{
+    enumerate_info();
+    return runtime::info::find(_v).first;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline component::info
+get_info(int _idx)
+{
+    enumerate_info();
+    auto&& itr = runtime::info::find(_idx);
+    if(itr == runtime::info::end())
+        return component::info{};
+    return itr->second;
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -64,6 +64,7 @@ struct placeholder;
 struct nothing : base<nothing, skeleton::base>
 {};
 
+struct info;
 }  // namespace component
 }  // namespace tim
 

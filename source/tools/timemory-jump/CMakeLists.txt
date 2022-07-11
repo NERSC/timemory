@@ -20,7 +20,7 @@ foreach(LIB_TYPE shared static)
     set(LIB_TARGET timemory-jump-${LIB_TYPE})
     string(TOUPPER "${LIB_TYPE}" UC_LIB_TYPE)
 
-    build_library(
+    timemory_build_library(
         PIC NO_CACHE_LIST ${_EXCLUDE}
         TYPE ${UC_LIB_TYPE}
         TARGET_NAME timemory-jump-${LIB_TYPE}

@@ -22,10 +22,10 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-/** \file mpl/types.hpp
- * \headerfile mpl/types.hpp "timemory/mpl/types.hpp"
+/** \file timemory/mpl/types.hpp
+ * \headerfile timemory/mpl/types.hpp "timemory/mpl/types.hpp"
  *
- * This is a declaration of all the operation structs.
+ * This is a declaration of all the type-trait structs.
  * Care should be taken to make sure that this includes a minimal
  * number of additional headers.
  *
@@ -34,7 +34,9 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/defines.h"
 #include "timemory/mpl/concepts.hpp"
+#include "timemory/mpl/macros.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <cstdint>
@@ -44,8 +46,6 @@
 #include <type_traits>
 #include <vector>
 
-//======================================================================================//
-//
 namespace tim
 {
 //
@@ -174,6 +174,12 @@ template <typename T>
 struct uses_percent_units;
 
 template <typename T>
+struct uses_power_units;
+
+template <typename T>
+struct uses_temperature_units;
+
+template <typename T>
 struct requires_json;
 
 template <typename T>
@@ -225,7 +231,19 @@ template <typename T>
 struct file_sampler;
 
 template <typename T>
+struct format_precision;
+
+template <typename T>
+struct format_width;
+
+template <typename T>
+struct format_flags;
+
+template <typename T>
 struct units;
+
+template <typename T>
+struct assignable_units;
 
 template <typename T>
 struct echo_enabled;
@@ -310,6 +328,12 @@ struct uses_value_storage;
 
 template <typename ApiT>
 struct perfetto_category;
+
+template <typename ApiT, typename... T>
+struct max_threads
+{
+    static constexpr size_t value = TIMEMORY_MAX_THREADS;
+};
 
 //--------------------------------------------------------------------------------------//
 //

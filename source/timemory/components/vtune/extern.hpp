@@ -33,6 +33,6 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/components/vtune/components.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(vtune_event, false, void)
-TIMEMORY_EXTERN_COMPONENT(vtune_frame, false, void)
-TIMEMORY_EXTERN_COMPONENT(vtune_profiler, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(vtune_event, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(vtune_frame, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(vtune_profiler, false, void)

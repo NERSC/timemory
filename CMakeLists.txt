@@ -150,11 +150,14 @@ if(TIMEMORY_BUILD_DEVELOPER OR TIMEMORY_USE_CTP)
     if(compile-time-perf_FOUND)
         enable_compile_time_perf(
             timemory-compile-time
+            ${TIMEMORY_CTP_OPTIONS}
             LINK
             ANALYZER_OPTIONS
             -s
             "${PROJECT_BINARY_DIR}/"
+            "${CMAKE_BINARY_DIR}/"
             "${PROJECT_SOURCE_DIR}/"
+            "${CMAKE_SOURCE_DIR}/"
             -f
             "lang-all"
             "so"
@@ -231,7 +234,7 @@ if(NOT "${TIMEMORY_TLS_MODEL}" IN_LIST _TLS_OPTIONS)
     message(FATAL_ERROR "TIMEMORY_TLS_MODEL must be one of: \"${_TLS_OPTIONS}\"")
 endif()
 
-add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
+timemory_add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
 unset(_TLS_DESCRIPT)
 unset(_TLS_OPTIONS)
 
@@ -274,6 +277,10 @@ if(timemory_MAIN_PROJECT)
     set(CMAKE_CXX_VISIBILITY_PRESET
         "default"
         CACHE STRING "Default visibility")
+elseif(TIMEMORY_BUILD_HIDDEN_VISIBILITY)
+    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+    set(CMAKE_C_VISIBILITY_PRESET "hidden")
+    set(CMAKE_CXX_VISIBILITY_PRESET "hidden")
 else()
     set(CMAKE_VISIBILITY_INLINES_HIDDEN OFF)
     set(CMAKE_C_VISIBILITY_PRESET "default")
@@ -349,7 +356,7 @@ if(timemory_MAIN_PROJECT)
     mark_as_advanced(TIMEMORY_PRINT_FEATURES)
 
     if(TIMEMORY_PRINT_FEATURES AND NOT TIMEMORY_QUIET_CONFIG)
-        print_features()
+        timemory_print_features()
     endif()
 
 endif()

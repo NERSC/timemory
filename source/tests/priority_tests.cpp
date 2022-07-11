@@ -59,10 +59,6 @@ struct test_clock : public base<test_clock<Idx, StartSleep, StopSleep>>
     using base_type::set_stopped;
     using base_type::value;
 
-    static const short                   precision    = wall_clock::precision;
-    static const short                   width        = wall_clock::width;
-    static const std::ios_base::fmtflags format_flags = wall_clock::format_flags;
-
     static int64_t    unit() { return wall_clock::unit(); }
     static string_t   label() { return string_t("test_clock_") + std::to_string(Idx); }
     static string_t   description() { return "wall time"; }

@@ -1,5 +1,5 @@
 if(TIMEMORY_USE_PYTHON AND TIMEMORY_BUILD_PYTHON_LINE_PROFILER)
-    checkout_git_submodule(
+    timemory_checkout_git_submodule(
         RECURSIVE
         RELATIVE_PATH external/line-profiler
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -15,7 +15,7 @@ if(TIMEMORY_USE_PYTHON AND TIMEMORY_BUILD_PYTHON_LINE_PROFILER)
 endif()
 
 if(TIMEMORY_USE_PYTHON AND TIMEMORY_BUILD_PYTHON_HATCHET)
-    checkout_git_submodule(
+    timemory_checkout_git_submodule(
         RECURSIVE
         RELATIVE_PATH external/hatchet
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}

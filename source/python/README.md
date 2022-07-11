@@ -480,7 +480,7 @@ import timemory
 from  timemory.component import WallClock
 
 # instantiate wall clock component
-wc = WallClock("wall")
+wc = WallClock("wall-time")
 # start the clock
 wc.start()
 # sleep

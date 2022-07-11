@@ -14,7 +14,7 @@ if(TIMEMORY_USE_PAPI OR TIMEMORY_USE_CUPTI)
         set_source_files_properties(${source_files} PROPERTIES LINKER_LANGUAGE CUDA)
     endif()
 
-    build_intermediate_library(
+    timemory_build_intermediate_library(
         USE_INTERFACE
         NAME ${NAME}
         TARGET ${NAME}-component

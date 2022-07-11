@@ -3,7 +3,7 @@ file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 get_filename_component(folder_name "${CMAKE_CURRENT_LIST_DIR}" NAME)
 
-build_intermediate_library(
+timemory_build_intermediate_library(
     USE_INTERFACE INSTALL_SOURCE
     NAME ${folder_name}
     TARGET ${folder_name}

@@ -23,3 +23,6 @@
 // SOFTWARE.
 
 #include "timemory/components/likwid/extern.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(likwid_marker, false, void)
+TIMEMORY_EXTERN_COMPONENT(likwid_nvmarker, false, void)

@@ -30,11 +30,13 @@
 #pragma once
 
 #include "timemory/components/base.hpp"
-#include "timemory/components/tau_marker/backends.hpp"
+#include "timemory/components/tau_marker/macros.hpp"
 #include "timemory/components/tau_marker/types.hpp"
-#include "timemory/mpl/apply.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/units.hpp"
+#include "timemory/components/types.hpp"
+#include "timemory/macros/attributes.hpp"
+#include "timemory/mpl/concepts.hpp"
+
+#include <type_traits>
 
 //======================================================================================//
 //
@@ -58,33 +60,44 @@ struct tau_marker : public base<tau_marker, void>
         return "Forwards markers to TAU instrumentation (via Tau_start and Tau_stop)";
     }
 
-#if defined(TIMEMORY_USE_TAU)
-    static void global_init() { Tau_set_node(dmp::rank()); }
-    static void thread_init() { TAU_REGISTER_THREAD(); }
-    static void start(const char* _prefix) { Tau_start(_prefix); }
-
-    static void stop(const char* _prefix)
-    {
-        Tau_stop(_prefix);
-        consume_parameters(_prefix);
-    }
-
     TIMEMORY_DEFAULT_OBJECT(tau_marker)
+
+    static void global_init();
+    static void thread_init();
+
+    static void start(const char* _prefix);
+    static void stop(const char* _prefix);
 
     tau_marker(const char* _prefix)
     : m_prefix(_prefix)
     {}
 
-    void start() { Tau_start(m_prefix); }
-    void stop() { Tau_stop(m_prefix); }
+    void start() { tau_marker::start(m_prefix); }
+    void stop() { tau_marker::stop(m_prefix); }
     void set_prefix(const char* _prefix) { m_prefix = _prefix; }
 
+    template <typename Tp>
+    static auto start(Tp&& _v, enable_if_t<concepts::is_string_type<Tp>::value, int> = 0)
+        -> decltype(tau_marker::start(std::forward<Tp>(_v).data()))
+    {
+        return tau_marker::start(const_cast<const char*>(std::forward<Tp>(_v).data()));
+    }
+
+    template <typename Tp, enable_if_t<concepts::is_string_type<Tp>::value, int> = 0>
+    static auto stop(Tp&& _v, enable_if_t<concepts::is_string_type<Tp>::value, int> = 0)
+        -> decltype(tau_marker::stop(std::forward<Tp>(_v).data()))
+    {
+        return tau_marker::stop(const_cast<const char*>(std::forward<Tp>(_v).data()));
+    }
+
 private:
-    const char m_prefix = nullptr;
-#endif
+    const char* m_prefix = nullptr;
 };
 //
 }  // namespace component
 }  // namespace tim
-//
-//======================================================================================//
+
+#if defined(TIMEMORY_TAU_MARKER_COMPONENT_HEADER_ONLY_MODE) &&                           \
+    TIMEMORY_TAU_MARKER_COMPONENT_HEADER_ONLY_MODE > 0
+#    include "timemory/components/tau_marker/components.cpp"
+#endif

@@ -23,7 +23,7 @@ elseif(TIMEMORY_USE_HIP)
     list(APPEND source_files $<TARGET_OBJECTS:timemory-ert-hip-object>)
 endif()
 
-build_intermediate_library(
+timemory_build_intermediate_library(
     USE_INTERFACE
     NAME ert
     TARGET ert

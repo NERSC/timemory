@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/backends/gotcha.hpp"
+#include "timemory/operations/types/set_data.hpp"
 #include "timemory/utility/mangler.hpp"
 #include "timemory/variadic/types.hpp"
 
@@ -43,8 +44,47 @@
 //
 namespace tim
 {
+namespace quirk
+{
+struct fast;
+}
+//
+namespace backend
+{
+namespace gotcha
+{
+template <typename Tp>
+struct is_fast
+{
+    static constexpr bool value = std::is_same<Tp, quirk::fast>::value;
+};
+//
+template <typename Tp, typename Up>
+struct num_components
+{
+    static constexpr size_t value =
+        (is_fast<Tp>::value) ? 0 : mpl::get_tuple_size<Up>::value;
+};
+//
+template <typename Tp, typename Up>
+struct wraps
+{
+    static constexpr bool value = num_components<Tp, Up>::value > 0;
+};
+//
+template <typename Tp, typename Up>
+struct replaces
+{
+    static constexpr bool value =
+        is_one_of<Tp, Up>::value ||
+        (num_components<Tp, Up>::value == 0 && concepts::is_component<Tp>::value);
+};
+}  // namespace gotcha
+}  // namespace backend
+//
 namespace component
 {
+struct gotcha_data;
 //
 //======================================================================================//
 ///
@@ -58,23 +98,55 @@ struct gotcha_invoker
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
+    TIMEMORY_DEFAULT_OBJECT(gotcha_invoker)
+
     template <typename FuncT, typename... Args>
-    static decltype(auto) invoke(Tp& _obj, FuncT&& _func, Args&&... _args)
+    static TIMEMORY_INLINE decltype(auto) invoke(Tp& _obj, gotcha_data&& _data,
+                                                 FuncT&& _func, Args&&... _args)
     {
-        return invoke_sfinae(_obj, std::forward<FuncT>(_func),
-                             std::forward<Args>(_args)...);
+        return gotcha_invoker{}(_obj, std::forward<gotcha_data>(_data),
+                                std::forward<FuncT>(_func), std::forward<Args>(_args)...);
+    }
+
+    template <typename FuncT, typename... Args>
+    TIMEMORY_INLINE decltype(auto) operator()(Tp& _obj, gotcha_data&& _data,
+                                              FuncT&& _func, Args&&... _args) const
+    {
+        // if object has set_data(gotcha_data) member function
+        operation::set_data<Tp>{}(_obj, std::forward<gotcha_data>(_data));
+        // if object has set_data(<function-pointer>) member function
+        operation::set_data<Tp>{}(_obj, std::forward<FuncT>(_func));
+        //
+        return invoke_sfinae(_obj, std::forward<gotcha_data>(_data),
+                             std::forward<FuncT>(_func), std::forward<Args>(_args)...);
     }
 
 private:
     //----------------------------------------------------------------------------------//
-    //  Call:
+    //      Ret Type::operator{}(gotcha_data, Args...)
     //
+    template <typename DataT, typename FuncT, typename... Args>
+    static auto sfinae(Tp& _obj, int, int, int, DataT&& _data, FuncT&&, Args&&... _args)
+        -> decltype(_obj(std::forward<DataT>(_data), std::forward<Args>(_args)...))
+    {
+        return _obj(std::forward<DataT>(_data), std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //      Ret Type::operator{}(<function-pointer>, Args...)
+    //
+    template <typename DataT, typename FuncT, typename... Args>
+    static auto sfinae(Tp& _obj, int, int, long, DataT&&, FuncT&& _func, Args&&... _args)
+        -> decltype(_obj(std::forward<FuncT>(_func), std::forward<Args>(_args)...))
+    {
+        return _obj(std::forward<FuncT>(_func), std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     //      Ret Type::operator{}(Args...)
     //
-    //  instead of gotcha_wrappee
-    //
-    template <typename FuncT, typename... Args>
-    static auto invoke_sfinae_impl(Tp& _obj, int, FuncT&&, Args&&... _args)
+    template <typename DataT, typename FuncT, typename... Args>
+    static auto sfinae(Tp& _obj, int, long, long, DataT&&, FuncT&&, Args&&... _args)
         -> decltype(_obj(std::forward<Args>(_args)...))
     {
         return _obj(std::forward<Args>(_args)...);
@@ -83,23 +155,23 @@ private:
     //----------------------------------------------------------------------------------//
     //  Call the original gotcha_wrappee
     //
-    template <typename FuncT, typename... Args>
-    static auto invoke_sfinae_impl(Tp&, long, FuncT&& _func, Args&&... _args)
+    template <typename DataT, typename FuncT, typename... Args>
+    static auto sfinae(Tp&, long, long, long, DataT&&, FuncT&& _func, Args&&... _args)
         -> decltype(std::forward<FuncT>(_func)(std::forward<Args>(_args)...))
     {
         return std::forward<FuncT>(_func)(std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
-    //  Wrapper that calls one of two above
+    //  Wrapper that calls one of above
     //
-    template <typename FuncT, typename... Args>
-    static auto invoke_sfinae(Tp& _obj, FuncT&& _func, Args&&... _args)
-        -> decltype(invoke_sfinae_impl(_obj, 0, std::forward<FuncT>(_func),
-                                       std::forward<Args>(_args)...))
+    template <typename DataT, typename FuncT, typename... Args>
+    static auto invoke_sfinae(Tp& _obj, DataT&& _data, FuncT&& _func, Args&&... _args)
+        -> decltype(sfinae(_obj, 0, 0, 0, std::forward<DataT>(_data),
+                           std::forward<FuncT>(_func), std::forward<Args>(_args)...))
     {
-        return invoke_sfinae_impl(_obj, 0, std::forward<FuncT>(_func),
-                                  std::forward<Args>(_args)...);
+        return sfinae(_obj, 0, 0, 0, std::forward<DataT>(_data),
+                      std::forward<FuncT>(_func), std::forward<Args>(_args)...);
     }
 };
 //
@@ -124,20 +196,47 @@ struct gotcha_data
     gotcha_data& operator=(const gotcha_data&) = delete;
     gotcha_data& operator=(gotcha_data&&) = delete;
 
-    bool          ready        = false;        /// ready to be used NOLINT
-    bool          filled       = false;        /// structure is populated NOLINT
-    bool          is_active    = false;        /// is currently wrapping NOLINT
-    bool          is_finalized = false;        /// no more wrapping is allowed NOLINT
-    int           priority     = 0;            /// current priority NOLINT
-    binding_t     binding      = binding_t{};  /// hold the binder set NOLINT
-    wrappee_t     wrapper      = nullptr;      /// the func pointer doing wrapping NOLINT
-    wrappee_t     wrappee      = nullptr;      /// the func pointer being wrapped NOLINT
-    wrappid_t     wrap_id      = "";           /// function name (possibly mangled) NOLINT
-    wrappid_t     tool_id      = "";           /// function name (unmangled) NOLINT
-    constructor_t constructor  = []() {};      /// wrap the function NOLINT
-    destructor_t  destructor   = []() {};      /// unwrap the function NOLINT
-    bool*         suppression  = nullptr;      /// turn on/off some suppression var NOLINT
-    bool*         debug        = nullptr;      //  NOLINT
+    bool          ready        = false;        /// ready to be used
+    bool          filled       = false;        /// structure is populated
+    bool          is_active    = false;        /// is currently wrapping
+    bool          is_finalized = false;        /// no more wrapping is allowed
+    int           priority     = 0;            /// current priority
+    size_t        index        = 0;            /// index in gotcha wrapper
+    binding_t     binding      = binding_t{};  /// hold the binder set
+    wrappee_t     wrapper      = nullptr;      /// the func pointer doing wrapping
+    wrappee_t     wrappee      = nullptr;      /// the func pointer being wrapped
+    wrappid_t     wrap_id      = {};           /// function name (possibly mangled)
+    wrappid_t     tool_id      = {};           /// function name (unmangled)
+    constructor_t constructor  = []() {};      /// wrap the function
+    destructor_t  destructor   = []() {};      /// unwrap the function
+    bool*         suppression  = nullptr;      /// turn on/off some suppression var
+    bool*         debug        = nullptr;      //
+};
+//
+//======================================================================================//
+//
+///
+/// \struct tim::component::gotcha_config
+/// \brief A simple type definition for specifying the index, return value, and the
+/// arguments
+template <size_t Idx, typename Ret, typename... Args>
+struct gotcha_config
+{
+    gotcha_config(std::string _name, int _prio = 0, std::string _tool = {})
+    : priority{ _prio }
+    , tool{ std::move(_tool) }
+    , names{ std::vector<std::string>{ std::move(_name) } }
+    {}
+
+    gotcha_config(std::vector<std::string> _names, int _prio = 0, std::string _tool = {})
+    : priority{ _prio }
+    , tool{ std::move(_tool) }
+    , names{ std::move(_names) }
+    {}
+
+    int                      priority = 0;
+    std::string              tool     = {};
+    std::vector<std::string> names    = {};
 };
 }  // namespace component
 }  // namespace tim

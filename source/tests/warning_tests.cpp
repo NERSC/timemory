@@ -48,10 +48,11 @@ TEST_F(warning_tests, enabled)
     ss << "enable_signal_handler = 0\n";
     ss << "fake_test = dummy\n";
 
-    tim::set_env("TIMEMORY_ENABLE_ALL_SIGNALS", "ON", 1);
-    tim::set_env("TIMEMORY_DISABLE_ALL_SIGNALS", "NO", 1);
+    tim::set_env(TIMEMORY_SETTINGS_PREFIX "ENABLE_ALL_SIGNALS", "ON", 1);
+    tim::set_env(TIMEMORY_SETTINGS_PREFIX "DISABLE_ALL_SIGNALS", "NO", 1);
 
     tim::settings::parse();
+    tim::settings::strict_config()         = false;
     tim::settings::debug()                 = false;
     tim::settings::verbose()               = 0;
     tim::settings::enabled()               = true;
@@ -62,7 +63,7 @@ TEST_F(warning_tests, enabled)
     tim::settings::enable_all_signals()    = true;
     tim::settings::disable_all_signals()   = false;
 
-    tim::set_env("TIMEMORY_SUPPRESS_PARSING", "ON", 1);
+    tim::set_env(TIMEMORY_SETTINGS_PREFIX "SUPPRESS_PARSING", "ON", 1);
 
     tim::timemory_init(_argc, _argv);
 
@@ -70,7 +71,7 @@ TEST_F(warning_tests, enabled)
     auto _rsuccess = _settings->read(ss);
 
     _settings->parse();
-    tim::set_env("TIMEMORY_GLOBAL_COMPONENTS", "wall_clock", 1);
+    tim::set_env(TIMEMORY_SETTINGS_PREFIX "GLOBAL_COMPONENTS", "wall_clock", 1);
 
     EXPECT_FALSE(_rsuccess) << " Unsuccessful read";
     EXPECT_TRUE(tim::settings::suppress_parsing());

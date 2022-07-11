@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include "timemory/backends/dmp.hpp"
+#include "timemory/defines.h"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
@@ -86,8 +88,8 @@ struct ctest_notes_deleter : public std::default_delete<std::set<std::string>>
         {
             if(settings::debug() || settings::verbose() > 1)
             {
-                std::cout << "[ctest_notes]> Outputting '" << fname << "'..."
-                          << std::endl;
+                fprintf(stderr, "[%s][ctest_notes]|%i> Outputting '%s'...\n",
+                        TIMEMORY_PROJECT_NAME, dmp::rank(), fname.c_str());
             }
             ofs << ss.str() << std::endl;
         }

@@ -40,6 +40,8 @@
 #include "timemory/storage/node.hpp"
 #include "timemory/storage/types.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
+#include "timemory/utility/demangle.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <string>
 #include <vector>
@@ -238,10 +240,11 @@ get<Type, true>::operator()(result_type& ret)
                 }
                 std::string _msg = "Intervals: ";
                 _msg += ss.str().substr(2);
-                PRINT_HERE("[%s][pid=%i][tid=%i]> %s. range = { %i, %i }",
-                           demangle<get<Type, true>>().c_str(), (int) process::get_id(),
-                           (int) threading::get_id(), _msg.c_str(), (int) _range.first,
-                           (int) _range.second);
+                TIMEMORY_PRINT_HERE("[%s][pid=%i][tid=%i]> %s. range = { %i, %i }",
+                                    demangle<get<Type, true>>().c_str(),
+                                    (int) process::get_id(), (int) threading::get_id(),
+                                    _msg.c_str(), (int) _range.first,
+                                    (int) _range.second);
             }
         }
 
@@ -296,8 +299,8 @@ get<Type, true>::operator()(result_type& ret)
             {
                 if(!itr)
                 {
-                    PRINT_HERE("[%s] Warning! Invalid iterator!",
-                               demangle<Type>().c_str());
+                    TIMEMORY_PRINT_HERE("[%s] Warning! Invalid iterator!",
+                                        demangle<Type>().c_str());
                     continue;
                 }
                 _min = std::min<int64_t>(_min, itr->depth());
@@ -307,12 +310,12 @@ get<Type, true>::operator()(result_type& ret)
             {
                 if(!itr)
                 {
-                    PRINT_HERE("[%s] Warning! Invalid iterator!",
-                               demangle<Type>().c_str());
+                    TIMEMORY_PRINT_HERE("[%s] Warning! Invalid iterator!",
+                                        demangle<Type>().c_str());
                     continue;
                 }
                 // skip if invalid
-                if(operation::get_is_invalid<Type, false>{}(itr->data()))
+                if(operation::get_is_invalid<>{}(itr->data()))
                     continue;
                 if(itr->depth() > _min)
                 {
@@ -326,11 +329,14 @@ get<Type, true>::operator()(result_type& ret)
                     auto _pid       = itr->pid();
                     while(_parent && _parent->depth() > _min)
                     {
-                        if(operation::get_is_invalid<Type, false>{}(_parent->data()))
-                            break;
+                        // ensure parent is always updated regardless of branch taken
+                        scope::destructor _dtor{ [&_parent]() {
+                            _parent = graph_type::parent(_parent);
+                        } };
+                        if(operation::get_is_invalid<>{}(_parent->data()))
+                            continue;
                         _hierarchy.push_back(_parent->id());
                         _rolling += _parent->id();
-                        _parent = graph_type::parent(_parent);
                     }
                     if(_hierarchy.size() > 1)
                         std::reverse(_hierarchy.begin(), _hierarchy.end());

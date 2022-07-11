@@ -142,11 +142,11 @@ protected:
         user_profiler_bundle::reset();
 
         auto bundle1_init = [](bundle1_t& _bundle) {
-            PRINT_HERE("%s", "bundle1_init");
+            TIMEMORY_PRINT_HERE("%s", "bundle1_init");
             if(details::get_test_name() != "bundle_0" &&
                details::get_test_name() != "bundle_3")
             {
-                PRINT_HERE("%s<%s, %s>", "initialize", "cpu_clock", "peak_rss");
+                TIMEMORY_PRINT_HERE("%s<%s, %s>", "initialize", "cpu_clock", "peak_rss");
 
                 // check that initialization works
                 _bundle.initialize<cpu_clock, peak_rss>();
@@ -629,22 +629,22 @@ TEST_F(user_bundle_tests, laps)
     size_t      n = 10;
     lw_bundle_t obj{ details::get_test_name(), tim::scope::config(true, true) };
 
-    DEBUG_PRINT_HERE("%s", "Real push begin");
+    TIMEMORY_DEBUG_PRINT_HERE("%s", "Real push begin");
     obj.push();
-    DEBUG_PRINT_HERE("%s", "Real push end");
+    TIMEMORY_DEBUG_PRINT_HERE("%s", "Real push end");
     for(size_t i = 0; i < n; ++i)
     {
-        DEBUG_PRINT_HERE("%s", "Real start begin");
+        TIMEMORY_DEBUG_PRINT_HERE("%s", "Real start begin");
         obj.start();
-        DEBUG_PRINT_HERE("%s", "Real start end");
+        TIMEMORY_DEBUG_PRINT_HERE("%s", "Real start end");
         ret += details::fibonacci(35);
-        DEBUG_PRINT_HERE("%s", "Real stop begin");
+        TIMEMORY_DEBUG_PRINT_HERE("%s", "Real stop begin");
         obj.stop();
-        DEBUG_PRINT_HERE("%s", "Real stop end");
+        TIMEMORY_DEBUG_PRINT_HERE("%s", "Real stop end");
     }
-    DEBUG_PRINT_HERE("%s", "Real pop start");
+    TIMEMORY_DEBUG_PRINT_HERE("%s", "Real pop start");
     obj.pop();
-    DEBUG_PRINT_HERE("%s", "Real pop end");
+    TIMEMORY_DEBUG_PRINT_HERE("%s", "Real pop end");
 
     printf("fibonacci(35) = %li\n", ret);
 

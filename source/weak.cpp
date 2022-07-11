@@ -85,7 +85,7 @@ struct tools_stubs_dlsym
     : m_id{ std::move(id) }
     , m_libname{ std::move(libname) }
     {
-        DEBUG_PRINT_HERE("id: %s, libname: %s", m_id.c_str(), m_libname.c_str());
+        TIMEMORY_DEBUG_PRINT_HERE("id: %s, libname: %s", m_id.c_str(), m_libname.c_str());
         load();
     }
 

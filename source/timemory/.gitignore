@@ -1,5 +1,0 @@
-
-# ignore the version.h since this is auto-generated
-/version.h
-/defines.h
-/defines.h.in

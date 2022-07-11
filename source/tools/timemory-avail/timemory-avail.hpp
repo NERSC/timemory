@@ -33,9 +33,10 @@
 #define TIMEMORY_DISABLE_BANNER
 #define TIMEMORY_DISABLE_COMPONENT_STORAGE_INIT
 
+#include "timemory/settings/macros.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
 #include "timemory/tpls/cereal/cereal/external/base64.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <algorithm>
 #include <array>
@@ -124,7 +125,7 @@ public:
 
         current_entry->insert({ "identifier", name });
         std::string       func   = name;
-        const std::string prefix = "TIMEMORY_";
+        const std::string prefix = TIMEMORY_SETTINGS_PREFIX;
         func                     = func.erase(0, prefix.length());
         std::transform(func.begin(), func.end(), func.begin(),
                        [](char& c) { return tolower(c); });
@@ -169,8 +170,9 @@ private:
     array_type* output_stream  = nullptr;
     unique_set  exclude_stream = {};
     int_stack   name_counter;
-    unique_set  value_keys = { "name",      "value",   "description", "count",  "environ",
-                              "max_count", "cmdline", "data_type",   "initial" };
+    unique_set  value_keys = { "name",    "value",     "description", "count",
+                              "environ", "max_count", "cmdline",     "data_type",
+                              "initial", "categories" };
 };
 
 //======================================================================================//

@@ -33,7 +33,6 @@
 #include "timemory/environment/macros.hpp"
 #include "timemory/environment/types.hpp"
 #include "timemory/utility/transient_function.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <atomic>
 #include <iosfwd>

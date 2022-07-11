@@ -127,7 +127,7 @@ generate(py::module& _pymod)
             //   "Built-in identifier for " + itr.symbol() + " : " +
             //   itr.long_description();
             if(tim::settings::debug() && tim::settings::verbose() > 1)
-                PRINT_HERE("%s", itr.python_symbol().c_str());
+                TIMEMORY_PRINT_HERE("%s", itr.python_symbol().c_str());
             _preset.def_property_readonly_static(
                 itr.python_symbol().c_str(),
                 [itr](py::object) { return new info_t(itr); });

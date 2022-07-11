@@ -24,8 +24,13 @@
 
 #pragma once
 
+#include "timemory/backends/papi.hpp"
 #include "timemory/components/papi/backends.hpp"
+#include "timemory/components/papi/macros.hpp"
+#include "timemory/components/papi/papi_event_vector.hpp"
 #include "timemory/components/papi/types.hpp"
+#include "timemory/defines.h"
+#include "timemory/macros/attributes.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/types.hpp"
@@ -36,6 +41,7 @@
 #include <array>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -50,7 +56,7 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 //
-struct papi_common
+struct TIMEMORY_VISIBLE papi_common
 {
 public:
     template <typename Tp>
@@ -60,7 +66,7 @@ public:
     using array_t = std::array<Tp, N>;
 
     using size_type         = size_t;
-    using event_list        = vector_t<int>;
+    using event_list        = papi_event_vector;
     using value_type        = vector_t<long long>;
     using entry_type        = typename value_type::value_type;
     using get_initializer_t = std::function<event_list()>;
@@ -71,9 +77,10 @@ public:
     {
         TIMEMORY_DEFAULT_OBJECT(state_data)
 
-        bool is_initialized = false;
-        bool is_finalized   = false;
-        bool is_working     = false;
+        bool          is_initialized = false;
+        bool          is_finalized   = false;
+        bool          is_working     = false;
+        volatile bool is_running     = false;
     };
 
     //----------------------------------------------------------------------------------//
@@ -82,268 +89,52 @@ public:
     {
         TIMEMORY_DEFAULT_OBJECT(common_data)
 
-        bool          is_configured = false;
-        bool          is_fixed      = false;
-        int           event_set     = PAPI_NULL;
-        vector_t<int> events        = {};
+        bool              is_configured = false;
+        bool              is_fixed      = false;
+        int               event_set     = PAPI_NULL;
+        papi_event_vector events        = {};
     };
 
     //----------------------------------------------------------------------------------//
 
-    static TIMEMORY_NOINLINE state_data& state()
-    {
-        static thread_local state_data _instance{};
-        return _instance;
-    }
+    static state_data& state();
 
     template <typename Tp>
-    static TIMEMORY_NOINLINE common_data& data()
-    {
-        static thread_local common_data _instance{};
-        return _instance;
-    }
+    static common_data& data();
 
     template <typename Tp>
-    static int& event_set()
-    {
-        return data<Tp>().event_set;
-    }
+    static auto& event_set();
 
     template <typename Tp>
-    static bool& is_configured()
-    {
-        return data<Tp>().is_configured;
-    }
+    static auto& is_configured();
 
     template <typename Tp>
-    static bool& is_fixed()
-    {
-        return data<Tp>().is_fixed;
-    }
+    static auto& is_running();
 
     template <typename Tp>
-    static vector_t<int>& get_events()
-    {
-        auto& _ret = data<Tp>().events;
-        if(!is_fixed<Tp>() && _ret.empty())
-            _ret = get_initializer<Tp>()();
-        return _ret;
-    }
+    static auto& is_fixed();
+
+    template <typename Tp>
+    static auto& get_events();
 
     //----------------------------------------------------------------------------------//
 
     static void overflow_handler(int evt_set, void* address, long long overflow_vector,
-                                 void* context)
-    {
-        fprintf(stderr, "[papi_common%i]> Overflow at %p! bit=0x%llx \n", evt_set,
-                address, overflow_vector);
-        consume_parameters(context);
-    }
+                                 void* context);
 
-    //----------------------------------------------------------------------------------//
+    static void add_event(int evt);
 
-    static void add_event(int evt)
-    {
-        auto& pevents = private_events();
-        auto  fitr    = std::find(pevents.begin(), pevents.end(), evt);
-        if(fitr == pevents.end())
-            pevents.push_back(evt);
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static bool initialize_papi()
-    {
-        if(!state().is_initialized && !state().is_working)
-        {
-            if(settings::debug() || settings::verbose() > 2)
-            {
-                PRINT_HERE("Initializing papi. is initialized: %s, is working: %s",
-                           state().is_initialized ? "y" : "n",
-                           state().is_working ? "y" : "n");
-            }
-            papi::init();
-            papi::register_thread();
-            state().is_working = papi::working();
-            if(!state().is_working)
-            {
-                std::cerr << "Warning! PAPI failed to initialized!\n";
-                std::cerr << "The following PAPI events will not be reported: \n";
-                for(const auto& itr : get_events<void>())
-                    std::cerr << "    " << papi::get_event_info(itr).short_descr << "\n";
-                std::cerr << std::flush;
-                // disable all the papi APIs with concrete instantiations
-                tim::trait::apply<tim::trait::runtime_enabled>::set<
-                    tpls::papi, papi_array_t, papi_common, papi_vector, papi_array8_t,
-                    papi_array16_t, papi_array32_t>(false);
-            }
-            else
-            {
-                state().is_initialized = true;
-            }
-        }
-        return state().is_initialized && state().is_working;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static bool finalize_papi()
-    {
-        if(!state().is_finalized && state().is_working)
-        {
-            papi::unregister_thread();
-            state().is_working = papi::working();
-            if(state().is_working)
-                state().is_finalized = true;
-        }
-        return state().is_finalized && state().is_working;
-    }
-
-    //----------------------------------------------------------------------------------//
+    static bool initialize_papi();
+    static bool finalize_papi();
 
     template <typename Tp>
-    static get_initializer_t& get_initializer()
-    {
-        static get_initializer_t _instance = []() {
-            if(!papi_common::initialize_papi())
-            {
-                fprintf(stderr, "[papi_common]> PAPI could not be initialized\n");
-                return vector_t<int>{};
-            }
-
-            auto events_str = settings::papi_events();
-
-            if(settings::verbose() > 1 || settings::debug())
-            {
-                printf("[papi_common]> TIMEMORY_PAPI_EVENTS: '%s'...\n",
-                       events_str.c_str());
-            }
-
-            // don't delimit colons!
-            vector_t<string_t> events_str_list = delimit(events_str, "\"',; ");
-            vector_t<int>      events_list;
-
-            auto& pevents = private_events();
-            for(int& pevent : pevents)
-            {
-                auto fitr = std::find(events_list.begin(), events_list.end(), pevent);
-                if(fitr == events_list.end())
-                    events_list.push_back(pevent);
-            }
-
-            for(const auto& itr : events_str_list)
-            {
-                if(itr.length() == 0)
-                    continue;
-
-                if(settings::debug())
-                {
-                    printf("[papi_common]> Getting event code from '%s'...\n",
-                           itr.c_str());
-                }
-
-                int evt_code = papi::get_event_code(itr);
-                if(evt_code == PAPI_NOT_INITED)  // defined as zero
-                {
-                    std::stringstream ss;
-                    ss << "[papi_common] Error creating event with ID: " << itr;
-                    if(settings::papi_fail_on_error())
-                    {
-                        TIMEMORY_EXCEPTION(ss.str());
-                    }
-                    else
-                    {
-                        fprintf(stderr, "%s\n", ss.str().c_str());
-                    }
-                }
-                else
-                {
-                    auto fitr =
-                        std::find(events_list.begin(), events_list.end(), evt_code);
-                    if(fitr == events_list.end())
-                    {
-                        if(settings::debug() || settings::verbose() > 1)
-                        {
-                            printf("[papi_common] Successfully created event '%s' with "
-                                   "code '%i'...\n",
-                                   itr.c_str(), evt_code);
-                        }
-                        events_list.push_back(evt_code);
-                    }
-                    else
-                    {
-                        if(settings::debug() || settings::verbose() > 1)
-                        {
-                            printf("[papi_common] Event '%s' with code '%i' already "
-                                   "exists...\n",
-                                   itr.c_str(), evt_code);
-                        }
-                    }
-                }
-            }
-
-            return events_list;
-        };
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
+    static get_initializer_t& get_initializer();
 
     template <typename Tp>
-    static void initialize()
-    {
-        if(!is_configured<Tp>() && initialize_papi())
-        {
-            auto& _event_set = event_set<Tp>();
-            auto& _events    = get_events<Tp>();
-            if(!_events.empty())
-            {
-                if(settings::debug() || settings::verbose() > 1)
-                    PRINT_HERE("configuring %i papi events", (int) _events.size());
-                papi::create_event_set(&_event_set, settings::papi_multiplexing());
-                papi::add_events(_event_set, _events.data(), _events.size());
-                if(settings::papi_overflow() > 0)
-                {
-                    for(auto itr : _events)
-                    {
-                        papi::overflow(_event_set, itr, settings::papi_overflow(), 0,
-                                       &overflow_handler);
-                    }
-                }
-                if(settings::papi_attach())
-                    papi::attach(_event_set, process::get_target_id());
-                papi::start(_event_set);
-                is_configured<Tp>() = papi::working();
-            }
-            if(!is_configured<Tp>())
-            {
-                PRINT_HERE("Warning! Configuring %i papi events failed",
-                           (int) _events.size());
-            }
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
+    static void initialize();
 
     template <typename Tp>
-    static void finalize()
-    {
-        if(!initialize_papi())
-            return;
-        auto& _event_set = event_set<Tp>();
-        auto& _events    = get_events<Tp>();
-        if(!_events.empty() && _event_set != PAPI_NULL && _event_set >= 0)
-        {
-            value_type values(_events.size(), 0);
-            papi::stop(_event_set, values.data());
-            papi::remove_events(_event_set, _events.data(), _events.size());
-            papi::destroy_event_set(_event_set);
-            _event_set = PAPI_NULL;
-            _events.clear();
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
+    static void finalize();
 
 public:
     TIMEMORY_DEFAULT_OBJECT(papi_common)
@@ -358,5 +149,259 @@ protected:
         return _instance;
     }
 };
+
+template <typename Tp>
+inline papi_common::common_data&
+papi_common::data()
+{
+    static thread_local common_data _instance{};
+    return _instance;
+}
+
+template <typename Tp>
+inline auto&
+papi_common::event_set()
+{
+    return data<Tp>().event_set;
+}
+
+template <typename Tp>
+inline auto&
+papi_common::is_configured()
+{
+    return data<Tp>().is_configured;
+}
+
+template <typename Tp>
+inline auto&
+papi_common::is_running()
+{
+    return state().is_running;
+}
+
+template <typename Tp>
+inline auto&
+papi_common::is_fixed()
+{
+    return data<Tp>().is_fixed;
+}
+
+template <typename Tp>
+inline auto&
+papi_common::get_events()
+{
+    auto& _ret = data<Tp>().events;
+    if(!is_fixed<Tp>() && _ret.empty())
+        _ret = get_initializer<Tp>()();
+    return _ret;
+}
+
+template <typename Tp>
+inline papi_common::get_initializer_t&
+papi_common::get_initializer()
+{
+    static std::mutex        _papi_common_lk{};
+    static std::string       _last_events_str = {};
+    static get_initializer_t _instance        = []() {
+        if(!trait::runtime_enabled<papi_common>::get())
+            return papi_event_vector{};
+
+        bool _changed   = false;
+        auto events_str = settings::papi_events();
+        {
+            std::unique_lock<std::mutex> _lk{ _papi_common_lk };
+            if(events_str != _last_events_str)
+                _changed = true;
+        }
+
+        if(!papi_common::initialize_papi())
+        {
+            if(!settings::papi_quiet() && _changed)
+                fprintf(stderr,
+                        "[%s][papi_common]> PAPI could not be initialized "
+                        "(initialized: %s, working: %s)\n",
+                        TIMEMORY_PROJECT_NAME, state().is_initialized ? "y" : "n",
+                        state().is_working ? "y" : "n");
+            return papi_event_vector{};
+        }
+
+        if(events_str.empty() && private_events().empty())
+            return papi_event_vector{};
+        else if(_changed && !events_str.empty() &&
+                (settings::verbose() > 1 || settings::debug()))
+        {
+            if(!_last_events_str.empty())
+                fprintf(stderr,
+                        "[%s][papi_common]> configuring new set of papi events: "
+                        "'%s'... (was: '%s')\n",
+                        TIMEMORY_PROJECT_NAME, events_str.c_str(),
+                        _last_events_str.c_str());
+            else
+                fprintf(stderr,
+                        "[%s][papi_common]> configuring new set of papi events: "
+                        "'%s'...\n",
+                        TIMEMORY_PROJECT_NAME, events_str.c_str());
+        }
+
+        // don't delimit colons!
+        papi_event_vector events_str_list = delimit(events_str, "\"',; ");
+        papi_event_vector events_list;
+
+        static std::set<string_t> query_success{};
+        static std::set<string_t> query_failure{};
+
+        auto _query_event = [](const string_t& _evt) {
+            std::unique_lock<std::mutex> _lk{ _papi_common_lk };
+            if(query_success.count(_evt) > 0)
+                return true;
+            if(query_failure.count(_evt) > 0)
+                return false;
+            auto _v = papi::query_event(_evt);
+            (void) papi::get_event_info(_evt);
+            if(_v)
+                query_success.emplace(_evt);
+            else
+                query_failure.emplace(_evt);
+            return _v;
+        };
+
+        auto& pevents = private_events();
+        for(auto& pevent : pevents)
+        {
+            string_t _pevent_str = papi::get_event_info(pevent).symbol;
+            if(!_query_event(_pevent_str))
+                continue;
+            auto fitr = std::find(events_list.begin(), events_list.end(), _pevent_str);
+            if(fitr == events_list.end())
+                events_list.push_back(_pevent_str);
+        }
+
+        for(const auto& itr : events_str_list)
+        {
+            if(itr.length() == 0)
+                continue;
+
+            if(settings::debug())
+            {
+                fprintf(stderr, "[%s][papi_common]> Querying event '%s'...\n",
+                        TIMEMORY_PROJECT_NAME, itr.c_str());
+            }
+
+            if(!_query_event(itr))
+            {
+                std::stringstream _ss{};
+                _ss << "[" << TIMEMORY_PROJECT_NAME << "][papi_common]> Event '" << itr
+                    << "' not valid";
+                if(settings::papi_fail_on_error())
+                {
+                    TIMEMORY_EXCEPTION(_ss.str());
+                }
+                else if(settings::verbose() >= 0)
+                {
+                    fprintf(stderr, "[%s] %s\n", TIMEMORY_PROJECT_NAME,
+                            _ss.str().c_str());
+                }
+                continue;
+            }
+
+            auto fitr = std::find(events_list.begin(), events_list.end(), itr);
+            if(fitr == events_list.end())
+            {
+                if(settings::debug() || settings::verbose() > 1)
+                {
+                    fprintf(stderr,
+                            "[%s][papi_common] Successfully queried event '%s'...\n",
+                            TIMEMORY_PROJECT_NAME, itr.c_str());
+                }
+                events_list.push_back(itr);
+            }
+            else
+            {
+                if(settings::debug() || settings::verbose() > 1)
+                {
+                    fprintf(stderr, "[%s][papi_common] Event '%s' already exists...\n",
+                            TIMEMORY_PROJECT_NAME, itr.c_str());
+                }
+            }
+        }
+
+        return events_list;
+    };
+    return _instance;
+}
+
+template <typename Tp>
+inline void
+papi_common::initialize()
+{
+    if(!is_configured<Tp>() && initialize_papi())
+    {
+        auto _quiet   = settings::papi_quiet();
+        auto _debug   = (_quiet) ? false : settings::debug();
+        auto _verbose = (_quiet) ? -1 : settings::verbose();
+        if(is_running<Tp>())
+        {
+            if(_debug || _verbose > 0)
+                TIMEMORY_PRINT_HERE("papi event set %i is already running",
+                                    event_set<Tp>());
+            return;
+        }
+        auto& _event_set = event_set<Tp>();
+        auto& _events    = get_events<Tp>();
+        if(!_events.empty())
+        {
+            if(_debug || _verbose > 1)
+                TIMEMORY_PRINT_HERE("configuring %i papi events", (int) _events.size());
+            papi::create_event_set(&_event_set, settings::papi_multiplexing());
+            papi::add_events(_event_set, _events.data(), _events.size());
+            if(settings::papi_overflow() > 0)
+            {
+                for(auto itr : _events)
+                {
+                    papi::overflow(_event_set, itr, settings::papi_overflow(), 0,
+                                   &overflow_handler);
+                }
+            }
+            if(settings::papi_attach())
+                papi::attach(_event_set, process::get_target_id());
+            papi::start(_event_set);
+            is_running<Tp>()    = true;
+            is_configured<Tp>() = papi::working();
+        }
+        if(!_events.empty() && !is_configured<Tp>())
+        {
+            TIMEMORY_CONDITIONAL_PRINT_HERE(!_quiet,
+                                            "Warning! Configuring %i papi events failed",
+                                            (int) _events.size());
+        }
+    }
+}
+
+template <typename Tp>
+inline void
+papi_common::finalize()
+{
+    if(!initialize_papi())
+        return;
+    if(!is_running<Tp>())
+        return;
+    auto& _event_set = event_set<Tp>();
+    auto& _events    = get_events<Tp>();
+    if(!_events.empty() && _event_set != PAPI_NULL && _event_set >= 0)
+    {
+        value_type values(_events.size(), 0);
+        papi::stop(_event_set, values.data());
+        papi::remove_events(_event_set, _events.data(), _events.size());
+        papi::destroy_event_set(_event_set);
+        _event_set = PAPI_NULL;
+        _events.clear();
+        is_running<Tp>() = false;
+    }
+}
 }  // namespace component
 }  // namespace tim
+
+#if defined(TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE) &&                                 \
+    TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE > 0
+#    include "timemory/components/papi/papi_common.cpp"
+#endif

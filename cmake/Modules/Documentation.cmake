@@ -84,8 +84,8 @@ if(TIMEMORY_BUILD_DOCS AND Doxygen_FOUND)
             set(_default "ON")
         endif()
         # add option
-        add_option(ENABLE_DOXYGEN_${_doc_format}_DOCS
-                   "Build documentation with ${_doc_format} format" ${_default})
+        timemory_add_option(ENABLE_DOXYGEN_${_doc_format}_DOCS
+                            "Build documentation with ${_doc_format} format" ${_default})
         mark_as_advanced(ENABLE_DOXYGEN_${_doc_format}_DOCS)
     endforeach()
 
@@ -109,8 +109,8 @@ if(TIMEMORY_BUILD_DOCS AND Doxygen_FOUND)
             # create CMake doc string
             string(TOLOWER _graph_type_desc ${_graph_type})
             # add option
-            add_option(ENABLE_DOXYGEN_${_graph_type}_GRAPH "${_message}"
-                       ${${_graph_type}_GRAPH_DEFAULT})
+            timemory_add_option(ENABLE_DOXYGEN_${_graph_type}_GRAPH "${_message}"
+                                ${${_graph_type}_GRAPH_DEFAULT})
             mark_as_advanced(ENABLE_DOXYGEN_${_graph_type}_GRAPH)
             # set GENERATE_DOXYGEN_${_graph_type}_GRAPH to YES/NO
             # GENERATE_DOXYGEN_${_graph_type}_GRAPH is used in configure_file @ONLY

@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/components/base/types.hpp"
 #include "timemory/macros/attributes.hpp"
 #include "timemory/mpl/math.hpp"
 #include "timemory/mpl/types.hpp"
@@ -36,9 +37,6 @@ namespace tim
 {
 namespace component
 {
-//
-template <typename Tp, size_t Sz>
-struct base_data;
 //
 template <typename Tp>
 struct base_data<Tp, 0>
@@ -98,13 +96,16 @@ struct base_data<Tp, 1>
     using value_type = Tp;
     using accum_type = empty_type;
     using last_type  = empty_type;
+    using cref_return_type =
+        std::conditional_t<std::is_trivially_copyable<value_type>::value, value_type,
+                           const value_type&>;
 
-    TIMEMORY_INLINE const value_type& get_value() const { return value; }
-    TIMEMORY_INLINE const value_type& get_accum() const { return value; }
-    TIMEMORY_INLINE const value_type& get_last() const { return value; }
-    TIMEMORY_INLINE void              set_value(value_type v) { value = v; }
-    TIMEMORY_INLINE void              set_accum(value_type) {}
-    TIMEMORY_INLINE void              set_last(value_type) {}
+    TIMEMORY_INLINE cref_return_type get_value() const { return value; }
+    TIMEMORY_INLINE cref_return_type get_accum() const { return value; }
+    TIMEMORY_INLINE cref_return_type get_last() const { return value; }
+    TIMEMORY_INLINE void             set_value(value_type v) { value = std::move(v); }
+    TIMEMORY_INLINE void             set_accum(value_type) {}
+    TIMEMORY_INLINE void             set_last(value_type) {}
 
     base_data()  = default;
     ~base_data() = default;
@@ -194,13 +195,16 @@ struct base_data<Tp, 2>
     using value_type = Tp;
     using accum_type = Tp;
     using last_type  = empty_type;
+    using cref_return_type =
+        std::conditional_t<std::is_trivially_copyable<value_type>::value, value_type,
+                           const value_type&>;
 
-    TIMEMORY_INLINE const value_type& get_value() const { return value; }
-    TIMEMORY_INLINE const value_type& get_accum() const { return accum; }
-    TIMEMORY_INLINE const value_type& get_last() const { return value; }
-    TIMEMORY_INLINE void              set_value(value_type v) { value = v; }
-    TIMEMORY_INLINE void              set_accum(value_type v) { accum = v; }
-    TIMEMORY_INLINE void              set_last(value_type) {}
+    TIMEMORY_INLINE cref_return_type get_value() const { return value; }
+    TIMEMORY_INLINE cref_return_type get_accum() const { return accum; }
+    TIMEMORY_INLINE cref_return_type get_last() const { return value; }
+    TIMEMORY_INLINE void             set_value(value_type v) { value = std::move(v); }
+    TIMEMORY_INLINE void             set_accum(value_type v) { accum = std::move(v); }
+    TIMEMORY_INLINE void             set_last(value_type) {}
 
     base_data()  = default;
     ~base_data() = default;
@@ -312,13 +316,16 @@ struct base_data<Tp, 3>
     using value_type = Tp;
     using accum_type = Tp;
     using last_type  = Tp;
+    using cref_return_type =
+        std::conditional_t<std::is_trivially_copyable<value_type>::value, value_type,
+                           const value_type&>;
 
-    TIMEMORY_INLINE const value_type& get_value() const { return value; }
-    TIMEMORY_INLINE const value_type& get_accum() const { return accum; }
-    TIMEMORY_INLINE const value_type& get_last() const { return last; }
-    TIMEMORY_INLINE void              set_value(value_type v) { value = v; }
-    TIMEMORY_INLINE void              set_accum(value_type v) { accum = v; }
-    TIMEMORY_INLINE void              set_last(value_type v) { last = v; }
+    TIMEMORY_INLINE cref_return_type get_value() const { return value; }
+    TIMEMORY_INLINE cref_return_type get_accum() const { return accum; }
+    TIMEMORY_INLINE cref_return_type get_last() const { return last; }
+    TIMEMORY_INLINE void             set_value(value_type v) { value = std::move(v); }
+    TIMEMORY_INLINE void             set_accum(value_type v) { accum = std::move(v); }
+    TIMEMORY_INLINE void             set_last(value_type v) { last = std::move(v); }
 
     base_data()  = default;
     ~base_data() = default;
@@ -419,63 +426,6 @@ protected:
     value_type value = Tp{};  // NOLINT
     value_type accum = Tp{};  // NOLINT
     value_type last  = Tp{};  // NOLINT
-};
-/// \struct base_state
-/// \brief Provide state configuration options for a component instance.
-/// The current states are:
-///
-/// 1. `get_is_running()`   : returns true if a component has started collection.
-///
-/// 2. `get_is_on_stack()`  : returns true if a component has bookmarked a storage
-///                           location.
-///
-/// 3. `get_is_transient()` : returns true if the value returned from `get()` (or similar)
-///                           represents a phase measurement.
-///
-/// 4. `get_is_flat()`      : returns true if the component bookmarked storage at a
-///                           call-stack depth of zero explicitly.
-///
-/// 5. `get_depth_change()` : used internally by components to determine if a push
-///                           operation incremented/decremented the call-stack depth.
-///
-/// 6. `get_is_invalid()`   : used to indicate that the metric does not have a valid
-///                           state. If set to false before a push operation, this will
-///                           suppress insertion into storage.
-///
-struct base_state : private utility::bit_flags<6>
-{
-protected:
-    using base_type = utility::bit_flags<6>;
-    using base_type::set;
-    using base_type::test;
-
-public:
-    using base_type::reset;
-
-    TIMEMORY_INLINE bool get_is_running() const { return test<RunningIdx>(); }
-    TIMEMORY_INLINE bool get_is_on_stack() const { return test<OnStackIdx>(); }
-    TIMEMORY_INLINE bool get_is_transient() const { return test<TransientIdx>(); }
-    TIMEMORY_INLINE bool get_is_flat() const { return test<FlatIdx>(); }
-    TIMEMORY_INLINE bool get_depth_change() const { return test<DepthIdx>(); }
-    TIMEMORY_INLINE bool get_is_invalid() const { return test<InvalidIdx>(); }
-
-    TIMEMORY_INLINE void set_is_running(bool v) { set<RunningIdx>(v); }
-    TIMEMORY_INLINE void set_is_on_stack(bool v) { set<OnStackIdx>(v); }
-    TIMEMORY_INLINE void set_is_transient(bool v) { set<TransientIdx>(v); }
-    TIMEMORY_INLINE void set_is_flat(bool v) { set<FlatIdx>(v); }
-    TIMEMORY_INLINE void set_depth_change(bool v) { set<DepthIdx>(v); }
-    TIMEMORY_INLINE void set_is_invalid(bool v) { set<InvalidIdx>(v); }
-
-protected:
-    enum State
-    {
-        RunningIdx   = 0,
-        OnStackIdx   = 1,
-        TransientIdx = 2,
-        FlatIdx      = 3,
-        DepthIdx     = 4,
-        InvalidIdx   = 5,
-    };
 };
 //
 namespace internal

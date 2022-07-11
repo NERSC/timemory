@@ -25,3 +25,5 @@
 #include "timemory/components/perfetto/extern.hpp"
 
 PERFETTO_TRACK_EVENT_STATIC_STORAGE();
+
+TIMEMORY_EXTERN_COMPONENT(perfetto_trace, false, void)

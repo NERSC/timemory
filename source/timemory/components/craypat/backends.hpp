@@ -32,7 +32,6 @@
 
 #include "timemory/components/macros.hpp"
 #include "timemory/utility/types.hpp"
-#include "timemory/utility/utility.hpp"
 
 #include <regex>
 #include <string>
@@ -161,7 +160,7 @@ namespace craypat
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline int
+inline int
 record(int val)
 {
 #if defined(CRAYPAT)
@@ -174,7 +173,7 @@ record(int val)
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline int
+inline int
 flush_buffer(unsigned long* val)
 {
 #if defined(CRAYPAT)
@@ -187,7 +186,7 @@ flush_buffer(unsigned long* val)
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline int
+inline int
 region_begin(int id, const char* label)
 {
 #if defined(CRAYPAT)
@@ -200,7 +199,7 @@ region_begin(int id, const char* label)
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline int
+inline int
 region_end(int id)
 {
 #if defined(CRAYPAT)
@@ -213,7 +212,7 @@ region_end(int id)
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline int
+inline int
 heap_stats()
 {
 #if defined(CRAYPAT)
@@ -225,7 +224,7 @@ heap_stats()
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline int
+inline int
 counters(int category, const char**& names, unsigned long*& values, int*& nevents)
 {
 #if defined(CRAYPAT)
@@ -238,7 +237,7 @@ counters(int category, const char**& names, unsigned long*& values, int*& nevent
 //
 //--------------------------------------------------------------------------------------//
 //
-static inline int
+inline int
 get_category(const std::string& key)
 {
     using regex_array_t              = std::vector<std::pair<std::regex, int>>;

@@ -28,4 +28,4 @@
 #include "timemory/components/io/components.hpp"
 #include "timemory/components/macros.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(read_bytes, true, std::pair<int64_t, int64_t>)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(read_bytes, true, std::pair<int64_t, int64_t>)

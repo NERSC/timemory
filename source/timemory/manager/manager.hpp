@@ -40,6 +40,8 @@
 #include "timemory/mpl/policy.hpp"
 #include "timemory/settings/settings.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
+#include "timemory/utility/demangle.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <atomic>
 #include <cstdint>
@@ -63,7 +65,7 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
-class manager
+class TIMEMORY_VISIBILITY("default") manager
 {
     template <typename... Args>
     using uomap_t = std::unordered_map<Args...>;
@@ -77,7 +79,6 @@ public:
     using comm_group_t       = std::tuple<mpi::comm_t, int32_t>;
     using mutex_t            = std::recursive_mutex;
     using auto_lock_t        = std::unique_lock<mutex_t>;
-    using auto_lock_ptr_t    = std::shared_ptr<std::unique_lock<mutex_t>>;
     using initializer_func_t = std::function<bool()>;
     using initializer_list_t = std::deque<initializer_func_t>;
     using finalizer_func_t   = std::function<void()>;
@@ -188,6 +189,9 @@ public:
     /// provides a serialization function for the type.
     template <typename Tp>
     static void add_metadata(const std::string&, const Tp&);
+    template <typename FuncT>
+    static auto add_metadata(FuncT&& _func)
+        -> decltype(_func(std::declval<cereal::PrettyJSONOutputArchive&>()), void());
     /// Add a metadata entry of a const character array. This only exists to avoid
     /// the template function from serializing the pointer.
     static void add_metadata(const std::string&, const char*);
@@ -328,7 +332,6 @@ private:
     std::thread::id m_thread_id        = threading::get_tid();
     string_t        m_metadata_prefix  = {};
     mutex_t         m_mutex;
-    auto_lock_ptr_t m_lock = auto_lock_ptr_t{ nullptr };
     /// increment the shared_ptr count here to ensure these instances live
     /// for the entire lifetime of the manager instance
     hash_map_ptr_t     m_hash_ids           = get_hash_ids();
@@ -442,12 +445,10 @@ template <typename InitFuncT>
 void
 manager::add_initializer(InitFuncT&& _init_func)
 {
-    bool _owns = m_lock->owns_lock();
-    if(!_owns)
-        m_lock->lock();
+    auto_lock_t _lk{ m_mutex, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
     m_initializers.emplace_back(std::forward<InitFuncT>(_init_func));
-    if(!_owns)
-        m_lock->unlock();
 }
 //
 //----------------------------------------------------------------------------------//
@@ -485,6 +486,23 @@ manager::add_metadata(const std::string& _key, const Tp& _value)
             return;
         auto* ar = static_cast<cereal::PrettyJSONOutputArchive*>(_varchive);
         (*ar)(cereal::make_nvp(_key.c_str(), _value));
+    });
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename FuncT>
+auto
+manager::add_metadata(FuncT&& _func)
+    -> decltype(_func(std::declval<cereal::PrettyJSONOutputArchive&>()), void())
+{
+    auto_lock_t _lk(type_mutex<manager>());
+    ++f_manager_persistent_data().metadata_count;
+    f_manager_persistent_data().func_metadata.push_back([_func](void* _varchive) {
+        if(!_varchive)
+            return;
+        auto* ar = static_cast<cereal::PrettyJSONOutputArchive*>(_varchive);
+        _func(*ar);
     });
 }
 //

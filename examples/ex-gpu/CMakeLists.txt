@@ -36,14 +36,17 @@ if(NOT CMAKE_CUDA_COMPILER)
     set_source_files_properties(${sources} PROPERTIES LANGUAGE CXX)
 endif()
 
-if(TIMEMORY_USE_CUDA)
-    # hasn't been ported yet
+if(TIMEMORY_BUILD_GPU_EXAMPLES)
     add_executable(ex_gpu_event ex_gpu_event.cu)
     target_link_libraries(ex_gpu_event PRIVATE timemory-gpu-example logging)
     install(
         TARGETS ex_gpu_event
         DESTINATION bin
         OPTIONAL)
+endif()
+
+if(NOT TIMEMORY_BUILD_GPU_KERNEL_INSTRUMENT_EXAMPLES)
+    return()
 endif()
 
 add_executable(ex_kernel_instrument ex_kernel_instrument.cu)

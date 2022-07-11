@@ -25,7 +25,7 @@ endif()
 project(timemory-CPU-Roofline-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cpu_roofline)
-set(COMPONENTS compile-options analysis-tools cpu-roofline ert component)
+set(COMPONENTS compile-options analysis-tools cpu-roofline component)
 
 find_package(
     timemory REQUIRED

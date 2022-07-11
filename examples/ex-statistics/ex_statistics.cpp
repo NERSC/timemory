@@ -22,21 +22,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <cstdio>
-#include <cstdlib>
-#include <random>
-
-//--------------------------------------------------------------------------------------//
+//
 // include these headers for declaration w/o instantiation
 //
-#include "timemory/components/macros.hpp"
+#include "timemory/mpl/macros.hpp"
 #include "timemory/mpl/types.hpp"
 
-//
-// all types use pretty json
-//
-TIMEMORY_DEFINE_CONCRETE_TRAIT(pretty_archive, void, std::true_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(pretty_archive, void, true_type)
 
+//
+// include these headers for declaration w/o instantiation
+//
 #include "timemory/components/types.hpp"
 
 //
@@ -51,6 +47,10 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(record_statistics, component::current_peak_rss, t
 // include rest of headers
 //
 #include "timemory/timemory.hpp"
+
+#include <cstdio>
+#include <cstdlib>
+#include <random>
 
 //
 // shorthand

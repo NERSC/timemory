@@ -36,6 +36,7 @@
 #include "timemory/storage/basic_tree.hpp"
 #include "timemory/storage/graph.hpp"
 
+#include <ios>
 #include <unordered_map>
 
 namespace tim
@@ -71,11 +72,17 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
 
     auto* _settings = tim::settings::instance();
     if(!_settings)
-        PRINT_HERE("[%s]> nullptr to settings!", Type::get_label().c_str());
+        TIMEMORY_PRINT_HERE("[%s]> nullptr to settings!", Type::get_label().c_str());
     auto _debug =
         _settings != nullptr && (_settings->get_debug() || _settings->get_verbose() > 2);
+#if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
+    bool _testing_debug = true;
+#else
+    bool _testing_debug = _debug;
+#endif
 
-    rhs.stack_clear();
+    if(_settings && _settings->get_stack_clearing())
+        rhs.stack_clear();
 
     auto _copy_hash_ids = [&lhs, &rhs, _debug]() {
         // copy over mapping of hashes to strings
@@ -85,7 +92,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
             if(!_lk.owns_lock())
                 _lk.lock();
 
-            CONDITIONAL_PRINT_HERE(
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
                 _debug, "[%s]> merging %lu hash-ids into existing set of %lu hash-ids!",
                 Type::get_label().c_str(), (unsigned long) rhs.get_hash_ids()->size(),
                 (unsigned long) lhs.get_hash_ids()->size());
@@ -104,12 +111,12 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
             if(!_lk.owns_lock())
                 _lk.lock();
 
-            CONDITIONAL_PRINT_HERE(_debug,
-                                   "[%s]> merging %lu hash-aliases into existing set of "
-                                   "%lu hash-aliases!",
-                                   Type::get_label().c_str(),
-                                   (unsigned long) rhs.get_hash_aliases()->size(),
-                                   (unsigned long) lhs.get_hash_aliases()->size());
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                _debug,
+                "[%s]> merging %lu hash-aliases into existing set of "
+                "%lu hash-aliases!",
+                Type::get_label().c_str(), (unsigned long) rhs.get_hash_aliases()->size(),
+                (unsigned long) lhs.get_hash_aliases()->size());
 
             auto _hash_aliases = *rhs.get_hash_aliases();
             for(const auto& itr : _hash_aliases)
@@ -123,8 +130,9 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
     // if self is not initialized but itr is, copy data
     if(rhs.is_initialized() && !lhs.is_initialized())
     {
-        PRINT_HERE("[%s]> Warning! master is not initialized! Segmentation fault likely",
-                   Type::get_label().c_str());
+        TIMEMORY_PRINT_HERE(
+            "[%s]> Warning! master is not initialized! Segmentation fault likely",
+            Type::get_label().c_str());
         lhs.graph().insert_subgraph_after(lhs._data().head(), rhs.data().head());
         lhs.graph().steal_resources(rhs.graph());
         lhs.m_initialized = rhs.m_initialized;
@@ -143,37 +151,42 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
 
     for(auto entry : inverse_insert)
     {
-        auto master_entry = lhs.data().find(entry.second);
-        if(master_entry != lhs.data().end())
+        auto _main_entry = lhs.data().find(entry.second);
+        if(_main_entry != lhs.data().end())
         {
-            pre_order_iterator pitr(entry.second);
+            // create copy of data so we can tweak the thread ids
+            auto _main_v = *_main_entry;
+            auto itr     = pre_order_iterator{ entry.second };
 
-            if(rhs.graph().is_valid(pitr) && pitr)
+            if(rhs.graph().is_valid(itr) && itr)
             {
-                CONDITIONAL_PRINT_HERE(
+                TIMEMORY_CONDITIONAL_PRINT_HERE(
                     _debug, "[%s]> worker is merging %i records into %i records",
                     Type::get_label().c_str(), (int) rhs.size(), (int) lhs.size());
 
-                pre_order_iterator pos = master_entry;
+                // the tids will always be different
+                _main_v.tid() = itr->tid();
 
-                if(*pos == *pitr)
+                if(*itr == _main_v)
                 {
                     ++num_merged;
-                    sibling_iterator other = pitr;
+                    sibling_iterator other = itr;
                     for(auto sitr = other.begin(); sitr != other.end(); ++sitr)
                     {
-                        pre_order_iterator pchild = sitr;
-                        if(!pchild || pchild->data().get_is_invalid())
+                        pre_order_iterator citr = sitr;
+                        using Tp                = std::decay_t<decltype(citr->data())>;
+                        if(!citr || operation::get_is_invalid<Tp, false>{}(citr->data()))
                             continue;
-                        lhs.graph().append_child(pos, pchild);
+                        lhs.graph().append_child(pre_order_iterator{ _main_entry }, citr);
                     }
                 }
 
-                CONDITIONAL_PRINT_HERE(_debug, "[%s]> master has %i records",
-                                       Type::get_label().c_str(), (int) lhs.size());
+                TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s]> master has %i records",
+                                                Type::get_label().c_str(),
+                                                (int) lhs.size());
 
                 // remove the entry from this graph since it has been added
-                // rhs.graph().erase(pitr);
+                // rhs.graph().erase(itr);
             }
         }
     }
@@ -186,18 +199,58 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
         ss << "Testing error! Missing " << diff << " merge points. The worker thread "
            << "contained " << merge_size << " bookmarks but only merged " << num_merged
            << " nodes!";
+        if(_debug || _testing_debug)
+        {
+            ss << std::boolalpha << "\n";
+            for(auto entry : inverse_insert)
+            {
+                using graph_data_t = std::decay_t<decltype(lhs.data())>;
+                auto _litr         = lhs.data().find(entry.second);
+                auto _pitr         = pre_order_iterator{ entry.second };
+                bool _found        = _litr != lhs.data().end();
+                bool _valid        = rhs.graph().is_valid(_pitr);
+                bool _match =
+                    (_found && _litr) ? (*pre_order_iterator{ _litr } == *_pitr) : false;
 
-        CONDITIONAL_PRINT_HERE(_debug, "%s", ss.str().c_str());
+                auto _print_entry = [&ss](auto _v) {
+                    ss << "      HASH         : " << _v->hash() << "\n";
+                    ss << "      DUMMY        : " << _v->is_dummy() << "\n";
+                    ss << "      DATA         : " << _v->data() << "\n";
+                    ss << "      PID          : " << _v->pid() << "\n";
+                    ss << "      TID          : " << _v->tid() << "\n";
+                    ss << "      DEPTH        : " << _v->depth() << "\n";
+                    ss << "      ROLLING HASH : " << graph_data_t::get_rolling_hash(_v)
+                       << "\n";
+                };
 
-#if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
-        TIMEMORY_EXCEPTION(ss.str());
-#endif
+                ss << "  RHS ENTRY " << entry.first << ":\n";
+                ss << "    FOUND : " << _found << "\n";
+                ss << "    VALID : " << _valid << "\n";
+                ss << "    MATCH : " << _match << "\n";
+
+                _print_entry(entry.second);
+
+                if(_found)
+                {
+                    ss << "  LHS ENTRY:\n";
+                    _print_entry(_litr);
+                }
+                for(auto itr = lhs.data().begin(); itr != lhs.data().end(); ++itr)
+                {
+                    ss << "  CANDIDATE:\n";
+                    _print_entry(itr);
+                }
+            }
+        }
+
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_testing_debug, "%s", ss.str().c_str());
+        TIMEMORY_TESTING_EXCEPTION(ss.str());
     }
 
     if(num_merged == 0)
     {
-        CONDITIONAL_PRINT_HERE(_debug, "[%s]> worker is not merged!",
-                               Type::get_label().c_str());
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_testing_debug, "[%s]> worker is not merged!",
+                                        Type::get_label().c_str());
         pre_order_iterator _nitr(rhs.data().head());
         ++_nitr;
         if(!lhs.graph().is_valid(_nitr))
@@ -205,8 +258,8 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
         lhs.graph().append_child(lhs._data().head(), _nitr);
     }
 
-    CONDITIONAL_PRINT_HERE(_debug, "[%s]> clearing merged storage!",
-                           Type::get_label().c_str());
+    TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s]> clearing merged storage!",
+                                    Type::get_label().c_str());
 
     lhs.graph().steal_resources(rhs.graph());
     rhs.data().clear();
@@ -518,7 +571,8 @@ merge<Type, true>::operator()(GraphT& _g, ItrT _root, ItrT _rhs)
 template <typename Type>
 merge<Type, false>::merge(storage_type& lhs, storage_type& rhs)
 {
-    rhs.stack_clear();
+    if(rhs.m_settings && rhs.m_settings->get_stack_clearing())
+        rhs.stack_clear();
 
     // create lock
     auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);

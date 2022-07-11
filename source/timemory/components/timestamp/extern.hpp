@@ -28,4 +28,4 @@
 #include "timemory/components/macros.hpp"
 #include "timemory/components/timestamp/timestamp.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(timestamp, true, ::tim::component::timestamp_entry_t)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(timestamp, true, ::tim::component::timestamp_entry_t)

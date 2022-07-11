@@ -31,6 +31,7 @@
 
 #include "timemory/backends/types/papi.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/components/papi/macros.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"

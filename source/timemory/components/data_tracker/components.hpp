@@ -36,6 +36,7 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #if defined(TIMEMORY_PYBIND11_SOURCE)
 #    include "pybind11/cast.h"
@@ -235,12 +236,12 @@ public:
     /// a reference is returned here so that it can be easily updated
     static std::string& description();
 
-    /// this returns a reference so that it can be easily modified
-    static auto& get_unit()
-    {
-        static auto _unit = base_type::get_unit();
-        return _unit;
-    }
+    using base_type::display_unit;
+    using base_type::get_display_unit;
+    using base_type::get_unit;
+    using base_type::set_display_unit;
+    using base_type::set_unit;
+    using base_type::unit;
 
     // default set of ctor and assign
     TIMEMORY_DEFAULT_OBJECT(data_tracker)

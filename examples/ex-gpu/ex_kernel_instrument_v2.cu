@@ -264,8 +264,8 @@ tim::component::gpu_device_timer::allocate(device::gpu, size_t nthreads)
         m_threads = nthreads;
         m_incr    = gpu::malloc<unsigned int>(m_threads);
         m_data    = gpu::malloc<CLOCK_DTYPE>(m_threads);
-        TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memset(m_incr, 0, m_threads));
-        TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memset(m_data, 0, m_threads));
+        TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memset(m_incr, 0, m_threads));
+        TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memset(m_data, 0, m_threads));
         max_threads() = std::max<size_t>(max_threads(), nthreads);
         gpu::check(gpu::get_last_error());
     }
@@ -471,8 +471,8 @@ run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N)
 
     float* d_x = device::gpu::alloc<float>(N);
     float* d_y = device::gpu::alloc<float>(N);
-    TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memcpy(d_x, x, N, gpu::host_to_device_v, stream));
-    TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memcpy(d_y, y, N, gpu::host_to_device_v, stream));
+    TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memcpy(d_x, x, N, gpu::host_to_device_v, stream));
+    TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memcpy(d_y, y, N, gpu::host_to_device_v, stream));
 
     sync_streams();
     for(auto& itr : streams)
@@ -488,7 +488,7 @@ run_saxpy(int nitr, int nstreams, int64_t block_size, int64_t N)
         tot.mark_end(mpl::piecewise_select<comp::gpu_event>{}, itr);
     sync_streams();
 
-    TIMEMORY_HIP_RUNTIME_API_CALL(gpu::memcpy(y, d_y, N, gpu::device_to_host_v, stream));
+    TIMEMORY_GPU_RUNTIME_API_CALL(gpu::memcpy(y, d_y, N, gpu::device_to_host_v, stream));
     gpu::device_sync();
     tot.stop();
     gpu::free(d_x);

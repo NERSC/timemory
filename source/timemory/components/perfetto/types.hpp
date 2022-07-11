@@ -25,16 +25,15 @@
 #pragma once
 
 #include "timemory/components/macros.hpp"
+#include "timemory/components/perfetto/macros.hpp"
 #include "timemory/enum.h"
 #include "timemory/mpl/type_traits.hpp"
 
-#if !defined(TIMEMORY_COMPONENT_SOURCE) && !defined(TIMEMORY_USE_PERFETTO_EXTERN)
-#    if !defined(TIMEMORY_COMPONENT_PERFETTO_HEADER_ONLY_MODE)
-#        define TIMEMORY_COMPONENT_PERFETTO_HEADER_ONLY_MODE 1
-#    endif
-#endif
-
 TIMEMORY_DECLARE_COMPONENT(perfetto_trace)
+
+TIMEMORY_SET_COMPONENT_API(component::perfetto_trace, project::timemory, tpls::perfetto,
+                           category::external, category::timing, category::visualization,
+                           os::agnostic)
 
 TIMEMORY_DEFINE_CONCRETE_TRAIT(uses_value_storage, component::perfetto_trace, false_type)
 
@@ -62,26 +61,6 @@ struct python_args<TIMEMORY_START, component::perfetto_trace>
 };
 }  // namespace trait
 }  // namespace tim
-#endif
-
-// perfetto header
-#if defined(TIMEMORY_USE_PERFETTO)
-#    include <perfetto.h>
-#endif
-
-// provides a constexpr "category"
-#if !defined(TIMEMORY_PERFETTO_API)
-#    define TIMEMORY_PERFETTO_API ::tim::project::timemory
-#endif
-
-// allow including file to override by defining before inclusion
-#if !defined(TIMEMORY_PERFETTO_CATEGORIES)
-#    define TIMEMORY_PERFETTO_CATEGORIES                                                 \
-        perfetto::Category("timemory").SetDescription("Events from the timemory API")
-#endif
-
-#if defined(TIMEMORY_USE_PERFETTO)
-PERFETTO_DEFINE_CATEGORIES(TIMEMORY_PERFETTO_CATEGORIES);
 #endif
 
 TIMEMORY_PROPERTY_SPECIALIZATION(perfetto_trace, TIMEMORY_PERFETTO_TRACE,

@@ -73,8 +73,8 @@ get_absolute_lib_filepath(std::string lib_name);
 int
 main(int argc, char** argv)
 {
-#if defined(DYNINST_API_RT)
-    auto _dyn_api_rt_paths = tim::delimit(DYNINST_API_RT, ":");
+#if defined(TIMEMORY_DYNINST_API_RT)
+    auto _dyn_api_rt_paths = tim::delimit(TIMEMORY_DYNINST_API_RT, ":");
 #else
     auto _dyn_api_rt_paths = std::vector<std::string>{};
 #endif
@@ -97,7 +97,7 @@ main(int argc, char** argv)
             tim::set_env<string_t>("DYNINSTAPI_RT_LIB",
                                    TIMEMORY_JOIN('/', itr, "libdyninstAPI_RT.a"), 0);
     }
-    verbprintf(0, "DYNINST_API_RT: %s\n",
+    verbprintf(0, "DYNINSTAPI_RT_LIB: %s\n",
                tim::get_env<string_t>("DYNINSTAPI_RT_LIB", "").c_str());
 
 #if defined(TIMEMORY_USE_MPI)

@@ -23,3 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/components/cuda/extern.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(cuda_event, true, float)
+TIMEMORY_EXTERN_COMPONENT(cuda_profiler, false, void)
+TIMEMORY_EXTERN_COMPONENT(nvtx_marker, false, void)

@@ -26,6 +26,7 @@
 #pragma once
 
 #include "timemory/macros/attributes.hpp"
+#include "timemory/macros/os.hpp"
 
 #include <cstdint>
 #include <cstdio>
@@ -34,18 +35,92 @@
 #include <utility>
 
 #if defined(TIMEMORY_CORE_SOURCE)
-#    define TIMEMORY_UTILITY_SOURCE
+#    define TIMEMORY_UTILITY_SOURCE 1
 #    define TIMEMORY_UTILITY_INLINE
+#    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
 #elif defined(TIMEMORY_USE_CORE_EXTERN)
-#    define TIMEMORY_USE_UTILITY_EXTERN
+#    define TIMEMORY_USE_UTILITY_EXTERN 1
 #    define TIMEMORY_UTILITY_INLINE
+#    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
 #else
 #    define TIMEMORY_UTILITY_INLINE inline
-#    define TIMEMORY_UTILITY_HEADER_ONLY 1
+#    define TIMEMORY_UTILITY_HEADER_MODE 1
+#    define TIMEMORY_UTILITY_LINKAGE(...) inline __VA_ARGS__
 #endif
 //
 #if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_UTILITY_EXTERN)
-#    define TIMEMORY_USE_UTILITY_EXTERN
+#    define TIMEMORY_USE_UTILITY_EXTERN 1
+#endif
+
+#if !defined(TIMEMORY_DEFAULT_UMASK)
+#    define TIMEMORY_DEFAULT_UMASK 0777
+#endif
+
+#if defined(TIMEMORY_WINDOWS)
+namespace tim
+{
+using pid_t = DWORD;
+}
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DECLARE_EXTERN_TEMPLATE)
+#    define TIMEMORY_DECLARE_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE)
+#    define TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(...) template __VA_ARGS__;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_ESC)
+#    define TIMEMORY_ESC(...) __VA_ARGS__
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DELETED_OBJECT)
+#    define TIMEMORY_DELETED_OBJECT(NAME)                                                \
+        NAME()            = delete;                                                      \
+        NAME(const NAME&) = delete;                                                      \
+        NAME(NAME&&)      = delete;                                                      \
+        NAME& operator=(const NAME&) = delete;                                           \
+        NAME& operator=(NAME&&) = delete;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DELETE_COPY_MOVE_OBJECT)
+#    define TIMEMORY_DELETE_COPY_MOVE_OBJECT(NAME)                                       \
+        NAME(const NAME&) = delete;                                                      \
+        NAME(NAME&&)      = delete;                                                      \
+        NAME& operator=(const NAME&) = delete;                                           \
+        NAME& operator=(NAME&&) = delete;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DEFAULT_MOVE_ONLY_OBJECT)
+#    define TIMEMORY_DEFAULT_MOVE_ONLY_OBJECT(NAME)                                      \
+        NAME(const NAME&)     = delete;                                                  \
+        NAME(NAME&&) noexcept = default;                                                 \
+        NAME& operator=(const NAME&) = delete;                                           \
+        NAME& operator=(NAME&&) noexcept = default;
+#endif
+
+//======================================================================================//
+//
+#if !defined(TIMEMORY_DEFAULT_OBJECT)
+#    define TIMEMORY_DEFAULT_OBJECT(NAME)                                                \
+        TIMEMORY_HOST_DEVICE_FUNCTION NAME() = default;                                  \
+        NAME(const NAME&)                    = default;                                  \
+        NAME(NAME&&) noexcept                = default;                                  \
+        NAME& operator=(const NAME&) = default;                                          \
+        NAME& operator=(NAME&&) noexcept = default;
 #endif
 
 //======================================================================================//
@@ -54,8 +129,8 @@
 //
 //======================================================================================//
 
-#if !defined(CREATE_STATIC_VARIABLE_ACCESSOR)
-#    define CREATE_STATIC_VARIABLE_ACCESSOR(TYPE, FUNC_NAME, VARIABLE)                   \
+#if !defined(TIMEMORY_CREATE_STATIC_VARIABLE_ACCESSOR)
+#    define TIMEMORY_CREATE_STATIC_VARIABLE_ACCESSOR(TYPE, FUNC_NAME, VARIABLE)          \
         static TYPE& FUNC_NAME()                                                         \
         {                                                                                \
             static TYPE _instance = Type::VARIABLE;                                      \
@@ -65,8 +140,8 @@
 
 //--------------------------------------------------------------------------------------//
 
-#if !defined(CREATE_STATIC_FUNCTION_ACCESSOR)
-#    define CREATE_STATIC_FUNCTION_ACCESSOR(TYPE, FUNC_NAME, VARIABLE)                   \
+#if !defined(TIMEMORY_CREATE_STATIC_FUNCTION_ACCESSOR)
+#    define TIMEMORY_CREATE_STATIC_FUNCTION_ACCESSOR(TYPE, FUNC_NAME, VARIABLE)          \
         static TYPE& FUNC_NAME()                                                         \
         {                                                                                \
             static TYPE _instance = Type::VARIABLE();                                    \
@@ -94,13 +169,15 @@
 #if !defined(TIMEMORY_TRUNCATED_FILE_STRING)
 #    define TIMEMORY_TRUNCATED_FILE_STRING(FILE)                                         \
         []() {                                                                           \
-            std::string _f{ FILE };                                                      \
-            auto        _pos = _f.find("/timemory/");                                    \
-            if(_pos != std::string::npos)                                                \
+            std::string TIMEMORY_VAR_NAME_COMBINE(_f, __LINE__){ FILE };                 \
+            auto        TIMEMORY_VAR_NAME_COMBINE(_pos, __LINE__) =                      \
+                TIMEMORY_VAR_NAME_COMBINE(_f, __LINE__).find("/timemory/");              \
+            if(TIMEMORY_VAR_NAME_COMBINE(_pos, __LINE__) != std::string::npos)           \
             {                                                                            \
-                return _f.substr(_pos + 1);                                              \
+                return TIMEMORY_VAR_NAME_COMBINE(_f, __LINE__)                           \
+                    .substr(TIMEMORY_VAR_NAME_COMBINE(_pos, __LINE__) + 1);              \
             }                                                                            \
-            return _f;                                                                   \
+            return TIMEMORY_VAR_NAME_COMBINE(_f, __LINE__);                              \
         }()
 #endif
 
@@ -148,16 +225,16 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
     fflush(stderr);
 }
 
-#if !defined(PRINT_HERE)
-#    define PRINT_HERE(...)                                                              \
+#if !defined(TIMEMORY_PRINT_HERE)
+#    define TIMEMORY_PRINT_HERE(...)                                                     \
         timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                             \
                             TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(), __LINE__,  \
                             __FUNCTION__, __VA_ARGS__)
 #endif
 
-#if !defined(DEBUG_PRINT_HERE)
+#if !defined(TIMEMORY_DEBUG_PRINT_HERE)
 #    if defined(DEBUG)
-#        define DEBUG_PRINT_HERE(...)                                                    \
+#        define TIMEMORY_DEBUG_PRINT_HERE(...)                                           \
             if(::tim::settings::debug())                                                 \
             {                                                                            \
                 timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                     \
@@ -165,12 +242,12 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
                                     __LINE__, __FUNCTION__, __VA_ARGS__);                \
             }
 #    else
-#        define DEBUG_PRINT_HERE(...)
+#        define TIMEMORY_DEBUG_PRINT_HERE(...)
 #    endif
 #endif
 
-#if !defined(VERBOSE_PRINT_HERE)
-#    define VERBOSE_PRINT_HERE(VERBOSE_LEVEL, ...)                                       \
+#if !defined(TIMEMORY_VERBOSE_PRINT_HERE)
+#    define TIMEMORY_VERBOSE_PRINT_HERE(VERBOSE_LEVEL, ...)                              \
         if(::tim::settings::verbose() >= VERBOSE_LEVEL)                                  \
         {                                                                                \
             timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
@@ -179,8 +256,8 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
         }
 #endif
 
-#if !defined(CONDITIONAL_PRINT_HERE)
-#    define CONDITIONAL_PRINT_HERE(CONDITION, ...)                                       \
+#if !defined(TIMEMORY_CONDITIONAL_PRINT_HERE)
+#    define TIMEMORY_CONDITIONAL_PRINT_HERE(CONDITION, ...)                              \
         if(CONDITION)                                                                    \
         {                                                                                \
             timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
@@ -193,8 +270,8 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 #    define TIMEMORY_CONDITIONAL_BACKTRACE(CONDITION, DEPTH)                             \
         if(CONDITION)                                                                    \
         {                                                                                \
-            ::tim::print_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING,            \
-                                          TIMEMORY_FILE_LINE_FUNC_STRING);               \
+            timemory_print_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING,          \
+                                            TIMEMORY_FILE_LINE_FUNC_STRING);             \
         }
 #endif
 
@@ -202,19 +279,19 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 #    define TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(CONDITION, DEPTH)                   \
         if(CONDITION)                                                                    \
         {                                                                                \
-            ::tim::print_demangled_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING,  \
-                                                    TIMEMORY_FILE_LINE_FUNC_STRING);     \
+            timemory_print_demangled_backtrace<DEPTH>(                                   \
+                std::cerr, TIMEMORY_PID_TID_STRING, TIMEMORY_FILE_LINE_FUNC_STRING);     \
         }
 #endif
 
-#if !defined(PRETTY_PRINT_HERE)
+#if !defined(TIMEMORY_PRETTY_PRINT_HERE)
 #    if defined(TIMEMORY_GNU_COMPILER) || defined(TIMEMORY_CLANG_COMPILER)
-#        define PRETTY_PRINT_HERE(...)                                                   \
+#        define TIMEMORY_PRETTY_PRINT_HERE(...)                                          \
             timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
                                 TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),        \
                                 __LINE__, __PRETTY_FUNCTION__, __VA_ARGS__)
 #    else
-#        define PRETTY_PRINT_HERE(...)                                                   \
+#        define TIMEMORY_PRETTY_PRINT_HERE(...)                                          \
             timemory_print_here(TIMEMORY_PID_TID_STRING.c_str(),                         \
                                 TIMEMORY_TRUNCATED_FILE_STRING(__FILE__).c_str(),        \
                                 __LINE__, __FUNCTION__, __VA_ARGS__)
@@ -225,7 +302,7 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 #    define TIMEMORY_CONDITIONAL_BACKTRACE(CONDITION, DEPTH)                             \
         if(CONDITION)                                                                    \
         {                                                                                \
-            ::tim::print_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING);           \
+            timemory_print_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING);         \
         }
 #endif
 
@@ -233,8 +310,26 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 #    define TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(CONDITION, DEPTH)                   \
         if(CONDITION)                                                                    \
         {                                                                                \
-            ::tim::print_demangled_backtrace<DEPTH>(std::cerr, TIMEMORY_PID_TID_STRING); \
+            timemory_print_demangled_backtrace<DEPTH>(std::cerr,                         \
+                                                      TIMEMORY_PID_TID_STRING);          \
         }
+#endif
+
+// backwards compatibility
+#if !defined(PRINT_HERE)
+#    define PRINT_HERE(...) TIMEMORY_PRINT_HERE(__VA_ARGS__)
+#endif
+
+#if !defined(DEBUG_PRINT_HERE)
+#    define DEBUG_PRINT_HERE(...) TIMEMORY_DEBUG_PRINT_HERE(__VA_ARGS__)
+#endif
+
+#if !defined(VERBOSE_PRINT_HERE)
+#    define VERBOSE_PRINT_HERE(...) TIMEMORY_VERBOSE_PRINT_HERE(__VA_ARGS__)
+#endif
+
+#if !defined(CONDITIONAL_PRINT_HERE)
+#    define CONDITIONAL_PRINT_HERE(...) TIMEMORY_CONDITIONAL_PRINT_HERE(__VA_ARGS__)
 #endif
 
 #if defined(DEBUG)
@@ -289,22 +384,4 @@ _DBG(const char* msg)
         {}
 #    define _DBG(...)                                                                    \
         {}
-#endif
-
-//======================================================================================//
-//
-// Define macros for utility
-//
-//======================================================================================//
-//
-#if defined(TIMEMORY_UTILITY_SOURCE)
-#    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
-#    define TIMEMORY_UTILITY_INLINE
-#elif defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_UTILITY_EXTERN)
-#    define TIMEMORY_UTILITY_LINKAGE(...) __VA_ARGS__
-#    define TIMEMORY_UTILITY_INLINE
-#else
-#    define TIMEMORY_UTILITY_LINKAGE(...) inline __VA_ARGS__
-#    define TIMEMORY_UTILITY_INLINE inline
-#    define TIMEMORY_UTILITY_HEADER_MODE
 #endif

@@ -33,6 +33,7 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/defines.h"
 #include "timemory/environment/types.hpp"
 #include "timemory/mpl/available.hpp"
 #include "timemory/mpl/types.hpp"
@@ -316,6 +317,22 @@ struct uses_percent_units : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// \struct tim::trait::uses_power_units
+/// \brief trait that designates the value represents a power value
+///
+template <typename T>
+struct uses_power_units : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::uses_temperature_units
+/// \brief trait that designates the value represents a temperature
+///
+template <typename T>
+struct uses_temperature_units : false_type
+{};
+
+//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::requires_json
 /// \brief trait that designates a type should always print a JSON output
 ///
@@ -483,6 +500,79 @@ struct file_sampler : false_type
 {};
 
 //--------------------------------------------------------------------------------------//
+/// \struct tim::trait::format_precision
+/// \brief trait that specifies the default precision when printing
+///
+template <typename T>
+struct format_precision
+{
+    static constexpr short value = trait::uses_percent_units<T>::value ? 1 : 3;
+
+    auto operator()() const { return (*this)(0); }
+
+private:
+    template <typename U = T, short V = U::precision>
+    auto operator()(int) const
+    {
+        return V;
+    }
+    template <typename U = T>
+    auto operator()(long) const
+    {
+        return value;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::format_width
+/// \brief trait that specifies the default width when printing
+///
+template <typename T>
+struct format_width
+{
+    static constexpr short value = trait::uses_percent_units<T>::value ? 6 : 8;
+
+    auto operator()() const { return (*this)(0); }
+
+private:
+    template <typename U = T, short V = U::width>
+    auto operator()(int) const
+    {
+        return V;
+    }
+    template <typename U = T>
+    auto operator()(long) const
+    {
+        return value;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::format_flags
+/// \brief trait that specifies the default formatting flags when printing
+///
+template <typename T>
+struct format_flags
+{
+    static constexpr std::ios_base::fmtflags value =
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+
+    auto operator()() const { return (*this)(0); }
+
+private:
+    template <typename U = T, std::ios_base::fmtflags V = U::format_flags>
+    auto operator()(int) const
+    {
+        return V;
+    }
+    template <typename U = T>
+    auto operator()(long) const
+    {
+        return value;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
 /// \struct tim::trait::units
 /// \brief trait that specifies the units
 ///
@@ -492,6 +582,14 @@ struct units
     using type         = int64_t;
     using display_type = std::string;
 };
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::trait::assignable_units
+/// \brief trait that specifies the units should be assignable
+///
+template <typename T>
+struct assignable_units : false_type
+{};
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::echo_enabled
@@ -578,7 +676,7 @@ struct output_archive
 template <>
 struct output_archive<manager, TIMEMORY_API>
 {
-    using type = cereal::BaseJSONOutputArchive<cereal::PrettyJsonWriter>;
+    using type = cereal::PrettyJSONOutputArchive;
 };
 
 template <typename Api>
@@ -996,9 +1094,12 @@ struct uses_value_storage<T, type_list<>, A>
 /// \struct tim::trait::perfetto_category
 /// \brief Provides the static category for perfetto traces
 template <typename ApiT>
-struct perfetto_category
+struct perfetto_category;
+
+template <>
+struct perfetto_category<TIMEMORY_API>
 {
-    static constexpr auto value = "timemory";
+    static constexpr auto value = TIMEMORY_PROJECT_NAME;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -1075,54 +1176,3 @@ struct supports_args : false_type
 //--------------------------------------------------------------------------------------//
 }  // namespace trait
 }  // namespace tim
-
-//======================================================================================//
-//
-//                              Specifications
-//
-//======================================================================================//
-
-#if !defined(TIMEMORY_DEFINE_CONCRETE_TRAIT)
-#    define TIMEMORY_DEFINE_CONCRETE_TRAIT(TRAIT, COMPONENT, VALUE)                      \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <>                                                                      \
-        struct TRAIT<COMPONENT> : VALUE                                                  \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-#if !defined(TIMEMORY_DEFINE_TEMPLATE_TRAIT)
-#    define TIMEMORY_DEFINE_TEMPLATE_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TYPE T>                                                                \
-        struct TRAIT<COMPONENT<T>> : VALUE                                               \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-#if !defined(TIMEMORY_DEFINE_VARIADIC_TRAIT)
-#    define TIMEMORY_DEFINE_VARIADIC_TRAIT(TRAIT, COMPONENT, VALUE, TYPE)                \
-        namespace tim                                                                    \
-        {                                                                                \
-        namespace trait                                                                  \
-        {                                                                                \
-        template <TYPE... T>                                                             \
-        struct TRAIT<COMPONENT<T...>> : VALUE                                            \
-        {};                                                                              \
-        }                                                                                \
-        }
-#endif
-
-//--------------------------------------------------------------------------------------//

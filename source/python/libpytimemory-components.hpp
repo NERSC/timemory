@@ -154,9 +154,9 @@ get_enum_set(py::list _args)
             } catch(py::cast_error&)
             {}
 
-            PRINT_HERE("ignoring argument that failed casting to either "
-                       "'timemory.component' and string: %s",
-                       obj_repr.c_str());
+            TIMEMORY_PRINT_HERE("ignoring argument that failed casting to either "
+                                "'timemory.component' and string: %s",
+                                obj_repr.c_str());
         }
     }
     return components;

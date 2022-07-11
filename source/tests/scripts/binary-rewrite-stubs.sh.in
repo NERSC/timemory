@@ -35,7 +35,7 @@ emit-separator "Executing instrumented exe with stub functions"
 
 emit-separator "Collecting stub results"
 
-WALL_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-wall.txt"
+WALL_FILE="${TIMEMORY_OUTPUT_PATH}/${TIMEMORY_OUTPUT_PREFIX}-wall_clock.txt"
 
 NORIG=0
 LORIG=""

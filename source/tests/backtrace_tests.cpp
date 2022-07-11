@@ -33,7 +33,7 @@ TIMEMORY_TEST_DEFAULT_MAIN
 TIMEMORY_NOINLINE auto
 foo()
 {
-    return tim::get_backtrace<4, 1>();
+    return tim::get_native_backtrace<4, 1>();
 }
 
 TIMEMORY_NOINLINE auto
@@ -51,7 +51,7 @@ spam()
 TIMEMORY_NOINLINE auto
 foo_d()
 {
-    return tim::get_demangled_backtrace<4>();
+    return tim::get_demangled_native_backtrace<4>();
 }
 
 TIMEMORY_NOINLINE auto
@@ -331,8 +331,8 @@ TEST_F(backtrace_tests, decode)
 TEST_F(backtrace_tests, print_backtrace)
 {
     std::stringstream ss;
-    tim::print_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING,
-                               TIMEMORY_FILE_LINE_FUNC_STRING);
+    tim::print_native_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING,
+                                      TIMEMORY_FILE_LINE_FUNC_STRING);
     std::cerr << ss.str();
     auto btvec = tim::delimit(ss.str(), "\n");
     EXPECT_GE(btvec.size(), 3) << ss.str();
@@ -343,8 +343,8 @@ TEST_F(backtrace_tests, print_backtrace)
 TEST_F(backtrace_tests, print_demangled_backtrace)
 {
     std::stringstream ss;
-    tim::print_demangled_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING,
-                                         TIMEMORY_FILE_LINE_FUNC_STRING);
+    tim::print_demangled_native_backtrace<3, 2>(ss, TIMEMORY_PID_TID_STRING,
+                                                TIMEMORY_FILE_LINE_FUNC_STRING);
     std::cerr << ss.str();
     auto btvec = tim::delimit(ss.str(), "\n");
     EXPECT_GE(btvec.size(), 3) << ss.str();

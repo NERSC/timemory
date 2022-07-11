@@ -26,18 +26,28 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
+#include "timemory/backends/memory.hpp"
+#include "timemory/backends/mpi.hpp"
+#include "timemory/components/rusage/components.hpp"
 #include "timemory/timemory.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/tpls/cereal/cereal/archives/json.hpp"
+#include "timemory/tpls/cereal/cereal/details/helpers.hpp"
+#include "timemory/units.hpp"
 #include "timemory/utility/signals.hpp"
 
 #include "gtest/gtest.h"
 #include <cassert>
+#include <cctype>
 #include <chrono>
 #include <cmath>
+#include <cstddef>
 #include <fstream>
 #include <future>
 #include <iostream>
 #include <iterator>
 #include <random>
+#include <sstream>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -141,6 +151,9 @@ protected:
         tim::timemory_finalize();
         tim::dmp::finalize();
     }
+
+    void SetUp() override { tim::mpi::barrier(); }
+    void TearDown() override { tim::mpi::barrier(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -432,6 +445,87 @@ TEST_F(mpi_tests, vector_get)
         if(nc > tim::mpi::size())
             nc = 1;
         EXPECT_EQ(pr_vec.size(), nc);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(mpi_tests, send_recv_overflow)
+{
+    namespace comp   = tim::component;
+    namespace mpi    = tim::mpi;
+    using char_vec_t = std::vector<char>;
+    using mpi_get_t  = tim::operation::finalize::mpi_get<char_vec_t, true>;
+
+    const int64_t required_gb = 13 + (6 * (mpi::size() - 1));
+    if(tim::memory::free_memory() < required_gb * tim::units::gigabyte)
+    {
+        std::cerr << "Skipping test " << details::get_test_name()
+                  << " because the amount of free memory is less than " << required_gb
+                  << " GB: " << (tim::memory::free_memory() / tim::units::megabyte)
+                  << " MB (total memory: "
+                  << (tim::memory::total_memory() / tim::units::megabyte) << " MB)\n";
+        return;
+    }
+    else
+    {
+        std::cerr << "Executing test " << details::get_test_name()
+                  << " because the amount of free memory exceeds " << required_gb
+                  << " GB: " << (tim::memory::free_memory() / tim::units::megabyte)
+                  << " MB (total memory: "
+                  << (tim::memory::total_memory() / tim::units::megabyte) << " MB)\n";
+    }
+
+    comp::peak_rss _prss{};
+    _prss.start();
+
+    printf("[%s][%i] %-20s : %22s\n", details::get_test_name().c_str(), mpi::rank(),
+           "Initial peak memory", TIMEMORY_JOIN("", _prss).c_str());
+
+    tim::mpi::barrier();
+
+    auto _size     = static_cast<size_t>(std::numeric_limits<int>::max()) + 1;
+    auto _generate = [_size](int32_t _init) {
+        char_vec_t _data{};
+        _data.reserve(_size);
+        uint8_t c = _init;
+        for(size_t i = 0; i < _size; ++i, ++c)
+        {
+            _data.emplace_back(static_cast<char>(c));
+        }
+        return _data;
+    };
+
+    std::vector<char_vec_t> _rank_data = {};
+    mpi_get_t{ false }(_rank_data, _generate(tim::mpi::rank()));
+
+    _prss.stop();
+
+    printf("[%s][%i] %-20s : %22s\n", details::get_test_name().c_str(), mpi::rank(),
+           "Peak memory", TIMEMORY_JOIN("", _prss).c_str());
+
+    if(mpi::rank() == 0)
+    {
+        auto _perc = [](size_t _num, size_t _denom) {
+            return static_cast<double>(_num) / _denom * 100.;
+        };
+
+        for(size_t i = 0; i < _rank_data.size(); ++i)
+        {
+            auto _expected = _generate(i);
+            ASSERT_EQ(_expected.size(), _rank_data.at(i).size());
+            for(size_t j = 0; j < _size; ++j)
+            {
+                char _exp = _expected[j];
+                char _dat = _rank_data[i][j];
+                ASSERT_EQ(_exp, _dat)
+                    << "rank: " << i << ", position: " << j
+                    << ", expected value: " << (_expected[j])
+                    << ", actual value: " << (_rank_data[i][j])
+                    << ", total size: " << _size << ", % correct: " << _perc(j, _size)
+                    << ", remaining: " << (_size - j);
+            }
+        }
     }
 }
 

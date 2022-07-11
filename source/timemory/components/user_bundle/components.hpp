@@ -40,7 +40,7 @@
 #include "timemory/runtime/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <algorithm>
 #include <functional>
@@ -101,7 +101,7 @@ initialize_bundle(AltApi _api = AltApi{})
     auto  itr              = variables.find(Idx);
     if(itr != variables.end())
     {
-        CONDITIONAL_PRINT_HERE(
+        TIMEMORY_CONDITIONAL_PRINT_HERE(
             (settings::instance()) ? (settings::instance()->get_debug()) : false,
             "getting user bundle components for type %s (%s)",
             demangle<user_bundle_type>().c_str(), user_bundle_type::label().c_str());
@@ -291,8 +291,8 @@ public:
     //  Explicitly clear the previous configurations
     static void reset()
     {
-        CONDITIONAL_PRINT_HERE(settings::verbose() > 3 || settings::debug(),
-                               "Resetting %s", demangle<this_type>().c_str());
+        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::verbose() > 3 || settings::debug(),
+                                        "Resetting %s", demangle<this_type>().c_str());
         internal::user_bundle::reset(get_data(), get_typeids(), get_lock());
     }
 
@@ -424,7 +424,7 @@ void
 user_bundle<Idx, Tag>::global_init(bool _preinit)
 {
     if(settings::verbose() > 2 || settings::debug())
-        PRINT_HERE("Global initialization of %s", demangle<this_type>().c_str());
+        TIMEMORY_PRINT_HERE("Global initialization of %s", demangle<this_type>().c_str());
     get_persistent_data().init(_preinit);
 }
 //

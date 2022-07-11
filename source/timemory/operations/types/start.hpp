@@ -28,6 +28,7 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <type_traits>
 
@@ -128,10 +129,10 @@ private:
     void do_sfinae(Up&, long, long, Args&&...) const
     {
         SFINAE_WARNING(type);
-        DEBUG_PRINT_HERE("No support for arguments: start(%s)",
-                         tim::mpl::apply<std::string>::join(", ", try_demangle<Up>(),
-                                                            demangle<Args>()...)
-                             .c_str());
+        TIMEMORY_DEBUG_PRINT_HERE("No support for arguments: start(%s)",
+                                  tim::mpl::apply<std::string>::join(
+                                      ", ", try_demangle<Up>(), demangle<Args>()...)
+                                      .c_str());
     }
 };
 //

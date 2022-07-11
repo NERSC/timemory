@@ -24,6 +24,77 @@
 
 #pragma once
 
+#include "timemory/macros/os.hpp"
+
+#if defined(TIMEMORY_USE_EXTERN)
+#    if !defined(TIMEMORY_USE_TIMING_EXTERN)
+#        define TIMEMORY_USE_TIMING_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_RUSAGE_EXTERN)
+#        define TIMEMORY_USE_RUSAGE_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_IO_EXTERN) && !defined(TIMEMORY_MACOSX)
+#        define TIMEMORY_USE_IO_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_NETWORK_EXTERN) && defined(TIMEMORY_LINUX)
+#        define TIMEMORY_USE_NETWORK_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_TRIP_COUNT_EXTERN)
+#        define TIMEMORY_USE_TRIP_COUNT_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_DATA_TRACKER_EXTERN)
+#        define TIMEMORY_USE_DATA_TRACKER_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_TIMESTAMP_EXTERN)
+#        define TIMEMORY_USE_TIMESTAMP_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
+#        define TIMEMORY_USE_USER_BUNDLE_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_ALLINEA_MAP_EXTERN) && defined(TIMEMORY_USE_ALLINEA_MAP)
+#        define TIMEMORY_USE_ALLINEA_MAP_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_CALIPER_EXTERN) && defined(TIMEMORY_USE_CALIPER)
+#        define TIMEMORY_USE_CALIPER_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_CRAYPAT_EXTERN) && defined(TIMEMORY_USE_CRAYPAT)
+#        define TIMEMORY_USE_CRAYPAT_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_CUDA_EXTERN) && defined(TIMEMORY_USE_CUDA)
+#        define TIMEMORY_USE_CUDA_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_CUDA_EXTERN) && defined(TIMEMORY_USE_CUDA)
+#        define TIMEMORY_USE_CUDA_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_CUPTI_EXTERN) && defined(TIMEMORY_USE_CUPTI)
+#        define TIMEMORY_USE_CUPTI_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_HIP_EXTERN) && defined(TIMEMORY_USE_HIP)
+#        define TIMEMORY_USE_HIP_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_GOTCHA_EXTERN) && defined(TIMEMORY_USE_GOTCHA)
+#        define TIMEMORY_USE_GOTCHA_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_GPERFTOOLS_EXTERN) && defined(TIMEMORY_USE_GPERFTOOLS)
+#        define TIMEMORY_USE_GPERFTOOLS_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_LIKWID_EXTERN) && defined(TIMEMORY_USE_LIKWID)
+#        define TIMEMORY_USE_LIKWID_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_PAPI_EXTERN) && defined(TIMEMORY_USE_PAPI)
+#        define TIMEMORY_USE_PAPI_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_TAU_EXTERN) && defined(TIMEMORY_USE_TAU)
+#        define TIMEMORY_USE_TAU_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_VTUNE_EXTERN) && defined(TIMEMORY_USE_VTUNE)
+#        define TIMEMORY_USE_VTUNE_EXTERN 1
+#    endif
+#    if !defined(TIMEMORY_USE_OMPT_EXTERN) && defined(TIMEMORY_USE_OMPT)
+#        define TIMEMORY_USE_OMPT_EXTERN 1
+#    endif
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 #if defined(TIMEMORY_USE_ALLINEA_MAP_EXTERN)
@@ -134,20 +205,26 @@
 //
 //--------------------------------------------------------------------------------------//
 //
+#if defined(TIMEMORY_USE_DATA_TRACKER_EXTERN)
+#    include "timemory/components/data_tracker/extern.hpp"
+#endif
+//
+//--------------------------------------------------------------------------------------//
+//
 #if defined(TIMEMORY_USE_OMPT_EXTERN)
 #    include "timemory/components/ompt/extern.hpp"
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
-#    include "timemory/components/user_bundle/extern.hpp"
+#if defined(TIMEMORY_USE_TIMESTAMP_EXTERN)
+#    include "timemory/components/timestamp/extern.hpp"
 #endif
 //
 //--------------------------------------------------------------------------------------//
 //
-#if defined(TIMEMORY_USE_DATA_TRACKER_EXTERN)
-#    include "timemory/components/data_tracker/extern.hpp"
+#if defined(TIMEMORY_USE_USER_BUNDLE_EXTERN)
+#    include "timemory/components/user_bundle/extern.hpp"
 #endif
 //
 //--------------------------------------------------------------------------------------//

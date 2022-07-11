@@ -36,12 +36,14 @@
 #include "timemory/macros/os.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/type_list.hpp"
 
 #include <array>
 #include <bitset>
 #include <functional>
 #include <initializer_list>
 #include <memory>
+#include <mutex>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -74,80 +76,22 @@
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_DECLARE_EXTERN_TEMPLATE)
-#    define TIMEMORY_DECLARE_EXTERN_TEMPLATE(...) extern template __VA_ARGS__;
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE)
-#    define TIMEMORY_INSTANTIATE_EXTERN_TEMPLATE(...) template __VA_ARGS__;
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_ESC)
-#    define TIMEMORY_ESC(...) __VA_ARGS__
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_DELETED_OBJECT)
-#    define TIMEMORY_DELETED_OBJECT(NAME)                                                \
-        NAME()            = delete;                                                      \
-        NAME(const NAME&) = delete;                                                      \
-        NAME(NAME&&)      = delete;                                                      \
-        NAME& operator=(const NAME&) = delete;                                           \
-        NAME& operator=(NAME&&) = delete;
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_DELETE_COPY_MOVE_OBJECT)
-#    define TIMEMORY_DELETE_COPY_MOVE_OBJECT(NAME)                                       \
-        NAME(const NAME&) = delete;                                                      \
-        NAME(NAME&&)      = delete;                                                      \
-        NAME& operator=(const NAME&) = delete;                                           \
-        NAME& operator=(NAME&&) = delete;
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_DEFAULT_MOVE_ONLY_OBJECT)
-#    define TIMEMORY_DEFAULT_MOVE_ONLY_OBJECT(NAME)                                      \
-        NAME(const NAME&)     = delete;                                                  \
-        NAME(NAME&&) noexcept = default;                                                 \
-        NAME& operator=(const NAME&) = delete;                                           \
-        NAME& operator=(NAME&&) noexcept = default;
-#endif
-
-//======================================================================================//
-//
-#if !defined(TIMEMORY_DEFAULT_OBJECT)
-#    define TIMEMORY_DEFAULT_OBJECT(NAME)                                                \
-        TIMEMORY_HOST_DEVICE_FUNCTION NAME() = default;                                  \
-        NAME(const NAME&)                    = default;                                  \
-        NAME(NAME&&) noexcept                = default;                                  \
-        NAME& operator=(const NAME&) = default;                                          \
-        NAME& operator=(NAME&&) noexcept = default;
-#endif
-
-//======================================================================================//
-//
 #if !defined(TIMEMORY_EXCEPTION)
 #    define TIMEMORY_EXCEPTION(...)                                                      \
         {                                                                                \
-            std::stringstream _errmsg;                                                   \
-            _errmsg << __VA_ARGS__;                                                      \
-            perror(_errmsg.str().c_str());                                               \
-            std::cerr << _errmsg.str() << std::endl;                                     \
+            {                                                                            \
+                static std::mutex            _mtx{};                                     \
+                std::unique_lock<std::mutex> _lk{ _mtx };                                \
+                std::cerr << __VA_ARGS__ << std::endl;                                   \
+            }                                                                            \
             std::exit(EXIT_FAILURE);                                                     \
         }
 #endif
 
 //======================================================================================//
 //
-#if !defined(TIMEMORY_TESTING_EXCEPTION) && defined(TIMEMORY_INTERNAL_TESTING)
+#if !defined(TIMEMORY_TESTING_EXCEPTION) &&                                              \
+    (defined(TIMEMORY_INTERNAL_TESTING) || defined(TIMEMORY_TESTING))
 #    define TIMEMORY_TESTING_EXCEPTION(...)                                              \
         {                                                                                \
             TIMEMORY_EXCEPTION(__VA_ARGS__)                                              \
@@ -222,14 +166,6 @@ using identity_t = typename identity<T>::type;
 /// \brief this is a placeholder type for optional type-traits. It is used as the default
 /// type for the type-traits to signify there is no specialization.
 struct null_type : concepts::null_type
-{};
-//
-//--------------------------------------------------------------------------------------//
-//
-/// \struct tim::type_list
-/// \brief lightweight tuple-alternative for meta-programming logic
-template <typename... Tp>
-struct type_list
 {};
 //
 //--------------------------------------------------------------------------------------//
@@ -543,31 +479,25 @@ struct config : public data_type
         return *this;
     }
 
-    TIMEMORY_NODISCARD bool is_flat() const { return this->test(flat::value); }
-    TIMEMORY_NODISCARD bool is_timeline() const { return this->test(timeline::value); }
+    bool is_flat() const { return this->test(flat::value); }
+    bool is_timeline() const { return this->test(timeline::value); }
     // "tree" is default behavior so it returns true if nothing is set but gives
     // priority to the flat setting
-    TIMEMORY_NODISCARD bool is_tree() const
+    bool is_tree() const
     {
         return this->none() || (this->test(tree::value) && !this->test(flat::value));
     }
-    TIMEMORY_NODISCARD bool is_flat_timeline() const
-    {
-        return (is_flat() && is_timeline());
-    }
-    TIMEMORY_NODISCARD bool is_tree_timeline() const
-    {
-        return (is_tree() && is_timeline());
-    }
+    bool is_flat_timeline() const { return (is_flat() && is_timeline()); }
+    bool is_tree_timeline() const { return (is_tree() && is_timeline()); }
 
     template <bool ForceFlatT>
-    TIMEMORY_NODISCARD bool is_flat() const
+    bool is_flat() const
     {
         return (ForceFlatT) ? true : this->test(flat::value);
     }
 
     template <bool ForceTreeT, bool ForceTimeT>
-    TIMEMORY_NODISCARD bool is_tree() const
+    bool is_tree() const
     {
         return (ForceTreeT)
                    ? true
@@ -624,11 +554,11 @@ struct config : public data_type
         if(is_tree<ForceTreeT::value, ForceTimeT::value>() ||
            is_flat<ForceFlatT::value>())
         {
-            _id = get_combined_hash_id(_id, _depth);
+            _id = hash::get_hash_id(_id, _depth);
         }
         if(ForceTimeT::value || is_timeline())
         {
-            _id = get_combined_hash_id(_id, _counter++);
+            _id = hash::get_hash_id(_id, _counter++);
         }
         return _id;
     }
@@ -694,14 +624,24 @@ operator+(config _lhs, config _rhs) -> config
 //
 /// \struct tim::scope::destructor
 /// \brief provides an object which can be returned from functions that will execute
-/// the lambda provided during construction when it is destroyed
+/// the lambda provided during construction when it is destroyed.
 ///
 struct destructor
 {
-    template <typename FuncT>
-    destructor(FuncT&& _func)
-    : m_functor(std::forward<FuncT>(_func))
-    {}
+    /// \fn destructor(FuncT&& _fini, InitT&& _init)
+    /// \tparam FuncT "std::function<void()> or void (*)()"
+    /// \tparam InitT "std::function<void()> or void (*)()"
+    /// \param _fini Function to execute when object is destroyed
+    /// \param _init Function to execute when object is created (optional)
+    ///
+    /// \brief Provides a utility to perform an operation when exiting a scope.
+    template <typename FuncT, typename InitT = void (*)()>
+    destructor(
+        FuncT&& _fini, InitT&& _init = []() {})
+    : m_functor{ std::forward<FuncT>(_fini) }
+    {
+        _init();
+    }
 
     // delete copy operations
     destructor(const destructor&) = delete;
@@ -709,7 +649,7 @@ struct destructor
 
     // allow move operations
     destructor(destructor&& rhs) noexcept
-    : m_functor(std::move(rhs.m_functor))
+    : m_functor{ std::move(rhs.m_functor) }
     {
         rhs.m_functor = []() {};
     }

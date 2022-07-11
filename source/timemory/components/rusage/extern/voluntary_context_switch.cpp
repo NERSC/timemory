@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/rusage/extern/voluntary_context_switch.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(voluntary_context_switch, true, int64_t)

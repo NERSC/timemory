@@ -29,25 +29,33 @@
 
 #pragma once
 
-#include "timemory/dll.hpp"
-
 //======================================================================================//
 //
 // Define macros for storage
 //
 //======================================================================================//
 //
-#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_STORAGE_EXTERN)
-#    define TIMEMORY_USE_STORAGE_EXTERN
+#if !defined(TIMEMORY_USE_STORAGE_EXTERN)
+#    if defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_USE_COMMON_EXTERN) ||           \
+        defined(TIMEMORY_USE_GLOBAL_EXTERN)
+#        define TIMEMORY_USE_STORAGE_EXTERN 1
+#    endif
+#endif
+//
+#if !defined(TIMEMORY_STORAGE_SOURCE)
+#    if defined(TIMEMORY_SOURCE) || defined(TIMEMORY_COMMON_SOURCE) ||                   \
+        defined(TIMEMORY_GLOBAL_SOURCE)
+#        define TIMEMORY_STORAGE_SOURCE 1
+#    endif
 #endif
 //
 #if defined(TIMEMORY_STORAGE_SOURCE)
-#    define TIMEMORY_STORAGE_LINKAGE
+#    define TIMEMORY_STORAGE_INLINE
 #elif defined(TIMEMORY_USE_STORAGE_EXTERN)
-#    define TIMEMORY_STORAGE_LINKAGE
-#    define TIMEMORY_STORAGE_HIDE_DEFINITION
+#    define TIMEMORY_STORAGE_INLINE
+#    define TIMEMORY_STORAGE_HIDE_DEFINITION 1
 #else
-#    define TIMEMORY_STORAGE_LINKAGE inline
+#    define TIMEMORY_STORAGE_INLINE inline
+#    define TIMEMORY_STORAGE_HEADER_ONLY_MODE 1
 #endif
 //
-//--------------------------------------------------------------------------------------//

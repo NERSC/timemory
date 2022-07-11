@@ -23,3 +23,5 @@
 // SOFTWARE.
 
 #include "timemory/components/rusage/extern/num_io_out.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(num_io_out, true, int64_t)

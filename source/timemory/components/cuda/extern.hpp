@@ -33,6 +33,6 @@
 #include "timemory/components/extern/common.hpp"
 #include "timemory/components/macros.hpp"
 
-TIMEMORY_EXTERN_COMPONENT(cuda_event, true, float)
-TIMEMORY_EXTERN_COMPONENT(cuda_profiler, false, void)
-TIMEMORY_EXTERN_COMPONENT(nvtx_marker, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(cuda_event, true, float)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(cuda_profiler, false, void)
+TIMEMORY_DECLARE_EXTERN_COMPONENT(nvtx_marker, false, void)

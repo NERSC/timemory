@@ -8,7 +8,7 @@ The design of timemory enables there to be two categories for introducing new co
 
 Either #1 or #2 is acceptable. In general, if the component(s) provide an interface to another tool, it is preferred that you just make the
 necessary additions to the build system to find the package, creates a `types.hpp` header which declares the component types and provides
-some metadata for the `timemory-avail` tool, and a `extern.hpp` + `extern.cpp` files for instantiating some of the templates when 
+some metadata for the `timemory-avail` tool, and a `extern.hpp` + `extern.cpp` files for instantiating some of the templates when
 your tool is enabled. Beyond this, every thing else can be freely modified in your source code. See the
 [Version and Interface Compatibility](#version-and-interface-compatibility) section for long-term compatibility concerns.
 
@@ -30,18 +30,18 @@ Folder containing all the necessary files for the component
 
 ### Step 2. `source/timemory/components/hello_world/CMakeLists.txt`
 
-- Add an option: `add_option(TIMEMORY_USE_HELLO_WORLD "Enable HELLO_WORLD support" OFF)`
-- Add an interface library: `add_interface_library(timemory-hello-world "Enables HELLO_WORLD support")`
+- Add an option: `timemory_add_option(TIMEMORY_USE_HELLO_WORLD "Enable HELLO_WORLD support" OFF)`
+- Add an interface library: `timemory_add_interface_library(timemory-hello-world "Enables HELLO_WORLD support")`
   - Use this library to set all the build-flags, include paths, etc.
 - Link the interface library to the `timemory-extensions` target
-- Use the `build_intermediate_library(...)` to build the extern templates
+- Use the `timemory_build_intermediate_library(...)` to build the extern templates
 - Include this directory in [source/timemory/components/CMakeLists.txt](source/timemory/components/CMakeLists.txt)
 
 ```cmake
 # use ON if you want the package to be picked up in auto-detect mode
 define_default_option(_HELLO_WORLD ON)
-add_option(TIMEMORY_USE_HELLO_WORLD "Enable HELLO_WORLD support" ${_HELLO_WORLD})
-add_interface_library(timemory-hello-world "Enables HELLOW_WORLD support")
+timemory_add_option(TIMEMORY_USE_HELLO_WORLD "Enable HELLO_WORLD support" ${_HELLO_WORLD})
+timemory_add_interface_library(timemory-hello-world "Enables HELLOW_WORLD support")
 
 if(TIMEMORY_USE_HELLO_WORLD)
     # if TIMEMORY_REQUIRE_PACKAGES=ON and user requested HELLO_WORLD, this will be fatal
@@ -52,13 +52,13 @@ endif()
 # that this is correctly displayed in final report
 if(NOT HelloWorld_FOUND)
     set(TIMEMORY_USE_HELLO_WORLD OFF CACHE BOOL "Hello World" FORCE)
-    inform_empty_interface(timemory-hello-world "HelloWorld")
+    timemory_inform_empty_interface(timemory-hello-world "HelloWorld")
     return()
 endif()
 
 if(TIMEMORY_USE_HELLO_WORLD)
     # this ensure libtimemory has library in RPATH
-    add_rpath(${HelloWorld_LIBRARIES})
+    timemory_add_rpath(${HelloWorld_LIBRARIES})
     target_link_libraries(timemory-hello-world INTERFACE ${HelloWorld_LIBRARIES})
     target_link_directories(timemory-hello-world INTERFACE ${HelloWorld_LIBRARY_DIRS})
     target_include_directories(timemory-hello-world SYSTEM INTERFACE ${HelloWorld_INCLUDE_DIRS})
@@ -71,7 +71,7 @@ if(TIMEMORY_USE_HELLO_WORLD)
     file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
     file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
-    build_intermediate_library(
+    timemory_build_intermediate_library(
         USE_INTERFACE
         NAME                ${NAME}
         TARGET              ${NAME}-component
@@ -123,7 +123,7 @@ TIMEMORY_PROPERTY_SPECIALIZATION(hello_world_printer, HELLO_WORLD_PRINTER, "hell
 
 ### Step 4. `source/timemory/components/hello_world/backends.hpp`
 
-Create any entries here that help with portability, e.g. timemory defines the PAPI presets when PAPI is not enabled 
+Create any entries here that help with portability, e.g. timemory defines the PAPI presets when PAPI is not enabled
 so that components like `papi_tuple<PAPI_L1_TCM>` do not cause compile errors when PAPI is not used.
 Include this file in [source/timemory/components/backends.hpp](source/timemory/components/backends.hpp)
 
@@ -201,12 +201,12 @@ struct hello_world_printer : public base<hello_world_printer, void>
 
     static std::string label() { return "hello_world_printer"; }
     static std::string description() { return "Prints hello world"; }
-    
+
     void set_prefix(const char* _cstr) { m_prefix = _cstr; }
-    
+
     void start() { printf("Hello World! %s has started", m_prefix); }
-    void stop()  { printf("Hello World! %s has stopped", m_prefix); }    
-    
+    void stop()  { printf("Hello World! %s has stopped", m_prefix); }
+
 private:
     const char* m_prefix = nullptr;
 };
@@ -218,14 +218,14 @@ private:
 
 In general, version and interface compatibility issues _should be non-existent_. Most version and compatibility issues arise
 from API changes and the changes causing these breaks are almost exclusively due to (1) function signature changes as
-capabilities evolve and (2) the internal behavior changing in such a way that the extension does not function properly. 
+capabilities evolve and (2) the internal behavior changing in such a way that the extension does not function properly.
 
 ### Function Signature Changes
 
 Depending on the package, this comes in three general forms: (1) the original function add/removes parameters or changes the return type,
-e.g. `void foo(int)` being changed to `void foo(int, int)`, (2) the original function `void foo(int) is deprecated and it is suggested 
+e.g. `void foo(int)` being changed to `void foo(int, int)`, (2) the original function `void foo(int) is deprecated and it is suggested
 that everyone start using `void foo(int, int), or (3) the function signature is opaque (i.e. `void*`) and there is a
-new enumeration value for a switch statement which must be handled, 
+new enumeration value for a switch statement which must be handled,
 e.g. [CUpti_ActivityKernel5](https://docs.nvidia.com/cupti/Cupti/annotated.html#structCUpti__ActivityKernel5), etc. In general,
 timemory is agnostic to return types and parameters being passed to the member functions of a component, it is left entirely
 up to the component to decide which arguments a member function can handle and which it cannot -- if a component wants to disable
@@ -235,26 +235,26 @@ accumulation will adapt accordingly during compilation.
 
 ### Behavior changes
 
-This issue tends to arise when internal changes lead to the extension no longer being invoked in the same way as previous versions. 
+This issue tends to arise when internal changes lead to the extension no longer being invoked in the same way as previous versions.
 There are multiple ways to handle these scenarios and ensure that
-components retain the desired behavior in the event something changes internally and/or something that was previously available 
+components retain the desired behavior in the event something changes internally and/or something that was previously available
 is no longer available. In general, all that is required is a template specialization which provides the desired behavior and
 doing so will fix that behavior for all previous and future versions of timemory.
 
 For example, suppose if was found that the static polymorphic base was defined in such a way that the data
 layout could be slightly tweaked to remove one data member for a 50% reduction in overhead and this data member wasn't used by
 99% of the components but your component was part of the 1% using it and your component _depended_ on it. The solution is simple:
-timemory would make this change and your component would integrate its requirements into the component, possibly even removing the 
-inheritance entirely since components are not required to inherit from a particular base class -- the base class only exists to 
-simplify the introduction of new components. 
+timemory would make this change and your component would integrate its requirements into the component, possibly even removing the
+inheritance entirely since components are not required to inherit from a particular base class -- the base class only exists to
+simplify the introduction of new components.
 
-In the scenario where the behavior involves _how_ the component member functions are invoked, all member function invocations 
+In the scenario where the behavior involves _how_ the component member functions are invoked, all member function invocations
 are routed through the constructor of a templated operation class or the function operator of that type and these operation
-classes can be specialized to perform the desired behavior.  This feature can be clearly demonstrated by the (fairly unlikely) 
+classes can be specialized to perform the desired behavior.  This feature can be clearly demonstrated by the (fairly unlikely)
 scenario provided: `Foo` should call `stop()` when every other component is calling `start()` and vice-versa:
 
 ```cpp
-namespace tim { 
+namespace tim {
 namespace operation {
 
 template <>
@@ -276,27 +276,27 @@ struct stop<Foo>
         obj.start();
     }
 };
-} 
+}
 }
 ```
 
-Thus, even in the event something changes in timemory and an undesirable behavior is introduced, a component can provide a 
+Thus, even in the event something changes in timemory and an undesirable behavior is introduced, a component can provide a
 specialization to eliminate the issue without affecting any other tools and without requiring a change to the component
-itself. 
+itself.
 
-Higher-level specialization on categories are also possible. All specific operations, such as `operation::start<T>`, 
+Higher-level specialization on categories are also possible. All specific operations, such as `operation::start<T>`,
 are routed through the constructor of `operation::generic_operator<OpT, T, ApiT>`. This type is
-responsible for ensuring that the specific operation (`OpT`) can be constructed with a reference to `T`. 
+responsible for ensuring that the specific operation (`OpT`) can be constructed with a reference to `T`.
 The primary purpose of this class is to handle when the instance of `T` is runtime optional, and
 therefore is a pointer and requires a nullptr check (might not be enabled). But the secondary purpose is to provide an API
-specialization for higher-level modifications to the behavior of multiple components. Thus, you can disable certain 
+specialization for higher-level modifications to the behavior of multiple components. Thus, you can disable certain
 components from being utilized except for when the pre-processor definition `TIMEMORY_API` is `tim::api::SpecialFoo` or
 when the components are part of `component_bundle<tim::api::SpecialFoo, ...>`:
 
 ```cpp
 TIMEMORY_DEFINE_API(SpecialFoo)
 
-namespace tim { 
+namespace tim {
 namespace operation {
 
 // define default behavior of Foo to generally do nothing

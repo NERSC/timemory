@@ -91,3 +91,9 @@ extern "C"
 }  // extern "C"
 //
 #endif
+
+TIMEMORY_EXTERN_COMPONENT(craypat_record, false, void)
+TIMEMORY_EXTERN_COMPONENT(craypat_region, false, void)
+TIMEMORY_EXTERN_COMPONENT(craypat_counters, true, std::vector<unsigned long>)
+TIMEMORY_EXTERN_COMPONENT(craypat_heap_stats, false, void)
+TIMEMORY_EXTERN_COMPONENT(craypat_flush_buffer, false, unsigned long)

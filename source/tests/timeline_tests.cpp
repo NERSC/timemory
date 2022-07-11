@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "test_macros.hpp"
+#include "timemory/defines.h"
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
@@ -151,7 +152,7 @@ class timeline_tests : public ::testing::Test
 protected:
     static void SetUpTestSuite()
     {
-        tim::set_env("TIMEMORY_TIMELINE_PROFILE", "ON", 1);
+        tim::set_env(TIMEMORY_SETTINGS_PREFIX "TIMELINE_PROFILE", "ON", 1);
         tim::settings::verbose()     = 0;
         tim::settings::debug()       = false;
         tim::settings::file_output() = false;
@@ -172,12 +173,12 @@ protected:
 TEST_F(timeline_tests, parse)
 {
     tim::settings::timeline_profile() = false;
-    tim::set_env("TIMEMORY_TIMELINE_PROFILE", "ON", 1);
+    tim::set_env(TIMEMORY_SETTINGS_PREFIX "TIMELINE_PROFILE", "ON", 1);
     tim::settings::parse();
     std::cout << "\ntimeline_profile() = " << std::boolalpha
               << tim::settings::timeline_profile() << '\n'
               << std::endl;
-    auto ret = tim::get_env<bool>("TIMEMORY_TIMELINE_PROFILE", false);
+    auto ret = tim::get_env<bool>(TIMEMORY_SETTINGS_PREFIX "TIMELINE_PROFILE", false);
     std::cout << "environment = " << std::boolalpha << ret << '\n' << std::endl;
     EXPECT_TRUE(ret);
     EXPECT_TRUE(tim::settings::timeline_profile());

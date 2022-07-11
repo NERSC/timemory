@@ -30,6 +30,9 @@
 #    include "timemory/backends/hip.hpp"
 #endif
 
+#include "timemory/macros/attributes.hpp"
+#include "timemory/macros/language.hpp"
+
 namespace tim
 {
 namespace gpu
@@ -48,6 +51,32 @@ using namespace ::tim::cuda;
 using namespace ::tim::hip;
 //
 #endif
+//
+TIMEMORY_DEVICE_INLINE void
+memory_fence()
+{
+#if defined(TIMEMORY_GPU_DEVICE_COMPILE) && TIMEMORY_GPU_DEVICE_COMPILE > 0
+    __threadfence();
+#endif
+}
+//
+TIMEMORY_DEVICE_INLINE void
+store_fence()
+{
+    memory_fence();
+}
+//
+TIMEMORY_DEVICE_INLINE void
+load_fence()
+{
+    memory_fence();
+}
+//
+TIMEMORY_DEVICE_INLINE void
+fence()
+{
+    memory_fence();
+}
 //
 }  // namespace gpu
 }  // namespace tim

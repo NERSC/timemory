@@ -42,7 +42,6 @@ were not available when timemory was installed.
 | `timemory::timemory-compile-extra` | Extra optimization flags |
 | `timemory::timemory-compile-options` | Adds the standard set of compiler flags used by timemory |
 | `timemory::timemory-compile-timing` | Adds compiler flags which report compilation timing metrics |
-| `timemory::timemory-compiler-instrument-compile-options` | INTERFACE |
 | `timemory::timemory-compiler-instrument` | Provides library for compiler instrumentation |
 | `timemory::timemory-coverage` | Enables code-coverage flags |
 | `timemory::timemory-cpu-roofline` | Enables flags and libraries for proper CPU roofline generation |
@@ -103,6 +102,7 @@ were not available when timemory was installed.
 | `timemory::timemory-undefined-sanitizer` | Adds compiler flags to enable undefined sanitizer (-fsanitize=undefined) |
 | `timemory::timemory-unreachable-sanitizer` | Adds compiler flags to enable unreachable sanitizer (-fsanitize=unreachable) |
 | `timemory::timemory-upcxx` | Enables UPC++ support |
+| `timemory::timemory-use-visibility` | Defines whether to use visibility attributes |
 | `timemory::timemory-vector` | Adds pre-processor definition of the max vectorization width in bytes |
 | `timemory::timemory-vtune` | Enables VTune support (ittnotify) |
 | `timemory::timemory-xml` | Enables XML serialization support |

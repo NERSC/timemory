@@ -26,9 +26,11 @@
 
 #include "timemory/components/base.hpp"  // for base
 #include "timemory/components/perfetto/backends.hpp"
+#include "timemory/components/perfetto/policy.hpp"
 #include "timemory/components/perfetto/types.hpp"
 #include "timemory/mpl/concepts.hpp"  // for concepts::is_component
-#include "timemory/mpl/types.hpp"     // for derivation_types
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"  // for derivation_types
 
 #include <iostream>
 #include <sstream>
@@ -57,6 +59,8 @@ struct perfetto_trace : base<perfetto_trace, void>
     using base_type       = base<perfetto_trace, value_type>;
     using strset_t        = std::unordered_set<std::string>;
     using strset_iterator = typename strset_t::iterator;
+    using initializer_t   = std::function<void()>;
+    using finalizer_t     = std::function<void()>;
 
     constexpr perfetto_trace() = default;
 
@@ -64,20 +68,30 @@ struct perfetto_trace : base<perfetto_trace, void>
 
     static std::string label();
     static std::string description();
-    static config&     get_config();
     static void        global_init();
     static void        global_finalize();
 
-    template <typename Tp>
-    void store(const char*, Tp, enable_if_t<std::is_integral<Tp>::value, int> = 0);
+    static config&        get_config();
+    static initializer_t& get_initializer();
+    static finalizer_t&   get_finalizer();
 
-    template <typename Tp>
-    void store(Tp, enable_if_t<std::is_integral<Tp>::value, int> = 0);
+    template <typename Tp, typename... Args>
+    void store(const char*, Tp, Args&&...,
+               enable_if_t<std::is_integral<Tp>::value, int> = 0);
 
-    void start(const char*);
-    void start();
-    void stop();
-    void set_prefix(const char*);
+    template <typename Tp, typename... Args>
+    void store(Tp, Args&&..., enable_if_t<std::is_integral<Tp>::value, int> = 0);
+
+    void        set_prefix(const char*);
+    void        start();
+    static void start(const char*);
+    static void stop();
+
+    template <typename ApiT, typename... Args>
+    static void start(type_list<ApiT>, const char*, Args&&...);
+
+    template <typename ApiT, typename... Args>
+    static void stop(type_list<ApiT>, Args&&...);
 
     struct config
     {
@@ -106,21 +120,41 @@ private:
 //
 //--------------------------------------------------------------------------------------//
 
-template <typename Tp>
+template <typename Tp, typename... Args>
 void
-tim::component::perfetto_trace::store(Tp _val,
+tim::component::perfetto_trace::store(Tp _val, Args&&... _args,
                                       enable_if_t<std::is_integral<Tp>::value, int>)
 {
     if(m_prefix)
-        backend::perfetto::trace_counter(m_prefix, _val);
+        backend::perfetto::trace_counter(
+            policy::perfetto_category<TIMEMORY_PERFETTO_API>{}, m_prefix, _val,
+            std::forward<Args>(_args)...);
 }
 
-template <typename Tp>
+template <typename Tp, typename... Args>
 void
-tim::component::perfetto_trace::store(const char* _label, Tp _val,
+tim::component::perfetto_trace::store(const char* _label, Tp _val, Args&&... _args,
                                       enable_if_t<std::is_integral<Tp>::value, int>)
 {
-    backend::perfetto::trace_counter<TIMEMORY_PERFETTO_API>(_label, _val);
+    backend::perfetto::trace_counter(policy::perfetto_category<TIMEMORY_PERFETTO_API>{},
+                                     _label, _val, std::forward<Args>(_args)...);
+}
+
+template <typename ApiT, typename... Args>
+void
+tim::component::perfetto_trace::start(tim::type_list<ApiT>, const char* _label,
+                                      Args&&... _args)
+{
+    backend::perfetto::trace_event_start(policy::perfetto_category<ApiT>{}, _label,
+                                         std::forward<Args>(_args)...);
+}
+
+template <typename ApiT, typename... Args>
+void
+tim::component::perfetto_trace::stop(tim::type_list<ApiT>, Args&&... _args)
+{
+    backend::perfetto::trace_event_stop(policy::perfetto_category<ApiT>{},
+                                        std::forward<Args>(_args)...);
 }
 
 //--------------------------------------------------------------------------------------//

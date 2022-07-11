@@ -34,6 +34,7 @@
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/extern.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <array>
 #include <memory>
@@ -269,7 +270,7 @@ struct cpu_roofline
         if(!is_configured())
         {
             if(settings::debug() || settings::verbose() > 1)
-                PRINT_HERE("%s", "configuring cpu_roofline");
+                TIMEMORY_PRINT_HERE("%s", "configuring cpu_roofline");
 
             // do this BEFORE setting is_configured to true to ensure mode is updated
             // properly
@@ -286,7 +287,7 @@ struct cpu_roofline
     static void global_init()
     {
         if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("%s", "global initialization of cpu_roofline");
+            TIMEMORY_PRINT_HERE("%s", "global initialization of cpu_roofline");
         configure();
     }
 
@@ -295,7 +296,7 @@ struct cpu_roofline
     static void thread_init()
     {
         if(settings::debug() || settings::verbose() > 2)
-            PRINT_HERE("%s", "thread initialization of cpu_roofline");
+            TIMEMORY_PRINT_HERE("%s", "thread initialization of cpu_roofline");
         configure();
     }
 

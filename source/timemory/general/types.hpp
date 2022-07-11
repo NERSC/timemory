@@ -61,7 +61,7 @@ get_static_source_location(Args&&... args);
             TIMEMORY_CAPTURE_MODE(MODE), __FUNCTION__, __LINE__, __FILE__, __VA_ARGS__)  \
             .get_captured(__VA_ARGS__)
 
-#    define _TIM_STATIC_SRC_LOCATION(MODE, ...)                                          \
+#    define TIMEMORY_STATIC_SRC_LOCATION(MODE, ...)                                      \
         static thread_local auto _AUTO_LOCATION(__LINE__) =                              \
             TIMEMORY_SOURCE_LOCATION(TIMEMORY_CAPTURE_MODE(MODE), __VA_ARGS__)
 

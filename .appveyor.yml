@@ -36,20 +36,20 @@ environment:
     - CONDA: 38
       CPP: 17
       CONFIG: Release
-      EXAMPLES: "OFF"
       TOOLS: "OFF"
       WINSOCK: "OFF"
       USE_ARCH: "OFF"
-      USE_PYTHON: "ON"
+      USE_PYTHON: "OFF"
       BUILD_C: "ON"
       BUILD_SHARED: "ON"
       BUILD_STATIC: "OFF"
       BUILD_TESTING: "ON"
+      BUILD_EXAMPLES: "OFF"
+      RUN_EXAMPLES: "OFF"
       LINE_PROFILER: "ON"
     - PYTHON: 37
       CPP: 14
       CONFIG: Debug
-      EXAMPLES: "ON"
       TOOLS: "ON"
       WINSOCK: "OFF"
       USE_ARCH: "OFF"
@@ -59,6 +59,8 @@ environment:
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
       LINE_PROFILER: "OFF"
+      BUILD_EXAMPLES: "ON"
+      RUN_EXAMPLES: "OFF"
 
 install:
   # Configure environment
@@ -87,7 +89,7 @@ install:
           $env:PYTHON_EXE = "C:\Python$env:PYTHON\python.exe"
         }
         python -m pip install --disable-pip-version-check --user --upgrade pip wheel
-        python -m pip install --user matplotlib numpy pillow cython six pandas pydot multiprocess
+        python -m pip install --user numpy matplotlib pillow cython six pandas pydot multiprocess
       } elseif ($env:CONDA) {
         if ($env:PLATFORM -eq "x64") {
           $env:PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts;$env:PATH"
@@ -100,8 +102,6 @@ install:
           $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
           $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
         }
-        conda update -y -n base conda
-        conda install -y -c conda-forge -c defaults matplotlib numpy pillow cython six pandas pydot multiprocess
       }
       $env:TIMEMORY_FILE_OUTPUT = "OFF"
       $env:TIMEMORY_AUTO_OUTPUT = "ON"
@@ -123,7 +123,7 @@ build_script:
     -DTIMEMORY_USE_PYTHON="%USE_PYTHON%"
     -DTIMEMORY_USE_ARCH="%USE_ARCH%"
     -DTIMEMORY_BUILD_C="%BUILD_C%"
-    -DTIMEMORY_BUILD_EXAMPLES="%EXAMPLES%"
+    -DTIMEMORY_BUILD_EXAMPLES="%BUILD_EXAMPLES%"
     -DTIMEMORY_BUILD_TESTING=OFF
     -DTIMEMORY_BUILD_MINIMAL_TESTING="%BUILD_TESTING%"
     -DTIMEMORY_BUILD_TOOLS="%TOOLS%"
@@ -136,10 +136,10 @@ build_script:
   - ls
   - ps: |
       if ($env:BUILD_TESTING -eq "ON") {
-          iex "ctest --output-on-failure -C $env:CONFIG"
+          iex "ctest --output-on-failure -j 2 -C $env:CONFIG"
       }
   - ps: |
-      if ($env:EXAMPLES -eq "ON") {
+      if ($env:RUN_EXAMPLES -eq "ON") {
         iex ".\outputs\runtime\$env:CONFIG\ex_optional_off.exe"
         iex ".\outputs\runtime\$env:CONFIG\ex_cxx_basic.exe"
         iex ".\outputs\runtime\$env:CONFIG\ex_optional_on.exe"

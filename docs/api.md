@@ -163,7 +163,7 @@ struct wall_clock : public base<wall_clock, int64_t>
     using value_type = int64_t;
     using base_type  = base<wall_clock, value_type>;
 
-    static std::string label() { return "wall"; }
+    static std::string label() { return "wall_clock"; }
     static std::string description() { return "wall-clock timer"; }
 
     static value_type  record()

@@ -48,7 +48,7 @@ struct system_clock : public base<system_clock>
     using value_type = int64_t;
     using base_type  = base<system_clock, value_type>;
 
-    static std::string label() { return "sys"; }
+    static std::string label() { return "system_clock"; }
     static std::string description() { return "CPU time spent in kernel-mode"; }
     static value_type  record() noexcept
     {
@@ -78,7 +78,7 @@ struct user_clock : public base<user_clock>
     using value_type = int64_t;
     using base_type  = base<user_clock, value_type>;
 
-    static std::string label() { return "user"; }
+    static std::string label() { return "user_clock"; }
     static std::string description() { return "CPU time spent in user-mode"; }
     static value_type  record() noexcept
     {
@@ -108,7 +108,7 @@ struct cpu_clock : public base<cpu_clock>
     using value_type = int64_t;
     using base_type  = base<cpu_clock, value_type>;
 
-    static std::string label() { return "cpu"; }
+    static std::string label() { return "cpu_clock"; }
     static std::string description()
     {
         return "Total CPU time spent in both user- and kernel-mode";
@@ -209,7 +209,7 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     using value_type = int64_t;
     using base_type  = base<thread_cpu_clock, value_type>;
 
-    static std::string label() { return "thread_cpu"; }
+    static std::string label() { return "thread_cpu_clock"; }
     static std::string description() { return "CPU-clock timer for the calling thread"; }
     static value_type  record() noexcept
     {
@@ -240,7 +240,7 @@ struct process_cpu_clock : public base<process_cpu_clock>
     using value_type = int64_t;
     using base_type  = base<process_cpu_clock, value_type>;
 
-    static std::string label() { return "process_cpu"; }
+    static std::string label() { return "process_cpu_clock"; }
     static std::string description()
     {
         return "CPU-clock timer for the calling process (all threads)";
@@ -383,7 +383,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     using base_type  = base<process_cpu_util, value_type>;
     using this_type  = process_cpu_util;
 
-    static std::string label() { return "proc_cpu_util"; }
+    static std::string label() { return "process_cpu_util"; }
     static std::string description()
     {
         return "Percentage of CPU-clock time divided by wall-clock time for calling "

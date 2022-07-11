@@ -35,6 +35,7 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <typeindex>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -51,27 +52,27 @@ namespace tim
 template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>,
           typename PairT = std::pair<PtrT, PtrT>>
 PairT&
-get_shared_ptr_pair();
+get_shared_ptr_pair() TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>,
           typename PairT = std::pair<PtrT, PtrT>>
 PtrT
-get_shared_ptr_pair_instance();
+get_shared_ptr_pair_instance() TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>,
           typename PairT = std::pair<PtrT, PtrT>>
 PtrT
-get_shared_ptr_pair_main_instance();
+get_shared_ptr_pair_main_instance() TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>>
 PtrT
-get_shared_ptr_lone_instance();
+get_shared_ptr_lone_instance() TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -92,22 +93,85 @@ using hash_resolver_vec_t = std::vector<hash_resolver_t>;
 //
 //--------------------------------------------------------------------------------------//
 //
+//                              Generic hash functions
+//
+//--------------------------------------------------------------------------------------//
+//
+namespace hash_impl
+{
+template <typename Tp>
+inline auto
+typeid_name()
+{
+    return typeid(Tp).name();
+}
+
+template <typename Tp, typename Up = Tp>
+inline auto
+typeid_hash(int) -> decltype(typeid_name<Tp>(), size_t{})
+{
+    return std::type_index(typeid(Tp)).hash_code();
+}
+//
+template <typename Tp, typename Up = Tp>
+inline auto
+typeid_hash(long)
+{
+    return 0;
+}
+}  // namespace hash_impl
+
+template <typename Tp>
+inline auto
+typeid_hash()
+{
+    return hash_impl::typeid_hash<Tp>(0);
+}
+//
+template <typename T>
+TIMEMORY_INLINE size_t
+get_hash(T&& obj)
+{
+    return std::hash<std::decay_t<T>>()(std::forward<T>(obj));
+}
+
+TIMEMORY_INLINE size_t
+get_hash(string_view_cref_t str)
+{
+    return std::hash<string_view_t>{}(str);
+}
+
+TIMEMORY_INLINE size_t
+get_hash(const char* cstr)
+{
+    return std::hash<string_view_t>{}(cstr);
+}
+
+template <typename T>
+struct hasher
+{
+    inline size_t operator()(T&& val) const { return get_hash(std::forward<T>(val)); }
+    inline size_t operator()(const T& val) const { return get_hash(val); }
+};
+//
+//--------------------------------------------------------------------------------------//
+//
 //                              HASH DATA STRUCTURES
 //
 //--------------------------------------------------------------------------------------//
 //
 hash_map_ptr_t&
-get_hash_ids() TIMEMORY_HOT;
+get_hash_ids() TIMEMORY_HOT TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
 hash_alias_ptr_t&
-get_hash_aliases() TIMEMORY_HOT;
+get_hash_aliases() TIMEMORY_HOT TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
 std::shared_ptr<hash_resolver_vec_t>&
-get_hash_resolvers() TIMEMORY_HOT;
+get_hash_resolvers() TIMEMORY_HOT TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -120,12 +184,12 @@ get_hash_resolvers() TIMEMORY_HOT;
 template <typename Tp,
           std::enable_if_t<concepts::is_string_type<std::decay_t<Tp>>::value, int> = 0>
 TIMEMORY_INLINE hash_value_t
-get_hash_id(Tp&& _prefix);
+get_hash_id(Tp&& _v);
 //
 template <typename Tp,
           std::enable_if_t<!concepts::is_string_type<std::decay_t<Tp>>::value, int> = 0>
 TIMEMORY_INLINE hash_value_t
-get_hash_id(Tp&& _prefix);
+get_hash_id(Tp&& _v);
 //
 TIMEMORY_INLINE hash_value_t
 get_combined_hash_id(hash_value_t _lhs, hash_value_t _rhs);
@@ -135,14 +199,22 @@ template <typename Tp,
 TIMEMORY_INLINE hash_value_t
 get_combined_hash_id(hash_value_t _lhs, Tp&& _rhs);
 //
+template <typename Tp, typename Arg, typename... Args>
+TIMEMORY_INLINE hash_value_t
+get_combined_hash_id(hash_value_t _lhs, Tp&& _rhs, Arg&& _arg, Args&&... _args);
+//
+template <typename Tp, typename... Args>
+TIMEMORY_INLINE hash_value_t
+get_hash_id(hash_value_t _lhs, Tp&& _rhs, Args&&... _args);
+//
 //  get hash of a string type
 //
 template <typename Tp,
           std::enable_if_t<concepts::is_string_type<std::decay_t<Tp>>::value, int>>
 hash_value_t
-get_hash_id(Tp&& _prefix)
+get_hash_id(Tp&& _v)
 {
-    return std::hash<string_view_t>{}(std::forward<Tp>(_prefix));
+    return std::hash<string_view_t>{}(std::forward<Tp>(_v));
 }
 //
 //  get hash of a non-string type
@@ -150,9 +222,9 @@ get_hash_id(Tp&& _prefix)
 template <typename Tp,
           std::enable_if_t<!concepts::is_string_type<std::decay_t<Tp>>::value, int>>
 hash_value_t
-get_hash_id(Tp&& _prefix)
+get_hash_id(Tp&& _v)
 {
-    return std::hash<std::decay_t<Tp>>{}(std::forward<Tp>(_prefix));
+    return std::hash<std::decay_t<Tp>>{}(std::forward<Tp>(_v));
 }
 //
 //  combine two existing hashes
@@ -170,6 +242,28 @@ hash_value_t
 get_combined_hash_id(hash_value_t _lhs, Tp&& _rhs)
 {
     return get_combined_hash_id(_lhs, get_hash_id(std::forward<Tp>(_rhs)));
+}
+//
+//  recursively process extra arguments
+//
+template <typename Tp, typename Arg, typename... Args>
+hash_value_t
+get_combined_hash_id(hash_value_t _lhs, Tp&& _rhs, Arg&& _arg, Args&&... _args)
+{
+    return get_combined_hash_id(_lhs,
+                                get_combined_hash_id(get_hash_id(std::forward<Tp>(_rhs)),
+                                                     std::forward<Arg>(_arg),
+                                                     std::forward<Args>(_args)...));
+}
+//
+//
+//
+template <typename Tp, typename... Args>
+hash_value_t
+get_hash_id(hash_value_t _lhs, Tp&& _rhs, Args&&... _args)
+{
+    return get_combined_hash_id(_lhs, get_hash_id(std::forward<Tp>(_rhs)),
+                                std::forward<Args>(_args)...);
 }
 //
 //--------------------------------------------------------------------------------------//

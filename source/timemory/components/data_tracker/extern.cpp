@@ -23,3 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/components/data_tracker/extern.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(data_tracker_integer, true, intmax_t)
+TIMEMORY_EXTERN_COMPONENT(data_tracker_unsigned, true, size_t)
+TIMEMORY_EXTERN_COMPONENT(data_tracker_floating, true, double)

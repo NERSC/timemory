@@ -29,6 +29,7 @@
 #include "timemory/manager/manager.hpp"
 
 #include "timemory/backends/process.hpp"
+#include "timemory/defines.h"
 #include "timemory/manager/macros.hpp"
 #include "timemory/manager/types.hpp"
 #include "timemory/operations/types/decode.hpp"
@@ -83,7 +84,6 @@ manager::manager()
 , m_rank(dmp::rank())
 , m_thread_index(threading::get_id())
 , m_thread_id(std::this_thread::get_id())
-, m_lock(std::make_shared<auto_lock_t>(m_mutex, std::defer_lock))
 , m_hash_ids(get_hash_ids())
 , m_hash_aliases(get_hash_aliases())
 {
@@ -121,10 +121,11 @@ manager::manager()
         add_metadata("TIMEMORY_GIT_REVISION", TIMEMORY_GIT_REVISION);
 #    endif
 
+        auto _cpu_features = delimit(_cpu_info.features, " \t");
         add_metadata("CPU_MODEL", _cpu_info.model);
         add_metadata("CPU_VENDOR", _cpu_info.vendor);
-        add_metadata("CPU_FEATURES", _cpu_info.features);
         add_metadata("CPU_FREQUENCY", _cpu_info.frequency);
+        add_metadata("CPU_FEATURES", _cpu_features);
         add_metadata("HW_CONCURRENCY", threading::affinity::hw_concurrency());
         add_metadata("HW_PHYSICAL_CPU", threading::affinity::hw_physicalcpu());
 
@@ -187,7 +188,7 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::cleanup(const std::string& key)
 {
     if(f_debug())
-        PRINT_HERE("cleaning %s", key.c_str());
+        TIMEMORY_PRINT_HERE("cleaning %s", key.c_str());
 
     auto _cleanup = [&](auto& _functors) {
         auto _orig = _functors.size();
@@ -205,7 +206,8 @@ manager::cleanup(const std::string& key)
         }
 
         if(f_debug())
-            PRINT_HERE("%s [size: %i]", "cleaned", (int) (_orig - _functors.size()));
+            TIMEMORY_PRINT_HERE("%s [size: %i]", "cleaned",
+                                (int) (_orig - _functors.size()));
     };
 
     _cleanup(m_finalizer_cleanups);
@@ -221,7 +223,8 @@ manager::cleanup()
 
     if(f_debug())
     {
-        PRINT_HERE("%s [size: %i]", "cleaning", (int) m_finalizer_cleanups.size());
+        TIMEMORY_PRINT_HERE("%s [size: %i]", "cleaning",
+                            (int) m_finalizer_cleanups.size());
     }
 
     auto _cleanup = [](finalizer_list_t& _functors) {
@@ -238,8 +241,8 @@ manager::cleanup()
 
     if(f_debug())
     {
-        PRINT_HERE("%s [size: %i]", "cleaned",
-                   (int) (_orig_sz - m_finalizer_cleanups.size()));
+        TIMEMORY_PRINT_HERE("%s [size: %i]", "cleaned",
+                            (int) (_orig_sz - m_finalizer_cleanups.size()));
     }
 }
 //
@@ -251,14 +254,12 @@ manager::initialize()
     if(m_is_initialized)
         return;
     m_is_initialized = true;
-    bool _owns       = m_lock->owns_lock();
-    if(!_owns)
-        m_lock->lock();
+    auto_lock_t _lk{ m_mutex, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
     m_initializers.erase(std::remove_if(m_initializers.begin(), m_initializers.end(),
                                         [](auto& itr) { return itr(); }),
                          m_initializers.end());
-    if(!_owns)
-        m_lock->unlock();
 }
 //
 //----------------------------------------------------------------------------------//
@@ -275,10 +276,10 @@ manager::finalize()
                     _val += itr.second.size();
                 return _val;
             };
-            PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", _msg,
-                       _get_sz(m_master_cleanup), _get_sz(m_master_finalizers),
-                       _get_sz(m_worker_cleanup), _get_sz(m_worker_finalizers),
-                       (int) m_pointer_fini.size());
+            TIMEMORY_PRINT_HERE("%s [master: %i/%i, worker: %i/%i, other: %i]", _msg,
+                                _get_sz(m_master_cleanup), _get_sz(m_master_finalizers),
+                                _get_sz(m_worker_cleanup), _get_sz(m_worker_finalizers),
+                                (int) m_pointer_fini.size());
         }
     };
 
@@ -349,7 +350,7 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::exit_hook()
 {
     if(f_debug())
-        PRINT_HERE("%s", "finalizing...");
+        TIMEMORY_PRINT_HERE("%s", "finalizing...");
 
     if(!manager::f_use_exit_hook())
         return;
@@ -371,7 +372,7 @@ manager::exit_hook()
     {}
 
     if(f_debug())
-        PRINT_HERE("%s", "finalizing...");
+        TIMEMORY_PRINT_HERE("%s", "finalizing...");
 }
 //
 //----------------------------------------------------------------------------------//
@@ -388,8 +389,8 @@ manager::update_metadata_prefix()
     auto _outp_prefix = _settings->get_global_output_prefix();
     m_metadata_prefix = _outp_prefix;
     if(f_debug())
-        PRINT_HERE("[rank=%i][id=%i] metadata prefix: '%s'", m_rank, m_instance_count,
-                   m_metadata_prefix.c_str());
+        TIMEMORY_PRINT_HERE("[rank=%i][id=%i] metadata prefix: '%s'", m_rank,
+                            m_instance_count, m_metadata_prefix.c_str());
 }
 //
 //----------------------------------------------------------------------------------//
@@ -407,7 +408,7 @@ manager::write_metadata(std::ostream& ofs)
     // ensure json write final block during destruction before the file is closed
     using policy_type = policy::output_archive_t<manager>;
     auto oa           = policy_type::get(ofs);
-    oa->setNextName("timemory");
+    oa->setNextName(TIMEMORY_PROJECT_NAME);
     oa->startNode();
     {
         oa->setNextName("metadata");
@@ -456,21 +457,24 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
     if(m_rank != 0)
     {
         if(f_debug())
-            PRINT_HERE("[%s]> metadata disabled for rank %i", context, (int) m_rank);
+            TIMEMORY_PRINT_HERE("[%s]> metadata disabled for rank %i", context,
+                                (int) m_rank);
         return;
     }
 
     if(tim::get_env<bool>("TIMEMORY_CXX_PLOT_MODE", false))
     {
         if(f_debug())
-            PRINT_HERE("[%s]> plot mode enabled. Skipping metadata", context);
+            TIMEMORY_PRINT_HERE("[%s]> plot mode enabled. Skipping metadata", context);
         return;
     }
 
-    auto fname = settings::compose_output_filename("metadata", "json", false, -1, false,
-                                                   _output_dir);
-    auto hname = settings::compose_output_filename("functions", "json", false, -1, false,
-                                                   _output_dir);
+    auto fname = settings::compose_output_filename(
+        "metadata", "json", settings::use_output_suffix(),
+        settings::default_process_suffix(), false, _output_dir);
+    auto hname = settings::compose_output_filename(
+        "functions", "json", settings::use_output_suffix(),
+        settings::default_process_suffix(), false, _output_dir);
 
     auto _settings = f_settings();
     auto _banner   = (_settings) ? _settings->get_banner() : false;
@@ -504,10 +508,11 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
         return;
 
     if((f_verbose() >= 0 || _banner || f_debug()) && !_hashes.empty())
-        printf("\n[metadata::%s]> Outputting '%s' and '%s'...\n", context, fname.c_str(),
-               hname.c_str());
+        fprintf(stderr, "\n[%s][%s][metadata]> Outputting '%s' and '%s'...\n",
+                TIMEMORY_PROJECT_NAME, context, fname.c_str(), hname.c_str());
     else if((f_verbose() >= 0 || _banner || f_debug()) && _hashes.empty())
-        printf("\n[metadata::%s]> Outputting '%s'...\n", context, fname.c_str());
+        fprintf(stderr, "\n[%s][%s][metadata]> Outputting '%s'...\n",
+                TIMEMORY_PROJECT_NAME, context, fname.c_str());
 
     std::ofstream ofs{};
     if(filepath::open(ofs, fname))
@@ -529,7 +534,7 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
         // ensure json write final block during destruction before the file is closed
         using policy_type = policy::output_archive_t<manager>;
         auto oa           = policy_type::get(hfs);
-        oa->setNextName("timemory");
+        oa->setNextName(TIMEMORY_PROJECT_NAME);
         oa->startNode();
         {
             oa->setNextName("functions");
@@ -560,29 +565,30 @@ manager::internal_write_metadata(const char* context)
     if(m_rank != 0)
     {
         if(f_debug())
-            PRINT_HERE("[%s]> metadata disabled for rank %i", context, (int) m_rank);
+            TIMEMORY_PRINT_HERE("[%s]> metadata disabled for rank %i", context,
+                                (int) m_rank);
         return;
     }
 
     if(m_num_entries < 1 && m_write_metadata < 1)
     {
         if(f_debug())
-            PRINT_HERE("[%s]> No components generated output. Skipping metadata",
-                       context);
+            TIMEMORY_PRINT_HERE("[%s]> No components generated output. Skipping metadata",
+                                context);
         return;
     }
 
     if(tim::get_env<bool>("TIMEMORY_CXX_PLOT_MODE", false))
     {
         if(f_debug())
-            PRINT_HERE("[%s]> plot mode enabled. Skipping metadata", context);
+            TIMEMORY_PRINT_HERE("[%s]> plot mode enabled. Skipping metadata", context);
         return;
     }
     auto _settings = f_settings();
     if(!_settings)
     {
         if(f_debug())
-            PRINT_HERE("[%s]> Null pointer to settings", context);
+            TIMEMORY_PRINT_HERE("[%s]> Null pointer to settings", context);
         return;
     }
 
@@ -594,18 +600,21 @@ manager::internal_write_metadata(const char* context)
     if(written || m_write_metadata < 1)
     {
         if(f_debug() && written)
-            PRINT_HERE("[%s]> metadata already written", context);
+            TIMEMORY_PRINT_HERE("[%s]> metadata already written", context);
         if(f_debug() && m_write_metadata < 1)
-            PRINT_HERE("[%s]> metadata disabled: %i", context, (int) m_write_metadata);
+            TIMEMORY_PRINT_HERE("[%s]> metadata disabled: %i", context,
+                                (int) m_write_metadata);
         return;
     }
 
     if((!_auto_output || !_file_output) && m_write_metadata < 1)
     {
         if(f_debug() && !_auto_output)
-            PRINT_HERE("[%s]> metadata disabled because auto output disabled", context);
+            TIMEMORY_PRINT_HERE("[%s]> metadata disabled because auto output disabled",
+                                context);
         if(f_debug() && !_file_output)
-            PRINT_HERE("[%s]> metadata disabled because file output disabled", context);
+            TIMEMORY_PRINT_HERE("[%s]> metadata disabled because file output disabled",
+                                context);
         return;
     }
 
@@ -613,14 +622,14 @@ manager::internal_write_metadata(const char* context)
     m_write_metadata = -1;
 
     if(f_debug())
-        PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
+        TIMEMORY_PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
 
     // get the output prefix if not already set
     if(m_metadata_prefix.empty())
         m_metadata_prefix = _outp_prefix;
 
     if(f_debug())
-        PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
+        TIMEMORY_PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
 
     // remove any non-ascii characters
     auto only_ascii = [](char c) { return isascii(c) == 0; };
@@ -629,14 +638,14 @@ manager::internal_write_metadata(const char* context)
         m_metadata_prefix.end());
 
     if(f_debug())
-        PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
+        TIMEMORY_PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
 
     // if empty, set to default
     if(m_metadata_prefix.empty())
         m_metadata_prefix = "timemory-output/";
 
     if(f_debug())
-        PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
+        TIMEMORY_PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
 
     // if first char is a control character, the statics probably got deleted
     std::locale _lc{};
@@ -644,7 +653,7 @@ manager::internal_write_metadata(const char* context)
         m_metadata_prefix = "timemory-output/";
 
     if(f_debug())
-        PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
+        TIMEMORY_PRINT_HERE("metadata prefix: '%s'", m_metadata_prefix.c_str());
 
     write_metadata(m_metadata_prefix, context);
 }
@@ -655,6 +664,9 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::add_file_output(const string_t& _category, const string_t& _label,
                          const string_t& _file)
 {
+    auto_lock_t _lk{ m_mutex, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
     m_output_files[_category][_label].insert(_file);
 }
 //
@@ -756,9 +768,10 @@ TIMEMORY_MANAGER_LINKAGE(void)
 manager::add_synchronization(const std::string& _key, int64_t _id,
                              std::function<void()> _func)
 {
-    m_mutex.lock();
+    auto_lock_t _lk{ m_mutex, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
     m_synchronize[_key].emplace(_id, std::move(_func));
-    m_mutex.unlock();
 }
 //
 //----------------------------------------------------------------------------------//
@@ -766,10 +779,11 @@ manager::add_synchronization(const std::string& _key, int64_t _id,
 TIMEMORY_MANAGER_LINKAGE(void)
 manager::remove_synchronization(const std::string& _key, int64_t _id)
 {
-    m_mutex.lock();
+    auto_lock_t _lk{ m_mutex, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
     if(m_synchronize[_key].find(_id) != m_synchronize[_key].end())
         m_synchronize[_key].erase(_id);
-    m_mutex.unlock();
 }
 //
 //----------------------------------------------------------------------------------//
@@ -798,8 +812,9 @@ manager::get_communicator_group()
     int32_t mpi_node_default = mpi::size() / max_processes;
     if(mpi_node_default < 1)
         mpi_node_default = 1;
-    int32_t mpi_node_count = get_env<int32_t>("TIMEMORY_NODE_COUNT", mpi_node_default);
-    int32_t mpi_split_size = mpi::rank() / (mpi::size() / mpi_node_count);
+    int32_t mpi_node_count = get_env<int32_t>("TIMEMORY_NODE_COUNT",
+mpi_node_default); int32_t mpi_split_size = mpi::rank() / (mpi::size() /
+mpi_node_count);
 
     // Split the communicator based on the number of nodes and use the
     // original rank for ordering
@@ -816,11 +831,11 @@ manager::get_communicator_group()
         std::stringstream _info;
         _info << "\t" << mpi::rank() << " Rank      : " << mpi::rank() << std::endl;
         _info << "\t" << mpi::rank() << " Size      : " << mpi::size() << std::endl;
-        _info << "\t" << mpi::rank() << " Node      : " << mpi_node_count << std::endl;
-        _info << "\t" << mpi::rank() << " Local Size: " << local_mpi_size << std::endl;
-        _info << "\t" << mpi::rank() << " Local Rank: " << local_mpi_rank << std::endl;
-        _info << "\t" << mpi::rank() << " Local File: " << local_mpi_file << std::endl;
-        std::cout << "tim::manager::" << __FUNCTION__ << "\n" << _info.str();
+        _info << "\t" << mpi::rank() << " Node      : " << mpi_node_count <<
+std::endl; _info << "\t" << mpi::rank() << " Local Size: " << local_mpi_size <<
+std::endl; _info << "\t" << mpi::rank() << " Local Rank: " << local_mpi_rank <<
+std::endl; _info << "\t" << mpi::rank() << " Local File: " << local_mpi_file <<
+std::endl; std::cout << "tim::manager::" << __FUNCTION__ << "\n" << _info.str();
     }
 #    endif
 
@@ -923,11 +938,14 @@ timemory_library_constructor()
     auto* _inst = timemory_manager_master_instance();
     if(_settings)
     {
+        auto _strict_v                 = _settings->get_strict_config();
+        _settings->get_strict_config() = false;
         _settings->init_config();
-        static auto _dir         = _settings->get_output_path();
-        static auto _prefix      = _settings->get_output_prefix();
-        static auto _time_output = _settings->get_time_output();
-        static auto _time_format = _settings->get_time_format();
+        _settings->get_strict_config() = _strict_v;
+        static auto _dir               = _settings->get_output_path();
+        static auto _prefix            = _settings->get_output_prefix();
+        static auto _time_output       = _settings->get_time_output();
+        static auto _time_format       = _settings->get_time_format();
         tim::consume_parameters(_dir, _prefix, _time_output, _time_format);
     }
 
@@ -950,7 +968,8 @@ timemory_library_constructor()
     }
     else
     {
-        printf("[%s]> manager :: master != worker : %p vs. %p. TLS behavior is abnormal. "
+        printf("[%s]> manager :: master != worker : %p vs. %p. TLS behavior is "
+               "abnormal. "
                "Report any issues to https://github.com/NERSC/timemory/issues\n",
                __FUNCTION__, (void*) _master.get(), (void*) _worker.get());
         if(!signal_settings::is_active())

@@ -23,3 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/components/ompt/extern.hpp"
+
+TIMEMORY_EXTERN_COMPONENT(ompt_native_handle, false, void)
+TIMEMORY_EXTERN_COMPONENT(ompt_native_data_tracker, false, void)
+TIMEMORY_EXTERN_COMPONENT(ompt_data_tracker_t, true, int64_t)

@@ -26,7 +26,9 @@
 
 #include "timemory/hash/declaration.hpp"
 #include "timemory/operations/types.hpp"
-#include "timemory/utility/utility.hpp"
+
+#include <string>
+#include <utility>
 
 namespace tim
 {
