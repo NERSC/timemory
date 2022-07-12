@@ -2068,7 +2068,22 @@ settings::read(std::istream& ifs, std::string inp)
                 continue;
             ++expected;
             // tokenize the string
-            auto delim = tim::delimit(line, "\n\t=,; ");
+            auto _equal_pos = line.find('=');
+            auto delim      = std::vector<std::string>{};
+            if(_equal_pos != std::string::npos)
+            {
+                auto line_key  = line.substr(0, _equal_pos);
+                auto line_data = line.substr(_equal_pos + 1);
+                delim          = tim::delimit(line_key, "\n\t ");
+                while(delim.size() > 1)
+                    delim.pop_back();
+                for(const auto& ditr : tim::delimit(line_data, "\n\t,; "))
+                    delim.emplace_back(ditr);
+            }
+            else
+            {
+                delim = tim::delimit(line, "\n\t,;= ");
+            }
             if(!delim.empty())
             {
                 string_t key = delim.front();
@@ -2082,7 +2097,7 @@ settings::read(std::istream& ifs, std::string inp)
                     if(_v != delim.at(i))
                     {
                         std::string _nv = {};
-                        for(const auto& itr : tim::delimit(_v, "\n\t=,; "))
+                        for(const auto& itr : tim::delimit(_v, "\n\t,; "))
                             _nv += "," + itr;
                         if(!_nv.empty())
                             _nv = _nv.substr(1);
