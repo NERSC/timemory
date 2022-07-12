@@ -92,6 +92,5 @@ sqrt(Tp _val)
 {
     return ::tim::math::sqrt(_val, get_index_sequence<Tp>::value, 0);
 }
-
 }  // namespace math
 }  // namespace tim

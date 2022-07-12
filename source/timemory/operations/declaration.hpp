@@ -540,8 +540,8 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    template <typename Tp, typename... _Extra>
-    static bool is_empty(const std::vector<Tp, _Extra...>& obj)
+    template <typename Tp, typename... ExtraT>
+    static bool is_empty(const std::vector<Tp, ExtraT...>& obj)
     {
         for(const auto& itr : obj)
         {

@@ -579,19 +579,19 @@ settings::settings()
 //
 TIMEMORY_SETTINGS_INLINE
 settings::settings(const settings& rhs)
-: m_initialized(rhs.m_initialized)
-, m_data(data_type{})
-, m_tag(rhs.m_tag)
-, m_config_stack(rhs.m_config_stack)
-, m_order(rhs.m_order)
-, m_command_line(rhs.m_command_line)
-, m_environment(rhs.m_environment)
-, m_read_configs(rhs.m_read_configs)
-, m_unknown_configs(rhs.m_unknown_configs)
+: m_initialized{ rhs.m_initialized }
+, m_tag{ rhs.m_tag }
+, m_config_stack{ rhs.m_config_stack }
+, m_order{ rhs.m_order }
+, m_command_line{ rhs.m_command_line }
+, m_environment{ rhs.m_environment }
+, m_read_configs{ rhs.m_read_configs }
+, m_unknown_configs{ rhs.m_unknown_configs }
 {
     m_order.reserve(rhs.m_order.capacity());
     for(const auto& itr : rhs.m_data)
         m_data.emplace(itr.first, itr.second->clone());
+
     for(auto& itr : m_order)
     {
         if(m_data.find(itr) == m_data.end())

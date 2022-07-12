@@ -37,6 +37,7 @@
 #include <chrono>
 #include <ostream>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -81,7 +82,7 @@ template <typename... Types, typename OtherT>
 std::tuple<Types...>&
 operator+=(std::tuple<Types...>& lhs, OtherT&& rhs)
 {
-    math::plus(lhs, rhs);
+    math::plus(lhs, std::forward<OtherT>(rhs));
     return lhs;
 }
 
@@ -90,7 +91,7 @@ template <typename... Types, typename OtherT>
 std::variant<Types...>&
 operator+=(std::variant<Types...>& lhs, OtherT&& rhs)
 {
-    math::plus(lhs, rhs);
+    math::plus(lhs, std::forward<OtherT>(rhs));
     return lhs;
 }
 #endif
@@ -624,6 +625,14 @@ tuple<>&
 operator+=(tuple<>& _lhs, const Tp&)
 {
     return _lhs;
+}
+
+template <typename... Types>
+const variant<Types...>
+operator-(variant<Types...> lhs, const variant<Types...>& rhs)
+{
+    ::tim::math::minus(lhs, rhs);
+    return lhs;
 }
 
 }  // namespace std

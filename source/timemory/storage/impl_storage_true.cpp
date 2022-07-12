@@ -136,31 +136,35 @@ storage<Type, true>::storage(standalone_storage, int64_t _instance_id, std::stri
 template <typename Type>
 storage<Type, true>::~storage()
 {
-    component::state<Type>::has_storage() = false;
+    if(!m_standalone)
+        component::state<Type>::has_storage() = false;
 
     auto _debug = m_settings->get_debug();
 
     TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> destroying storage",
                                     m_label.c_str(), (long) m_instance_id);
 
-    auto _main_instance = singleton_t::master_instance();
-
-    if(!m_is_master)
+    if(!m_standalone)
     {
-        if(_main_instance)
+        auto _main_instance = singleton_t::master_instance();
+
+        if(!m_is_master)
         {
-            TIMEMORY_CONDITIONAL_PRINT_HERE(_debug,
-                                            "[%s|%li]> merging into primary instance",
-                                            m_label.c_str(), (long) m_instance_id);
-            _main_instance->merge(this);
-        }
-        else
-        {
-            TIMEMORY_CONDITIONAL_PRINT_HERE(
-                _debug,
-                "[%s|%li]> skipping merge into non-existent primary "
-                "instance",
-                m_label.c_str(), (long) m_instance_id);
+            if(_main_instance)
+            {
+                TIMEMORY_CONDITIONAL_PRINT_HERE(_debug,
+                                                "[%s|%li]> merging into primary instance",
+                                                m_label.c_str(), (long) m_instance_id);
+                _main_instance->merge(this);
+            }
+            else
+            {
+                TIMEMORY_CONDITIONAL_PRINT_HERE(
+                    _debug,
+                    "[%s|%li]> skipping merge into non-existent primary "
+                    "instance",
+                    m_label.c_str(), (long) m_instance_id);
+            }
         }
     }
 
@@ -732,6 +736,13 @@ template <typename Type>
 void
 storage<Type, true>::internal_print()
 {
+    if(m_standalone)
+    {
+        auto _filename = (m_label == demangle<Type>()) ? Type::get_label() : m_label;
+        printer_t{ _filename, this, m_settings }.execute();
+        return;
+    }
+
     base::storage::stop_profiler();
 
     if(m_standalone)

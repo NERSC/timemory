@@ -52,42 +52,54 @@ struct plus
 {
     using type = Tp;
 
-    template <typename U>
-    using base_t = typename U::base_type;
+    template <typename Up>
+    using base_t = typename Up::base_type;
 
-    TIMEMORY_DELETED_OBJECT(plus)
+    TIMEMORY_DEFAULT_OBJECT(plus)
+
+    template <typename... Args>
+    explicit plus(type& obj, Args&&... args)
+    {
+        (*this)(obj, std::forward<Args>(args)...);
+    }
 
     template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
-    plus(type& obj, const type& rhs)
+    auto& operator()(type& obj, const type& rhs) const
     {
+        using namespace tim::stl;
         obj += rhs;
         // ensures update to laps
         sfinae(obj, 0, 0, rhs);
+        return obj;
     }
 
     template <typename Vt, typename Up = Tp, enable_if_t<!has_data<Up>::value, char> = 0>
-    plus(type&, const Vt&)
-    {}
+    auto& operator()(type& obj, const Vt&) const
+    {
+        return obj;
+    }
 
 private:
     template <typename Up>
-    auto sfinae(Up& obj, int, int, const Up& rhs)
+    static auto sfinae(Up& obj, int, int, const Up& rhs)
         -> decltype(static_cast<base_t<Up>&>(obj).plus(crtp::base{},
-                                                       static_cast<base_t<Up>&>(rhs)),
-                    void())
+                                                       static_cast<base_t<Up>&>(rhs)))
     {
-        static_cast<base_t<Up>&>(obj).plus(crtp::base{}, static_cast<base_t<Up>&>(rhs));
+        return static_cast<base_t<Up>&>(obj).plus(crtp::base{},
+                                                  static_cast<base_t<Up>&>(rhs));
     }
 
-    template <typename U>
-    auto sfinae(U& obj, int, long, const U& rhs) -> decltype(obj.plus(rhs), void())
+    template <typename Up>
+    static auto sfinae(Up& obj, int, long, const Up& rhs) -> decltype(obj.plus(rhs))
     {
-        obj.plus(rhs);
+        return obj.plus(rhs);
     }
 
-    template <typename U>
-    auto sfinae(U&, long, long, const U&)
-    {}
+    template <typename Up>
+    static auto& sfinae(Up& _v, long, long, const Up&)
+    {
+        return _v;
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -104,42 +116,54 @@ struct minus
 {
     using type = Tp;
 
-    template <typename U>
-    using base_t = typename U::base_type;
+    template <typename Up>
+    using base_t = typename Up::base_type;
 
-    TIMEMORY_DELETED_OBJECT(minus)
+    TIMEMORY_DEFAULT_OBJECT(minus)
+
+    template <typename... Args>
+    explicit minus(type& obj, Args&&... args)
+    {
+        (*this)(obj, std::forward<Args>(args)...);
+    }
 
     template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
-    minus(type& obj, const type& rhs)
+    inline auto& operator()(type& obj, const type& rhs) const
     {
+        using namespace tim::stl;
         obj -= rhs;
         // ensures update to laps
         sfinae(obj, 0, 0, rhs);
+        return obj;
     }
 
     template <typename Vt, typename Up = Tp, enable_if_t<!has_data<Up>::value, char> = 0>
-    minus(type&, const Vt&)
-    {}
+    inline auto& operator()(type& _v, const Vt&) const
+    {
+        return _v;
+    }
 
 private:
     template <typename Up>
-    auto sfinae(Up& obj, int, int, const Up& rhs)
+    static auto sfinae(Up& obj, int, int, const Up& rhs)
         -> decltype(static_cast<base_t<Up>&>(obj).minus(crtp::base{},
-                                                        static_cast<base_t<Up>&>(rhs)),
-                    void())
+                                                        static_cast<base_t<Up>&>(rhs)))
     {
-        static_cast<base_t<Up>&>(obj).minus(crtp::base{}, static_cast<base_t<Up>&>(rhs));
+        return static_cast<base_t<Up>&>(obj).minus(crtp::base{},
+                                                   static_cast<base_t<Up>&>(rhs));
     }
 
-    template <typename U>
-    auto sfinae(U& obj, int, long, const U& rhs) -> decltype(obj.minus(rhs), void())
+    template <typename Up>
+    static auto sfinae(Up& obj, int, long, const Up& rhs) -> decltype(obj.minus(rhs))
     {
-        obj.minus(rhs);
+        return obj.minus(rhs);
     }
 
-    template <typename U>
-    auto sfinae(U&, long, long, const U&)
-    {}
+    template <typename Up>
+    static auto& sfinae(Up& _v, long, long, const Up&)
+    {
+        return _v;
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -156,25 +180,35 @@ struct multiply
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(multiply)
+    TIMEMORY_DEFAULT_OBJECT(multiply)
 
-    template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
-    multiply(type& obj, int64_t rhs)
+    template <typename... Args>
+    explicit multiply(type& obj, Args&&... args)
     {
-        using namespace tim::stl;
-        obj *= rhs;
+        (*this)(obj, std::forward<Args>(args)...);
     }
 
     template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
-    multiply(type& obj, const type& rhs)
+    inline auto& operator()(type& obj, int64_t rhs) const
     {
         using namespace tim::stl;
         obj *= rhs;
+        return obj;
+    }
+
+    template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
+    inline auto& operator()(type& obj, const type& rhs) const
+    {
+        using namespace tim::stl;
+        obj *= rhs;
+        return obj;
     }
 
     template <typename Vt, typename Up = Tp, enable_if_t<!has_data<Up>::value, char> = 0>
-    multiply(type&, const Vt&)
-    {}
+    inline auto& operator()(type& _v, const Vt&) const
+    {
+        return _v;
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -191,25 +225,35 @@ struct divide
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(divide)
+    TIMEMORY_DEFAULT_OBJECT(divide)
 
-    template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
-    divide(type& obj, int64_t rhs)
+    template <typename... Args>
+    explicit divide(type& obj, Args&&... args)
     {
-        using namespace tim::stl;
-        obj /= rhs;
+        (*this)(obj, std::forward<Args>(args)...);
     }
 
     template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
-    divide(type& obj, const type& rhs)
+    inline auto& operator()(type& obj, int64_t rhs) const
     {
         using namespace tim::stl;
         obj /= rhs;
+        return obj;
+    }
+
+    template <typename Up = Tp, enable_if_t<has_data<Up>::value, char> = 0>
+    inline auto& operator()(type& obj, const type& rhs) const
+    {
+        using namespace tim::stl;
+        obj /= rhs;
+        return obj;
     }
 
     template <typename Vt, typename Up = Tp, enable_if_t<!has_data<Up>::value, char> = 0>
-    divide(type&, const Vt&)
-    {}
+    inline auto& operator()(type& _v, const Vt&) const
+    {
+        return _v;
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
