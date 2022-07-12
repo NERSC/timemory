@@ -24,37 +24,62 @@
 
 #pragma once
 
-#include "timemory/math/fwd.hpp"
+#include "timemory/macros/language.hpp"
 #include "timemory/mpl/concepts.hpp"
-#include "timemory/mpl/types.hpp"
-#include "timemory/utility/types.hpp"
-#include "timemory/utility/variant.hpp"
+#include "timemory/utility/transient_function.hpp"
 
-#include <cassert>
-#include <cmath>
-#include <limits>
-#include <utility>
+#if defined(CXX17)
+#    include <variant>
 
 namespace tim
 {
-namespace math
+namespace utility
 {
-template <typename Tp, typename Up>
+struct variant_assign_if_diff_index : std::true_type
+{};
+
+struct variant_ignore_if_diff_index : std::false_type
+{};
+
+template <typename VarT, typename FuncT, typename ArgT,
+          typename AssignT     = variant_assign_if_diff_index,
+          typename AssignFuncT = transient_function<void(VarT&, const VarT&)>>
 decltype(auto)
-assign(Tp& _lhs, Up&& _rhs)
+variant_apply(
+    VarT& _var, FuncT&& _func, ArgT&& _arg, AssignT = {},
+    AssignFuncT _assign = [](VarT& _out, const VarT& _inp) { _out = _inp; })
 {
-    return (_lhs = std::forward<Up>(_rhs));
+    if constexpr(concepts::is_unqualified_same<decltype(_var), decltype(_arg)>::value)
+    {
+        if(_var.index() != _arg.index())
+        {
+            if constexpr(AssignT::value)
+                _assign(_var, _arg);
+        }
+        else
+        {
+            std::visit(std::forward<FuncT>(_func), _var, std::forward<ArgT>(_arg));
+        }
+    }
+    else
+    {
+        std::visit(
+            [&_func, &_arg](auto& _v) {
+                std::forward<FuncT>(_func)(_v, std::forward<ArgT>(_arg));
+            },
+            _var);
+    }
+    return _var;
+    (void) _assign;
 }
 
-#if defined(CXX17)
-template <typename... Tp, typename Up>
+template <typename VarT, typename FuncT>
 decltype(auto)
-assign(std::variant<Tp...>& _lhs, Up&& _rhs)
+variant_apply(VarT& _var, FuncT&& _func)
 {
-    utility::variant_apply(
-        _lhs, [](auto& _out, auto&& _inp) { _out = _inp; }, std::forward<Up>(_rhs));
-    return _lhs;
+    std::visit(std::forward<FuncT>(_func), _var);
+    return _var;
 }
-#endif
-}  // namespace math
+}  // namespace utility
 }  // namespace tim
+#endif

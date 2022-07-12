@@ -49,6 +49,22 @@ percent_diff(Tp _lhs, Tp _rhs, type_list<>, ...)
     return (_pdiff < _zero) ? _zero : _pdiff;
 }
 
+#if defined(CXX17)
+template <typename... Tp, typename Up>
+TIMEMORY_INLINE auto
+percent_diff(std::variant<Tp...>& _lhs, Up _rhs, type_list<>, ...)
+{
+    utility::variant_apply(
+        _lhs,
+        [](auto& _out, auto&& _inp) {
+            using type = concepts::unqualified_type_t<decltype(_out)>;
+            percent_diff(_out, static_cast<type>(_inp));
+        },
+        _rhs);
+    return _lhs;
+}
+#endif
+
 template <typename Tp,
           enable_if_t<!std::is_arithmetic<Tp>::value && std::is_class<Tp>::value> = 0>
 TIMEMORY_INLINE auto

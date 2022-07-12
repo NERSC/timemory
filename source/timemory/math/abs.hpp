@@ -41,15 +41,25 @@ namespace math
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0,
           enable_if_t<std::is_integral<Tp>::value && std::is_unsigned<Tp>::value> = 0>
 TIMEMORY_INLINE auto
-abs(Tp _val, type_list<>) -> decltype(Tp{})
+abs(Tp _val, type_list<>, ...) -> decltype(Tp{})
 {
     return _val;
 }
 
+#if defined(CXX17)
+template <typename... Tp>
+TIMEMORY_INLINE decltype(auto)
+abs(std::variant<Tp...> _lhs, type_list<>, ...)
+{
+    utility::variant_apply(_lhs, [](auto& _out) { _out = abs(_out); });
+    return _lhs;
+}
+#endif
+
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0,
           enable_if_t<!(std::is_integral<Tp>::value && std::is_unsigned<Tp>::value)> = 0>
 auto TIMEMORY_INLINE
-abs(Tp _val, type_list<>) -> decltype(std::abs(_val), Tp{})
+abs(Tp _val, type_list<>, int) -> decltype(std::abs(_val), Tp{})
 {
     return std::abs(_val);
 }
@@ -66,7 +76,7 @@ abs(Tp _val, type_list<>, ...) -> decltype(std::begin(_val), Tp{})
 template <typename Tp, typename Kp = typename Tp::key_type,
           typename Mp = typename Tp::mapped_type>
 auto
-abs(Tp _val, type_list<>) -> decltype(std::begin(_val), Tp{})
+abs(Tp _val, type_list<>, int) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
     {
@@ -77,7 +87,7 @@ abs(Tp _val, type_list<>) -> decltype(std::begin(_val), Tp{})
 
 template <template <typename...> class Tuple, typename... Types, size_t... Idx>
 auto
-abs(Tuple<Types...> _val, index_sequence<Idx...>)
+abs(Tuple<Types...> _val, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_val), Tuple<Types...>())
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(_val) = ::tim::math::abs(std::get<Idx>(_val)));
@@ -88,7 +98,7 @@ template <typename Tp>
 Tp
 abs(Tp _val)
 {
-    return ::tim::math::abs(_val, get_index_sequence<Tp>::value);
+    return ::tim::math::abs(_val, get_index_sequence<Tp>::value, 0);
 }
 }  // namespace math
 }  // namespace tim

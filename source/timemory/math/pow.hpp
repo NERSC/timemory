@@ -40,10 +40,20 @@ namespace math
 {
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
 TIMEMORY_INLINE auto
-pow(Tp _val, double _m, type_list<>) -> decltype(std::pow(_val, _m), Tp{})
+pow(Tp _val, double _m, type_list<>, ...) -> decltype(std::pow(_val, _m), Tp{})
 {
     return std::pow(_val, _m);
 }
+
+#if defined(CXX17)
+template <typename... Tp>
+TIMEMORY_INLINE decltype(auto)
+pow(std::variant<Tp...> _lhs, double _m, type_list<>, ...)
+{
+    utility::variant_apply(_lhs, [_m](auto& _out) { _out = pow(_out, _m); });
+    return _lhs;
+}
+#endif
 
 template <typename Tp, typename Vp = typename Tp::value_type>
 auto
@@ -59,7 +69,7 @@ pow(Tp _val, double _m, type_list<>, ...) -> decltype(std::begin(_val), Tp{})
 template <typename Tp, typename Kp = typename Tp::key_type,
           typename Mp = typename Tp::mapped_type>
 auto
-pow(Tp _val, double _m, type_list<>) -> decltype(std::begin(_val), Tp{})
+pow(Tp _val, double _m, type_list<>, int) -> decltype(std::begin(_val), Tp{})
 {
     for(auto& itr : _val)
     {
@@ -70,7 +80,7 @@ pow(Tp _val, double _m, type_list<>) -> decltype(std::begin(_val), Tp{})
 
 template <template <typename...> class Tuple, typename... Types, size_t... Idx>
 auto
-pow(Tuple<Types...> _val, double _m, index_sequence<Idx...>)
+pow(Tuple<Types...> _val, double _m, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_val), Tuple<Types...>())
 {
     TIMEMORY_FOLD_EXPRESSION(std::get<Idx>(_val) =
@@ -82,7 +92,7 @@ template <typename Tp>
 Tp
 pow(Tp _val, double _m)
 {
-    return ::tim::math::pow(_val, _m, get_index_sequence<Tp>::value);
+    return ::tim::math::pow(_val, _m, get_index_sequence<Tp>::value, 0);
 }
 }  // namespace math
 }  // namespace tim

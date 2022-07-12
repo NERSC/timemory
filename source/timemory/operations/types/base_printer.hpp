@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/mpl/stl.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
@@ -87,6 +88,8 @@ private:
                 enable_if_t<not_string<ValueT, LabelT, DispT>(), int> = 0) const
         -> decltype((_value.size() + _disp.size() + _label.size()), void())
     {
+        using namespace tim::stl::ostream;
+
         auto _prec  = type::get_precision();
         auto _width = type::get_width();
         auto _flags = type::get_format_flags();
@@ -135,6 +138,8 @@ private:
                 enable_if_t<not_string<ValueT, LabelT>() && is_string<DispT>(), long> =
                     0L) const -> decltype((_value.size() + _label.size()), void())
     {
+        using namespace tim::stl::ostream;
+
         auto _prec  = type::get_precision();
         auto _width = type::get_width();
         auto _flags = type::get_format_flags();
@@ -183,6 +188,8 @@ private:
                 enable_if_t<not_string<ValueT>() && is_string<LabelT, DispT>(), double> =
                     0.0) const -> decltype((_value.size() + _label.size()), void())
     {
+        using namespace tim::stl::ostream;
+
         auto _prec  = type::get_precision();
         auto _width = type::get_width();
         auto _flags = type::get_format_flags();
@@ -232,6 +239,8 @@ private:
     auto sfinae(std::ostream& _os, long, ValueT& _value, DispT& _disp,
                 LabelT& _label) const
     {
+        using namespace tim::stl::ostream;
+
         auto _prec  = type::get_precision();
         auto _width = type::get_width();
         auto _flags = type::get_format_flags();

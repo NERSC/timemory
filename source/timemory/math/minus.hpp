@@ -40,15 +40,34 @@ namespace math
 {
 template <typename Tp, typename Up>
 TIMEMORY_INLINE auto
-minus(Tp& _lhs, const Up& _rhs, type_list<>, ...) -> decltype(_lhs -= _rhs, void())
+minus(Tp& _lhs, const Up& _rhs, type_list<>, ...)
+    -> decltype(_lhs -= _rhs, std::declval<Tp&>())
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     _lhs -= _rhs;
+    return _lhs;
 }
+
+#if defined(CXX17)
+template <typename... Tp, typename Up>
+TIMEMORY_INLINE decltype(auto)
+minus(std::variant<Tp...>& _lhs, Up _rhs, type_list<>, ...)
+{
+    utility::variant_apply(
+        _lhs,
+        [](auto& _out, auto&& _inp) {
+            using type = concepts::unqualified_type_t<decltype(_out)>;
+            minus(_out, static_cast<type>(_inp));
+        },
+        _rhs);
+    return _lhs;
+}
+#endif
 
 template <typename Tp, typename Up, typename Vp = typename Tp::value_type>
 auto
-minus(Tp& _lhs, const Up& _rhs, type_list<>, long) -> decltype(std::begin(_lhs), void())
+minus(Tp& _lhs, const Up& _rhs, type_list<>, long)
+    -> decltype(std::begin(_lhs), std::declval<Tp&>())
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _n = mpl::get_size(_rhs);
@@ -61,12 +80,14 @@ minus(Tp& _lhs, const Up& _rhs, type_list<>, long) -> decltype(std::begin(_lhs),
         auto ritr = std::begin(_rhs) + i;
         minus(*litr, *ritr);
     }
+    return _lhs;
 }
 
 template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
           typename Mp = typename Tp::mapped_type>
 auto
-minus(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), void())
+minus(Tp& _lhs, const Up& _rhs, type_list<>, int)
+    -> decltype(std::begin(_lhs), std::declval<Tp&>())
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
 
@@ -77,20 +98,24 @@ minus(Tp& _lhs, const Up& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), 
             continue;
         minus(litr->second, ritr->second);
     }
+    return _lhs;
 }
 
 template <typename Tp, typename Up>
-TIMEMORY_INLINE auto
-minus(Tp&, const Up&, index_sequence<>, int)
-{}
+TIMEMORY_INLINE decltype(auto)
+minus(Tp& _lhs, const Up&, index_sequence<>, int)
+{
+    return _lhs;
+}
 
 template <typename Tp, typename Up, size_t... Idx>
 auto
 minus(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
-    -> decltype(std::get<0>(_lhs), void())
+    -> decltype(std::get<0>(_lhs), std::declval<Tp&>())
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     TIMEMORY_FOLD_EXPRESSION(minus(std::get<Idx>(_lhs), std::get<Idx>(_rhs)));
+    return _lhs;
 }
 
 template <typename Tp, typename Up, enable_if_t<!concepts::is_null_type<Tp>::value>>

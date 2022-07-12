@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/mpl/stl.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
@@ -152,6 +153,7 @@ struct echo_measurement<Tp, true> : public common_utils
                                                 std::vector<T, Alloc...> _unit,
                                                 Args&&... _args)
     {
+        using namespace tim::stl::ostream;
         string_t ret;
         for(auto& itr : _unit)
         {
@@ -168,6 +170,7 @@ struct echo_measurement<Tp, true> : public common_utils
     static TIMEMORY_COLD string_t generate_name(const string_t&  _prefix,
                                                 std::array<T, N> _unit, Args&&... _args)
     {
+        using namespace tim::stl::ostream;
         string_t ret;
         for(auto& itr : _unit)
         {
@@ -185,6 +188,7 @@ struct echo_measurement<Tp, true> : public common_utils
                                                    const attributes_t& attributes,
                                                    const Vt&           value)
     {
+        using namespace tim::stl::ostream;
         os << "<DartMeasurement";
         os << " " << attribute_string("type", "numeric/double");
         for(const auto& itr : attributes)

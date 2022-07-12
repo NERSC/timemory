@@ -28,6 +28,7 @@
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/types.hpp"
+#include "timemory/utility/variant.hpp"
 
 #include <cassert>
 #include <cmath>
@@ -40,15 +41,31 @@ namespace math
 {
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0>
 TIMEMORY_INLINE Tp
-min(Tp _lhs, Tp _rhs, type_list<>)
+min(Tp _lhs, Tp _rhs, type_list<>, ...)
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     return (_rhs > _lhs) ? _lhs : _rhs;
 }
 
+#if defined(CXX17)
+template <typename... Tp, typename Up>
+TIMEMORY_INLINE decltype(auto)
+min(std::variant<Tp...> _lhs, Up _rhs, type_list<>, ...)
+{
+    utility::variant_apply(
+        _lhs,
+        [](auto& _out, auto&& _inp) {
+            using type = concepts::unqualified_type_t<decltype(_out)>;
+            _out       = min(_out, static_cast<type>(_inp));
+        },
+        _rhs);
+    return _lhs;
+}
+#endif
+
 template <typename Tp, typename Vp = typename Tp::value_type>
 auto
-min(const Tp& _lhs, const Tp& _rhs, type_list<>, ...) -> decltype(std::begin(_lhs), Tp{})
+min(const Tp& _lhs, const Tp& _rhs, type_list<>, long) -> decltype(std::begin(_lhs), Tp{})
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _nl    = mpl::get_size(_lhs);
@@ -73,7 +90,7 @@ min(const Tp& _lhs, const Tp& _rhs, type_list<>, ...) -> decltype(std::begin(_lh
 template <typename Tp, typename Kp = typename Tp::key_type,
           typename Mp = typename Tp::mapped_type>
 auto
-min(const Tp& _lhs, const Tp& _rhs, type_list<>) -> decltype(std::begin(_lhs), Tp{})
+min(const Tp& _lhs, const Tp& _rhs, type_list<>, int) -> decltype(std::begin(_lhs), Tp{})
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
     auto _nl    = mpl::get_size(_lhs);
@@ -97,7 +114,7 @@ min(const Tp& _lhs, const Tp& _rhs, type_list<>) -> decltype(std::begin(_lhs), T
 
 template <typename Tp, size_t... Idx>
 auto
-min(const Tp& _lhs, const Tp& _rhs, index_sequence<Idx...>)
+min(const Tp& _lhs, const Tp& _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), Tp{})
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
@@ -112,7 +129,7 @@ Tp
 min(const Tp& _lhs, const Tp& _rhs)
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
-    return min(_lhs, _rhs, get_index_sequence<Tp>::value);
+    return min(_lhs, _rhs, get_index_sequence<Tp>::value, 0);
 }
 }  // namespace math
 }  // namespace tim

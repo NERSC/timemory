@@ -35,6 +35,7 @@
 
 #include "timemory/api.hpp"
 #include "timemory/defines.h"
+#include "timemory/macros/language.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/macros.hpp"
 #include "timemory/utility/types.hpp"
@@ -45,6 +46,10 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+
+#if defined(CXX17)
+#    include <variant>
+#endif
 
 namespace tim
 {
@@ -869,6 +874,16 @@ struct get_index_sequence<Tuple<Types...>>
     static constexpr auto value = base_type::value;
     using type                  = typename base_type::type;
 };
+
+#if defined(CXX17)
+template <typename... Types>
+struct get_index_sequence<std::variant<Types...>>
+{
+    static constexpr auto size  = 0;
+    static constexpr auto value = type_list<>{};
+    using type                  = type_list<>;
+};
+#endif
 
 template <typename Tp>
 using get_index_sequence_t = typename get_index_sequence<decay_t<Tp>>::type;

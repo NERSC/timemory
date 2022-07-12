@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/macros/language.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 
 // cereal will cause some -Wclass-memaccess warnings that are quite annoying
@@ -43,6 +44,10 @@
 #include "timemory/tpls/cereal/cereal/types/tuple.hpp"
 #include "timemory/tpls/cereal/cereal/types/utility.hpp"
 #include "timemory/tpls/cereal/cereal/types/vector.hpp"
+
+#if defined(CXX17)
+#    include "timemory/tpls/cereal/cereal/types/variant.hpp"
+#endif
 
 #if defined(__GNUC__) && (__GNUC__ > 7)
 #    pragma GCC diagnostic pop

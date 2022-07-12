@@ -24,14 +24,20 @@
 
 #pragma once
 
+#include "timemory/macros/language.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/utility/types.hpp"
+#include "timemory/utility/variant.hpp"
 
 #include <cassert>
 #include <cmath>
 #include <limits>
 #include <utility>
+
+#if defined(CXX17)
+#    include <variant>
+#endif
 
 namespace tim
 {
@@ -49,6 +55,27 @@ is_finite(const Tp& val)
     return std::isfinite(val);
 #endif
 }
+
+#if defined(CXX17)
+template <typename... Tp>
+bool
+is_finite(const std::variant<Tp...>& _val)
+{
+    bool _ret = false;
+#    if defined(TIMEMORY_WINDOWS)
+    auto _func = [&_ret](auto&& _v) {
+        using type       = concepts::unqualified_type_t<decltype(_v)>;
+        const type _infv = std::numeric_limits<type>::infinity();
+        const type _inf  = (val < 0.0) ? -_infv : _infv;
+        _ret             = (val == val && val != _inf);
+    };
+#    else
+    auto _func = [&_ret](auto&& _v) { _ret = std::isfinite(_v); };
+#    endif
+    std::visit(_func, _val);
+    return _ret;
+}
+#endif
 
 template <typename Tp>
 TIMEMORY_INLINE Tp abs(Tp);
@@ -99,6 +126,20 @@ template <typename Tp>
 TIMEMORY_INLINE Tp
 percent_diff(const Tp&, const Tp&);
 
+//--------------------------------------------------------------------------------------//
+//
+//      variant overloads
+//
+//--------------------------------------------------------------------------------------//
+
+#if defined(CXX17)
+
+template <typename... Tp, typename Up>
+TIMEMORY_INLINE void
+assign(std::variant<Tp...>&, Up&&);
+
+#endif
+
 }  // namespace math
 
 inline namespace stl
@@ -125,6 +166,12 @@ template <typename... Types, typename Other>
 std::tuple<Types...>&
 operator+=(std::tuple<Types...>&, Other&&);
 
+#if defined(CXX17)
+template <typename... Types, typename Other>
+std::variant<Types...>&
+operator+=(std::variant<Types...>&, Other&&);
+#endif
+
 //--------------------------------------------------------------------------------------//
 //
 //      operator -=
@@ -135,37 +182,56 @@ template <typename Tp, size_t N>
 std::array<Tp, N>&
 operator-=(std::array<Tp, N>&, const std::array<Tp, N>&);
 
-template <typename Lhs, size_t N, typename Rhs,
-          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
-std::array<Lhs, N>&
-operator-=(std::array<Lhs, N>&, const Rhs&);
-
 template <typename Lhs, typename Rhs>
 std::pair<Lhs, Rhs>&
 operator-=(std::pair<Lhs, Rhs>&, const std::pair<Lhs, Rhs>&);
-
-template <typename Lhs, typename Rhs, typename ArithT,
-          enable_if_t<std::is_arithmetic<decay_t<ArithT>>::value, int> = 0>
-std::pair<Lhs, Rhs>&
-operator-=(std::pair<Lhs, Rhs>&, const ArithT&);
 
 template <typename Tp, typename... _Extra>
 std::vector<Tp, _Extra...>&
 operator-=(std::vector<Tp, _Extra...>&, const std::vector<Tp, _Extra...>&);
 
-template <typename Lhs, typename Rhs, typename... _Extra,
-          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
-std::vector<Lhs, _Extra...>&
-operator-=(std::vector<Lhs, _Extra...>&, const Rhs&);
-
 template <typename... Types>
 std::tuple<Types...>&
 operator-=(std::tuple<Types...>&, const std::tuple<Types...>&);
 
+#if defined(CXX17)
+template <typename... Types, typename Other>
+std::variant<Types...>&
+operator-=(std::variant<Types...>&, Other&&);
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
+//      operator -= (arithmetic)
+//
+//--------------------------------------------------------------------------------------//
+
+template <typename Lhs, size_t N, typename Rhs,
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
+std::array<Lhs, N>&
+operator-=(std::array<Lhs, N>&, Rhs);
+
+template <typename Lhs, typename Rhs, typename ArithT,
+          enable_if_t<std::is_arithmetic<decay_t<ArithT>>::value, int> = 0>
+std::pair<Lhs, Rhs>&
+operator-=(std::pair<Lhs, Rhs>&, ArithT);
+
+template <typename Lhs, typename Rhs, typename... _Extra,
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
+std::vector<Lhs, _Extra...>&
+operator-=(std::vector<Lhs, _Extra...>&, Rhs);
+
 template <typename... Lhs, typename Rhs,
           enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
 std::tuple<Lhs...>&
-operator-=(std::tuple<Lhs...>&, const Rhs&);
+operator-=(std::tuple<Lhs...>&, Rhs);
+
+#if defined(CXX17)
+template <typename... Lhs, typename Rhs,
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
+std::variant<Lhs...>&
+operator-=(std::variant<Lhs...>&, Rhs);
+#endif
 
 //--------------------------------------------------------------------------------------//
 //
@@ -177,37 +243,56 @@ template <typename Tp, size_t N>
 std::array<Tp, N>&
 operator*=(std::array<Tp, N>&, const std::array<Tp, N>&);
 
-template <typename Lhs, size_t N, typename Rhs,
-          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
-std::array<Lhs, N>&
-operator*=(std::array<Lhs, N>&, const Rhs&);
-
 template <typename Lhs, typename Rhs>
 std::pair<Lhs, Rhs>&
 operator*=(std::pair<Lhs, Rhs>&, const std::pair<Lhs, Rhs>&);
-
-template <typename Lhs, typename Rhs, typename ArithT,
-          enable_if_t<std::is_arithmetic<decay_t<ArithT>>::value, int> = 0>
-std::pair<Lhs, Rhs>&
-operator*=(std::pair<Lhs, Rhs>&, const ArithT&);
 
 template <typename Tp, typename... _Extra>
 std::vector<Tp, _Extra...>&
 operator*=(std::vector<Tp, _Extra...>&, const std::vector<Tp, _Extra...>&);
 
-template <typename Lhs, typename Rhs, typename... _Extra,
-          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
-std::vector<Lhs, _Extra...>&
-operator*=(std::vector<Lhs, _Extra...>&, const Rhs&);
-
 template <typename... Types>
 std::tuple<Types...>&
 operator*=(std::tuple<Types...>&, const std::tuple<Types...>&);
 
+#if defined(CXX17)
+template <typename... Types>
+std::variant<Types...>&
+operator*=(std::variant<Types...>&, const std::variant<Types...>&);
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
+//      operator *= (arithmetic)
+//
+//--------------------------------------------------------------------------------------//
+
+template <typename Lhs, size_t N, typename Rhs,
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
+std::array<Lhs, N>&
+operator*=(std::array<Lhs, N>&, Rhs);
+
+template <typename Lhs, typename Rhs, typename ArithT,
+          enable_if_t<std::is_arithmetic<decay_t<ArithT>>::value, int> = 0>
+std::pair<Lhs, Rhs>&
+operator*=(std::pair<Lhs, Rhs>&, ArithT);
+
+template <typename Lhs, typename Rhs, typename... _Extra,
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
+std::vector<Lhs, _Extra...>&
+operator*=(std::vector<Lhs, _Extra...>&, Rhs);
+
 template <typename... Lhs, typename Rhs,
           enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
 std::tuple<Lhs...>&
-operator*=(std::tuple<Lhs...>&, const Rhs&);
+operator*=(std::tuple<Lhs...>&, Rhs);
+
+#if defined(CXX17)
+template <typename... Lhs, typename Rhs,
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
+std::variant<Lhs...>&
+operator*=(std::variant<Lhs...>&, Rhs);
+#endif
 
 //--------------------------------------------------------------------------------------//
 //
@@ -219,53 +304,75 @@ template <typename Tp, size_t N>
 std::array<Tp, N>&
 operator/=(std::array<Tp, N>&, const std::array<Tp, N>&);
 
-template <typename Lhs, size_t N, typename Rhs,
-          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
-std::array<Lhs, N>&
-operator/=(std::array<Lhs, N>&, const Rhs&);
-
 template <typename Lhs, typename Rhs>
 std::pair<Lhs, Rhs>&
 operator/=(std::pair<Lhs, Rhs>&, const std::pair<Lhs, Rhs>&);
-
-template <typename Lhs, typename Rhs, typename ArithT,
-          enable_if_t<std::is_arithmetic<decay_t<ArithT>>::value, int> = 0>
-std::pair<Lhs, Rhs>&
-operator/=(std::pair<Lhs, Rhs>&, const ArithT&);
 
 template <typename Tp, typename... _Extra>
 std::vector<Tp, _Extra...>&
 operator/=(std::vector<Tp, _Extra...>&, const std::vector<Tp, _Extra...>&);
 
-template <typename Lhs, typename Rhs, typename... _Extra,
-          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
-std::vector<Lhs, _Extra...>&
-operator/=(std::vector<Lhs, _Extra...>&, const Rhs&);
-
 template <typename... Types>
 std::tuple<Types...>&
 operator/=(std::tuple<Types...>&, const std::tuple<Types...>&);
 
+#if defined(CXX17)
+template <typename... Types>
+std::variant<Types...>&
+operator/=(std::variant<Types...>&, const std::variant<Types...>&);
+#endif
+
+//--------------------------------------------------------------------------------------//
+//
+//      operator /= (arithmetic)
+//
+//--------------------------------------------------------------------------------------//
+
+template <typename Lhs, size_t N, typename Rhs,
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
+std::array<Lhs, N>&
+operator/=(std::array<Lhs, N>&, Rhs);
+
+template <typename Lhs, typename Rhs, typename ArithT,
+          enable_if_t<std::is_arithmetic<decay_t<ArithT>>::value, int> = 0>
+std::pair<Lhs, Rhs>&
+operator/=(std::pair<Lhs, Rhs>&, ArithT);
+
+template <typename Lhs, typename Rhs, typename... _Extra,
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
+std::vector<Lhs, _Extra...>&
+operator/=(std::vector<Lhs, _Extra...>&, Rhs);
+
 template <typename... Lhs, typename Rhs,
           enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
 std::tuple<Lhs...>&
-operator/=(std::tuple<Lhs...>&, const Rhs&);
+operator/=(std::tuple<Lhs...>&, Rhs);
+
+#if defined(CXX17)
+template <typename... Lhs, typename Rhs,
+          enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
+std::variant<Lhs...>&
+operator/=(std::variant<Lhs...>&, Rhs);
+#endif
 
 //--------------------------------------------------------------------------------------//
 //
-//      operator * (fundamental)
-//      operator / (fundamental)
+//      operator * (arithmetic)
+//      operator / (arithmetic)
 //
 //--------------------------------------------------------------------------------------//
 
 template <typename Lhs, typename Rhs,
           enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
-Lhs operator*(Lhs, const Rhs&);
+Lhs operator*(Lhs, Rhs);
 
 template <typename Lhs, typename Rhs,
           enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
-Lhs
-operator/(Lhs, const Rhs&);
+Lhs operator/(Lhs, Rhs);
+
+template <typename Rhs, enable_if_t<std::is_arithmetic<decay_t<Rhs>>::value, int> = 0>
+std::chrono::system_clock::time_point&
+operator/=(std::chrono::system_clock::time_point& lhs, Rhs);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -277,10 +384,6 @@ template <typename Tp, size_t N>
 std::array<Tp, N>
 operator+(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs);
 
-template <typename... Types>
-std::tuple<Types...>
-operator+(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs);
-
 template <typename Lhs, typename Rhs>
 std::pair<Lhs, Rhs>
 operator+(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs);
@@ -288,6 +391,16 @@ operator+(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs);
 template <typename Tp, typename... Extra>
 std::vector<Tp, Extra...>
 operator+(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs);
+
+template <typename... Types>
+std::tuple<Types...>
+operator+(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs);
+
+#if defined(CXX17)
+template <typename... Types>
+std::variant<Types...>
+operator+(std::variant<Types...> lhs, const std::variant<Types...>& rhs);
+#endif
 
 //--------------------------------------------------------------------------------------//
 //
@@ -299,10 +412,6 @@ template <typename Tp, size_t N>
 std::array<Tp, N>
 operator-(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs);
 
-template <typename... Types>
-std::tuple<Types...>
-operator-(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs);
-
 template <typename Lhs, typename Rhs>
 std::pair<Lhs, Rhs>
 operator-(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs);
@@ -310,6 +419,16 @@ operator-(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs);
 template <typename Tp, typename... Extra>
 std::vector<Tp, Extra...>
 operator-(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs);
+
+template <typename... Types>
+std::tuple<Types...>
+operator-(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs);
+
+#if defined(CXX17)
+template <typename... Types>
+std::variant<Types...>
+operator-(std::variant<Types...> lhs, const std::variant<Types...>& rhs);
+#endif
 
 //--------------------------------------------------------------------------------------//
 //
@@ -320,15 +439,21 @@ operator-(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs);
 template <typename Tp, size_t N>
 std::array<Tp, N> operator*(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs);
 
-template <typename... Types>
-std::tuple<Types...> operator*(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs);
-
 template <typename Lhs, typename Rhs>
 std::pair<Lhs, Rhs> operator*(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs);
 
 template <typename Tp, typename... Extra>
 std::vector<Tp, Extra...> operator*(std::vector<Tp, Extra...>        lhs,
                                     const std::vector<Tp, Extra...>& rhs);
+
+template <typename... Types>
+std::tuple<Types...> operator*(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs);
+
+#if defined(CXX17)
+template <typename... Types>
+std::variant<Types...> operator*(std::variant<Types...>        lhs,
+                                 const std::variant<Types...>& rhs);
+#endif
 
 //--------------------------------------------------------------------------------------//
 //
@@ -340,10 +465,6 @@ template <typename Tp, size_t N>
 std::array<Tp, N>
 operator/(std::array<Tp, N> lhs, const std::array<Tp, N>& rhs);
 
-template <typename... Types>
-std::tuple<Types...>
-operator/(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs);
-
 template <typename Lhs, typename Rhs>
 std::pair<Lhs, Rhs>
 operator/(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs);
@@ -351,6 +472,16 @@ operator/(std::pair<Lhs, Rhs> lhs, const std::pair<Lhs, Rhs>& rhs);
 template <typename Tp, typename... Extra>
 std::vector<Tp, Extra...>
 operator/(std::vector<Tp, Extra...> lhs, const std::vector<Tp, Extra...>& rhs);
+
+template <typename... Types>
+std::tuple<Types...>
+operator/(std::tuple<Types...> lhs, const std::tuple<Types...>& rhs);
+
+#if defined(CXX17)
+template <typename... Types>
+std::variant<Types...>
+operator/(std::variant<Types...> lhs, const std::variant<Types...>& rhs);
+#endif
 
 }  // namespace stl
 }  // namespace tim
