@@ -73,14 +73,6 @@ template <typename T, typename U>
 std::ostream&
 operator<<(std::ostream&, const std::pair<T, U>&);
 
-template <typename... Types>
-std::ostream&
-operator<<(std::ostream&, const std::tuple<Types...>&);
-
-template <typename... Types>
-std::ostream&
-operator<<(std::ostream&, type_list<Types...>);
-
 template <typename Tp, typename... Extra>
 std::ostream&
 operator<<(std::ostream&, const std::vector<Tp, Extra...>&);
@@ -89,6 +81,14 @@ template <typename Tp, size_t N>
 std::ostream&
 operator<<(std::ostream&, const std::array<Tp, N>&);
 
+template <typename... Types>
+std::ostream&
+operator<<(std::ostream&, const std::tuple<Types...>&);
+
+template <typename... Types>
+std::ostream&
+operator<<(std::ostream&, type_list<Types...>);
+
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename U>
@@ -96,24 +96,6 @@ std::ostream&
 operator<<(std::ostream& os, const std::pair<T, U>& p)
 {
     os << "(" << p.first << "," << p.second << ")";
-    return os;
-}
-
-template <typename... Types>
-std::ostream&
-operator<<(std::ostream& os, const std::tuple<Types...>& p)
-{
-    constexpr size_t N = sizeof...(Types);
-    tuple_printer(p, os, make_index_sequence<N>{});
-    return os;
-}
-
-template <typename... Types>
-std::ostream&
-operator<<(std::ostream& os, type_list<Types...> p)
-{
-    constexpr size_t N = sizeof...(Types);
-    type_list_printer(p, os, make_index_sequence<N>{});
     return os;
 }
 
@@ -136,6 +118,24 @@ operator<<(std::ostream& os, const std::array<Tp, N>& p)
     for(size_t i = 0; i < p.size(); ++i)
         os << p.at(i) << ((i + 1 < p.size()) ? "," : "");
     os << ")";
+    return os;
+}
+
+template <typename... Types>
+std::ostream&
+operator<<(std::ostream& os, const std::tuple<Types...>& p)
+{
+    constexpr size_t N = sizeof...(Types);
+    tuple_printer(p, os, make_index_sequence<N>{});
+    return os;
+}
+
+template <typename... Types>
+std::ostream&
+operator<<(std::ostream& os, type_list<Types...> p)
+{
+    constexpr size_t N = sizeof...(Types);
+    type_list_printer(p, os, make_index_sequence<N>{});
     return os;
 }
 
@@ -176,13 +176,13 @@ type_list_printer(type_list<Types...>, std::ostream& os, index_sequence<Idx...>)
 //--------------------------------------------------------------------------------------//
 
 #if defined(CXX17)
-template <typename... Types>
+template <typename Tp, typename... Types>
 std::ostream&
-operator<<(std::ostream&, const std::variant<Types...>&);
+operator<<(std::ostream&, const std::variant<Tp, Types...>&);
 
-template <typename... Types>
+template <typename Tp, typename... Types>
 std::ostream&
-operator<<(std::ostream& _os, const std::variant<Types...>& _val)
+operator<<(std::ostream& _os, const std::variant<Tp, Types...>& _val)
 {
     auto _func = [&_os](auto&& _v) { _os << _v; };
     std::visit(_func, _val);
