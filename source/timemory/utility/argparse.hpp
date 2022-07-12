@@ -463,8 +463,13 @@ struct argument_parser
                 std::conditional_t<concepts::is_string_type<T>::value, std::string, T>;
             m_default_tidx = std::type_index{ typeid(decay_t<type>) };
             m_callback     = [&](void*& obj) { obj = (void*) &val; };
-            if(m_actions.empty())
-                m_actions.emplace_back([this](argument_parser&) { get<T>(); });
+            if(!m_names.empty())
+            {
+                auto _name = m_names.front();
+                if(m_actions.empty())
+                    m_actions.emplace_back(
+                        [_name](argument_parser& _p) { _p.get<T>(_name); });
+            }
             return *this;
         }
 
