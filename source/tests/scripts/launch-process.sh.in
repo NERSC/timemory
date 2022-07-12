@@ -6,7 +6,7 @@ source $(dirname $(basename ${BASH_SOURCE[0]}))/common.sh
 
 TEST_NAME=$(basename ${BASH_SOURCE[0]})
 
-export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/dynamic/timemory-@TEST_NAME@-output
+export TIMEMORY_OUTPUT_PATH=@CMAKE_CURRENT_BINARY_DIR@/dynamic/timemory-dynamic-instrument-tests-output
 export TIMEMORY_OUTPUT_PREFIX="launch-process"
 export TIMEMORY_TEXT_OUTPUT=ON
 export TIMEMORY_FILE_OUTPUT=ON

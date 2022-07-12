@@ -24,6 +24,7 @@
 //
 
 #include "timemory/components/papi/components.hpp"
+#include "timemory/components/user_bundle/types.hpp"
 #include "timemory/library.h"
 #include "timemory/timemory.hpp"
 
@@ -82,9 +83,12 @@ timemory_register_custom_dynamic_instr()
     using tim::operation::init_mode;
     using tim::operation::mode_constant;
 
+    tim::settings::papi_multiplexing() = true;
+
     // insert monotonic clock component into structure
     // used by timemory-run in --mode=trace
-    init<user_trace_bundle>{ mode_constant<init_mode::global>{} };
+    if(!init<user_trace_bundle>{}(mode_constant<init_mode::global>{}))
+        user_trace_bundle::global_init(false);
     user_trace_bundle::configure<monotonic_clock>();
 
     // insert monotonic clock component into structure
