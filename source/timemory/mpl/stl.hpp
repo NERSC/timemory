@@ -30,14 +30,21 @@
 
 #pragma once
 
+#include "timemory/macros/language.hpp"
 #include "timemory/math/stl.hpp"
+#include "timemory/utility/demangle.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/type_list.hpp"
 
 #include <array>
 #include <ostream>
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#if defined(CXX17)
+#    include <variant>
+#endif
 
 namespace tim
 {
@@ -50,6 +57,11 @@ namespace ostream
 template <template <typename...> class Tuple, typename... Types, size_t... Idx>
 void
 tuple_printer(const Tuple<Types...>& obj, std::ostream& os, index_sequence<Idx...>);
+
+template <typename... Types, size_t... Idx>
+void
+type_list_printer(const type_list<Types...>& obj, std::ostream& os,
+                  index_sequence<Idx...>);
 
 //--------------------------------------------------------------------------------------//
 //
@@ -64,6 +76,10 @@ operator<<(std::ostream&, const std::pair<T, U>&);
 template <typename... Types>
 std::ostream&
 operator<<(std::ostream&, const std::tuple<Types...>&);
+
+template <typename... Types>
+std::ostream&
+operator<<(std::ostream&, type_list<Types...>);
 
 template <typename Tp, typename... Extra>
 std::ostream&
@@ -89,6 +105,15 @@ operator<<(std::ostream& os, const std::tuple<Types...>& p)
 {
     constexpr size_t N = sizeof...(Types);
     tuple_printer(p, os, make_index_sequence<N>{});
+    return os;
+}
+
+template <typename... Types>
+std::ostream&
+operator<<(std::ostream& os, type_list<Types...> p)
+{
+    constexpr size_t N = sizeof...(Types);
+    type_list_printer(p, os, make_index_sequence<N>{});
     return os;
 }
 
@@ -130,6 +155,40 @@ tuple_printer(const Tuple<Types...>& obj, std::ostream& os, index_sequence<Idx..
     if(N > 0)
         os << ")";
 }
+
+template <typename... Types, size_t... Idx>
+void
+type_list_printer(type_list<Types...>, std::ostream& os, index_sequence<Idx...>)
+{
+    using namespace ::tim::stl::ostream;
+    constexpr size_t N = sizeof...(Types);
+
+    if(N > 0)
+        os << "(";
+    char delim[N];
+    TIMEMORY_FOLD_EXPRESSION(delim[Idx] = ',');
+    delim[N - 1] = '\0';
+    TIMEMORY_FOLD_EXPRESSION(os << try_demangle<Types>() << delim[Idx]);
+    if(N > 0)
+        os << ")";
+}
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(CXX17)
+template <typename... Types>
+std::ostream&
+operator<<(std::ostream&, const std::variant<Types...>&);
+
+template <typename... Types>
+std::ostream&
+operator<<(std::ostream& _os, const std::variant<Types...>& _val)
+{
+    auto _func = [&_os](auto&& _v) { _os << _v; };
+    std::visit(_func, _val);
+    return _os;
+}
+#endif
 
 }  // namespace ostream
 }  // namespace stl
