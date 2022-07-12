@@ -236,6 +236,12 @@ public:
     /// a reference is returned here so that it can be easily updated
     static std::string& description();
 
+    /// override to avoid caching in default implementation
+    static std::string get_label() { return label(); }
+
+    /// override to avoid caching in default implementation
+    static std::string get_description() { return description(); }
+
     using base_type::display_unit;
     using base_type::get_display_unit;
     using base_type::get_unit;
