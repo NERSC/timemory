@@ -603,6 +603,31 @@ struct component_type<std::tuple<>>
 
 //--------------------------------------------------------------------------------------//
 
+template <typename Tp>
+struct unqualified_type
+{
+    using type = std::remove_reference_t<std::remove_cv_t<std::decay_t<Tp>>>;
+};
+
+template <typename Tp>
+using unqualified_type_t = typename unqualified_type<Tp>::type;
+
+template <typename LhsT, typename RhsT>
+struct is_unqualified_same
+{
+    using type =
+        typename std::is_same<unqualified_type_t<LhsT>, unqualified_type_t<RhsT>>::type;
+    using value_type = typename std::is_same<unqualified_type_t<LhsT>,
+                                             unqualified_type_t<RhsT>>::value_type;
+    static constexpr auto value =
+        std::is_same<unqualified_type_t<LhsT>, unqualified_type_t<RhsT>>::value;
+
+    constexpr      operator bool() const { return value; }
+    constexpr auto operator()() const { return value; }
+};
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace concepts
 
 template <typename T>
