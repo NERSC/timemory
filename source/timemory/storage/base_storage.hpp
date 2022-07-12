@@ -52,6 +52,7 @@ public:
 
 public:
     storage(bool _is_master, int64_t _instance_id, std::string _label);
+    storage(standalone_storage, int64_t _instance_id, std::string _label);
     virtual ~storage();
 
     explicit storage(const storage&) = delete;
@@ -59,6 +60,7 @@ public:
     storage& operator=(const storage&) = delete;
     storage& operator=(storage&& rhs) = delete;
 
+    virtual void write(std::string = {}) {}  // NOLINT
     virtual void print() {}
     virtual void cleanup() {}
     virtual void stack_clear() {}
@@ -105,6 +107,7 @@ protected:
     bool                      m_thread_init  = false;                     // NOLINT
     bool                      m_data_init    = false;                     // NOLINT
     bool                      m_is_master    = false;                     // NOLINT
+    bool                      m_standalone   = false;                     // NOLINT
     bool                      m_node_init    = dmp::is_initialized();     // NOLINT
     int32_t                   m_node_rank    = dmp::rank();               // NOLINT
     int32_t                   m_node_size    = dmp::size();               // NOLINT

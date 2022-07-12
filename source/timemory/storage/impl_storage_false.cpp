@@ -74,7 +74,19 @@ storage<Type, false>::storage()
         m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
     get_shared_manager();
     component::state<Type>::has_storage() = true;
-    // m_printer = std::make_shared<printer_t>(Type::get_label(), this);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+storage<Type, false>::storage(standalone_storage, int64_t _instance_id,
+                              std::string _label)
+: base_type(standalone_storage{}, _instance_id, std::move(_label))
+{
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "constructing %s",
+                                    m_label.c_str());
+    TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
+        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
 }
 //
 //--------------------------------------------------------------------------------------//

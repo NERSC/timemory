@@ -112,6 +112,8 @@ public:
     storage();
     ~storage() override;
 
+    storage(standalone_storage, int64_t _instance_id, std::string _label);
+
     explicit storage(const this_type&) = delete;
     explicit storage(this_type&&)      = delete;
     this_type& operator=(const this_type&) = delete;

@@ -47,6 +47,9 @@ class manager;
 //
 struct settings;
 //
+struct standalone_storage
+{};
+//
 //--------------------------------------------------------------------------------------//
 //
 //                              storage

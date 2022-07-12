@@ -102,6 +102,38 @@ storage<Type, true>::storage()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
+storage<Type, true>::storage(standalone_storage, int64_t _instance_id, std::string _label)
+: base_type(standalone_storage{}, _instance_id, std::move(_label))
+{
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "constructing %s",
+                                    m_label.c_str());
+    TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
+        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
+
+    // make sure all worker instances have a copy of the hash id and aliases
+    auto _master = singleton_t::master_instance();
+    if(_master)
+    {
+        hash_map_t       _hash_ids     = *_master->get_hash_ids();
+        hash_alias_map_t _hash_aliases = *_master->get_hash_aliases();
+        for(const auto& itr : _hash_ids)
+        {
+            if(m_hash_ids->find(itr.first) == m_hash_ids->end())
+                m_hash_ids->insert({ itr.first, itr.second });
+        }
+        for(const auto& itr : _hash_aliases)
+        {
+            if(m_hash_aliases->find(itr.first) == m_hash_aliases->end())
+                m_hash_aliases->insert({ itr.first, itr.second });
+        }
+    }
+
+    m_printer = std::make_shared<printer_t>(m_label, this, m_settings);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
 storage<Type, true>::~storage()
 {
     component::state<Type>::has_storage() = false;
@@ -678,9 +710,36 @@ storage<Type, true>::dmp_get(Tp& _ret)
 //
 template <typename Type>
 void
+storage<Type, true>::write(std::string _filename)
+{
+    if(_filename.empty())
+    {
+        if(!m_printer)
+            m_printer = std::make_shared<printer_t>(
+                (m_standalone) ? m_label : Type::get_label(), this, m_settings);
+        m_printer->execute();
+    }
+    else
+    {
+        auto _printer = printer_t{ _filename, this, m_settings };
+        _printer.execute();
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+void
 storage<Type, true>::internal_print()
 {
     base::storage::stop_profiler();
+
+    if(m_standalone)
+    {
+        if(trait::runtime_enabled<Type>::get())
+            write(m_label);
+        return;
+    }
 
     if(!m_initialized && !m_finalized)
         return;
