@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/mpl/stl.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
@@ -185,6 +186,7 @@ struct echo_measurement<Tp, true> : public common_utils
                                                    const attributes_t& attributes,
                                                    const Vt&           value)
     {
+        using namespace tim::stl::ostream;
         os << "<DartMeasurement";
         os << " " << attribute_string("type", "numeric/double");
         for(const auto& itr : attributes)

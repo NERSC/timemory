@@ -33,6 +33,7 @@
 #    include "timemory/hash/types.hpp"
 #    include "timemory/manager/manager.hpp"
 #    include "timemory/storage/base_storage.hpp"
+#    include "timemory/storage/types.hpp"
 
 #    include <atomic>
 #    include <cstdint>
@@ -78,6 +79,22 @@ storage::storage(bool _is_master, int64_t _instance_id, std::string _label)
     TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "%s: %i (%s)",
                                     "base::storage instance created", (int) m_instance_id,
                                     m_label.c_str());
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STORAGE_INLINE
+storage::storage(standalone_storage, int64_t _instance_id, std::string _label)
+: m_standalone{ true }
+, m_instance_id(_instance_id)
+, m_label(std::move(_label))
+, m_manager(::tim::manager::instance())
+, m_settings(::tim::settings::shared_instance())
+{
+    TIMEMORY_CONDITIONAL_PRINT_HERE(
+        m_settings->get_debug(), "%s: %i (%s)",
+        "base::storage instance created (standalone instance)", (int) m_instance_id,
+        m_label.c_str());
 }
 //
 //--------------------------------------------------------------------------------------//

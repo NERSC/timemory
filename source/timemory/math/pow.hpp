@@ -45,6 +45,14 @@ pow(Tp _val, double _m, type_list<>) -> decltype(std::pow(_val, _m), Tp{})
     return std::pow(_val, _m);
 }
 
+template <typename... Tp>
+std::variant<Tp...>
+pow(std::variant<Tp...> _val, double _m, type_list<>)
+{
+    std::visit([_m](auto& _lhs_v) { _lhs_v = pow(_lhs_v, _m); }, _val);
+    return _val;
+}
+
 template <typename Tp, typename Vp = typename Tp::value_type>
 auto
 pow(Tp _val, double _m, type_list<>, ...) -> decltype(std::begin(_val), Tp{})

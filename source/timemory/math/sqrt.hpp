@@ -45,6 +45,14 @@ sqrt(Tp _val, type_list<>) -> decltype(std::sqrt(_val), Tp{})
     return std::sqrt(_val);
 }
 
+template <typename... Tp>
+std::variant<Tp...>
+sqrt(std::variant<Tp...> _val, type_list<>)
+{
+    std::visit([](auto& _lhs_v) { _lhs_v = sqrt(_lhs_v); }, _val);
+    return _val;
+}
+
 template <typename Tp, typename Vp = typename Tp::value_type>
 auto
 sqrt(Tp _val, type_list<>, ...) -> decltype(std::begin(_val), Tp{})
@@ -82,6 +90,5 @@ sqrt(Tp _val)
 {
     return ::tim::math::sqrt(_val, get_index_sequence<Tp>::value);
 }
-
 }  // namespace math
 }  // namespace tim

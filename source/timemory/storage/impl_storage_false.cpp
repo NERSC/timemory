@@ -80,6 +80,18 @@ storage<Type, false>::storage()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
+storage<Type, false>::storage(standalone_storage, int64_t _id, const std::string& _label)
+: base_type(standalone_storage{}, _id, _label.empty() ? demangle<Type>() : _label)
+{
+    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "constructing %s",
+                                    m_label.c_str());
+    TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
+        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
 storage<Type, false>::~storage()
 {
     component::state<Type>::has_storage() = false;

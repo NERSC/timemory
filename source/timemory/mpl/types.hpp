@@ -44,6 +44,7 @@
 #include <iostream>
 #include <string>
 #include <type_traits>
+#include <variant>
 #include <vector>
 
 namespace tim
@@ -857,6 +858,14 @@ struct get_index_sequence<std::tuple<Types...>>
     static constexpr auto size  = std::tuple_size<std::tuple<Types...>>::value;
     static constexpr auto value = make_index_sequence<size>{};
     using type                  = decltype(make_index_sequence<size>{});
+};
+
+template <typename... Types>
+struct get_index_sequence<std::variant<Types...>>
+{
+    static constexpr auto size  = 0;
+    static constexpr auto value = type_list<>{};
+    using type                  = type_list<>;
 };
 
 template <template <typename...> class Tuple, typename... Types>

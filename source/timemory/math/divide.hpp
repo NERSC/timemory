@@ -46,6 +46,28 @@ divide(Tp& _lhs, Up _rhs, type_list<>, ...) -> decltype(_lhs /= _rhs, void())
     _lhs /= _rhs;
 }
 
+template <typename... Tp, typename Up>
+TIMEMORY_INLINE auto
+divide(std::variant<Tp...>& _lhs, const Up& _rhs, type_list<>, ...)
+{
+    using value_t = std::remove_cv_t<std::remove_reference_t<decay_t<Up>>>;
+    if constexpr(std::is_same<value_t, std::variant<Tp...>>::value)
+    {
+        if(_lhs.index() != _rhs.index())
+            _lhs = _rhs;
+        else
+            std::visit([](auto& _lhs_v, auto _rhs_v) { divide(_lhs_v, _rhs_v); }, _lhs,
+                       _rhs);
+    }
+    else
+    {
+        static_assert(is_one_of<value_t, type_list<Tp...>>::value,
+                      "Error! rhs type is not one of variants");
+        std::visit([&_rhs](auto& _lhs_v) { divide(_lhs_v, _rhs); }, _lhs);
+    }
+    return _lhs;
+}
+
 template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
           enable_if_t<!std::is_arithmetic<Up>::value> = 0>
 auto

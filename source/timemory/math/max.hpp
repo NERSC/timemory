@@ -46,6 +46,34 @@ max(Tp _lhs, Tp _rhs, type_list<>)
     return (_rhs < _lhs) ? _lhs : _rhs;
 }
 
+template <typename... Tp, typename Up>
+TIMEMORY_INLINE std::variant<Tp...>
+                max(std::variant<Tp...> _lhs, Up _rhs, type_list<>)
+{
+    using value_t = std::remove_cv_t<std::remove_reference_t<decay_t<Up>>>;
+    if constexpr(std::is_same<value_t, std::variant<Tp...>>::value)
+    {
+        std::visit(
+            [](auto& _lhs_v, auto _rhs_v) {
+                using lhs_type =
+                    std::remove_cv_t<std::remove_reference_t<decay_t<decltype(_lhs_v)>>>;
+                _lhs_v = max(_lhs_v, static_cast<lhs_type>(_rhs_v));
+            },
+            _lhs, _rhs);
+    }
+    else
+    {
+        std::visit(
+            [&_rhs](auto& _lhs_v) {
+                using lhs_type =
+                    std::remove_cv_t<std::remove_reference_t<decay_t<decltype(_lhs_v)>>>;
+                _lhs_v = max(_lhs_v, static_cast<lhs_type>(_rhs));
+            },
+            _lhs);
+    }
+    return _lhs;
+}
+
 template <typename Tp, typename Vp = typename Tp::value_type>
 auto
 max(const Tp& _lhs, const Tp& _rhs, type_list<>, ...) -> decltype(std::begin(_lhs), Tp{})
@@ -112,7 +140,7 @@ Tp
 max(const Tp& _lhs, const Tp& _rhs)
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
-    return max(_lhs, _rhs, get_index_sequence<Tp>::value);
+    return math::max(_lhs, _rhs, get_index_sequence<Tp>::value);
 }
 }  // namespace math
 }  // namespace tim

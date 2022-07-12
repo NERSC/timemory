@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/macros/language.hpp"
 #include "timemory/math/stl.hpp"
 #include "timemory/utility/macros.hpp"
 
@@ -38,6 +39,10 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+
+#if defined(CXX17)
+#    include <variant>
+#endif
 
 namespace tim
 {
@@ -72,6 +77,12 @@ operator<<(std::ostream&, const std::vector<Tp, Extra...>&);
 template <typename Tp, size_t N>
 std::ostream&
 operator<<(std::ostream&, const std::array<Tp, N>&);
+
+#if defined(CXX17)
+template <typename... Types>
+std::ostream&
+operator<<(std::ostream&, const std::variant<Types...>&);
+#endif
 
 //--------------------------------------------------------------------------------------//
 
@@ -131,6 +142,16 @@ tuple_printer(const Tuple<Types...>& obj, std::ostream& os, index_sequence<Idx..
         os << ")";
 }
 
+#if defined(CXX17)
+template <typename... Types>
+std::ostream&
+operator<<(std::ostream& _os, const std::variant<Types...>& _p)
+{
+    auto _op = [&_os](const auto& _v) { _os << _v; };
+    std::visit(_op, _p);
+    return _os;
+}
+#endif
 }  // namespace ostream
 }  // namespace stl
 }  // namespace tim

@@ -49,6 +49,34 @@ percent_diff(Tp _lhs, Tp _rhs, type_list<>, ...)
     return (_pdiff < _zero) ? _zero : _pdiff;
 }
 
+template <typename... Tp, typename Up>
+TIMEMORY_INLINE std::variant<Tp...>
+                percent_diff(std::variant<Tp...> _lhs, Up _rhs, type_list<>, ...)
+{
+    using value_t = std::remove_cv_t<std::remove_reference_t<decay_t<Up>>>;
+    if constexpr(std::is_same<value_t, std::variant<Tp...>>::value)
+    {
+        std::visit(
+            [](auto& _lhs_v, auto _rhs_v) {
+                using lhs_type =
+                    std::remove_cv_t<std::remove_reference_t<decay_t<decltype(_lhs_v)>>>;
+                _lhs_v = percent_diff(_lhs_v, static_cast<lhs_type>(_rhs_v));
+            },
+            _lhs, _rhs);
+    }
+    else
+    {
+        std::visit(
+            [&_rhs](auto& _lhs_v) {
+                using lhs_type =
+                    std::remove_cv_t<std::remove_reference_t<decay_t<decltype(_lhs_v)>>>;
+                _lhs_v = percent_diff(_lhs_v, static_cast<lhs_type>(_rhs));
+            },
+            _lhs);
+    }
+    return _lhs;
+}
+
 template <typename Tp,
           enable_if_t<!std::is_arithmetic<Tp>::value && std::is_class<Tp>::value> = 0>
 TIMEMORY_INLINE auto

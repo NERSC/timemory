@@ -58,6 +58,12 @@ public:
     friend struct impl::storage_deleter<this_type>;
     friend class manager;
 
+    /// construct the storage instance
+    /*template <typename... Args>
+    storage(Args&&... _args)
+    : base_type{ std::forward<Args>(_args)... }
+    {}*/
+    using base_type::base_type;
     /// get the pointer to the storage on the current thread. Will initialize instance if
     /// one does not exist.
     using base_type::instance;

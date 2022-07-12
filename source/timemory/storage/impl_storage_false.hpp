@@ -110,6 +110,7 @@ private:
 
 public:
     storage();
+    storage(standalone_storage, int64_t _idx, const std::string& = {});
     ~storage() override;
 
     explicit storage(const this_type&) = delete;

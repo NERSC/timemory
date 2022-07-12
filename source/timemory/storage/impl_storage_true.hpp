@@ -129,6 +129,7 @@ private:
 public:
 public:
     storage();
+    storage(standalone_storage, int64_t _idx, const std::string& = {});
     ~storage() override;
 
     storage(const this_type&) = delete;
@@ -140,6 +141,7 @@ public:
 public:
     void get_shared_manager();
 
+    void write(const std::string&) final;
     void print() final { internal_print(); }
     void cleanup() final { operation::cleanup<Type>{}; }
     void disable() final { trait::runtime_enabled<component_type>::set(false); }

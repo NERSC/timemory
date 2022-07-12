@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/mpl/stl.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/utility/demangle.hpp"
@@ -97,6 +98,8 @@ struct stream_entry
     template <typename Tp>
     void construct(const Tp& val)
     {
+        using namespace tim::stl::ostream;
+
         stringstream_t ss;
         ss.setf(m_format);
         ss << std::setprecision(m_precision) << val;

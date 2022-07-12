@@ -42,13 +42,11 @@ namespace operation
 {
 //
 //--------------------------------------------------------------------------------------//
-//
 ///
 /// \struct tim::operation::generic_operator
 /// \brief This operation class is similar to pointer_operator but can handle non-pointer
 /// types
 ///
-//
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Op, typename Tag>
@@ -56,11 +54,44 @@ struct generic_operator
 {
     using type = std::remove_pointer_t<Tp>;
 
-    TIMEMORY_DELETED_OBJECT(generic_operator)
+    TIMEMORY_DEFAULT_OBJECT(generic_operator)
+
+    //----------------------------------------------------------------------------------//
+    //      Available
+    //----------------------------------------------------------------------------------//
+    // if the type is not available, never do anything
+    template <typename... Args, typename Up = Tp,
+              enable_if_t<trait::is_available<Up>::value, int> = 0>
+    TIMEMORY_INLINE explicit generic_operator(Args&&... args)
+    {
+        (*this)(std::forward<Args>(args)...);
+    }
+
+    // if the type is not available, never do anything
+    template <typename... Args, typename Up = Tp,
+              enable_if_t<trait::is_available<Up>::value, int> = 0>
+    TIMEMORY_INLINE auto operator()(Args&&... args) const
+    {
+        return impl(std::forward<Args>(args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //      Not Available
+    //----------------------------------------------------------------------------------//
+    // if the type is not available, never do anything
+    template <typename... Args, typename Up = Tp,
+              enable_if_t<!trait::is_available<Up>::value, int> = 0>
+    TIMEMORY_INLINE explicit generic_operator(Args&&...)
+    {}
+
+    template <typename... Args, typename Up = Tp,
+              enable_if_t<!trait::is_available<Up>::value, int> = 0>
+    TIMEMORY_INLINE auto operator()(Args&&...) const
+    {}
 
 private:
     template <typename Up>
-    static bool check()
+    static inline bool check()
     {
         using U = std::decay_t<std::remove_pointer_t<Up>>;
         static_assert(std::is_same<U, type>::value, "Error! Up != type");
@@ -87,7 +118,7 @@ private:
     }
 
     template <typename Up>
-    static bool is_invalid(Up& obj)
+    static inline bool is_invalid(Up& obj)
     {
         // use a type-list for checking multiple types
         using passthrough_t =
@@ -103,11 +134,11 @@ private:
     //      Pointers
     //
     //----------------------------------------------------------------------------------//
-public:
+
     template <typename Up, typename... Args, typename Rp = type,
               enable_if_t<trait::is_available<Rp>::value, int> = 0,
               enable_if_t<std::is_pointer<Up>::value, int>     = 0>
-    TIMEMORY_INLINE explicit generic_operator(Up obj, Args&&... args)
+    static inline auto impl(Up obj, Args&&... args)
     {
         // rely on compiler to optimize this away if supports_runtime_checks if false
         if(!check<Up>())
@@ -115,13 +146,13 @@ public:
 
         // check the component is valid before applying
         if(obj && !is_invalid(*obj))
-            sfinae(obj, 0, 0, 0, std::forward<Args>(args)...);
+            sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args, typename Rp = type,
               enable_if_t<trait::is_available<Rp>::value, int> = 0,
               enable_if_t<std::is_pointer<Up>::value, int>     = 0>
-    TIMEMORY_INLINE explicit generic_operator(Up obj, Up rhs, Args&&... args)
+    static inline auto impl(Up obj, Up rhs, Args&&... args)
     {
         // rely on compiler to optimize this away if supports_runtime_checks if false
         if(!check<Up>())
@@ -129,63 +160,77 @@ public:
 
         // check the components are valid before applying
         if(obj && rhs && !is_invalid(*obj) && !is_invalid(*rhs))
-            sfinae(obj, rhs, 0, 0, 0, std::forward<Args>(args)...);
+            sfinae(obj, rhs, 0, 0, 0, 0, std::forward<Args>(args)...);
     }
 
     //----------------------------------------------------------------------------------//
-private:
-    template <typename Up, typename... Args>
-    TIMEMORY_INLINE auto pointer_sfinae(Up obj, int, int, int, Args&&... args)
-        -> decltype(Op(*obj, std::forward<Args>(args)...), void())
-    {
-        Op{ *obj, std::forward<Args>(args)... };
-    }
 
     template <typename Up, typename... Args,
               enable_if_t<std::is_default_constructible<Tp>::value> = 0>
-    TIMEMORY_INLINE auto pointer_sfinae(Up obj, int, int, long, Args&&... args)
-        -> decltype(std::declval<Op>()(*obj, std::forward<Args>(args)...), void())
+    static inline auto pointer_sfinae(Up obj, int, int, int, int, Args&&... args)
+        -> decltype(Op{}(*obj, std::forward<Args>(args)...))
     {
-        Op{}(*obj, std::forward<Args>(args)...);
+        return Op{}(*obj, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    TIMEMORY_INLINE auto pointer_sfinae(Up obj, int, long, long, Args&&...)
-        -> decltype(Op{ *obj }, void())
+    static inline auto pointer_sfinae(Up obj, int, int, int, long, Args&&... args)
+        -> decltype(Op{ *obj, std::forward<Args>(args)... })
     {
-        Op{ *obj };
+        return Op{ *obj, std::forward<Args>(args)... };
     }
 
     template <typename Up, typename... Args>
-    TIMEMORY_INLINE void pointer_sfinae(Up, long, long, long, Args&&...)
+    static inline auto pointer_sfinae(Up obj, int, int, long, long, Args&&...)
+        -> decltype(Op{}(*obj))
+    {
+        return Op{}(*obj);
+    }
+
+    template <typename Up, typename... Args>
+    static inline auto pointer_sfinae(Up obj, int, long, long, long, Args&&...)
+        -> decltype(Op{ *obj })
+    {
+        return Op{ *obj };
+    }
+
+    template <typename Up, typename... Args>
+    static inline void pointer_sfinae(Up, long, long, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
 
-    template <typename Up, typename... Args>
-    TIMEMORY_INLINE auto pointer_sfinae(Up obj, Up rhs, int, int, int, Args&&... args)
-        -> decltype(Op(*obj, *rhs, std::forward<Args>(args)...), void())
-    {
-        Op{ *obj, *rhs, std::forward<Args>(args)... };
-    }
-
     template <typename Up, typename... Args,
               enable_if_t<std::is_default_constructible<Tp>::value> = 0>
-    TIMEMORY_INLINE auto pointer_sfinae(Up obj, Up rhs, int, int, long, Args&&... args)
-        -> decltype(std::declval<Op>()(*obj, *rhs, std::forward<Args>(args)...), void())
+    static inline auto pointer_sfinae(Up obj, Up rhs, int, int, int, int, Args&&... args)
+        -> decltype(Op{}(*obj, *rhs, std::forward<Args>(args)...))
     {
-        Op{}(*obj, *rhs, std::forward<Args>(args)...);
+        return Op{}(*obj, *rhs, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    TIMEMORY_INLINE auto pointer_sfinae(Up obj, Up rhs, int, long, long, Args&&...)
-        -> decltype(Op(*obj, *rhs), void())
+    static inline auto pointer_sfinae(Up obj, Up rhs, int, int, int, long, Args&&... args)
+        -> decltype(Op{ *obj, *rhs, std::forward<Args>(args)... })
     {
-        Op{ *obj, *rhs };
+        return Op{ *obj, *rhs, std::forward<Args>(args)... };
     }
 
     template <typename Up, typename... Args>
-    TIMEMORY_INLINE void pointer_sfinae(Up, Up, long, long, long, Args&&...)
+    static inline auto pointer_sfinae(Up obj, Up rhs, int, int, long, long, Args&&...)
+        -> decltype(Op{}(*obj, *rhs))
+    {
+        return Op{}(*obj, *rhs);
+    }
+
+    template <typename Up, typename... Args>
+    static inline auto pointer_sfinae(Up obj, Up rhs, int, long, long, long, Args&&...)
+        -> decltype(Op{ *obj, *rhs })
+    {
+        return Op{ *obj, *rhs };
+    }
+
+    template <typename Up, typename... Args>
+    static inline void pointer_sfinae(Up, Up, long, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
@@ -193,11 +238,11 @@ private:
     //      References
     //
     //----------------------------------------------------------------------------------//
-public:
+
     template <typename Up, typename... Args, typename Rp = Tp,
               enable_if_t<trait::is_available<Rp>::value, int> = 0,
               enable_if_t<!std::is_pointer<Up>::value, int>    = 0>
-    TIMEMORY_INLINE explicit generic_operator(Up& obj, Args&&... args)
+    static inline auto impl(Up& obj, Args&&... args)
     {
         // rely on compiler to optimize this away if supports_runtime_checks if false
         if(!check<Up>())
@@ -205,13 +250,13 @@ public:
 
         // check the component is valid before applying
         if(!is_invalid(obj))
-            sfinae(obj, 0, 0, 0, std::forward<Args>(args)...);
+            sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args, typename Rp = Tp,
               enable_if_t<trait::is_available<Rp>::value, int> = 0,
               enable_if_t<!std::is_pointer<Up>::value, int>    = 0>
-    TIMEMORY_INLINE explicit generic_operator(Up& obj, Up& rhs, Args&&... args)
+    static inline auto impl(Up& obj, Up& rhs, Args&&... args)
     {
         // rely on compiler to optimize this away if supports_runtime_checks if false
         if(!check<Up>())
@@ -219,93 +264,95 @@ public:
 
         // check the components are valid before applying
         if(!is_invalid(obj) && !is_invalid(rhs))
-            sfinae(obj, rhs, 0, 0, 0, std::forward<Args>(args)...);
+            sfinae(obj, rhs, 0, 0, 0, 0, std::forward<Args>(args)...);
     }
 
     //----------------------------------------------------------------------------------//
-private:
-    template <typename Up, typename... Args>
-    TIMEMORY_INLINE auto sfinae(Up& obj, int, int, int, Args&&... args)
-        -> decltype(Op(obj, std::forward<Args>(args)...), void())
-    {
-        Op{ obj, std::forward<Args>(args)... };
-    }
 
     template <typename Up, typename... Args,
               enable_if_t<std::is_default_constructible<Tp>::value> = 0>
-    TIMEMORY_INLINE auto sfinae(Up& obj, int, int, long, Args&&... args)
-        -> decltype(std::declval<Op>()(obj, std::forward<Args>(args)...), void())
+    static inline auto sfinae(Up& obj, int, int, int, int, Args&&... args)
+        -> decltype(Op{}(obj, std::forward<Args>(args)...))
     {
-        Op{}(obj, std::forward<Args>(args)...);
+        return Op{}(obj, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    TIMEMORY_INLINE auto sfinae(Up& obj, int, long, long, Args&&...)
-        -> decltype(Op{ obj }, void())
+    static inline auto sfinae(Up& obj, int, int, int, long, Args&&... args)
+        -> decltype(Op{ obj, std::forward<Args>(args)... })
     {
-        Op{ obj };
+        return Op{ obj, std::forward<Args>(args)... };
+    }
+
+    template <typename Up, typename... Args>
+    static inline auto sfinae(Up& obj, int, int, long, long, Args&&...)
+        -> decltype(Op{}(obj))
+    {
+        return Op{}(obj);
+    }
+
+    template <typename Up, typename... Args>
+    static inline auto sfinae(Up& obj, int, long, long, long, Args&&...)
+        -> decltype(Op{ obj })
+    {
+        return Op{ obj };
     }
 
     template <typename Up, typename... Args,
               enable_if_t<std::is_pointer<Up>::value, int> = 0>
-    TIMEMORY_INLINE void sfinae(Up& obj, long, long, long, Args&&... args)
+    static inline auto sfinae(Up& obj, long, long, long, long, Args&&... args)
     {
         // some operations want a raw pointer, e.g. generic_deleter
-        pointer_sfinae(obj, 0, 0, 0, std::forward<Args>(args)...);
+        return pointer_sfinae(obj, 0, 0, 0, 0, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args,
               enable_if_t<!std::is_pointer<Up>::value, int> = 0>
-    TIMEMORY_INLINE void sfinae(Up&, long, long, long, Args&&...)
+    static inline void sfinae(Up&, long, long, long, long, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
 
-    template <typename Up, typename... Args>
-    TIMEMORY_INLINE auto sfinae(Up& obj, Up& rhs, int, int, int, Args&&... args)
-        -> decltype(Op(obj, rhs, std::forward<Args>(args)...), void())
-    {
-        Op{ obj, rhs, std::forward<Args>(args)... };
-    }
-
     template <typename Up, typename... Args,
               enable_if_t<std::is_default_constructible<Tp>::value> = 0>
-    TIMEMORY_INLINE auto sfinae(Up& obj, Up& rhs, int, int, long, Args&&... args)
-        -> decltype(std::declval<Op>()(obj, rhs, std::forward<Args>(args)...), void())
+    static inline auto sfinae(Up& obj, Up& rhs, int, int, int, int, Args&&... args)
+        -> decltype(Op{}(obj, rhs, std::forward<Args>(args)...))
     {
-        Op{}(obj, rhs, std::forward<Args>(args)...);
+        return Op{}(obj, rhs, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args>
-    TIMEMORY_INLINE auto sfinae(Up& obj, Up& rhs, int, long, long, Args&&...)
-        -> decltype(Op(obj, rhs), void())
+    static inline auto sfinae(Up& obj, Up& rhs, int, int, int, long, Args&&... args)
+        -> decltype(Op{ obj, rhs, std::forward<Args>(args)... })
     {
-        Op{ obj, rhs };
+        return Op{ obj, rhs, std::forward<Args>(args)... };
+    }
+
+    template <typename Up, typename... Args>
+    static inline auto sfinae(Up& obj, Up& rhs, int, int, long, long, Args&&...)
+        -> decltype(Op{}(obj, rhs))
+    {
+        return Op{}(obj, rhs);
+    }
+
+    template <typename Up, typename... Args>
+    static inline auto sfinae(Up& obj, Up& rhs, int, long, long, long, Args&&...)
+        -> decltype(Op{ obj, rhs })
+    {
+        return Op{ obj, rhs };
     }
 
     template <typename Up, typename... Args,
               enable_if_t<std::is_pointer<Up>::value, int> = 0>
-    TIMEMORY_INLINE void sfinae(Up& obj, Up& rhs, long, long, long, Args&&... args)
+    static inline auto sfinae(Up& obj, Up& rhs, long, long, long, long, Args&&... args)
     {
         // some operations want a raw pointer, e.g. generic_deleter
-        pointer_sfinae(obj, rhs, 0, 0, 0, std::forward<Args>(args)...);
+        return pointer_sfinae(obj, rhs, 0, 0, 0, 0, std::forward<Args>(args)...);
     }
 
     template <typename Up, typename... Args,
               enable_if_t<!std::is_pointer<Up>::value, int> = 0>
-    TIMEMORY_INLINE void sfinae(Up&, Up&, long, long, long, Args&&...)
-    {}
-
-    //----------------------------------------------------------------------------------//
-    //
-    //      Not available
-    //
-    //----------------------------------------------------------------------------------//
-public:
-    // if the type is not available, never do anything
-    template <typename Up, typename... Args, typename Rp = Tp,
-              enable_if_t<!trait::is_available<Rp>::value, int> = 0>
-    TIMEMORY_INLINE generic_operator(Up&, Args&&...)
+    static inline void sfinae(Up&, Up&, long, long, long, long, Args&&...)
     {}
 };
 //

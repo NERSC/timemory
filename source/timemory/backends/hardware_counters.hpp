@@ -45,6 +45,9 @@ struct api
     {
         papi = 0,
         cupti,
+        rocm,
+        perf,
+        likwid,
         unknown
     };
 };

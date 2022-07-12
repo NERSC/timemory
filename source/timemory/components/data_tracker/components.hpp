@@ -236,6 +236,9 @@ public:
     /// a reference is returned here so that it can be easily updated
     static std::string& description();
 
+    static std::string get_label() { return label(); }
+    static std::string get_description() { return description(); }
+
     using base_type::display_unit;
     using base_type::get_display_unit;
     using base_type::get_unit;

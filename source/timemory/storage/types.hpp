@@ -118,6 +118,9 @@ class tgraph_node;
 template <typename T, typename AllocatorT = data::ring_buffer_allocator<tgraph_node<T>>>
 class graph;
 //
+struct standalone_storage
+{};
+//
 //--------------------------------------------------------------------------------------//
 //
 }  // namespace tim

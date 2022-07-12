@@ -32,6 +32,7 @@
 #include <cassert>
 #include <cmath>
 #include <limits>
+#include <type_traits>
 #include <utility>
 
 namespace tim
@@ -39,10 +40,30 @@ namespace tim
 namespace math
 {
 template <typename Tp, typename Up>
-void
+Tp&
 assign(Tp& _lhs, Up&& _rhs)
 {
-    _lhs = std::forward<Up>(_rhs);
+    return (_lhs = std::forward<Up>(_rhs));
+}
+
+template <typename Up, typename... Tp>
+std::variant<Tp...>&
+assign(std::variant<Tp...>& _lhs, Up&& _rhs)
+{
+    using value_t = std::remove_cv_t<std::remove_reference_t<decay_t<Up>>>;
+    if constexpr(std::is_same<value_t, std::variant<Tp...>>::value)
+    {
+        _lhs = _rhs;
+    }
+    else
+    {
+        static_assert(is_one_of<value_t, type_list<Tp...>>::value,
+                      "Error! rhs type is not one of variants");
+
+        std::visit([&_rhs](auto& _lhs_v) { assign(_lhs_v, std::forward<Up>(_rhs)); },
+                   _lhs);
+    }
+    return _lhs;
 }
 }  // namespace math
 }  // namespace tim

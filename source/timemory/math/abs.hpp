@@ -46,6 +46,14 @@ abs(Tp _val, type_list<>) -> decltype(Tp{})
     return _val;
 }
 
+template <typename... Tp>
+std::variant<Tp...>
+abs(std::variant<Tp...> _val, type_list<>)
+{
+    std::visit([](auto& _lhs_v) { _lhs_v = abs(_lhs_v); }, _val);
+    return _val;
+}
+
 template <typename Tp, enable_if_t<std::is_arithmetic<Tp>::value> = 0,
           enable_if_t<!(std::is_integral<Tp>::value && std::is_unsigned<Tp>::value)> = 0>
 auto TIMEMORY_INLINE
