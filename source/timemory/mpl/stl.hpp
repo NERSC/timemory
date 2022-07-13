@@ -60,8 +60,7 @@ tuple_printer(const Tuple<Types...>& obj, std::ostream& os, index_sequence<Idx..
 
 template <typename... Types, size_t... Idx>
 void
-type_list_printer(const type_list<Types...>& obj, std::ostream& os,
-                  index_sequence<Idx...>);
+type_list_printer(type_list<Types...> obj, std::ostream& os, index_sequence<Idx...>);
 
 //--------------------------------------------------------------------------------------//
 //

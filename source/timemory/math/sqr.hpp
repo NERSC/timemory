@@ -43,7 +43,7 @@ Tp
 sqr(Tp _val)
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
-    return ::tim::math::pow(_val, 2.0);
+    return ::tim::math::multiply(_val, _val);
 }
 }  // namespace math
 }  // namespace tim

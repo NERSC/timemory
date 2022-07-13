@@ -23,6 +23,14 @@
 // SOFTWARE.
 
 #include "test_macros.hpp"
+#include "timemory/math/assign.hpp"
+#include "timemory/mpl/concepts.hpp"
+
+#include <bits/stdint-intn.h>
+#include <bits/stdint-uintn.h>
+#include <cstdint>
+#include <limits>
+#include <sstream>
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
@@ -293,6 +301,217 @@ TEST_F(stl_overload_tests, statistics)
 
     std::cout << '\n';
 }
+
+//--------------------------------------------------------------------------------------//
+#if defined(CXX17)
+
+template <typename... Tp>
+auto get_variant(type_list<Tp...>)
+{
+    return std::variant<Tp...>{};
+}
+
+template <typename Up, typename... Tp>
+auto
+get_variant(type_list<Tp...>, Up _v)
+{
+    std::variant<Tp...> _var;
+    return math::assign(_var, _v);
+}
+
+template <typename Up, typename... Tp>
+auto
+test_variant(int line_no, const std::variant<Tp...>& _var, Up _val,
+             double _tol = 2. * std::numeric_limits<float>::round_error())
+{
+    using types           = type_list<Tp...>;
+    constexpr auto _index = tim::index_of<Up, types>::value;
+
+    auto _orig = std::string{};
+    std::visit(
+        [&_orig](auto _v) {
+            _orig = TIMEMORY_JOIN("", std::setprecision(3), std::fixed, _v);
+        },
+        _var);
+
+    auto _msg = TIMEMORY_JOIN("", "[", details::get_test_name(), "][", __FILE__, ":",
+                              line_no, "] original value: ", _orig, " :: ");
+
+    EXPECT_EQ(_var.index(), _index)
+        << _msg << "type: " << demangle<Up>() << ", types: " << demangle<types>();
+
+    auto _func = [_val, _tol, _msg](auto _v) {
+        using type    = concepts::unqualified_type_t<decltype(_v)>;
+        auto _is_same = std::is_same<Up, type>::value;
+        ASSERT_TRUE(_is_same) << _msg << "Up: " << demangle<Up>()
+                              << ", type: " << demangle<type>();
+        if constexpr(std::is_integral<Up>::value)
+        {
+            EXPECT_EQ(_v, _val)
+                << _msg << "Up: " << demangle<Up>() << ", type: " << demangle<type>();
+        }
+        else
+        {
+            EXPECT_NEAR(_v, _val, _tol)
+                << _msg << "Up: " << demangle<Up>() << ", type: " << demangle<type>();
+        }
+        (void) _tol;
+    };
+
+    std::visit(_func, _var);
+}
+
+#    define TEST_VARIANT(TYPE, ...) test_variant<TYPE>(__LINE__, __VA_ARGS__)
+
+TEST_F(stl_overload_tests, variant)
+{
+    using types = type_list<int32_t, uint32_t, float, int64_t, uint64_t, double>;
+    using variant_type =
+        std::variant<int32_t, uint32_t, float, int64_t, uint64_t, double>;
+
+    using value_type = concepts::unqualified_type_t<decltype(get_variant(types{}))>;
+    auto _is_same    = std::is_same<variant_type, value_type>::value;
+    ASSERT_TRUE(_is_same) << "variant_type: " << tim::demangle<variant_type>()
+                          << ", value_type: " << tim::demangle<value_type>();
+
+    constexpr size_t _size = std::tuple_size<types>::value;
+    ASSERT_EQ(_size, 6);
+
+    auto _data  = std::array<value_type, _size>{};
+    _data.at(0) = get_variant<int32_t>(types{}, -1);
+    _data.at(1) = get_variant<uint32_t>(types{}, -1);
+    _data.at(2) = get_variant<float>(types{}, -1.0);
+    _data.at(3) = get_variant<int64_t>(types{}, -1);
+    _data.at(4) = get_variant<uint64_t>(types{}, -1);
+    _data.at(5) = get_variant<double>(types{}, -1.0f);
+
+    TEST_VARIANT(int32_t, _data.at(0), -1);
+    TEST_VARIANT(uint32_t, _data.at(1), std::numeric_limits<uint32_t>::max());
+    TEST_VARIANT(float, _data.at(2), -1.0f);
+    TEST_VARIANT(int64_t, _data.at(3), -1);
+    TEST_VARIANT(uint64_t, _data.at(4), std::numeric_limits<uint64_t>::max());
+    TEST_VARIANT(double, _data.at(5), -1.0);
+
+    TEST_VARIANT(int32_t, math::abs(_data.at(0)), 1);
+    TEST_VARIANT(uint32_t, math::abs(_data.at(1)), std::numeric_limits<uint32_t>::max());
+    TEST_VARIANT(float, math::abs(_data.at(2)), 1.0f);
+    TEST_VARIANT(int64_t, math::abs(_data.at(3)), 1);
+    TEST_VARIANT(uint64_t, math::abs(_data.at(4)), std::numeric_limits<uint64_t>::max());
+    TEST_VARIANT(double, math::abs(_data.at(5)), 1.0);
+
+    auto _reset_values = [](auto& _data, auto _v) {
+        _data.at(0) = get_variant<int32_t>(types{}, _v);
+        _data.at(1) = get_variant<uint32_t>(types{}, _v);
+        _data.at(2) = get_variant<float>(types{}, _v);
+        _data.at(3) = get_variant<int64_t>(types{}, _v);
+        _data.at(4) = get_variant<uint64_t>(types{}, _v);
+        _data.at(5) = get_variant<double>(types{}, _v);
+    };
+
+    _reset_values(_data, 9.0);
+
+    TEST_VARIANT(int32_t, _data.at(0), 9);
+    TEST_VARIANT(uint32_t, _data.at(1), 9);
+    TEST_VARIANT(float, _data.at(2), 9.0f);
+    TEST_VARIANT(int64_t, _data.at(3), 9);
+    TEST_VARIANT(uint64_t, _data.at(4), 9);
+    TEST_VARIANT(double, _data.at(5), 9.0);
+
+    TEST_VARIANT(int32_t, math::sqr(_data.at(0)), 81);
+    TEST_VARIANT(uint32_t, math::sqr(_data.at(1)), 81);
+    TEST_VARIANT(float, math::sqr(_data.at(2)), 81.0f);
+    TEST_VARIANT(int64_t, math::sqr(_data.at(3)), 81);
+    TEST_VARIANT(uint64_t, math::sqr(_data.at(4)), 81);
+    TEST_VARIANT(double, math::sqr(_data.at(5)), 81.0);
+
+    TEST_VARIANT(int32_t, math::sqrt(_data.at(0)), 3);
+    TEST_VARIANT(uint32_t, math::sqrt(_data.at(1)), 3);
+    TEST_VARIANT(float, math::sqrt(_data.at(2)), 3.0f);
+    TEST_VARIANT(int64_t, math::sqrt(_data.at(3)), 3);
+    TEST_VARIANT(uint64_t, math::sqrt(_data.at(4)), 3);
+    TEST_VARIANT(double, math::sqrt(_data.at(5)), 3.0);
+
+    TEST_VARIANT(int32_t, math::pow(_data.at(0), 3), 729);
+    TEST_VARIANT(uint32_t, math::pow(_data.at(1), 3), 729);
+    TEST_VARIANT(float, math::pow(_data.at(2), 3), 729.0f);
+    TEST_VARIANT(int64_t, math::pow(_data.at(3), 3), 729);
+    TEST_VARIANT(uint64_t, math::pow(_data.at(4), 3), 729);
+    TEST_VARIANT(double, math::pow(_data.at(5), 3), 729.0);
+
+    auto _data_min = _data;
+    _reset_values(_data_min, -729.0);
+
+    TEST_VARIANT(int32_t, math::min(_data.at(0), _data_min.at(0)), -729);
+    TEST_VARIANT(uint32_t, math::min(_data.at(1), _data_min.at(1)), 9);
+    TEST_VARIANT(float, math::min(_data.at(2), _data_min.at(2)), -729.0f);
+    TEST_VARIANT(int64_t, math::min(_data.at(3), _data_min.at(3)), -729);
+    TEST_VARIANT(uint64_t, math::min(_data.at(4), _data_min.at(4)), 9);
+    TEST_VARIANT(double, math::min(_data.at(5), _data_min.at(5)), -729.0);
+
+    auto _data_max = _data;
+    _reset_values(_data_max, 729.0);
+
+    TEST_VARIANT(int32_t, math::max(_data.at(0), _data_max.at(0)), 729);
+    TEST_VARIANT(uint32_t, math::max(_data.at(1), _data_max.at(1)), 729);
+    TEST_VARIANT(float, math::max(_data.at(2), _data_max.at(2)), 729.0f);
+    TEST_VARIANT(int64_t, math::max(_data.at(3), _data_max.at(3)), 729);
+    TEST_VARIANT(uint64_t, math::max(_data.at(4), _data_max.at(4)), 729);
+    TEST_VARIANT(double, math::max(_data.at(5), _data_max.at(5)), 729.0);
+
+    _reset_values(_data, 9.0);
+
+    TEST_VARIANT(int32_t, math::plus(_data.at(0), 9), 18);
+    TEST_VARIANT(uint32_t, math::plus(_data.at(1), 9), 18);
+    TEST_VARIANT(float, math::plus(_data.at(2), 9.0f), 18.0f);
+    TEST_VARIANT(int64_t, math::plus(_data.at(3), 9), 18);
+    TEST_VARIANT(uint64_t, math::plus(_data.at(4), 9), 18);
+    TEST_VARIANT(double, math::plus(_data.at(5), 9.0), 18.0);
+
+    _reset_values(_data, 9.0);
+
+    TEST_VARIANT(int32_t, math::minus(_data.at(0), 4), 5);
+    TEST_VARIANT(uint32_t, math::minus(_data.at(1), 4), 5);
+    TEST_VARIANT(float, math::minus(_data.at(2), 4.0f), 5.0f);
+    TEST_VARIANT(int64_t, math::minus(_data.at(3), 4), 5);
+    TEST_VARIANT(uint64_t, math::minus(_data.at(4), 4), 5);
+    TEST_VARIANT(double, math::minus(_data.at(5), 4.0), 5.0);
+
+    _reset_values(_data, 9.0);
+
+    TEST_VARIANT(int32_t, math::multiply(_data.at(0), 6), 54);
+    TEST_VARIANT(uint32_t, math::multiply(_data.at(1), 6), 54);
+    TEST_VARIANT(float, math::multiply(_data.at(2), 6.0f), 54.0f);
+    TEST_VARIANT(int64_t, math::multiply(_data.at(3), 6), 54);
+    TEST_VARIANT(uint64_t, math::multiply(_data.at(4), 6), 54);
+    TEST_VARIANT(double, math::multiply(_data.at(5), 6.0), 54.0);
+
+    _reset_values(_data, 9.0);
+
+    TEST_VARIANT(int32_t, math::divide(_data.at(0), 2), 4);
+    TEST_VARIANT(uint32_t, math::divide(_data.at(1), 2), 4);
+    TEST_VARIANT(float, math::divide(_data.at(2), 2.0f), 4.5f);
+    TEST_VARIANT(int64_t, math::divide(_data.at(3), 2), 4);
+    TEST_VARIANT(uint64_t, math::divide(_data.at(4), 2), 4);
+    TEST_VARIANT(double, math::divide(_data.at(5), 2.0), 4.5);
+
+    _reset_values(_data, 9.0);
+
+    TEST_VARIANT(int32_t, _data.at(0) * 4, 36);
+    TEST_VARIANT(uint32_t, _data.at(1) * 4, 36);
+    TEST_VARIANT(float, _data.at(2) * 4.0f, 36.0f);
+    TEST_VARIANT(int64_t, _data.at(3) * 4, 36);
+    TEST_VARIANT(uint64_t, _data.at(4) * 4, 36);
+    TEST_VARIANT(double, _data.at(5) * 4.0, 36.0);
+
+    TEST_VARIANT(int32_t, _data.at(0) / 2, 4);
+    TEST_VARIANT(uint32_t, _data.at(1) / 2, 4);
+    TEST_VARIANT(float, _data.at(2) / 2.0f, 4.5f);
+    TEST_VARIANT(int64_t, _data.at(3) / 2, 4);
+    TEST_VARIANT(uint64_t, _data.at(4) / 2, 4);
+    TEST_VARIANT(double, _data.at(5) / 2.0, 4.5);
+}
+
+#endif
 
 //--------------------------------------------------------------------------------------//
 

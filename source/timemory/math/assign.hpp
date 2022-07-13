@@ -41,21 +41,10 @@ namespace tim
 namespace math
 {
 template <typename Tp, typename Up>
-decltype(auto)
+Tp&
 assign(Tp& _lhs, Up&& _rhs)
 {
     return (_lhs = std::forward<Up>(_rhs));
 }
-
-#if defined(CXX17)
-template <typename... Tp, typename Up>
-decltype(auto)
-assign(std::variant<Tp...>& _lhs, Up&& _rhs)
-{
-    utility::variant_apply(
-        _lhs, [](auto& _out, auto&& _inp) { _out = _inp; }, std::forward<Up>(_rhs));
-    return _lhs;
-}
-#endif
 }  // namespace math
 }  // namespace tim

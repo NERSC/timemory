@@ -126,21 +126,6 @@ TIMEMORY_INLINE Tp&
 template <typename Tp>
 TIMEMORY_INLINE Tp
 percent_diff(const Tp&, const Tp&);
-
-//--------------------------------------------------------------------------------------//
-//
-//      variant overloads
-//
-//--------------------------------------------------------------------------------------//
-
-#if defined(CXX17)
-
-template <typename... Tp, typename Up>
-TIMEMORY_INLINE void
-assign(std::variant<Tp...>&, Up&&);
-
-#endif
-
 }  // namespace math
 
 inline namespace stl
