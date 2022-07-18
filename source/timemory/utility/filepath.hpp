@@ -48,6 +48,7 @@
 #    include <sys/types.h>
 #elif defined(TIMEMORY_WINDOWS)
 #    include <direct.h>
+#    include <shlwapi.h>
 #endif
 
 namespace tim
@@ -226,6 +227,21 @@ open(std::ofstream& _ofs, std::string _fpath, Args&&... _args)
     return (_ofs && _ofs.is_open() && _ofs.good());
 }
 
+//--------------------------------------------------------------------------------------//
+
+inline bool
+exists(std::string _fname)
+{
+    _fname = osrepr(_fname);
+#if defined(TIMEMORY_UNIX)
+    struct stat _buffer;
+    if(stat(_fname.c_str(), &_buffer) == 0)
+        return (S_ISREG(_buffer.st_mode) != 0 || S_ISLNK(_buffer.st_mode) != 0);
+    return false;
+#else
+    return PathFileExists(_fname.c_str());
+#endif
+}
 }  // namespace filepath
 }  // namespace tim
 
