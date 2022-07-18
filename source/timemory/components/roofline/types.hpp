@@ -34,6 +34,15 @@ TIMEMORY_DECLARE_TEMPLATE_COMPONENT(cpu_roofline, typename... Types)
 
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(gpu_roofline, typename... Types)
 
+#if !defined(TIMEMORY_USE_ROOFLINE)
+#    if defined(TIMEMORY_USE_PAPI) ||                                                    \
+        (defined(TIMEMORY_USE_CUPTI) && defined(TIMEMORY_USE_CUDA))
+#        define TIMEMORY_USE_ROOFLINE 1
+#    else
+#        define TIMEMORY_USE_ROOFLINE 0
+#    endif
+#endif
+
 namespace tim
 {
 namespace component
@@ -123,7 +132,8 @@ TIMEMORY_VARIADIC_STATISTICS_TYPE(component::gpu_roofline, std::vector<double>, 
 //
 //      PAPI
 //
-#if !defined(TIMEMORY_USE_PAPI)
+#if !defined(TIMEMORY_USE_PAPI) ||                                                       \
+    (defined(TIMEMORY_USE_ROOFLINE) && TIMEMORY_USE_ROOFLINE == 0)
 TIMEMORY_DEFINE_VARIADIC_TRAIT(is_available, component::cpu_roofline, false_type,
                                typename)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cpu_roofline_flops, false_type)
@@ -134,7 +144,8 @@ TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::cpu_roofline_dp_flops, f
 //
 //      CUDA and CUPTI
 //
-#if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA)
+#if !defined(TIMEMORY_USE_CUPTI) || !defined(TIMEMORY_USE_CUDA) ||                       \
+    (defined(TIMEMORY_USE_ROOFLINE) && TIMEMORY_USE_ROOFLINE == 0)
 TIMEMORY_DEFINE_VARIADIC_TRAIT(is_available, component::gpu_roofline, false_type,
                                typename)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(is_available, component::gpu_roofline_flops, false_type)
