@@ -74,7 +74,7 @@ freq::get(size_t _idx)
     return _freq;
 }
 
-auto
+inline auto
 freq::operator()(size_t _idx) const
 {
     return freq::get(_idx % size());

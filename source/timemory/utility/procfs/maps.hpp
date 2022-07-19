@@ -88,7 +88,7 @@ inline maps::maps(const std::vector<std::string>& _delim)
         pathname = _delim.at(5);
 }
 
-auto
+inline auto
 read_maps(pid_t _pid = process::get_target_id())
 {
     auto          _data  = std::vector<maps>{};
