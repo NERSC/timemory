@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include "timemory/macros/language.hpp"
+#include "timemory/macros/os.hpp"
 #include "timemory/math/fwd.hpp"
 #include "timemory/utility/macros.hpp"
 
@@ -40,6 +42,10 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+
+#if defined(CXX17)
+#    include <variant>
+#endif
 
 namespace tim
 {
@@ -627,6 +633,7 @@ operator+=(tuple<>& _lhs, const Tp&)
     return _lhs;
 }
 
+#if defined(CXX17)
 template <typename... Types>
 const variant<Types...>
 operator-(variant<Types...> lhs, const variant<Types...>& rhs)
@@ -634,5 +641,5 @@ operator-(variant<Types...> lhs, const variant<Types...>& rhs)
     ::tim::math::minus(lhs, rhs);
     return lhs;
 }
-
+#endif
 }  // namespace std
