@@ -87,8 +87,6 @@ timemory_register_custom_dynamic_instr()
 
     // insert monotonic clock component into structure
     // used by timemory-run in --mode=trace
-    if(!init<user_trace_bundle>{}(mode_constant<init_mode::global>{}))
-        user_trace_bundle::global_init(false);
     user_trace_bundle::configure<monotonic_clock>();
 
     // insert monotonic clock component into structure

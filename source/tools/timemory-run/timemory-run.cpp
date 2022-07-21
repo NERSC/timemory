@@ -1372,19 +1372,6 @@ main(int argc, char** argv)
             init_names.push_back(itr.get());
     }
 
-    for(const auto& itr : beg_expr)
-    {
-        if(itr.second)
-        {
-            verbprintf(1, "+ Adding %s instrumentation...\n", itr.first.c_str());
-            init_names.push_back(itr.second.get());
-        }
-        else
-        {
-            verbprintf(1, "- Skipping %s instrumentation...\n", itr.first.c_str());
-        }
-    }
-
     if(use_mpi && umpi_call)
         init_names.push_back(umpi_call.get());
 
@@ -1431,14 +1418,29 @@ main(int argc, char** argv)
         verbprintf(0, "No binary_rewrite and no app_thread!...\n");
     }
 
-    if(fini_call)
-        fini_names.push_back(fini_call.get());
+    // call after the timemory_trace_init call
+    for(const auto& itr : beg_expr)
+    {
+        if(itr.second)
+        {
+            verbprintf(1, "+ Adding %s instrumentation...\n", itr.first.c_str());
+            init_names.push_back(itr.second.get());
+        }
+        else
+        {
+            verbprintf(1, "- Skipping %s instrumentation...\n", itr.first.c_str());
+        }
+    }
 
+    // call before the timemory_trace_finalize call
     for(const auto& itr : end_expr)
     {
         if(itr.second)
             fini_names.push_back(itr.second.get());
     }
+
+    if(fini_call)
+        fini_names.push_back(fini_call.get());
 
     //----------------------------------------------------------------------------------//
     //
