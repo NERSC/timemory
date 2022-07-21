@@ -390,6 +390,23 @@ public:
         configure(_signals, _verbose, _unblock);
     }
 
+    void reset(std::set<int> _signals = {}, int _verbose = 0, bool _unblock = true);
+
+    template <typename Tp>
+    void reset(Tp _signal, int _verbose = 0, bool _unblock = true,
+               enable_if_t<!std::is_same<std::decay_t<Tp>, bool>::value &&
+                           std::is_integral<Tp>::value> = 0)
+    {
+        reset({ _signal }, _verbose, _unblock);
+    }
+
+    template <typename Tp>
+    void reset(Tp _unblock, std::set<int> _signals = {}, int _verbose = 0,
+               enable_if_t<std::is_same<std::decay_t<Tp>, bool>::value> = 0)
+    {
+        reset(_signals, _verbose, _unblock);
+    }
+
     /// \fn void ignore(std::set<int> _signals)
     /// \param[in] _signals Set of signals
     ///
@@ -1190,6 +1207,80 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
+void
+sampler<CompT<Types...>, N, SigIds...>::reset(std::set<int> _signals, int _verbose,
+                                              bool _unblock)
+{
+    _verbose = std::max<int>(_verbose, m_verbose);
+
+    TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose >= 3, "resetting sampler (index: %zu)",
+                                    m_idx);
+
+    // if specified by set_signals(...)
+    for(auto itr : m_timer_data.m_signals)
+        _signals.emplace(itr);
+    // if specified by template parameters
+    TIMEMORY_FOLD_EXPRESSION(_signals.emplace(SigIds));
+
+    if(!_signals.empty())
+    {
+        TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose >= 3,
+                                        "Resetting %zu signal handlers (index: %zu)",
+                                        _signals.size(), m_idx);
+
+        // block signals on thread while resetting
+        sampling::block_signals(_signals, sigmask_scope::thread);
+
+        // start the interval timer
+        for(const auto& itr : _signals)
+        {
+            // already active
+            if(!m_timer_data.m_active[itr])
+            {
+                TIMEMORY_CONDITIONAL_PRINT_HERE(
+                    _verbose >= 3, "handler for signal %i is already reset (index: %zu)",
+                    itr, m_idx);
+                continue;
+            }
+
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                _verbose >= 3, "resetting handler for signal %i (index: %zu)", itr,
+                m_idx);
+
+            // get the associated itimer type
+            auto _itimer = get_itimer(itr);
+            if(_itimer < 0)
+            {
+                TIMEMORY_EXCEPTION(
+                    TIMEMORY_JOIN(" ", "Error! Alarm cannot be reset for signal", itr,
+                                  "because the signal does not map to a known itimer "
+                                  "value\n"));
+            }
+
+            itimerval_t _itimer_zero;
+            _itimer_zero.it_interval.tv_sec  = 0;
+            _itimer_zero.it_interval.tv_usec = 0;
+            _itimer_zero.it_value.tv_sec     = 0;
+            _itimer_zero.it_value.tv_usec    = 0;
+
+            // reset the alarm (throws if fails)
+            check_itimer(setitimer(_itimer, &_itimer_zero, nullptr), true);
+
+            m_timer_data.m_active[itr] = false;
+        }
+    }
+
+    TIMEMORY_CONDITIONAL_PRINT_HERE(
+        _verbose >= 3, "signal handler configuration complete (index: %zu)", m_idx);
+
+    // unblock signals on thread after configuring
+    if(!_signals.empty() && _unblock)
+        sampling::unblock_signals(_signals, sigmask_scope::thread);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 inline void
 sampler<CompT<Types...>, N, SigIds...>::ignore(std::set<int> _signals)
 {
@@ -1459,6 +1550,12 @@ sampler<CompT<Types...>, N, SigIds...>::get_itimer(int _signal)
         case SIGALRM: _itimer = ITIMER_REAL; break;
         case SIGVTALRM: _itimer = ITIMER_VIRTUAL; break;
         case SIGPROF: _itimer = ITIMER_PROF; break;
+        default:
+        {
+            if(_signal >= SIGRTMIN && _signal <= SIGRTMAX)
+                _itimer = ITIMER_REAL;
+            break;
+        }
     }
     return _itimer;
 }
