@@ -532,7 +532,7 @@ comm_split(comm_t comm, int split_size, int rank, comm_t* local_comm)
 {
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
-        TIMEMORY_MPI_ERROR_CHECK(MPI_Comm_split(comm, split_size, rank, local_comm));
+        TIMEMORY_MPI_ERROR_CHECK(PMPI_Comm_split(comm, split_size, rank, local_comm));
 #else
     consume_parameters(comm, split_size, rank, local_comm);
 #endif
@@ -611,7 +611,7 @@ send(const std::string& str, int dest, int tag, comm_t comm = mpi::comm_world_v)
 #if defined(TIMEMORY_USE_MPI)
     using ulli_t = unsigned long long;
     ulli_t len   = str.size();
-    TIMEMORY_MPI_ERROR_CHECK(MPI_Send(&len, 1, MPI_UNSIGNED_LONG_LONG, dest, tag, comm));
+    TIMEMORY_MPI_ERROR_CHECK(PMPI_Send(&len, 1, MPI_UNSIGNED_LONG_LONG, dest, tag, comm));
     if(len != 0)
     {
         ulli_t _cmax = std::numeric_limits<int>::max();
@@ -657,7 +657,7 @@ recv(std::string& str, int src, int tag, comm_t comm = mpi::comm_world_v)
         {
             std::vector<char> tmp(len);
             TIMEMORY_MPI_ERROR_CHECK(
-                MPI_Recv(tmp.data(), len, MPI_CHAR, src, tag, comm, &s));
+                PMPI_Recv(tmp.data(), len, MPI_CHAR, src, tag, comm, &s));
             str.assign(tmp.begin(), tmp.end());
         }
         else
@@ -668,7 +668,7 @@ recv(std::string& str, int src, int tag, comm_t comm = mpi::comm_world_v)
                 _len += 1;
             std::vector<long> tmp(_len);
             TIMEMORY_MPI_ERROR_CHECK(
-                MPI_Recv(tmp.data(), _len, MPI_LONG, src, tag, comm, &s));
+                PMPI_Recv(tmp.data(), _len, MPI_LONG, src, tag, comm, &s));
             std::vector<char> chars  = {};
             auto              _ratio = sizeof(long) / sizeof(char);
             chars.reserve(_len * _ratio);
@@ -702,8 +702,8 @@ gather(const void* sendbuf, int sendcount, data_type_t sendtype, void* recvbuf,
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
     {
-        TIMEMORY_MPI_ERROR_CHECK(MPI_Gather(sendbuf, sendcount, sendtype, recvbuf,
-                                            recvcount, recvtype, root, comm));
+        TIMEMORY_MPI_ERROR_CHECK(PMPI_Gather(sendbuf, sendcount, sendtype, recvbuf,
+                                             recvcount, recvtype, root, comm));
     }
 #else
     consume_parameters(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root,
@@ -721,7 +721,7 @@ comm_spawn_multiple(int count, char** commands, char*** argv, const int* maxproc
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
     {
-        TIMEMORY_MPI_ERROR_CHECK(MPI_Comm_spawn_multiple(
+        TIMEMORY_MPI_ERROR_CHECK(PMPI_Comm_spawn_multiple(
             count, commands, argv, maxprocs, info, root, comm, intercomm, errcodes));
     }
 #else
