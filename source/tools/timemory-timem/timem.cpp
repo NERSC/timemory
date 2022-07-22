@@ -616,11 +616,11 @@ main(int argc, char** argv)
         get_sampler()->set_delay(sample_delay());
 
         /// \variable TIMEM_SAMPLE_FREQ
-        /// \brief Environment variable, expressed in 1/seconds, that sets the
-        /// frequency that the timem executable samples the relevant measurements
-        /// (components that read from child process status files)
+        /// \brief Environment variable, expressed in number of interrupts per second,
+        /// that sets the frequency that the timem executable samples the relevant
+        /// measurements (components that read from child process status files)
         ///
-        get_sampler()->set_frequency(1.0 / sample_freq());
+        get_sampler()->set_frequency(sample_freq());
 
         TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
                                         "configuring signal types");
