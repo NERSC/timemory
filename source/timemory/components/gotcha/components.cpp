@@ -497,8 +497,7 @@ gotcha<Nt, BundleT, DiffT>::is_permitted(const std::string& _func)
         _func.find("mpi_") != std::string::npos))
     {
         static auto mpi_reject_list = { "MPI_Pcontrol", "MPI_T_init_thread",
-                                        "MPI_Comm_split", "MPI_Abort",
-                                        "MPI_Comm_split_type" };
+                                        "MPI_Abort" };
 
         auto tofortran = [](std::string _fort) {
             for(auto& itr : _fort)
