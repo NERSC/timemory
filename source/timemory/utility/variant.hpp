@@ -26,7 +26,8 @@
 
 #include "timemory/macros/language.hpp"
 #include "timemory/mpl/concepts.hpp"
-#include "timemory/utility/transient_function.hpp"
+
+#include <utility>
 
 #if defined(CXX17)
 #    include <variant>
@@ -43,8 +44,8 @@ struct variant_ignore_if_diff_index : std::false_type
 
 template <typename VarT, typename FuncT, typename ArgT,
           typename AssignT     = variant_assign_if_diff_index,
-          typename AssignFuncT = transient_function<void(VarT&, const VarT&)>>
-decltype(auto)
+          typename AssignFuncT = void(VarT&, const VarT&)>
+inline decltype(auto)
 variant_apply(
     VarT& _var, FuncT&& _func, ArgT&& _arg, AssignT = {},
     AssignFuncT _assign = [](VarT& _out, const VarT& _inp) { _out = _inp; })
@@ -74,7 +75,7 @@ variant_apply(
 }
 
 template <typename VarT, typename FuncT>
-decltype(auto)
+inline decltype(auto)
 variant_apply(VarT& _var, FuncT&& _func)
 {
     std::visit(std::forward<FuncT>(_func), _var);
