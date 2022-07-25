@@ -123,10 +123,24 @@ struct gotcha_invoker
 
 private:
     //----------------------------------------------------------------------------------//
+    //      Ret Type::operator{}(gotcha_data, <function-pointer>, Args...)
+    //
+    template <typename DataT, typename FuncT, typename... Args>
+    static auto sfinae(Tp& _obj, int, int, int, int, DataT&& _data, FuncT&& _func,
+                       Args&&... _args)
+        -> decltype(_obj(std::forward<DataT>(_data), std::forward<FuncT>(_func),
+                         std::forward<Args>(_args)...))
+    {
+        return _obj(std::forward<DataT>(_data), std::forward<FuncT>(_func),
+                    std::forward<Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     //      Ret Type::operator{}(gotcha_data, Args...)
     //
     template <typename DataT, typename FuncT, typename... Args>
-    static auto sfinae(Tp& _obj, int, int, int, DataT&& _data, FuncT&&, Args&&... _args)
+    static auto sfinae(Tp& _obj, int, int, int, long, DataT&& _data, FuncT&&,
+                       Args&&... _args)
         -> decltype(_obj(std::forward<DataT>(_data), std::forward<Args>(_args)...))
     {
         return _obj(std::forward<DataT>(_data), std::forward<Args>(_args)...);
@@ -136,7 +150,8 @@ private:
     //      Ret Type::operator{}(<function-pointer>, Args...)
     //
     template <typename DataT, typename FuncT, typename... Args>
-    static auto sfinae(Tp& _obj, int, int, long, DataT&&, FuncT&& _func, Args&&... _args)
+    static auto sfinae(Tp& _obj, int, int, long, long, DataT&&, FuncT&& _func,
+                       Args&&... _args)
         -> decltype(_obj(std::forward<FuncT>(_func), std::forward<Args>(_args)...))
     {
         return _obj(std::forward<FuncT>(_func), std::forward<Args>(_args)...);
@@ -146,7 +161,7 @@ private:
     //      Ret Type::operator{}(Args...)
     //
     template <typename DataT, typename FuncT, typename... Args>
-    static auto sfinae(Tp& _obj, int, long, long, DataT&&, FuncT&&, Args&&... _args)
+    static auto sfinae(Tp& _obj, int, long, long, long, DataT&&, FuncT&&, Args&&... _args)
         -> decltype(_obj(std::forward<Args>(_args)...))
     {
         return _obj(std::forward<Args>(_args)...);
@@ -156,7 +171,8 @@ private:
     //  Call the original gotcha_wrappee
     //
     template <typename DataT, typename FuncT, typename... Args>
-    static auto sfinae(Tp&, long, long, long, DataT&&, FuncT&& _func, Args&&... _args)
+    static auto sfinae(Tp&, long, long, long, long, DataT&&, FuncT&& _func,
+                       Args&&... _args)
         -> decltype(std::forward<FuncT>(_func)(std::forward<Args>(_args)...))
     {
         return std::forward<FuncT>(_func)(std::forward<Args>(_args)...);
@@ -167,10 +183,10 @@ private:
     //
     template <typename DataT, typename FuncT, typename... Args>
     static auto invoke_sfinae(Tp& _obj, DataT&& _data, FuncT&& _func, Args&&... _args)
-        -> decltype(sfinae(_obj, 0, 0, 0, std::forward<DataT>(_data),
+        -> decltype(sfinae(_obj, 0, 0, 0, 0, std::forward<DataT>(_data),
                            std::forward<FuncT>(_func), std::forward<Args>(_args)...))
     {
-        return sfinae(_obj, 0, 0, 0, std::forward<DataT>(_data),
+        return sfinae(_obj, 0, 0, 0, 0, std::forward<DataT>(_data),
                       std::forward<FuncT>(_func), std::forward<Args>(_args)...);
     }
 };
