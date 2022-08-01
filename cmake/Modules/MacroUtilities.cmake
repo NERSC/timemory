@@ -575,23 +575,39 @@ endfunction()
 # ----------------------------------------------------------------------------------------#
 
 function(TIMEMORY_ADD_RPATH)
+    if(NOT CMAKE_INSTALL_RPATH_USE_LINK_PATH)
+        return()
+    endif()
     set(_DIRS)
     foreach(_ARG ${ARGN})
         if(EXISTS "${_ARG}" AND IS_DIRECTORY "${_ARG}")
             list(APPEND _DIRS "${_ARG}")
-        endif()
-        get_filename_component(_DIR "${_ARG}" DIRECTORY)
-        if(EXISTS "${_DIR}" AND IS_DIRECTORY "${_DIR}")
-            list(APPEND _DIRS "${_DIR}")
+        else()
+            get_filename_component(_DIR "${_ARG}" DIRECTORY)
+            if(EXISTS "${_DIR}" AND IS_DIRECTORY "${_DIR}")
+                list(APPEND _DIRS "${_DIR}")
+            endif()
         endif()
     endforeach()
     if(_DIRS)
         list(REMOVE_DUPLICATES _DIRS)
-        string(REPLACE ";" ":" _RPATH "${_DIRS}")
-        # message(STATUS "\n\tRPATH additions: ${_RPATH}\n")
-        set(CMAKE_INSTALL_RPATH
-            "${CMAKE_INSTALL_RPATH}:${_RPATH}"
-            PARENT_SCOPE)
+        set(_RPATH_DIRS)
+        foreach(_DIR ${_DIRS})
+            string(REPLACE "${CMAKE_BINARY_DIR}" "build_directory" _DIR "${_DIR}")
+            list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${_DIR}" _IS_SYSTEM_DIR)
+            if(NOT "${_DIR}" MATCHES "^build_directory"
+               AND EXISTS "${_DIR}"
+               AND IS_DIRECTORY "${_DIR}"
+               AND NOT _IS_SYSTEM_DIR)
+                list(APPEND _RPATH_DIRS ${_DIR})
+            endif()
+        endforeach()
+        if(_RPATH_DIRS)
+            string(REPLACE ";" ":" _RPATH_DIRS "${_RPATH_DIRS}")
+            set(CMAKE_INSTALL_RPATH
+                "${CMAKE_INSTALL_RPATH}:${_RPATH_DIRS}"
+                PARENT_SCOPE)
+        endif()
     endif()
 endfunction()
 
