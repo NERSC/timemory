@@ -145,8 +145,13 @@ TEST_F(ring_buffer_tests, empty_mmap) { EXPECT_TRUE(buffer.is_empty()); }
 TEST_F(ring_buffer_tests, copy)
 {
     buffer_type buffer_copy = buffer;
-    for(size_t i = 0; i < count; ++i)
+    for(size_t i = 0; i <= count; ++i)
     {
+        if(i == count)
+        {
+            EXPECT_TRUE(buffer_copy.is_full()) << "[" << i << "]> " << buffer_copy;
+            buffer_copy.retrieve();
+        }
         EXPECT_FALSE(buffer_copy.is_full()) << "[" << i << "]> " << buffer_copy;
         comp_type tmp{};
         tmp.store(static_cast<double>(i + 1));
@@ -166,18 +171,18 @@ TEST_F(ring_buffer_tests, copy)
     std::cout << "[   copy   ]> " << buffer_copy << std::endl;
     auto buffer_temp = buffer_copy;
     std::cout << "[   temp   ]> " << buffer_temp << std::endl;
-    buffer = buffer_temp;
+    buffer = std::move(buffer_temp);
     std::cout << "[   buff   ]> " << buffer << std::endl;
     EXPECT_TRUE(buffer.is_full()) << buffer;
+    EXPECT_TRUE(buffer_temp.is_empty()) << buffer_temp;
+    EXPECT_FALSE(buffer_temp.is_initialized()) << buffer_temp;
     auto n = buffer.count();
     for(size_t i = 0; i < n; ++i)
     {
-        if(i < n / 2)
-            buffer_temp.retrieve();
         comp_type* lhs = buffer.retrieve();
         comp_type* rhs = buffer_copy.retrieve();
-        ASSERT_TRUE(lhs != nullptr && rhs != nullptr)
-            << "lhs: " << lhs << ", rhs: " << rhs;
+        ASSERT_TRUE(lhs != nullptr) << "lhs: " << lhs << ", buffer: " << buffer;
+        ASSERT_TRUE(rhs != nullptr) << "rhs: " << rhs << ", buffer: " << buffer_copy;
         EXPECT_NE(lhs, rhs) << "lhs: " << lhs << ", rhs: " << rhs;
         // verify all fields
         COPY_EXPECT_EQ(get_depth_change)

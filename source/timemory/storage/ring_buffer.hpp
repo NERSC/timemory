@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include "timemory/units.hpp"
+
 #include <algorithm>
 #include <cmath>
 #include <functional>
@@ -59,10 +61,10 @@ struct ring_buffer
     ~ring_buffer();
 
     ring_buffer(const ring_buffer&);
-    ring_buffer(ring_buffer&&) noexcept = delete;
-
     ring_buffer& operator=(const ring_buffer&);
-    ring_buffer& operator=(ring_buffer&&) noexcept = delete;
+
+    ring_buffer(ring_buffer&&) noexcept;
+    ring_buffer& operator=(ring_buffer&&) noexcept;
 
     /// Returns whether the buffer has been allocated
     bool is_initialized() const { return m_init; }
@@ -149,6 +151,8 @@ private:
 
     /// Returns the current read pointer.
     void* read_ptr() const { return static_cast<char*>(m_ptr) + (m_read_count % m_size); }
+
+    void reset();
 
 private:
     bool           m_init              = false;
@@ -361,6 +365,8 @@ struct ring_buffer : private base::ring_buffer
 {
     using base_type = base::ring_buffer;
 
+    static size_t get_items_per_page();
+
     ring_buffer()  = default;
     ~ring_buffer() = default;
 
@@ -398,16 +404,16 @@ struct ring_buffer : private base::ring_buffer
     size_t data_size() const { return sizeof(Tp); }
 
     /// Write data to buffer. Return pointer to location of write
-    Tp* write(Tp* in) { return add_copy(base_type::write<Tp>(in).second); }
+    Tp* write(Tp* in) { return base_type::write<Tp>(in).second; }
 
     /// Read data from buffer. Return pointer to location of read
-    Tp* read(Tp* out) const { return remove_copy(base_type::read<Tp>(out).second); }
+    Tp* read(Tp* out) const { return base_type::read<Tp>(out).second; }
 
     /// Get an uninitialized address at tail of buffer.
-    Tp* request() { return add_copy(base_type::request<Tp>()); }
+    Tp* request() { return base_type::request<Tp>(); }
 
     /// Read data from head of buffer.
-    Tp* retrieve() { return remove_copy(base_type::retrieve<Tp>()); }
+    Tp* retrieve() { return base_type::retrieve<Tp>(); }
 
     /// Returns number of Tp instances currently held by the buffer.
     size_t count() const { return (base_type::count()) / sizeof(Tp); }
@@ -457,22 +463,29 @@ struct ring_buffer : private base::ring_buffer
     {
         return os << obj.as_string();
     }
-
-private:
-    using copy_function_t = std::function<void(ring_buffer&, Tp*)>;
-    using copy_entry_t    = std::pair<Tp*, copy_function_t>;
-
-    Tp*                               add_copy(Tp*) const;
-    Tp*                               remove_copy(Tp*) const;
-    mutable std::vector<copy_entry_t> m_copy = {};
 };
+//
+template <typename Tp>
+size_t
+ring_buffer<Tp>::get_items_per_page()
+{
+    return std::max<size_t>(units::get_page_size() / sizeof(Tp), 1);
+}
 //
 template <typename Tp>
 ring_buffer<Tp>::ring_buffer(const ring_buffer<Tp>& rhs)
 : base_type{ rhs }
 {
-    for(const auto& itr : rhs.m_copy)
-        itr.second(*this, itr.first);
+    size_t _n   = rhs.count();
+    char*  _end = static_cast<char*>(rhs.m_ptr) + rhs.m_size;
+    for(size_t i = 0; i < _n; ++i)
+    {
+        char* _addr = static_cast<char*>(rhs.read_ptr()) + (i * sizeof(Tp));
+        if((_addr + sizeof(Tp)) > _end)
+            _addr = static_cast<char*>(rhs.m_ptr);
+        Tp* _in = static_cast<Tp*>(static_cast<void*>(_addr));
+        write(_in);
+    }
 }
 //
 template <typename Tp>
@@ -483,44 +496,21 @@ ring_buffer<Tp>::operator=(const ring_buffer<Tp>& rhs)
         return *this;
 
     base_type::operator=(rhs);
-    for(const auto& itr : rhs.m_copy)
-        itr.second(*this, itr.first);
+    size_t     _n      = rhs.count();
+    char*      _end    = static_cast<char*>(rhs.m_ptr) + rhs.m_size;
+    for(size_t i = 0; i < _n; ++i)
+    {
+        char* _addr = static_cast<char*>(rhs.read_ptr()) + (i * sizeof(Tp));
+        if((_addr + sizeof(Tp)) > _end)
+            _addr = static_cast<char*>(rhs.m_ptr);
+        Tp* _in = static_cast<Tp*>(static_cast<void*>(_addr));
+        write(_in);
+    }
 
     return *this;
 }
 //
-template <typename Tp>
-Tp*
-ring_buffer<Tp>::add_copy(Tp* _v) const
-{
-    auto _copy_func = [](ring_buffer& _rb, Tp* _ptr) { _rb.write(_ptr); };
-    auto itr        = m_copy.begin();
-    for(; itr != m_copy.end(); ++itr)
-    {
-        if(itr->first == _v)
-        {
-            itr->second = std::move(_copy_func);
-            break;
-        }
-    }
-    if(itr == m_copy.end())
-        m_copy.emplace_back(_v, std::move(_copy_func));
-    return _v;
-}
-//
-template <typename Tp>
-Tp*
-ring_buffer<Tp>::remove_copy(Tp* _v) const
-{
-    m_copy.erase(
-        std::remove_if(m_copy.begin(), m_copy.end(),
-                       [_v](const copy_entry_t& _entry) { return _entry.first == _v; }),
-        m_copy.end());
-    return _v;
-}
-//
 }  // namespace data_storage
-//
 }  // namespace tim
 
 #include "timemory/storage/macros.hpp"

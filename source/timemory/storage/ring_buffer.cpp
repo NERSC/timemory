@@ -70,6 +70,20 @@ ring_buffer::ring_buffer(const ring_buffer& rhs)
 }
 
 TIMEMORY_STORAGE_INLINE
+ring_buffer::ring_buffer(ring_buffer&& rhs) noexcept
+: m_init{ rhs.m_init }
+, m_use_mmap{ rhs.m_use_mmap }
+, m_use_mmap_explicit{ rhs.m_use_mmap_explicit }
+, m_fd{ rhs.m_fd }
+, m_ptr{ rhs.m_ptr }
+, m_size{ rhs.m_size }
+, m_read_count{ rhs.m_read_count }
+, m_write_count{ rhs.m_write_count }
+{
+    rhs.reset();
+}
+
+TIMEMORY_STORAGE_INLINE
 ring_buffer&
 ring_buffer::operator=(const ring_buffer& rhs)
 {
@@ -79,6 +93,25 @@ ring_buffer::operator=(const ring_buffer& rhs)
     m_use_mmap          = rhs.m_use_mmap;
     m_use_mmap_explicit = rhs.m_use_mmap_explicit;
     init(rhs.m_size);
+    return *this;
+}
+
+TIMEMORY_STORAGE_INLINE
+ring_buffer&
+ring_buffer::operator=(ring_buffer&& rhs) noexcept
+{
+    if(this == &rhs)
+        return *this;
+    destroy();
+    m_init              = rhs.m_init;
+    m_use_mmap          = rhs.m_use_mmap;
+    m_use_mmap_explicit = rhs.m_use_mmap_explicit;
+    m_fd                = rhs.m_fd;
+    m_ptr               = rhs.m_ptr;
+    m_size              = rhs.m_size;
+    m_read_count        = rhs.m_read_count;
+    m_write_count       = rhs.m_write_count;
+    rhs.reset();
     return *this;
 }
 
@@ -167,7 +200,6 @@ ring_buffer::destroy()
 {
     if(m_ptr && m_init)
     {
-        m_init = false;
 #if defined(TIMEMORY_LINUX)
         if(!m_use_mmap)
         {
@@ -287,6 +319,18 @@ ring_buffer::rewind(size_t n) const
         n = m_read_count;
     m_read_count -= n;
     return n;
+}
+//
+TIMEMORY_STORAGE_INLINE
+void
+ring_buffer::reset()
+{
+    m_init        = false;
+    m_fd          = 0;
+    m_ptr         = nullptr;
+    m_size        = 0;
+    m_read_count  = 0;
+    m_write_count = 0;
 }
 }  // namespace base
 }  // namespace tim
