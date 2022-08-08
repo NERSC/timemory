@@ -291,6 +291,7 @@ struct sampler<CompT<Types...>, N, SigIds...>
     using array_t      = conditional_t<fixed_size_t<N>::value, std::array<bundle_type, N>,
                                   std::vector<bundle_type>>;
     using data_type    = array_t;
+    using buffer_t     = data_storage::ring_buffer<bundle_type>;
     using allocator_t =
         conditional_t<fixed_size_t<N>::value, allocator<void>, allocator<this_type>>;
 
@@ -378,17 +379,27 @@ public:
     bundle_type*  get_latest() const { return m_last; }
 
     template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
-    bundle_type& get(size_t idx);
+    const bundle_type& get(size_t idx) const;
     template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
-    bundle_type& get(size_t idx);
+    const bundle_type& get(size_t idx) const;
+
+    template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
+    decltype(auto) get_data() const
+    {
+        return m_alloc.get_data();
+    }
 
     template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
-    const bundle_type& get(size_t idx) const;
-    template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
-    const bundle_type& get(size_t idx) const;
+    array_t& get_data()
+    {
+        return m_data;
+    }
 
-    array_t&       get_data() { return m_data; }
-    const array_t& get_data() const { return m_data; }
+    template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
+    const array_t& get_data() const
+    {
+        return m_data;
+    }
 
 public:
     /// \fn void configure(std::set<int> _signals, int _verb)
@@ -567,40 +578,29 @@ public:
     }
 
     template <typename FuncT>
-    void set_wait(FuncT&& _v)
-    {
-        m_wait = std::forward<FuncT>(_v);
-    }
-
-    template <typename FuncT>
     void set_exit(FuncT&& _v)
     {
         m_exit = std::forward<FuncT>(_v);
     }
 
-    template <typename FuncT>
-    void set_swap_data(FuncT&& _v)
-    {
-        m_swap_data = std::forward<FuncT>(_v);
-    }
-
-    void swap_data() { m_swap_data(m_data); }
+    auto get_sample_count() const { return m_count; }
 
 protected:
-    bool                            m_backtrace   = false;
-    int                             m_verbose     = tim::settings::verbose();
-    size_t                          m_idx         = get_counter()++;
-    size_t                          m_buffer_size = trait::buffer_size<this_type>::value;
-    bundle_type*                    m_last        = nullptr;
-    signal_set_t                    m_good        = {};
-    signal_set_t                    m_bad         = {};
-    array_t                         m_data        = {};
-    std::function<void()>           m_notify      = []() {};
-    std::function<void()>           m_wait        = []() {};
-    std::function<void()>           m_exit        = []() {};
-    std::function<void(data_type&)> m_swap_data   = [](data_type&) {};
-    allocator_t                     m_alloc;
-    std::string                     m_label = {};
+    bool                  m_backtrace   = false;
+    int                   m_verbose     = tim::settings::verbose();
+    size_t                m_idx         = get_counter()++;
+    size_t                m_buffer_size = trait::buffer_size<this_type>::value;
+    size_t                m_count       = 0;
+    bundle_type*          m_last        = nullptr;
+    signal_set_t          m_good        = {};
+    signal_set_t          m_bad         = {};
+    array_t               m_data        = {};
+    std::function<void()> m_notify      = []() {};
+    std::function<void()> m_exit        = []() {};
+    buffer_t              m_buffer      = {};
+    buffer_t              m_filled      = {};
+    allocator_t           m_alloc;
+    std::string           m_label = {};
 
 private:
     struct timer_data

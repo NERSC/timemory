@@ -26,6 +26,7 @@
 
 #include "timemory/backends/threading.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/storage/ring_buffer.hpp"
 
 #include <atomic>
 #include <cerrno>
@@ -33,6 +34,7 @@
 #include <csignal>
 #include <cstdio>
 #include <exception>
+#include <future>
 #include <iostream>
 #include <mutex>
 #include <pthread.h>
@@ -141,7 +143,10 @@ unblock_signals(const std::set<int>& _signals, sigmask_scope _scope)
 template <typename Tp>
 struct allocator
 {
-    using data_type = typename Tp::data_type;
+    using this_type   = allocator<Tp>;
+    using data_type   = typename Tp::bundle_type;
+    using buffer_type = data_storage::ring_buffer<data_type>;
+    using lock_type   = std::unique_lock<std::mutex>;
 
     allocator(Tp* _obj);
     ~allocator();
@@ -151,34 +156,41 @@ struct allocator
     allocator& operator=(const allocator&) = delete;
     allocator& operator=(allocator&&) noexcept = default;
 
-    const auto& get_data() const { return m_data; }
-    bool        ready() const { return m_ready; }
+    const auto& get_data() const;
     bool        is_alive() const { return m_alive; }
     void        join();
     void        restart(Tp* _obj);
+    void        block_signal(int _v);
+    void        emplace(buffer_type&&);
 
     static void execute(allocator*, Tp*);
 
 private:
     /// this function makes sure that allocator isn't interrupted by signals
-    static void block_signals();
+    void block_pending_signals();
 
-    std::atomic<bool>      m_ready{ false };
-    std::atomic<bool>      m_alive{ false };
-    int                    m_verbose = 0;
-    int64_t                m_tid     = threading::get_id();
-    std::vector<data_type> m_data    = {};
-    semaphore_t            m_sem;
-    std::thread            m_thread;
-    std::exception_ptr     m_thread_exception = {};
+    void update_data();
+
+    std::atomic<bool>        m_alive{ false };
+    int                      m_verbose = 0;
+    int64_t                  m_tid     = threading::get_id();
+    semaphore_t              m_sem;
+    std::mutex               m_signal_mutex;
+    std::mutex               m_buffer_mutex;
+    std::promise<void>       m_promise                 = {};
+    std::vector<data_type>   m_data                    = {};
+    std::vector<buffer_type> m_buffers                 = {};
+    std::set<int>            m_block_signals_pending   = { SIGALRM, SIGVTALRM, SIGPROF };
+    std::set<int>            m_block_signals_completed = {};
+    std::exception_ptr       m_thread_exception        = {};
+    std::thread              m_thread;  // construct thread after data to prevent UB
 };
 
 template <typename Tp>
 allocator<Tp>::allocator(Tp* _obj)
 : m_thread{ &execute, this, _obj }
 {
-    while(!m_ready)
-        std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
+    m_promise.get_future().wait();
 }
 
 template <typename Tp>
@@ -209,49 +221,108 @@ allocator<Tp>::restart(Tp* _obj)
     _obj->m_exit();
     if(m_thread.joinable())
         m_thread.join();
-    m_ready.store(false);
+    m_promise = std::promise<void>{};
     m_alive.store(false);
     m_thread = std::thread{ &execute, this, _obj };
-    while(!m_ready)
-        std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
+    m_promise.get_future().wait();
 }
 
 template <typename Tp>
 void
-allocator<Tp>::block_signals()
+allocator<Tp>::block_signal(int _v)
 {
-    sampling::block_signals({ SIGALRM, SIGVTALRM, SIGPROF }, sigmask_scope::thread);
+    lock_type _lk{ m_signal_mutex, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
+
+    if(m_block_signals_completed.count(_v) == 0)
+    {
+        m_block_signals_pending.emplace(_v);
+    }
+}
+
+template <typename Tp>
+void
+allocator<Tp>::emplace(buffer_type&& _v)
+{
+    lock_type _lk{ m_buffer_mutex };
+    m_buffers.emplace_back(std::move(_v));
+}
+
+template <typename Tp>
+void
+allocator<Tp>::block_pending_signals()
+{
+    lock_type _lk{ m_signal_mutex, std::defer_lock };
+    if(!_lk.owns_lock())
+        _lk.lock();
+
+    auto& _pending = m_block_signals_pending;
+    if(!_pending.empty())
+    {
+        auto& _completed = m_block_signals_completed;
+        for(const auto& itr : _pending)
+        {
+            sampling::block_signals({ itr }, sigmask_scope::thread);
+            _completed.emplace(itr);
+        }
+        _pending.clear();
+    }
+}
+
+template <typename Tp>
+void
+allocator<Tp>::update_data()
+{
+    // swap out buffer array for a temporary to avoid
+    // holding lock while processing
+    auto _buffers = std::vector<buffer_type>{};
+    {
+        lock_type _lk{ m_buffer_mutex, std::defer_lock };
+        if(!_lk.owns_lock())
+            _lk.lock();
+        std::swap(m_buffers, _buffers);
+    }
+    size_t _n = 0;
+    for(auto& itr : _buffers)
+        _n += itr.count();
+    m_data.reserve(m_data.size() + _n);
+    for(auto& itr : _buffers)
+    {
+        while(!itr.is_empty())
+        {
+            auto _v = data_type{};
+            itr.read(&_v);
+            m_data.emplace_back(std::move(_v));
+        }
+        itr.destroy();
+    }
+}
+
+template <typename Tp>
+const auto&
+allocator<Tp>::get_data() const
+{
+    const_cast<this_type*>(this)->update_data();
+    return m_data;
 }
 
 template <typename Tp>
 void
 allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
 {
-    block_signals();
-
     threading::set_thread_name(
         std::string{ "samp.alloc." + std::to_string(_alloc->m_tid) }.c_str());
 
-    bool   _completed   = false;
-    size_t _swap_count  = 0;
-    size_t _buffer_size = _obj->get_buffer_size();
-    sem_t& _sem         = _alloc->m_sem;
+    bool   _completed  = false;
+    size_t _swap_count = 0;
+    sem_t& _sem        = _alloc->m_sem;
     TIMEMORY_SEMAPHORE_CHECK(sem_init(&_sem, 0, 0));
 
     _alloc->m_alive.store(true);
     try
     {
         _obj->set_notify([&]() { TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem)); });
-
-        _obj->set_wait([&_sem]() {
-            int _val = 0;
-            do
-            {
-                std::this_thread::sleep_for(std::chrono::microseconds{ 10 });
-                TIMEMORY_SEMAPHORE_CHECK(sem_getvalue(&_sem, &_val));
-            } while(_val > 0);
-            TIMEMORY_SEMAPHORE_CHECK(sem_wait(&_sem));
-        });
 
         _obj->set_exit([&_sem, &_completed]() {
             _completed = true;
@@ -264,36 +335,21 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
             TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
         });
 
-        _obj->set_swap_data([_alloc, &_buffer_size](data_type& _data) {
-            if(!_data.empty())
-            {
-                data_type _buff{};
-                _buff.reserve(_buffer_size);
-                std::swap(_buff, _data);
-                _alloc->m_data.emplace_back(std::move(_buff));
-            }
-        });
-
-        _alloc->m_ready.store(true);
+        _alloc->m_promise.set_value();
 
         while(!_completed)
         {
-            data_type _buff{};
-            _buffer_size = std::max<size_t>(_buffer_size, _obj->m_buffer_size);
-            _buff.reserve(_buffer_size);
+            _alloc->block_pending_signals();
+
+            auto _buff = buffer_type{};
 
             TIMEMORY_SEMAPHORE_CHECK(sem_wait(&_sem));
-            if(!_obj->m_data.empty() || _obj->m_data.capacity() == 0)
+            if(!_obj->m_filled.is_empty())
             {
-                std::swap(_buff, _obj->m_data);
-                TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
+                std::swap(_buff, _obj->m_filled);
                 ++_swap_count;
-                if(!_buff.empty())
-                    _alloc->m_data.emplace_back(std::move(_buff));
-            }
-            else
-            {
-                TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
+                if(!_buff.is_empty())
+                    _alloc->emplace(std::move(_buff));
             }
         }
     } catch(...)
@@ -303,7 +359,6 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
     }
 
     _obj->set_notify([]() {});
-    _obj->set_wait([]() {});
     _obj->set_exit([]() {});
     _alloc->m_alive.store(false);
 
@@ -328,11 +383,15 @@ struct allocator<void>
     allocator& operator=(const allocator&) = delete;
     allocator& operator=(allocator&&) noexcept = default;
 
-    static constexpr bool ready() { return true; }
     static constexpr bool is_alive() { return false; }
+    static constexpr void block_signal(int) {}
 
     template <typename Tp>
-    void restart(Tp*)
+    static constexpr void emplace(Tp&&)
+    {}
+
+    template <typename Tp>
+    static constexpr void restart(Tp*)
     {}
 };
 

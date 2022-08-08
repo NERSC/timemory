@@ -27,9 +27,6 @@
 
 #include "timemory/utility/types.hpp"
 
-#include <initializer_list>
-#include <limits>
-
 #if !defined(TIMEMORY_SAMPLING_SAMPLER_HPP_)
 #    include "timemory/sampling/sampler.hpp"
 #endif
@@ -57,7 +54,9 @@
 #include <cstdio>
 #include <cstring>
 #include <ctime>
+#include <initializer_list>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <thread>
 #include <type_traits>
@@ -191,7 +190,8 @@ template <typename... Args, typename Tp, enable_if_t<Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::sample(Args&&... _args)
 {
-    m_last = &(m_data.at((m_idx++) % N));
+    m_last = &(get_data().at((m_idx++) % N));
+    ++m_count;
     if(m_backtrace)
     {
         // e.g. _depth == 4 and _offset == 3 means get last 4 of 7 backtrace entries
@@ -219,15 +219,20 @@ void
 sampler<CompT<Types...>, N, SigIds...>::sample(Args&&... _args)
 {
     assert(m_buffer_size > 0);
-    if(m_data.size() == m_buffer_size || m_data.capacity() < m_buffer_size)
+    if(!m_buffer.is_initialized())
     {
-        m_notify();
-        m_wait();
+        m_buffer = buffer_t{ m_buffer_size, true };
     }
-
-    assert(m_data.capacity() >= m_buffer_size);
-    m_data.emplace_back(bundle_type{});
-    m_last = &m_data.back();
+    else if(m_buffer.is_full())
+    {
+        m_filled = std::move(m_buffer);
+        m_notify();
+        m_buffer = buffer_t{ m_buffer_size, true };
+    }
+    m_last = m_buffer.request();
+    if(!m_last)
+        return;
+    ++m_count;
     if(m_backtrace)
     {
         // e.g. _depth == 4 and _offset == 3 means get last 4 of 7 backtrace entries
@@ -254,13 +259,16 @@ template <typename Tp, enable_if_t<Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::start()
 {
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "starting (index: %zu)", m_idx);
-    auto cnt = tracker_type::start();
-    base_type::set_started();
-    for(auto& itr : m_data)
-        itr.start();
-    if(cnt.second == 0)
-        configure({ SigIds... });
+    if(!base_type::get_is_running())
+    {
+        TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "starting (index: %zu)", m_idx);
+        auto cnt = tracker_type::start();
+        base_type::set_started();
+        for(auto& itr : get_data())
+            itr.start();
+        if(cnt.second == 0)
+            configure({ SigIds... });
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -270,13 +278,16 @@ template <typename Tp, enable_if_t<Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::stop()
 {
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "stopping (index: %zu)", m_idx);
-    auto cnt = tracker_type::stop();
-    base_type::set_stopped();
-    for(auto& itr : m_data)
-        itr.stop();
-    if(cnt.second == 0)
-        stop({});
+    if(base_type::get_is_running())
+    {
+        TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "stopping (index: %zu)", m_idx);
+        auto cnt = tracker_type::stop();
+        base_type::set_stopped();
+        for(auto& itr : get_data())
+            itr.stop();
+        if(cnt.second == 0)
+            stop({});
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -286,17 +297,18 @@ template <typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::start()
 {
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "starting (index: %zu)", m_idx);
-    auto cnt = tracker_type::start();
-    if(cnt.second == 0 && !m_alloc.is_alive())
+    if(!base_type::get_is_running())
     {
-        TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2,
-                                        "restarting allocator (index: %zu)", m_idx);
-        m_alloc.restart(this);
+        TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "starting (index: %zu)", m_idx);
+        auto cnt = tracker_type::start();
+        if(cnt.second == 0 && !m_alloc.is_alive())
+        {
+            TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2,
+                                            "restarting allocator (index: %zu)", m_idx);
+            m_alloc.restart(this);
+        }
+        base_type::set_started();
     }
-    base_type::set_started();
-    for(auto& itr : m_data)
-        itr.start();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -306,13 +318,24 @@ template <typename Tp, enable_if_t<!Tp::value>>
 void
 sampler<CompT<Types...>, N, SigIds...>::stop()
 {
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "stopping (index: %zu)", m_idx);
-    auto cnt = tracker_type::stop();
-    base_type::set_stopped();
-    for(auto& itr : m_data)
-        itr.stop();
-    if(cnt.second == 0)
-        stop({});
+    if(base_type::get_is_running())
+    {
+        TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "stopping (index: %zu)", m_idx);
+        auto cnt = tracker_type::stop();
+        base_type::set_stopped();
+        if(cnt.second == 0)
+            stop({});
+    }
+    auto _alloc_emplace = [&](buffer_t& itr) {
+        if(itr.is_initialized() && !itr.is_empty())
+        {
+            auto _v = buffer_t{};
+            std::swap(itr, _v);
+            m_alloc.emplace(std::move(_v));
+        }
+    };
+    _alloc_emplace(m_filled);
+    _alloc_emplace(m_buffer);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -368,30 +391,10 @@ sampler<CompT<Types...>, N, SigIds...>::stop(std::set<int> _signals)
 //
 template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
 template <typename Tp, enable_if_t<Tp::value>>
-typename sampler<CompT<Types...>, N, SigIds...>::bundle_type&
-sampler<CompT<Types...>, N, SigIds...>::get(size_t idx)
-{
-    return m_data.at(idx % N);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
-template <typename Tp, enable_if_t<Tp::value>>
 const typename sampler<CompT<Types...>, N, SigIds...>::bundle_type&
 sampler<CompT<Types...>, N, SigIds...>::get(size_t idx) const
 {
-    return m_data.at(idx % N);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <template <typename...> class CompT, size_t N, typename... Types, int... SigIds>
-template <typename Tp, enable_if_t<!Tp::value>>
-typename sampler<CompT<Types...>, N, SigIds...>::bundle_type&
-sampler<CompT<Types...>, N, SigIds...>::get(size_t idx)
-{
-    return m_data.at(idx);
+    return get_data().at(idx % N);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -401,7 +404,7 @@ template <typename Tp, enable_if_t<!Tp::value>>
 const typename sampler<CompT<Types...>, N, SigIds...>::bundle_type&
 sampler<CompT<Types...>, N, SigIds...>::get(size_t idx) const
 {
-    return m_data.at(idx);
+    return get_data().at(idx);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -410,36 +413,12 @@ template <template <typename...> class CompT, size_t N, typename... Types, int..
 void
 sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
 {
-    // prevent re-entry from different signals
-    static thread_local semaphore_t _sem = []() {
-        semaphore_t _v{};
-        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "initializing %s",
-                                        "semaphore");
-        int _err = 0;
-        TIMEMORY_SEMAPHORE_HANDLE_EINTR(sem_init, _err, &_v, 0, 1)
-        TIMEMORY_SEMAPHORE_CHECK_MSG(_err, "sem_init(&_v, 0, 1)")
-        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "%s initialized", "semaphore");
-        return _v;
-    }();
-
+    static thread_local sig_atomic_t _sig_lock = 0;
     IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
     {
-        int _err = 0;
-        TIMEMORY_SEMAPHORE_TRYWAIT(_sem, _err);
-
-        if(_err == EAGAIN)
-        {
-            TIMEMORY_CONDITIONAL_PRINT_HERE(
-                settings::debug(), "Ignoring signal %i (raised while sampling)", signum);
+        if(_sig_lock > 0)
             return;
-        }
-        else if(_err != 0)
-        {
-            std::stringstream _msg{};
-            _msg << "sem_trywait(&_sem) returned error code: " << _err;
-            perror(_msg.str().c_str());
-            throw std::runtime_error(_msg.str().c_str());
-        }
+        _sig_lock = 1;
     }
 
     for(auto& itr : get_samplers(threading::get_id()))
@@ -467,10 +446,7 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum)
         else { itr->sample(signum); }
     }
 
-    IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
-    {
-        TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
-    }
+    IF_CONSTEXPR(trait::prevent_reentry<this_type>::value) { _sig_lock = 0; }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -479,43 +455,12 @@ template <template <typename...> class CompT, size_t N, typename... Types, int..
 void
 sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t* _info, void* _data)
 {
-    // prevent re-entry from different signals
-    static thread_local semaphore_t _sem = []() {
-        semaphore_t _v{};
-        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "initializing %s",
-                                        "semaphore");
-        int _err = 0;
-        TIMEMORY_SEMAPHORE_HANDLE_EINTR(sem_init, _err, &_v, 0, 1)
-        TIMEMORY_SEMAPHORE_CHECK_MSG(_err, "sem_init(&_v, 0, 1)")
-        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "%s initialized", "semaphore");
-        return _v;
-    }();
-    static thread_local auto _sem_dtor = scope::destructor{ []() {
-        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "destroying %s", "semaphore");
-        int                  _err      = 0;
-        TIMEMORY_SEMAPHORE_HANDLE_EINTR(sem_destroy, _err, &_sem)
-        TIMEMORY_SEMAPHORE_CHECK_MSG(_err, "sem_destroy(&_sem)")
-        TIMEMORY_CONDITIONAL_PRINT_HERE(settings::debug(), "%s destroyed", "semaphore");
-    } };
-
+    static thread_local sig_atomic_t _sig_lock = 0;
     IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
     {
-        int _err = 0;
-        TIMEMORY_SEMAPHORE_TRYWAIT(_sem, _err);
-
-        if(_err == EAGAIN)
-        {
-            TIMEMORY_CONDITIONAL_PRINT_HERE(
-                settings::debug(), "Ignoring signal %i (raised while sampling)", signum);
+        if(_sig_lock > 0)
             return;
-        }
-        else if(_err != 0)
-        {
-            std::stringstream _msg{};
-            _msg << "sem_trywait(&_sem) returned error code: " << _err;
-            perror(_msg.str().c_str());
-            throw std::runtime_error(_msg.str().c_str());
-        }
+        _sig_lock = 1;
     }
 
     for(auto& itr : get_samplers(threading::get_id()))
@@ -543,10 +488,7 @@ sampler<CompT<Types...>, N, SigIds...>::execute(int signum, siginfo_t* _info, vo
         else { itr->sample(signum, _info, _data); }
     }
 
-    IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
-    {
-        TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
-    }
+    IF_CONSTEXPR(trait::prevent_reentry<this_type>::value) { _sig_lock = 0; }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -594,6 +536,7 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
         TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose >= 3,
                                         "configuring %zu signal handlers (index: %zu)",
                                         _signals.size(), m_idx);
+
         auto& _custom_sa = m_timer_data.m_custom_sigaction;
 
         memset(&_custom_sa, 0, sizeof(_custom_sa));
@@ -610,6 +553,9 @@ sampler<CompT<Types...>, N, SigIds...>::configure(std::set<int> _signals, int _v
         // start the interval timer
         for(const auto& itr : _signals)
         {
+            m_alloc.block_signal(itr);
+            m_notify();
+
             // already active
             if(m_timer_data.m_active[itr])
             {
@@ -1174,8 +1120,8 @@ void
 sampler<CompT<Types...>, N, SigIds...>::_init_sampler(int64_t _tid)
 {
     TIMEMORY_FOLD_EXPRESSION(m_good.insert(SigIds));
-    m_notify();
-    m_wait();
+    m_buffer.set_use_mmap(true);
+    m_buffer.init(m_buffer_size);
     get_samplers(_tid).emplace_back(this);
     if(settings::debug())
         m_verbose += 16;
