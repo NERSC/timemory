@@ -31,7 +31,9 @@
 #pragma once
 
 #include "timemory/defines.h"
+#include "timemory/environment/types.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/delimit.hpp"
 #include "timemory/utility/locking.hpp"
 #include "timemory/utility/macros.hpp"
@@ -98,6 +100,23 @@ get_reserved_ids()
     static auto _v = std::set<int64_t>{ 0 };
     return _v;
 }
+inline std::vector<int64_t>&
+get_available_offset_ids()
+{
+    static auto _v = []() {
+        auto _tmp = std::vector<int64_t>{};
+        _tmp.reserve(TIMEMORY_MAX_THREADS);
+        return _tmp;
+    }();
+    return _v;
+}
+//
+inline bool&
+offset_this_id()
+{
+    static thread_local bool _v = false;
+    return _v;
+}
 //
 struct recycle_ids
 {
@@ -129,14 +148,43 @@ recycle_ids()
     static auto _v = internal::recycle_ids{};
     return _v;
 }
+inline void
+offset_this_id(bool _v)
+{
+    internal::offset_this_id() = _v;
+}
 //
 inline int64_t
 get_id()
 {
+    static bool _debug =
+        get_env<bool>(TIMEMORY_SETTINGS_PREFIX "DEBUG_THREADING_GET_ID", false);
     static std::atomic<int64_t> _global_counter{ 0 };
+    static std::atomic<int64_t> _offset_counter{ TIMEMORY_MAX_THREADS };
     static thread_local auto    _this_id = []() {
         int64_t _id = -1;
-        if(recycle_ids() && _global_counter >= TIMEMORY_MAX_THREADS)
+        if(internal::offset_this_id() && _global_counter == 0)
+            internal::offset_this_id() = false;
+        bool _offset = internal::offset_this_id();
+        if(_offset)
+        {
+            if(recycle_ids())
+            {
+                auto_lock_t _lk{ type_mutex<internal::recycle_ids>(1) };
+                auto&       _avail = internal::get_available_offset_ids();
+                if(!_avail.empty())
+                {
+                    // always grab from front
+                    _id = _avail.front();
+                    for(size_t i = 1; i < _avail.size(); ++i)
+                        _avail[i - 1] = _avail[i];
+                    _avail.pop_back();
+                }
+            }
+            if(_id < 0)
+                _id = --_offset_counter;
+        }
+        else if(recycle_ids() && _global_counter >= _offset_counter)
         {
             auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
             auto&       _avail = internal::get_available_ids();
@@ -153,11 +201,28 @@ get_id()
         if(_id < 0)
             _id = _global_counter++;
 
-        return std::make_pair(_id, scope::destructor{ [_id]() {
-                                  auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
-                                  if(internal::get_reserved_ids().count(_id) == 0)
-                                      internal::get_available_ids().emplace_back(_id);
-                              } });
+        if(_debug)
+        {
+            timemory_print_demangled_backtrace<8>(
+                std::cerr, std::string{},
+                std::string{ "threading::get_id() [id=" } + std::to_string(_id) +
+                    std::string{ "]" });
+        }
+
+        return std::make_pair(
+            _id, scope::destructor{ [_id, _offset]() {
+                if(_offset)
+                {
+                    auto_lock_t _lk{ type_mutex<internal::recycle_ids>(1) };
+                    internal::get_available_offset_ids().emplace_back(_id);
+                }
+                else
+                {
+                    auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
+                    if(internal::get_reserved_ids().count(_id) == 0)
+                        internal::get_available_ids().emplace_back(_id);
+                }
+            } });
     }();
     return _this_id.first;
 }
