@@ -226,6 +226,10 @@ papi_vector::label_array() const
         papi::event_info_t _info = papi::get_event_info(events.at(i));
         if(!_info.modified_short_descr)
             arr.at(i) = _info.short_descr;
+        if(arr.at(i).empty())
+            arr.at(i) = _info.symbol;
+        if(arr.at(i).empty())
+            arr.at(i) = events.at(i);
     }
 
     for(auto& itr : arr)
