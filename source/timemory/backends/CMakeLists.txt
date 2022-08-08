@@ -4,7 +4,6 @@ file(GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 if(TIMEMORY_USE_MPI_INIT)
-
     timemory_build_intermediate_library(
         NAME mpi_init
         TARGET common
@@ -12,14 +11,12 @@ if(TIMEMORY_USE_MPI_INIT)
         FOLDER components
         HEADERS ${mpi_header_files}
         SOURCES ${mpi_source_files}
-        DEPENDS timemory-mpi timemory-core
+        DEPENDS timemory::timemory-mpi timemory::timemory-core
         PROPERTY_DEPENDS GLOBAL)
-
 endif()
 
-foreach(_category header source)
-    list(REMOVE_ITEM ${_category}_files ${mpi_${_category}_files})
-endforeach()
+list(REMOVE_ITEM header_files ${mpi_header_files})
+list(REMOVE_ITEM source_files ${mpi_source_files})
 
 timemory_build_intermediate_library(
     USE_INTERFACE INSTALL_SOURCES
@@ -29,5 +26,5 @@ timemory_build_intermediate_library(
     FOLDER components
     HEADERS ${header_files}
     SOURCES ${source_files}
-    DEPENDS timemory-mpi timemory-core
+    DEPENDS timemory::timemory-mpi timemory::timemory-core timemory::timemory-gotcha
     PROPERTY_DEPENDS GLOBAL)

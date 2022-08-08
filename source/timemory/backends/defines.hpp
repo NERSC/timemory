@@ -38,7 +38,7 @@
 #    define TIMEMORY_BACKENDS_LINKAGE(...) __VA_ARGS__
 #    define TIMEMORY_BACKENDS_INLINE
 #elif defined(TIMEMORY_USE_BACKENDS_EXTERN)
-#    define TIMEMORY_BACKENDS_LINKAGE(...) extern __VA_ARGS__
+#    define TIMEMORY_BACKENDS_LINKAGE(...) __VA_ARGS__
 #    define TIMEMORY_BACKENDS_INLINE
 #else
 #    define TIMEMORY_BACKENDS_LINKAGE(...) inline __VA_ARGS__

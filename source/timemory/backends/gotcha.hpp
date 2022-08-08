@@ -30,7 +30,11 @@
 
 #pragma once
 
+#include "timemory/backends/defines.hpp"
+#include "timemory/defines.h"
+#include "timemory/mpl/concepts.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/settings/macros.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>
@@ -117,98 +121,47 @@ using error_t   = _gotcha_error_timemory;
 
 //--------------------------------------------------------------------------------------//
 
-inline std::string
-get_error(const error_t& err)
-{
-    switch(err)
-    {
-        case GOTCHA_SUCCESS: return "success";
-        case GOTCHA_FUNCTION_NOT_FOUND: return "function not found";
-        case GOTCHA_INTERNAL: return "internal error";
-        case GOTCHA_INVALID_TOOL: return "invalid tool";
-    }
-    return "unknown";
-}
+bool
+initialize();
 
-//--------------------------------------------------------------------------------------//
+const char*
+get_error(error_t err);
 
-inline error_t
+error_t
+set_priority(const char* _tool, int _priority = 0);
+
+error_t
+get_priority(const char* _tool, int& _priority);
+
+error_t
+wrap(binding_t& _bind, const char* _label);
+
+inline auto
 set_priority(const std::string& _tool, int _priority = 0)
 {
-    if(settings::debug())
-    {
-        printf("[gotcha::%s]> Setting priority for tool: %s to %i...\n", __FUNCTION__,
-               _tool.c_str(), _priority);
-    }
-#if defined(TIMEMORY_USE_GOTCHA)
-    // return GOTCHA_SUCCESS;
-    error_t _ret = gotcha_set_priority(_tool.c_str(), _priority);
-    if(_ret != GOTCHA_SUCCESS)
-        printf("[gotcha::%s]> Warning! set_priority == %i failed for '%s'. err %i: %s\n",
-               __FUNCTION__, _priority, _tool.c_str(), static_cast<int>(_ret),
-               get_error(_ret).c_str());
-    return _ret;
-#else
-    if(settings::debug())
-        printf("[gotcha::%s]> Warning! GOTCHA not truly enabled!", __FUNCTION__);
-    return GOTCHA_SUCCESS;
-#endif
+    return set_priority(_tool.c_str(), _priority);
 }
 
-//--------------------------------------------------------------------------------------//
-
-inline error_t
+inline auto
 get_priority(const std::string& _tool, int& _priority)
 {
-    if(settings::debug())
-    {
-        printf("[gotcha::%s]> Getting priority for tool: %s to %i...\n", __FUNCTION__,
-               _tool.c_str(), _priority);
-    }
-#if defined(TIMEMORY_USE_GOTCHA)
-    // return GOTCHA_SUCCESS;
-    error_t _ret = gotcha_get_priority(_tool.c_str(), &_priority);
-    if(_ret != GOTCHA_SUCCESS)
-        printf("[gotcha::%s]> Warning! get_priority == %i failed for '%s'. err %i: %s\n",
-               __FUNCTION__, _priority, _tool.c_str(), static_cast<int>(_ret),
-               get_error(_ret).c_str());
-    return _ret;
-#else
-    if(settings::debug())
-        printf("[gotcha::%s]> Warning! GOTCHA not truly enabled!", __FUNCTION__);
-    return GOTCHA_SUCCESS;
-#endif
+    return get_priority(_tool.c_str(), _priority);
 }
 
-//--------------------------------------------------------------------------------------//
-
-inline error_t
+inline auto
 wrap(binding_t& _bind, std::string& _label)
 {
-    error_t _ret = GOTCHA_SUCCESS;
-
-    if(settings::debug())
-        printf("[gotcha::%s]> Adding tool: %s...\n", __FUNCTION__, _label.c_str());
-
-#if defined(TIMEMORY_USE_GOTCHA)
-    if(_ret == GOTCHA_SUCCESS)
-        _ret = gotcha_wrap(&_bind, 1, _label.c_str());
-#else
-    if(settings::debug())
-        printf("[gotcha::%s]> Warning! GOTCHA not truly enabled!", __FUNCTION__);
-    consume_parameters(_bind);
-#endif
-
-    return _ret;
+    return wrap(_bind, _label.c_str());
 }
 
-//--------------------------------------------------------------------------------------//
-
-template <size_t N>
+template <size_t N, typename StringT>
 std::array<error_t, N>
 wrap(std::array<binding_t, N>& _arr, const std::array<bool, N>& _filled,
-     std::array<std::string, N>& _labels)
+     std::array<StringT, N>& _labels)
 {
+    static_assert(concepts::is_string_type<StringT>::value,
+                  "Error! labels must be string type");
+    initialize();
     std::array<error_t, N> _ret;
     for(size_t i = 0; i < N; ++i)
     {
@@ -223,11 +176,11 @@ wrap(std::array<binding_t, N>& _arr, const std::array<bool, N>& _filled,
     }
     return _ret;
 }
-
-//--------------------------------------------------------------------------------------//
-
 }  // namespace gotcha
 }  // namespace backend
 }  // namespace tim
 
-//======================================================================================//
+#if defined(TIMEMORY_BACKENDS_HEADER_ONLY_MODE) && TIMEMORY_BACKENDS_HEADER_ONLY_MODE > 0
+#    include "timemory/backends/gotcha.cpp"
+#    error "Should not be header-only"
+#endif

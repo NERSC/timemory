@@ -203,7 +203,7 @@ gotcha<Nt, BundleT, DiffT>::construct(const std::string& _func, int _priority,
         };
         _data.destructor = []() { this_type::revert<N>(); };
         _data.binding    = std::move(construct_binder<N, Ret, Args...>(_data.wrap_id));
-        error_t ret_wrap = backend::gotcha::wrap(_data.binding, _data.tool_id);
+        error_t ret_wrap = backend::gotcha::wrap(_data.binding, _data.tool_id.c_str());
         check_error<N>(ret_wrap, "binding");
     }
 
