@@ -505,6 +505,10 @@ extern "C"
                     (int) tim::threading::get_id());
         }
 
+        // configure bundle
+        if(user_trace_bundle::bundle_size() == 0)
+            user_trace_bundle::global_init(true);
+
         _trace_map[id].emplace_back(traceset_t{ id });
         _trace_map[id].back().start();
         _overh_map[id].first.start();
@@ -742,11 +746,6 @@ extern "C"
             }
 
             tim::settings::parse();
-
-            // configure bundle
-            user_trace_bundle::global_init(true);
-            // tim::operation::init<user_trace_bundle>(
-            //    tim::operation::mode_constant<tim::operation::init_mode::global>{});
         };
 
         if(!get_library_state()[0] && library_trace_count++ == 0)

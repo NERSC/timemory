@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 #
 # NOTE: The attach mode may not work if system permissions are disabled.
 #

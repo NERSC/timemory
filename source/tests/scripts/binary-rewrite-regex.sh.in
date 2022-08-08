@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 #
 # NOTE: add '--mpi' after @PROJECT_BINARY_DIR@/timemory-run to applications built with MPI
 #

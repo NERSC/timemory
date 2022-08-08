@@ -1,4 +1,4 @@
-#!/bin/bash -ex
+#!/bin/bash -e
 #
 # NOTE: Applications built with MPI may abort when launched via @PROJECT_BINARY_DIR@/timemory-run
 #
