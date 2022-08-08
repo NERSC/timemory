@@ -26,8 +26,6 @@
 #include "timemory/math/assign.hpp"
 #include "timemory/mpl/concepts.hpp"
 
-#include <bits/stdint-intn.h>
-#include <bits/stdint-uintn.h>
 #include <cstdint>
 #include <limits>
 #include <sstream>
