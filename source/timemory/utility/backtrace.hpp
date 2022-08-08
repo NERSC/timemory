@@ -24,10 +24,12 @@
 
 #pragma once
 
+#include "timemory/defines.h"
 #include "timemory/macros/compiler.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/demangle.hpp"
+#include "timemory/utility/locking.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -50,6 +52,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 
 namespace tim
 {
@@ -214,12 +217,17 @@ get_demangled_unw_backtrace()
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE inline std::ostream&
 print_native_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                       const std::string& _info = "", const std::string& _indent = "    ")
+                       const std::string& _info = "", const std::string& _indent = "    ",
+                       bool _use_lock = true)
 {
-    os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
+    auto_lock_t _lk{ type_mutex<std::ostream>(), std::defer_lock };
+    if(_use_lock && !_lk.owns_lock())
+        _lk.lock();
+    os << _indent.substr(0, _indent.length() / 2) << "[" << TIMEMORY_PROJECT_NAME
+       << "] Backtrace";
     if(!_info.empty())
         os << " " << _info;
-    os << ":\n" << std::flush;
+    os << " [tid=" << std::this_thread::get_id() << "]:\n" << std::flush;
     auto bt = ::tim::get_native_backtrace<Depth, Offset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
@@ -237,13 +245,18 @@ print_native_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
 template <size_t Depth, size_t Offset = 2>
 TIMEMORY_NOINLINE inline std::ostream&
 print_demangled_native_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                                 const std::string& _info   = "",
-                                 const std::string& _indent = "    ")
+                                 const std::string& _info     = "",
+                                 const std::string& _indent   = "    ",
+                                 bool               _use_lock = true)
 {
-    os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
+    auto_lock_t _lk{ type_mutex<std::ostream>(), std::defer_lock };
+    if(_use_lock && !_lk.owns_lock())
+        _lk.lock();
+    os << _indent.substr(0, _indent.length() / 2) << "[" << TIMEMORY_PROJECT_NAME
+       << "] Backtrace";
     if(!_info.empty())
         os << " " << _info;
-    os << ":\n" << std::flush;
+    os << " [tid=" << std::this_thread::get_id() << "]:\n" << std::flush;
     auto bt = ::tim::get_demangled_native_backtrace<Depth, Offset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
@@ -261,12 +274,17 @@ print_demangled_native_backtrace(std::ostream& os = std::cerr, std::string _pref
 template <size_t Depth, size_t Offset = 2, bool WFuncOffset = true>
 TIMEMORY_NOINLINE inline std::ostream&
 print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
-                    const std::string& _info = "", const std::string& _indent = "    ")
+                    const std::string& _info = "", const std::string& _indent = "    ",
+                    bool _use_lock = true)
 {
-    os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
+    auto_lock_t _lk{ type_mutex<std::ostream>(), std::defer_lock };
+    if(_use_lock && !_lk.owns_lock())
+        _lk.lock();
+    os << _indent.substr(0, _indent.length() / 2) << "[" << TIMEMORY_PROJECT_NAME
+       << "] Backtrace";
     if(!_info.empty())
         os << " " << _info;
-    os << ":\n" << std::flush;
+    os << " [tid=" << std::this_thread::get_id() << "]:\n" << std::flush;
     auto bt = ::tim::get_unw_backtrace<Depth, Offset, WFuncOffset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
@@ -285,12 +303,16 @@ template <size_t Depth, size_t Offset = 3>
 TIMEMORY_NOINLINE inline std::ostream&
 print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
                               const std::string& _info   = "",
-                              const std::string& _indent = "    ")
+                              const std::string& _indent = "    ", bool _use_lock = true)
 {
-    os << _indent.substr(0, _indent.length() / 2) << "Backtrace";
+    auto_lock_t _lk{ type_mutex<std::ostream>(), std::defer_lock };
+    if(_use_lock && !_lk.owns_lock())
+        _lk.lock();
+    os << _indent.substr(0, _indent.length() / 2) << "[" << TIMEMORY_PROJECT_NAME
+       << "] Backtrace";
     if(!_info.empty())
         os << " " << _info;
-    os << ":\n" << std::flush;
+    os << " [tid=" << std::this_thread::get_id() << "]:\n" << std::flush;
     auto bt = ::tim::get_demangled_unw_backtrace<Depth, Offset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
