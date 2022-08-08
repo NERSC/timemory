@@ -94,6 +94,7 @@ add_subdirectory(operations)
 add_subdirectory(variadic)
 add_subdirectory(config)
 add_subdirectory(backends)
+add_subdirectory(sampling)
 
 # deprecated
 add_subdirectory(deprecated)

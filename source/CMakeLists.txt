@@ -18,8 +18,7 @@ file(GLOB cxx_headers_variadic ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp
 file(GLOB_RECURSE cxx_headers_backends ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
 file(GLOB_RECURSE cxx_headers_components
      ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
-file(GLOB cxx_headers_sampling ${CMAKE_CURRENT_LIST_DIR}/timemory/sampling/*.hpp
-     ${CMAKE_CURRENT_LIST_DIR}/timemory/sampling/*.cpp)
+file(GLOB cxx_headers_sampling ${CMAKE_CURRENT_LIST_DIR}/timemory/sampling/*.hpp)
 file(GLOB cxx_headers_macros ${CMAKE_CURRENT_LIST_DIR}/timemory/macros/*.hpp)
 file(GLOB cxx_headers_api ${CMAKE_CURRENT_LIST_DIR}/timemory/api/*.hpp)
 file(GLOB cxx_headers_ert ${CMAKE_CURRENT_LIST_DIR}/timemory/ert/*.hpp)
