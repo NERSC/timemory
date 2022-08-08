@@ -182,5 +182,4 @@ wrap(std::array<binding_t, N>& _arr, const std::array<bool, N>& _filled,
 
 #if defined(TIMEMORY_BACKENDS_HEADER_ONLY_MODE) && TIMEMORY_BACKENDS_HEADER_ONLY_MODE > 0
 #    include "timemory/backends/gotcha.cpp"
-#    error "Should not be header-only"
 #endif
