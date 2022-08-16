@@ -403,91 +403,87 @@ public:
 public:
     // MinimalJSONOutputArchive overloads -- get instantiated in extern template
     TIMEMORY_COLD serialization(const Tp& obj, cereal::MinimalJSONOutputArchive& ar,
-                                const unsigned int version, ...);
+                                const unsigned int version);
 
     TIMEMORY_COLD void operator()(const Tp& obj, cereal::MinimalJSONOutputArchive& ar,
-                                  const unsigned int version, ...) const;
+                                  const unsigned int version) const;
 
-    TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive& ar, metadata,
-                                  ...) const;
+    TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive& ar, metadata) const;
 
     TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive& ar,
-                                  const basic_tree_vector_type&     data, ...) const;
+                                  const basic_tree_vector_type&     data) const;
 
     TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive&          ar,
-                                  const std::vector<basic_tree_vector_type>& data,
-                                  ...) const;
+                                  const std::vector<basic_tree_vector_type>& data) const;
 
     TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive& ar,
-                                  const basic_tree_map_type&        data, ...) const;
+                                  const basic_tree_map_type&        data) const;
 
     TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive& ar,
-                                  const result_type&                data, ...) const;
+                                  const result_type&                data) const;
 
     TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive& ar,
-                                  const distrib_type&               data, ...) const;
+                                  const distrib_type&               data) const;
+
+    TIMEMORY_COLD void operator()(cereal::MinimalJSONOutputArchive& ar,
+                                  const distrib_type&               _dist,
+                                  const basic_tree_map_type&        _tree) const;
 
 public:
     // PrettyJSONOutputArchive overloads -- do not get instantiated in extern template
     template <typename ArchiveT,
               enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
                           int> = 0>
-    TIMEMORY_COLD serialization(const Tp& obj, ArchiveT& ar, const unsigned int version,
-                                ...);
+    TIMEMORY_COLD serialization(const Tp& obj, ArchiveT& ar, const unsigned int version);
 
     template <typename ArchiveT,
               enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
                           int> = 0>
-    TIMEMORY_COLD void operator()(const Tp& obj, ArchiveT& ar, const unsigned int version,
-                                  ...) const;
+    TIMEMORY_COLD void operator()(const Tp& obj, ArchiveT& ar,
+                                  const unsigned int version) const;
 
     template <typename ArchiveT,
               enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
                           int> = 0>
-    TIMEMORY_COLD void operator()(ArchiveT& ar, metadata, ...) const;
+    TIMEMORY_COLD void operator()(ArchiveT& ar, metadata) const;
 
     template <typename ArchiveT,
               enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
                           int> = 0>
-    TIMEMORY_COLD void operator()(ArchiveT& ar, const basic_tree_vector_type& data,
-                                  ...) const;
+    TIMEMORY_COLD void operator()(ArchiveT& ar, const basic_tree_vector_type& data) const;
 
     template <typename ArchiveT,
               enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
                           int> = 0>
     TIMEMORY_COLD void operator()(ArchiveT&                                  ar,
-                                  const std::vector<basic_tree_vector_type>& data,
-                                  ...) const;
+                                  const std::vector<basic_tree_vector_type>& data) const;
 
     template <typename ArchiveT,
               enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
                           int> = 0>
-    TIMEMORY_COLD void operator()(ArchiveT& ar, const basic_tree_map_type& data,
-                                  ...) const;
+    TIMEMORY_COLD void operator()(ArchiveT& ar, const basic_tree_map_type& data) const;
 
     template <typename ArchiveT,
               enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
                           int> = 0>
-    TIMEMORY_COLD void operator()(ArchiveT& ar, const result_type& data, ...) const;
+    TIMEMORY_COLD void operator()(ArchiveT& ar, const result_type& data) const;
 
     template <typename ArchiveT,
               enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
                           int> = 0>
-    TIMEMORY_COLD void operator()(ArchiveT& ar, const distrib_type& data, ...) const;
+    TIMEMORY_COLD void operator()(ArchiveT& ar, const distrib_type& data) const;
 
 public:
     // JSONInputArchive overloads -- get instantiated in extern template
     TIMEMORY_COLD void operator()(cereal::JSONInputArchive& ar,
-                                  basic_tree_vector_type&   data, ...) const;
+                                  basic_tree_vector_type&   data) const;
 
     TIMEMORY_COLD void operator()(cereal::JSONInputArchive&            ar,
-                                  std::vector<basic_tree_vector_type>& data, ...) const;
+                                  std::vector<basic_tree_vector_type>& data) const;
 
-    TIMEMORY_COLD void operator()(cereal::JSONInputArchive& ar, result_type& data,
-                                  ...) const;
+    TIMEMORY_COLD void operator()(cereal::JSONInputArchive& ar, result_type& data) const;
 
-    TIMEMORY_COLD void operator()(cereal::JSONInputArchive& ar, distrib_type& data,
-                                  ...) const;
+    TIMEMORY_COLD void operator()(cereal::JSONInputArchive& ar, distrib_type& data) const;
 
 public:
     template <typename ValueT>
@@ -525,6 +521,11 @@ private:
     template <typename Archive>
     TIMEMORY_COLD void impl(
         Archive& ar, const distrib_type& data,
+        enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
+
+    template <typename Archive>
+    TIMEMORY_COLD void impl(
+        Archive& ar, const distrib_type&, const basic_tree_map_type&,
         enable_if_t<concepts::is_output_archive<Archive>::value, int> = 0) const;
 
     // input
@@ -702,6 +703,53 @@ serialization<Tp, true>::impl(
         ar.finishNode();
     }
     ar.finishNode();  // ranks
+    ar.finishNode();  // name
+}
+//
+template <typename Tp>
+template <typename Archive>
+void
+serialization<Tp, true>::impl(
+    Archive& ar, const distrib_type& _dist, const basic_tree_map_type& _tree,
+    enable_if_t<concepts::is_output_archive<Archive>::value, int>) const
+{
+    auto _name = get_identifier();
+    ar.setNextName(_name.c_str());
+    ar.startNode();
+    {
+        impl(ar, metadata{});
+        extra_serialization<Tp>{ ar };
+    }
+    {
+        ar.setNextName("ranks");
+        ar.startNode();
+        ar.makeArray();
+        for(uint64_t i = 0; i < _dist.size(); ++i)
+        {
+            if(_dist.at(i).empty())
+                continue;
+
+            ar.startNode();
+
+            ar(cereal::make_nvp("rank", i));
+            cereal::save(ar, _dist.at(i));
+
+            ar.finishNode();
+        }
+        ar.finishNode();  // ranks
+    }
+    {
+        auto pitr = _tree.find("process");
+        if(pitr != _tree.end())
+        {
+            ar(cereal::make_nvp("graph", pitr->second));
+        }
+        else
+        {
+            for(const auto& itr : _tree)
+                ar(cereal::make_nvp(itr.first, itr.second));
+        }
+    }
     ar.finishNode();  // name
 }
 //

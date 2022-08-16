@@ -209,7 +209,6 @@ print<Tp, true>::setup()
     auto fext       = trait::archive_extension<trait::output_archive_t<Tp>>{}();
     auto extensions = tim::delimit(m_settings->get_input_extensions(), ",; ");
 
-    tree_outfname = settings::compose_output_filename(label, ".tree" + fext);
     json_outfname = settings::compose_output_filename(label, fext);
     text_outfname = settings::compose_output_filename(label, ".txt");
 
@@ -435,7 +434,8 @@ print<Tp, true>::update_data()
 //
 template <typename Tp>
 void
-print<Tp, true>::print_json(const std::string& outfname, result_type& results)
+print<Tp, true>::print_json(const std::string& outfname, result_type& _dist,
+                            result_tree& _tree)
 {
     using policy_type = policy::output_archive_t<Tp>;
     if(outfname.length() > 0)
@@ -457,7 +457,15 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results)
 
             oa->setNextName("timemory");
             oa->startNode();
-            operation::serialization<Tp>{}(*oa, results);
+            if(json_output() && tree_output() && !_dist.empty() && !_tree.empty())
+                operation::serialization<Tp>{}(*oa, _dist, _tree);
+            else
+            {
+                if(json_output() && !_dist.empty())
+                    operation::serialization<Tp>{}(*oa, _dist);
+                if(tree_output() && !_tree.empty())
+                    operation::serialization<Tp>{}(*oa, _tree);
+            }
             oa->finishNode();  // timemory
         }
         else
@@ -468,45 +476,6 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& results)
         }
         if(ofs)
             ofs << std::endl;
-        ofs.close();
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp>
-void
-print<Tp, true>::print_tree(const std::string& outfname, result_tree& rt)
-{
-    using policy_type = policy::output_archive_t<Tp>;
-
-    if(outfname.length() > 0)
-    {
-        auto fext = outfname.substr(outfname.find_last_of('.') + 1);
-        if(fext.empty())
-            fext = "unknown";
-        manager::instance()->add_file_output(fext, label, outfname);
-        if(!m_settings || m_settings->get_verbose() >= 0)
-            fprintf(stderr, "[%s][%s]|%i> Outputting '%s'...\n", TIMEMORY_PROJECT_NAME,
-                    label.c_str(), node_rank, outfname.c_str());
-        std::ofstream ofs{};
-        if(filepath::open(ofs, outfname))
-        {
-            // ensure write final block during destruction before the file is closed
-            auto oa = policy_type::get(ofs);
-
-            oa->setNextName("timemory");
-            oa->startNode();
-            operation::serialization<Tp>{}(*oa, rt);
-            oa->finishNode();
-        }
-        else
-        {
-            fprintf(stderr, "[storage<%s>::%s @ %i]|%i> Error opening '%s'...\n",
-                    label.c_str(), __FUNCTION__, __LINE__, node_rank, outfname.c_str());
-            return;
-        }
-        ofs << std::endl;
         ofs.close();
     }
 }

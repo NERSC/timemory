@@ -40,7 +40,7 @@ namespace internal
 template <typename Tp>
 serialization<Tp, true>::serialization(const Tp&                         obj,
                                        cereal::MinimalJSONOutputArchive& ar,
-                                       const unsigned int                version, ...)
+                                       const unsigned int                version)
 {
     impl(obj, ar, version);
 }
@@ -48,15 +48,14 @@ serialization<Tp, true>::serialization(const Tp&                         obj,
 template <typename Tp>
 void
 serialization<Tp, true>::operator()(const Tp& obj, cereal::MinimalJSONOutputArchive& ar,
-                                    const unsigned int version, ...) const
+                                    const unsigned int version) const
 {
     impl(obj, ar, version);
 }
 
 template <typename Tp>
 void
-serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive& ar, metadata,
-                                    ...) const
+serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive& ar, metadata) const
 {
     impl(ar, metadata{});
 }
@@ -64,7 +63,7 @@ serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive& ar, metada
 template <typename Tp>
 void
 serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive& ar,
-                                    const basic_tree_vector_type&     data, ...) const
+                                    const basic_tree_vector_type&     data) const
 {
     impl(ar, data);
 }
@@ -72,8 +71,7 @@ serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive& ar,
 template <typename Tp>
 void
 serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive&          ar,
-                                    const std::vector<basic_tree_vector_type>& data,
-                                    ...) const
+                                    const std::vector<basic_tree_vector_type>& data) const
 {
     impl(ar, data);
 }
@@ -81,7 +79,7 @@ serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive&          a
 template <typename Tp>
 void
 serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive& ar,
-                                    const basic_tree_map_type&        data, ...) const
+                                    const basic_tree_map_type&        data) const
 {
     impl(ar, data);
 }
@@ -89,7 +87,7 @@ serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive& ar,
 template <typename Tp>
 void
 serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive& ar,
-                                    const result_type&                data, ...) const
+                                    const result_type&                data) const
 {
     impl(ar, data);
 }
@@ -97,9 +95,18 @@ serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive& ar,
 template <typename Tp>
 void
 serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive& ar,
-                                    const distrib_type&               data, ...) const
+                                    const distrib_type&               data) const
 {
     impl(ar, data);
+}
+
+template <typename Tp>
+void
+serialization<Tp, true>::operator()(cereal::MinimalJSONOutputArchive& ar,
+                                    const distrib_type&               _dist,
+                                    const basic_tree_map_type&        _tree) const
+{
+    impl(ar, _dist, _tree);
 }
 
 template <typename Tp>
@@ -107,7 +114,7 @@ template <
     typename ArchiveT,
     enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value, int>>
 serialization<Tp, true>::serialization(const Tp& obj, ArchiveT& ar,
-                                       const unsigned int version, ...)
+                                       const unsigned int version)
 {
     impl(obj, ar, version);
 }
@@ -118,7 +125,7 @@ template <
     enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value, int>>
 void
 serialization<Tp, true>::operator()(const Tp& obj, ArchiveT& ar,
-                                    const unsigned int version, ...) const
+                                    const unsigned int version) const
 {
     impl(obj, ar, version);
 }
@@ -128,7 +135,7 @@ template <
     typename ArchiveT,
     enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value, int>>
 void
-serialization<Tp, true>::operator()(ArchiveT& ar, metadata, ...) const
+serialization<Tp, true>::operator()(ArchiveT& ar, metadata) const
 {
     impl(ar, metadata{});
 }
@@ -138,8 +145,8 @@ template <
     typename ArchiveT,
     enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value, int>>
 void
-serialization<Tp, true>::operator()(ArchiveT& ar, const basic_tree_vector_type& data,
-                                    ...) const
+serialization<Tp, true>::operator()(ArchiveT&                     ar,
+                                    const basic_tree_vector_type& data) const
 {
     impl(ar, data);
 }
@@ -150,8 +157,7 @@ template <
     enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value, int>>
 void
 serialization<Tp, true>::operator()(ArchiveT&                                  ar,
-                                    const std::vector<basic_tree_vector_type>& data,
-                                    ...) const
+                                    const std::vector<basic_tree_vector_type>& data) const
 {
     impl(ar, data);
 }
@@ -161,8 +167,7 @@ template <
     typename ArchiveT,
     enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value, int>>
 void
-serialization<Tp, true>::operator()(ArchiveT& ar, const basic_tree_map_type& data,
-                                    ...) const
+serialization<Tp, true>::operator()(ArchiveT& ar, const basic_tree_map_type& data) const
 {
     impl(ar, data);
 }
@@ -172,7 +177,7 @@ template <
     typename ArchiveT,
     enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value, int>>
 void
-serialization<Tp, true>::operator()(ArchiveT& ar, const result_type& data, ...) const
+serialization<Tp, true>::operator()(ArchiveT& ar, const result_type& data) const
 {
     impl(ar, data);
 }
@@ -182,7 +187,7 @@ template <
     typename ArchiveT,
     enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value, int>>
 void
-serialization<Tp, true>::operator()(ArchiveT& ar, const distrib_type& data, ...) const
+serialization<Tp, true>::operator()(ArchiveT& ar, const distrib_type& data) const
 {
     impl(ar, data);
 }
@@ -190,7 +195,7 @@ serialization<Tp, true>::operator()(ArchiveT& ar, const distrib_type& data, ...)
 template <typename Tp>
 void
 serialization<Tp, true>::operator()(cereal::JSONInputArchive& ar,
-                                    basic_tree_vector_type&   data, ...) const
+                                    basic_tree_vector_type&   data) const
 {
     impl(ar, data);
 }
@@ -198,23 +203,22 @@ serialization<Tp, true>::operator()(cereal::JSONInputArchive& ar,
 template <typename Tp>
 void
 serialization<Tp, true>::operator()(cereal::JSONInputArchive&            ar,
-                                    std::vector<basic_tree_vector_type>& data, ...) const
+                                    std::vector<basic_tree_vector_type>& data) const
 {
     impl(ar, data);
 }
 
 template <typename Tp>
 void
-serialization<Tp, true>::operator()(cereal::JSONInputArchive& ar, result_type& data,
-                                    ...) const
+serialization<Tp, true>::operator()(cereal::JSONInputArchive& ar, result_type& data) const
 {
     impl(ar, data);
 }
 
 template <typename Tp>
 void
-serialization<Tp, true>::operator()(cereal::JSONInputArchive& ar, distrib_type& data,
-                                    ...) const
+serialization<Tp, true>::operator()(cereal::JSONInputArchive& ar,
+                                    distrib_type&             data) const
 {
     impl(ar, data);
 }

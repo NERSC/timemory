@@ -1281,7 +1281,6 @@ struct print
 
     TIMEMORY_COLD auto get_label() const { return label; }
     TIMEMORY_COLD auto get_text_output_name() const { return text_outfname; }
-    TIMEMORY_COLD auto get_tree_output_name() const { return tree_outfname; }
     TIMEMORY_COLD auto get_json_output_name() const { return json_outfname; }
     TIMEMORY_COLD auto get_json_input_name() const { return json_inpfname; }
     TIMEMORY_COLD auto get_text_diff_name() const { return text_diffname; }
@@ -1387,14 +1386,13 @@ protected:
     int32_t     verbose        = 0;                                    // NOLINT
     int64_t     max_depth      = 0;                                    // NOLINT
     int64_t     max_call_stack = std::numeric_limits<int64_t>::max();  // NOLINT
-    std::string label          = "";                                   // NOLINT
-    std::string description    = "";                                   // NOLINT
-    std::string text_outfname  = "";                                   // NOLINT
-    std::string tree_outfname  = "";                                   // NOLINT
-    std::string json_outfname  = "";                                   // NOLINT
-    std::string json_inpfname  = "";                                   // NOLINT
-    std::string text_diffname  = "";                                   // NOLINT
-    std::string json_diffname  = "";                                   // NOLINT
+    std::string label          = {};                                   // NOLINT
+    std::string description    = {};                                   // NOLINT
+    std::string text_outfname  = {};                                   // NOLINT
+    std::string json_outfname  = {};                                   // NOLINT
+    std::string json_inpfname  = {};                                   // NOLINT
+    std::string text_diffname  = {};                                   // NOLINT
+    std::string json_diffname  = {};                                   // NOLINT
     stream_type data_stream    = stream_type{};                        // NOLINT
     stream_type diff_stream    = stream_type{};                        // NOLINT
 };
@@ -1460,10 +1458,8 @@ struct print<Tp, true> : public base::print
 
         if(file_output())
         {
-            if(json_output())
-                print_json(json_outfname, node_results);
-            if(tree_output())
-                print_tree(tree_outfname, node_tree);
+            if(json_output() || tree_output())
+                print_json(json_outfname, node_results, node_tree);
             if(text_output())
                 print_text(text_outfname, data_stream);
             if(plot_output())
@@ -1488,7 +1484,10 @@ struct print<Tp, true> : public base::print
             if(file_output())
             {
                 if(json_output())
-                    print_json(json_diffname, node_delta);
+                {
+                    auto _empty_tree = result_tree{};
+                    print_json(json_diffname, node_delta, _empty_tree);
+                }
                 if(text_output())
                     print_text(text_diffname, diff_stream);
                 if(plot_output())
@@ -1528,10 +1527,9 @@ struct print<Tp, true> : public base::print
             fprintf(stderr, "Exception: %s\n", e.what());
         }
     }
-    TIMEMORY_COLD virtual void print_tree(const std::string& fname, result_tree& rt);
-
     TIMEMORY_COLD void        write_stream(stream_type& stream, result_type& results);
-    TIMEMORY_COLD void        print_json(const std::string& fname, result_type& results);
+    TIMEMORY_COLD void        print_json(const std::string& fname, result_type& results,
+                                         result_tree& rt);
     TIMEMORY_COLD const auto& get_data() const { return data; }
     TIMEMORY_COLD const auto& get_node_results() const { return node_results; }
     TIMEMORY_COLD const auto& get_node_input() const { return node_input; }
