@@ -220,6 +220,20 @@ public:
     const auto& obj() const { return this->data(); }
 
     hash_value_t uniq_hash() const { return get_combined_hash_id(id(), tid(), depth()); }
+
+    std::string as_string() const
+    {
+        std::stringstream _ss{};
+        _ss << std::boolalpha << "is_dummy=" << is_dummy() << ", tid=" << tid()
+            << ", pid=" << pid() << ", hash=" << hash() << ", depth=" << depth()
+            << ", data=" << data() << ", stats=" << stats();
+        return _ss.str();
+    }
+
+    friend std::ostream& operator<<(std::ostream& _os, const this_type& _v)
+    {
+        return _os << _v.as_string();
+    }
 };
 //
 //--------------------------------------------------------------------------------------//

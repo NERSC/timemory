@@ -2461,15 +2461,19 @@ graph<T, AllocatorT>::sibling(const iterator_base& it, unsigned int num) const
 
 template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::sibling_iterator
-graph<T, AllocatorT>::child(const iterator_base& it, unsigned int num)
+graph<T, AllocatorT>::child(const iterator_base& itr, unsigned int _num)
 {
-    graph_node* tmp = it.node->first_child;
-    while((num--) != 0u)
+    if(!itr.node)
+        return sibling_iterator{ nullptr };
+
+    graph_node* _v = itr.node->first_child;
+    for(unsigned int i = 0; i < _num; ++i)
     {
-        assert(tmp != nullptr);
-        tmp = tmp->next_sibling;
+        if(!_v || _v == itr.node->last_child)
+            return sibling_iterator{ nullptr };
+        _v = _v->next_sibling;
     }
-    return tmp;
+    return sibling_iterator{ _v };
 }
 
 //--------------------------------------------------------------------------------------//

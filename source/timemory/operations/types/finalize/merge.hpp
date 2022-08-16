@@ -55,7 +55,7 @@ template <typename Type>
 merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
 {
     using pre_order_iterator = typename graph_t::pre_order_iterator;
-    using sibling_iterator   = typename graph_t::sibling_iterator;
+    using is_invalid_t       = operation::get_is_invalid<Type, false>;
 
     // don't merge self
     if(&lhs == &rhs)
@@ -70,16 +70,26 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
     if(!rhs.is_initialized())
         return;
 
+    // don't merge if rhs is empty
+    if(rhs.true_size() == 0)
+        return;
+
     auto* _settings = tim::settings::instance();
-    if(!_settings)
-        TIMEMORY_PRINT_HERE("[%s]> nullptr to settings!", Type::get_label().c_str());
-    auto _debug =
-        _settings != nullptr && (_settings->get_debug() || _settings->get_verbose() > 2);
+    TIMEMORY_CONDITIONAL_PRINT_HERE(!_settings, "[%s]> nullptr to settings!",
+                                    Type::get_label().c_str());
+    auto _debug = (_settings != nullptr)
+                      ? (_settings->get_debug() || _settings->get_verbose() >= 3)
+                      : true;
+    auto _verbose = (_settings != nullptr) ? _settings->get_verbose() : 16;
 #if defined(TIMEMORY_TESTING) || defined(TIMEMORY_INTERNAL_TESTING)
     bool _testing_debug = true;
 #else
     bool _testing_debug = _debug;
 #endif
+
+    TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s]> merging rhs=%zu into lhs=%zu",
+                                    Type::get_label().c_str(), rhs.true_size(),
+                                    lhs.true_size());
 
     if(_settings && _settings->get_stack_clearing())
         rhs.stack_clear();
@@ -151,43 +161,87 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
 
     for(auto entry : inverse_insert)
     {
-        auto _main_entry = lhs.data().find(entry.second);
+        auto& eitr        = entry.second;
+        auto  _main_entry = lhs.data().find(eitr);
         if(_main_entry != lhs.data().end())
         {
             // create copy of data so we can tweak the thread ids
             auto _main_v = *_main_entry;
-            auto itr     = pre_order_iterator{ entry.second };
+            auto itr     = pre_order_iterator{ eitr };
 
-            if(rhs.graph().is_valid(itr) && itr)
+            if(itr && rhs.graph().is_valid(itr))
             {
                 TIMEMORY_CONDITIONAL_PRINT_HERE(
-                    _debug, "[%s]> worker is merging %i records into %i records",
-                    Type::get_label().c_str(), (int) rhs.size(), (int) lhs.size());
+                    _debug, "[%s]> worker is merging %zu records into %zu records",
+                    Type::get_label().c_str(), rhs.size(), lhs.size());
 
                 // the tids will always be different
-                _main_v.tid() = itr->tid();
+                if(*itr != _main_v)
+                    _main_v.tid() = itr->tid();
 
                 if(*itr == _main_v)
                 {
                     ++num_merged;
-                    sibling_iterator other = itr;
-                    for(auto sitr = other.begin(); sitr != other.end(); ++sitr)
+                    size_t _nchildren = itr.number_of_children();
+                    auto   siblings   = std::vector<pre_order_iterator>{};
+                    siblings.reserve(_nchildren);
+                    for(size_t i = 0; i < _nchildren; ++i)
                     {
-                        pre_order_iterator citr = sitr;
-                        using Tp                = std::decay_t<decltype(citr->data())>;
-                        if(!citr || operation::get_is_invalid<Tp, false>{}(citr->data()))
+                        auto iitr = graph_t::child(itr, i);
+                        if(!iitr)
+                        {
+                            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                                _verbose >= 1,
+                                "skipping child #%zu of '%s'. Invalid iterator", i,
+                                tim::get_hash_identifier(itr->hash()).c_str());
                             continue;
-                        lhs.graph().append_child(pre_order_iterator{ _main_entry }, citr);
+                        }
+                        else if(is_invalid_t{}(iitr->data()))
+                        {
+                            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                                _verbose >= 1,
+                                "skipping child #%zu of '%s' :: '%s'. Invalid data", i,
+                                tim::get_hash_identifier(itr->hash()).c_str(),
+                                tim::get_hash_identifier(iitr->hash()).c_str());
+                            continue;
+                        }
+                        else
+                        {
+                            siblings.emplace_back(pre_order_iterator{ iitr });
+                        }
+                    }
+
+                    for(auto&& iitr : siblings)
+                    {
+                        TIMEMORY_CONDITIONAL_PRINT_HERE(
+                            (_debug && _verbose >= 2), "merging '%s'",
+                            tim::get_hash_identifier(iitr->hash()).c_str());
+                        lhs.graph().append_child(pre_order_iterator{ _main_entry }, iitr);
                     }
                 }
 
-                TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s]> master has %i records",
-                                                Type::get_label().c_str(),
-                                                (int) lhs.size());
+                TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s]> master has %zu records",
+                                                Type::get_label().c_str(), lhs.size());
 
                 // remove the entry from this graph since it has been added
                 // rhs.graph().erase(itr);
             }
+            else if(itr)
+            {
+                TIMEMORY_PRINT_HERE("[%s]> entry is not valid: %s",
+                                    Type::get_label().c_str(),
+                                    TIMEMORY_JOIN("", *itr).c_str());
+            }
+            else
+            {
+                TIMEMORY_PRINT_HERE("[%s]> bad iterator: %s", Type::get_label().c_str(),
+                                    TIMEMORY_JOIN("", eitr).c_str());
+            }
+        }
+        else
+        {
+            TIMEMORY_PRINT_HERE("[%s]> entry not found: %s", Type::get_label().c_str(),
+                                TIMEMORY_JOIN("", eitr).c_str());
         }
     }
 
