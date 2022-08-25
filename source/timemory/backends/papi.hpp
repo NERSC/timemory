@@ -262,10 +262,11 @@ check(int retval, string_view_cref_t mesg, bool quiet = false)
         else
         {
             if(working() && !settings::papi_quiet())
-                fprintf(stderr, "%s\n", _msg.c_str());
+                TIMEMORY_PRINTF(stderr, "%s\n", _msg.c_str());
         }
 #else
-        fprintf(stderr, "[timemory][papi] %s (error code = %i)\n", mesg.data(), retval);
+        TIMEMORY_PRINTF(stderr, "[timemory][papi] %s (error code = %i)\n", mesg.data(),
+                        retval);
 #endif
     }
     return (success && working());
@@ -385,8 +386,14 @@ attach(int event_set, Tp pid_or_tid)
 {
     // inform PAPI that a previously registered thread is disappearing
 #if defined(TIMEMORY_USE_PAPI)
+    if(settings::verbose() >= 1)
+        TIMEMORY_PRINTF(stderr,
+                        "[timemory][papi] attaching event set %i to pid/tid %li\n",
+                        event_set, (long) pid_or_tid);
     int retval = PAPI_attach(event_set, pid_or_tid);
-    return (working() = check(retval, "Warning!! Failure attaching to event set"));
+    return (working() =
+                check(retval, TIMEMORY_JOIN(" ", "Warning!! Failure attaching event set",
+                                            event_set, "to pid/tid", pid_or_tid)));
 #else
     consume_parameters(event_set, pid_or_tid);
     return false;
@@ -417,9 +424,9 @@ init_threading()
         {
             static std::atomic<int> _once(0);
             if(_once++ == 0)
-                fprintf(stderr,
-                        "Warning!! Thread support is not enabled because it is not "
-                        "currently working\n");
+                TIMEMORY_PRINTF(
+                    stderr, "Warning!! Thread support is not enabled because it is not "
+                            "currently working\n");
         }
     }
     return working();
@@ -451,9 +458,10 @@ init_multiplexing()
         {
             static std::atomic<int32_t> _once(0);
             if(_once++ == 0)
-                fprintf(stderr,
-                        "Warning!! Multiplexing is not enabled because of previous PAPI "
-                        "errors\n");
+                TIMEMORY_PRINTF(
+                    stderr,
+                    "Warning!! Multiplexing is not enabled because of previous PAPI "
+                    "errors\n");
         }
     }
     return working();
@@ -481,7 +489,7 @@ init_library()
     {
         int retval = PAPI_library_init(PAPI_VER_CURRENT);
         if(retval != PAPI_VER_CURRENT && retval > 0)
-            fprintf(stderr, "PAPI library version mismatch!\n");
+            TIMEMORY_PRINTF(stderr, "PAPI library version mismatch!\n");
         working() = (retval == PAPI_VER_CURRENT);
     }
     return working();
@@ -506,14 +514,16 @@ init()
         details::init_library();
         details::init_multiplexing();
         if(!working())
-            fprintf(stderr,
-                    "[timemory][papi] Warning!! PAPI library not fully initialized!\n");
+            TIMEMORY_PRINTF(
+                stderr,
+                "[timemory][papi] Warning!! PAPI library not fully initialized!\n");
         else
         {
             if(details::generate_component_info() == 0)
             {
-                fprintf(stderr,
-                        "[timemory][papi] Warning!! No PAPI component info was found\n");
+                TIMEMORY_PRINTF(
+                    stderr,
+                    "[timemory][papi] Warning!! No PAPI component info was found\n");
             }
         }
     }

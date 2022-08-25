@@ -23,7 +23,7 @@
 //  SOFTWARE.
 
 #ifndef TIMEMORY_BACKENDS_PAPI_CPP_
-#define TIMEMORY_BACKENDS_PAPI_CPP_ 1
+#define TIMEMORY_BACKENDS_PAPI_CPP_
 
 #include "timemory/backends/defines.hpp"
 
@@ -35,6 +35,7 @@
 
 #include "timemory/backends/hardware_counters.hpp"
 #include "timemory/backends/types/papi.hpp"
+#include "timemory/log/color.hpp"
 #include "timemory/macros/language.hpp"
 
 #include <regex>
@@ -64,9 +65,10 @@ generate_component_info(bool _with_qualifiers, bool _force)
         for(auto&& itr : *_info_map)
         {
             for(auto&& vitr : itr.second)
-                fprintf(stderr, "[papi][%s][%i][%i][%i][%i] %-40s :: %s\n",
-                        itr.first.name, itr.first.index, vitr.component_index,
-                        vitr.event_code, vitr.event_type, vitr.symbol, vitr.short_descr);
+                TIMEMORY_PRINTF(stderr, "[papi][%s][%i][%i][%i][%i] %-40s :: %s\n",
+                                itr.first.name, itr.first.index, vitr.component_index,
+                                vitr.event_code, vitr.event_type, vitr.symbol,
+                                vitr.short_descr);
         }
     };
     auto parse_event_qualifiers = [](PAPI_event_info_t* info) {
@@ -338,16 +340,18 @@ add_event(int event_set, string_view_cref_t event_name)
     if(working())
     {
         auto& _info_map = get_component_info_map();
-        printf("[timemory][papi] checking for %s in %i components...\n",
-               event_name.data(), (int) _info_map->size());
         for(auto& itr : *_info_map)
         {
-            printf("[timemory][papi] checking for %s in component %s...\n",
-                   event_name.data(), itr.first.name);
+            if(settings::debug() || settings::verbose() >= 2)
+                TIMEMORY_PRINTF(stderr, "[papi] checking for %s in component %s...\n",
+                                event_name.data(), itr.first.name);
             for(auto& eitr : itr.second)
             {
                 if(strcmp(event_name.data(), eitr.symbol) == 0)
                 {
+                    if(settings::debug() || settings::verbose() >= 2)
+                        TIMEMORY_PRINTF(stderr, "[papi] found %s in component %s...\n",
+                                        event_name.data(), itr.first.name);
                     auto retval = PAPI_add_event(event_set, eitr.event_code);
                     return check(
                         retval, TIMEMORY_JOIN(" ", "Warning!! Failure to add named event",
@@ -384,10 +388,7 @@ add_events(int event_set, string_t* events, int number)
     {
         for(int i = 0; i < number; ++i)
         {
-            int retval = PAPI_add_named_event(event_set, events[i].data());
-            _success[i] =
-                check(retval, TIMEMORY_JOIN(" ", "Warning!! Failure to add named event",
-                                            events[i], "to event set", event_set));
+            _success.at(i) = add_event(event_set, events[i].data());
         }
     }
 #else
@@ -505,10 +506,10 @@ available_events_info()
                    // could not be added \n", info->symbol);
                 if(PAPI_destroy_eventset(&EventSet) != PAPI_OK)
                 {
-                    fprintf(stderr,
-                            "**********  Call to destroy eventset failed when trying to "
-                            "check event '%s'  **********\n",
-                            info->symbol);
+                    TIMEMORY_PRINTF(stderr,
+                                    "**********  Call to destroy eventset failed when "
+                                    "trying to check event '%s'  **********\n",
+                                    info->symbol);
                 }
             }
             return (event_available != 0);
