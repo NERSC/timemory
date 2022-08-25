@@ -491,10 +491,11 @@ private:
     static Ret invoke(gotcha_data&& _data, Comp& _comp, Ret (*_func)(Args...),
                       Args&&... _args)
     {
-        using Type = DiffT;
-        Type& _obj = *_comp.template get<Type>();
-        return gotcha_invoker<Type, Ret>{}(_obj, std::forward<gotcha_data>(_data), _func,
-                                           std::forward<Args>(_args)...);
+        constexpr bool set_data_v = !quirk::has_quirk<quirk::static_data, BundleT>::value;
+        using Type                = DiffT;
+        Type& _obj                = *_comp.template get<Type>();
+        return gotcha_invoker<Type, Ret, set_data_v>{}(
+            _obj, std::forward<gotcha_data>(_data), _func, std::forward<Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//

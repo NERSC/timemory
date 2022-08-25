@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/backends/gotcha.hpp"
+#include "timemory/mpl/quirks.hpp"
 #include "timemory/operations/types/set_data.hpp"
 #include "timemory/utility/mangler.hpp"
 #include "timemory/variadic/types.hpp"
@@ -54,10 +55,8 @@ namespace backend
 namespace gotcha
 {
 template <typename Tp>
-struct is_fast
-{
-    static constexpr bool value = std::is_same<Tp, quirk::fast>::value;
-};
+struct is_fast : quirk::has_quirk<quirk::fast, Tp>
+{};
 //
 template <typename Tp, typename Up>
 struct num_components
@@ -91,7 +90,7 @@ struct gotcha_data;
 /// \struct tim::component::gotcha_invoker
 ///
 ///
-template <typename Tp, typename Ret>
+template <typename Tp, typename Ret, bool SetDataV>
 struct gotcha_invoker
 {
     using Type       = Tp;
@@ -112,10 +111,13 @@ struct gotcha_invoker
     TIMEMORY_INLINE decltype(auto) operator()(Tp& _obj, gotcha_data&& _data,
                                               FuncT&& _func, Args&&... _args) const
     {
-        // if object has set_data(gotcha_data) member function
-        operation::set_data<Tp>{}(_obj, std::forward<gotcha_data>(_data));
-        // if object has set_data(<function-pointer>) member function
-        operation::set_data<Tp>{}(_obj, std::forward<FuncT>(_func));
+        IF_CONSTEXPR(SetDataV)
+        {
+            // if object has set_data(gotcha_data) member function
+            operation::set_data<Tp>{}(_obj, std::forward<gotcha_data>(_data));
+            // if object has set_data(<function-pointer>) member function
+            operation::set_data<Tp>{}(_obj, std::forward<FuncT>(_func));
+        }
         //
         return invoke_sfinae(_obj, std::forward<gotcha_data>(_data),
                              std::forward<FuncT>(_func), std::forward<Args>(_args)...);

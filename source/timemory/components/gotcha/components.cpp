@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_CPP_
-#define TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_CPP_ 1
+#define TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_CPP_
 
 #include "timemory/components/gotcha/components.hpp"
 
@@ -205,6 +205,14 @@ gotcha<Nt, BundleT, DiffT>::construct(const std::string& _func, int _priority,
         _data.binding    = std::move(construct_binder<N, Ret, Args...>(_data.wrap_id));
         error_t ret_wrap = backend::gotcha::wrap(_data.binding, _data.tool_id.c_str());
         check_error<N>(ret_wrap, "binding");
+
+        using func_t = Ret (*)(Args...);
+        operation::set_data<operator_type>{}(_data);
+        operation::set_data<operator_type>{}(
+            reinterpret_cast<func_t>(gotcha_get_wrappee(_data.wrappee)));
+        operation::set_data<bundle_type>{}(_data);
+        operation::set_data<bundle_type>{}(
+            reinterpret_cast<func_t>(gotcha_get_wrappee(_data.wrappee)));
     }
 
     if(!_data.is_active)
@@ -324,6 +332,8 @@ gotcha<Nt, BundleT, DiffT>::configure()
         lk.unlock();
         auto& _init = get_initializer();
         _init();
+        operation::set_data<operator_type>{}(get_data());
+        operation::set_data<bundle_type>{}(get_data());
     }
 }
 
