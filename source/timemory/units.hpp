@@ -110,6 +110,16 @@ static constexpr int64_t kilowatt  = 1000 * watt;
 static constexpr int64_t megawatt  = 1000 * kilowatt;
 static constexpr int64_t gigawatt  = 1000 * megawatt;
 
+static constexpr int64_t hertz     = 1;
+static constexpr int64_t kilohertz = 1000 * hertz;
+static constexpr int64_t megahertz = 1000 * kilohertz;
+static constexpr int64_t gigahertz = 1000 * megahertz;
+
+static constexpr int64_t Hz  = 1;
+static constexpr int64_t KHz = 1000 * Hz;
+static constexpr int64_t MHz = 1000 * KHz;
+static constexpr int64_t GHz = 1000 * MHz;
+
 #if defined(TIMEMORY_LINUX)
 
 inline int64_t
@@ -190,6 +200,22 @@ mem_repr(int64_t _unit)
 //--------------------------------------------------------------------------------------//
 
 inline std::string
+freq_repr(int64_t _unit)
+{
+    switch(_unit)
+    {
+        case hertz: return "Hz"; break;
+        case kilohertz: return "KHz"; break;
+        case megahertz: return "MHz"; break;
+        case gigahertz: return "GHz"; break;
+        default: return "UNK"; break;
+    }
+    return std::string{};
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline std::string
 power_repr(int64_t _unit)
 {
     switch(_unit)
@@ -216,35 +242,35 @@ get_memory_unit(std::string _unit)
     using inner_t     = std::tuple<string_t, string_t, int64_t>;
 
     if(_unit.length() == 0)
-        return return_type{ "MB", tim::units::megabyte };
+        return return_type{ "MB", units::megabyte };
 
     for(auto& itr : _unit)
         itr = tolower(itr);
 
-    for(const auto& itr : { inner_t{ "byte", "b", tim::units::byte },
-                            inner_t{ "kilobyte", "kb", tim::units::kilobyte },
-                            inner_t{ "megabyte", "mb", tim::units::megabyte },
-                            inner_t{ "gigabyte", "gb", tim::units::gigabyte },
-                            inner_t{ "terabyte", "tb", tim::units::terabyte },
-                            inner_t{ "petabyte", "pb", tim::units::petabyte },
-                            inner_t{ "kibibyte", "kib", tim::units::KiB },
-                            inner_t{ "mebibyte", "mib", tim::units::MiB },
-                            inner_t{ "gibibyte", "gib", tim::units::GiB },
-                            inner_t{ "tebibyte", "tib", tim::units::TiB },
-                            inner_t{ "pebibyte", "pib", tim::units::PiB } })
+    for(const auto& itr : { inner_t{ "byte", "b", units::byte },
+                            inner_t{ "kilobyte", "kb", units::kilobyte },
+                            inner_t{ "megabyte", "mb", units::megabyte },
+                            inner_t{ "gigabyte", "gb", units::gigabyte },
+                            inner_t{ "terabyte", "tb", units::terabyte },
+                            inner_t{ "petabyte", "pb", units::petabyte },
+                            inner_t{ "kibibyte", "kib", units::KiB },
+                            inner_t{ "mebibyte", "mib", units::MiB },
+                            inner_t{ "gibibyte", "gib", units::GiB },
+                            inner_t{ "tebibyte", "tib", units::TiB },
+                            inner_t{ "pebibyte", "pib", units::PiB } })
     {
         if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr))
         {
-            if(std::get<0>(itr) == "byte")
-                return return_type(std::get<0>(itr), std::get<2>(itr));
-            return return_type(std::get<1>(itr), std::get<2>(itr));
+            if(std::get<2>(itr) == units::byte)
+                return return_type{ std::get<0>(itr), std::get<2>(itr) };
+            return return_type{ mem_repr(std::get<2>(itr)), std::get<2>(itr) };
         }
     }
 
     std::cerr << "Warning!! No memory unit matching \"" << _unit << "\". Using default..."
               << std::endl;
 
-    return return_type{ "MB", tim::units::megabyte };
+    return return_type{ "MB", units::megabyte };
 }
 
 //--------------------------------------------------------------------------------------//
@@ -258,73 +284,101 @@ get_timing_unit(std::string _unit)
     using inner_t     = std::tuple<string_t, strset_t, int64_t>;
 
     if(_unit.length() == 0)
-        return return_type{ "sec", tim::units::sec };
+        return return_type{ "sec", units::sec };
 
     for(auto& itr : _unit)
         itr = tolower(itr);
 
     for(const auto& itr :
-        { inner_t{ "nsec", strset_t{ "ns", "nanosecond", "nanoseconds" },
-                   tim::units::nsec },
-          inner_t{ "usec", strset_t{ "us", "microsecond", "microseconds" },
-                   tim::units::usec },
-          inner_t{ "msec", strset_t{ "ms", "millisecond", "milliseconds" },
-                   tim::units::msec },
-          inner_t{ "csec", strset_t{ "cs", "centisecond", "centiseconds" },
-                   tim::units::csec },
-          inner_t{ "dsec", strset_t{ "ds", "decisecond", "deciseconds" },
-                   tim::units::dsec },
-          inner_t{ "sec", strset_t{ "s", "second", "seconds" }, tim::units::sec },
-          inner_t{ "min", strset_t{ "minute", "minutes" }, tim::units::minute },
-          inner_t{ "hr", strset_t{ "hr", "hour", "hours" }, tim::units::hour } })
+        { inner_t{ "nsec", strset_t{ "ns", "nanosecond", "nanoseconds" }, units::nsec },
+          inner_t{ "usec", strset_t{ "us", "microsecond", "microseconds" }, units::usec },
+          inner_t{ "msec", strset_t{ "ms", "millisecond", "milliseconds" }, units::msec },
+          inner_t{ "csec", strset_t{ "cs", "centisecond", "centiseconds" }, units::csec },
+          inner_t{ "dsec", strset_t{ "ds", "decisecond", "deciseconds" }, units::dsec },
+          inner_t{ "sec", strset_t{ "s", "second", "seconds" }, units::sec },
+          inner_t{ "min", strset_t{ "minute", "minutes" }, units::minute },
+          inner_t{ "hr", strset_t{ "hr", "hour", "hours" }, units::hour } })
     {
         if(_unit == std::get<0>(itr) ||
            std::get<1>(itr).find(_unit) != std::get<1>(itr).end())
         {
-            return return_type{ std::get<0>(itr), std::get<2>(itr) };
+            return return_type{ time_repr(std::get<2>(itr)), std::get<2>(itr) };
         }
     }
 
     std::cerr << "Warning!! No timing unit matching \"" << _unit << "\". Using default..."
               << std::endl;
 
-    return return_type{ "sec", tim::units::sec };
+    return return_type{ "sec", units::sec };
 }
 
 //--------------------------------------------------------------------------------------//
 
 inline std::tuple<std::string, int64_t>
-get_power_unit(std::string _unit)
+get_frequncy_unit(std::string _unit)
 {
     using string_t    = std::string;
     using return_type = std::tuple<string_t, int64_t>;
     using inner_t     = std::tuple<string_t, string_t, int64_t>;
 
     if(_unit.length() == 0)
-        return return_type{ "watts", tim::units::watt };
+        return return_type{ "MHz", units::megahertz };
 
     for(auto& itr : _unit)
         itr = tolower(itr);
 
-    for(const auto& itr : { inner_t{ "nanowatts", "nW", tim::units::nanowatt },
-                            inner_t{ "microwatts", "uW", tim::units::microwatt },
-                            inner_t{ "milliwatts", "mW", tim::units::milliwatt },
-                            inner_t{ "watts", "W", tim::units::watt },
-                            inner_t{ "kilowatts", "KW", tim::units::kilowatt },
-                            inner_t{ "megawatts", "MW", tim::units::megawatt },
-                            inner_t{ "gigawatts", "GW", tim::units::gigawatt } })
+    for(const auto& itr : { inner_t{ "hertz", "hz", units::hertz },
+                            inner_t{ "kilohertz", "khz", units::kilohertz },
+                            inner_t{ "megahertz", "mhz", units::megahertz },
+                            inner_t{ "gigahertz", "ghz", units::gigahertz } })
     {
-        if(_unit == std::get<0>(itr) || _unit + "s" == std::get<0>(itr) ||
+        if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr))
+        {
+            return return_type{ freq_repr(std::get<2>(itr)), std::get<2>(itr) };
+        }
+    }
+
+    std::cerr << "Warning!! No frequency unit matching \"" << _unit
+              << "\". Using default..." << std::endl;
+
+    return return_type{ "MHz", units::megahertz };
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline std::tuple<std::string, int64_t>
+get_power_unit(const std::string& _unit)
+{
+    using string_t    = std::string;
+    using return_type = std::tuple<string_t, int64_t>;
+    using inner_t     = std::tuple<string_t, string_t, int64_t>;
+
+    if(_unit.length() == 0)
+        return return_type{ "watts", units::watt };
+
+    auto _lunit = _unit;
+    for(auto& itr : _lunit)
+        itr = tolower(itr);
+
+    for(const auto& itr : { inner_t{ "nanowatt", "nW", units::nanowatt },
+                            inner_t{ "microwatt", "uW", units::microwatt },
+                            inner_t{ "milliwatt", "mW", units::milliwatt },
+                            inner_t{ "watt", "W", units::watt },
+                            inner_t{ "kilowatt", "KW", units::kilowatt },
+                            inner_t{ "megawatt", "MW", units::megawatt },
+                            inner_t{ "gigawatt", "GW", units::gigawatt } })
+    {
+        if(_lunit == std::get<0>(itr) || _lunit + "s" == std::get<0>(itr) ||
            _unit == std::get<1>(itr))
         {
-            return return_type{ std::get<0>(itr), std::get<2>(itr) };
+            return return_type{ power_repr(std::get<2>(itr)), std::get<2>(itr) };
         }
     }
 
     std::cerr << "Warning!! No power unit matching \"" << _unit << "\". Using default..."
               << std::endl;
 
-    return return_type{ "sec", tim::units::sec };
+    return return_type{ "watts", units::watt };
 }
 
 //--------------------------------------------------------------------------------------//
