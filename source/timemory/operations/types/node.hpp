@@ -23,8 +23,8 @@
 // SOFTWARE.
 
 /**
- * \file timemory/operations/types/push_node.hpp
- * \brief Definition for various functions for push_node in operations
+ * \file timemory/operations/types/node.hpp
+ * \brief Definition for various functions for pushing and popping storage nodes
  */
 
 #pragma once
@@ -38,6 +38,10 @@
 #include "timemory/operations/types/add_secondary.hpp"
 #include "timemory/operations/types/add_statistics.hpp"
 #include "timemory/operations/types/math.hpp"
+
+#if !defined(NDEBUG)
+#    include "timemory/settings/settings.hpp"
+#endif
 
 #include <type_traits>
 
@@ -333,11 +337,18 @@ private:
             if(_storage == nullptr)
                 _storage = operation::get_storage<type>{}(_obj, _tid);
 
-            assert(_storage != nullptr);
-
             // if storage is null, iterator is stale which means targ and stats are too
             if(_storage == nullptr)
+            {
+#if !defined(NDEBUG)
+                TIMEMORY_CONDITIONAL_PRINT_HERE(
+                    settings::debug() || settings::verbose() > 1,
+                    "storage for thread %li was deleted for component of type %s while "
+                    "it was still on the stack",
+                    _tid, demangle<Tp>().c_str());
+#endif
                 return nullptr;
+            }
 
             operation::set_is_on_stack<type>{}(_obj, false);
             auto&& itr   = _obj.get_iterator();
@@ -346,9 +357,11 @@ private:
 
             if(settings::debug())
             {
-                fprintf(stderr, "\n");
-                fprintf(stderr, "[START][TARG]> %s\n", TIMEMORY_JOIN("", targ).data());
-                fprintf(stderr, "[START][DATA]> %s\n", TIMEMORY_JOIN("", _obj).data());
+                TIMEMORY_PRINTF(stderr, "\n");
+                TIMEMORY_PRINTF(stderr, "[START][TARG]> %s\n",
+                                TIMEMORY_JOIN("", targ).data());
+                TIMEMORY_PRINTF(stderr, "[START][DATA]> %s\n",
+                                TIMEMORY_JOIN("", _obj).data());
             }
 
             // reset depth change and set valid state on target
@@ -359,7 +372,8 @@ private:
             //
             if(settings::debug())
             {
-                fprintf(stderr, "[AFTER][TARG]> %s\n", TIMEMORY_JOIN("", targ).data());
+                TIMEMORY_PRINTF(stderr, "[AFTER][TARG]> %s\n",
+                                TIMEMORY_JOIN("", targ).data());
             }
             // add the secondary data
             operation::add_secondary<type>(_storage, itr, _obj);

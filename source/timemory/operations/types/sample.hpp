@@ -50,10 +50,9 @@ namespace operation
 template <typename Tp>
 struct sample
 {
-    static constexpr bool enable = trait::sampler<Tp>::value;
-    using type                   = Tp;
+    using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(sample)
+    TIMEMORY_DEFAULT_OBJECT(sample)
 
     explicit sample(type& obj);
 
@@ -61,7 +60,7 @@ struct sample
     sample(type& obj, Arg&& arg, Args&&... args);
 
     template <typename... Args>
-    auto operator()(type& obj, Args&&... args)
+    TIMEMORY_INLINE auto operator()(type& obj, Args&&... args) const
     {
         return sfinae(obj, 0, 0, std::forward<Args>(args)...);
     }
@@ -69,7 +68,7 @@ struct sample
 private:
     //  satisfies mpl condition and accepts arguments
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, Args&&... args)
+    TIMEMORY_INLINE static auto sfinae(Up& obj, int, int, Args&&... args)
         -> decltype(obj.sample(std::forward<Args>(args)...))
     {
         return obj.sample(std::forward<Args>(args)...);
@@ -77,16 +76,16 @@ private:
 
     //  satisfies mpl condition but does not accept arguments
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.sample())
+    TIMEMORY_INLINE static auto sfinae(Up& obj, int, long, Args&&...)
+        -> decltype(obj.sample())
     {
         return obj.sample();
     }
 
     //  no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
-    null_type sfinae(Up&, long, long, Args&&...)
+    TIMEMORY_INLINE static null_type sfinae(Up&, long, long, Args&&...)
     {
-        SFINAE_WARNING(type);
         return null_type{};
     }
 };

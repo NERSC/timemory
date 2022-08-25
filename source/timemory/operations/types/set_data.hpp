@@ -44,10 +44,16 @@ struct set_data
         return sfinae(obj, 0, std::forward<DataT>(_data));
     }
 
+    template <typename DataT>
+    TIMEMORY_INLINE auto operator()(DataT&& _data) const
+    {
+        return static_sfinae<Tp>(null_type{}, 0, std::forward<DataT>(_data));
+    }
+
 private:
     //  If the component has a set_data(...) member function
     template <typename T, typename DataT>
-    TIMEMORY_INLINE auto sfinae(T& obj, int, DataT&& _data) const
+    TIMEMORY_INLINE static auto sfinae(T& obj, int, DataT&& _data)
         -> decltype(obj.set_data(std::forward<DataT>(_data)))
     {
         return obj.set_data(std::forward<DataT>(_data));
@@ -55,7 +61,30 @@ private:
 
     //  If the component does not have a set_data(...) member function
     template <typename T, typename DataT>
-    TIMEMORY_INLINE void sfinae(T&, long, DataT&&) const
+    TIMEMORY_INLINE static void sfinae(T&, long, DataT&&)
+    {}
+
+    //  If the component has a set_data(...) static member function
+    template <typename Up = Tp, typename DataT>
+    TIMEMORY_INLINE static auto static_sfinae(null_type&&, int, DataT&& _data)
+        -> decltype(Up::set_data(std::forward<DataT>(_data)))
+    {
+        return Up::set_data(std::forward<DataT>(_data));
+    }
+
+    //  If the component does not have a set_data(...) static member function
+    template <typename Up = Tp, typename DataT>
+    TIMEMORY_INLINE static void static_sfinae(null_type&&, long, DataT&&)
+    {}
+};
+
+template <>
+struct set_data<void>
+{
+    TIMEMORY_DEFAULT_OBJECT(set_data)
+
+    template <typename DataT>
+    TIMEMORY_INLINE auto operator()(DataT&&) const
     {}
 };
 }  // namespace operation

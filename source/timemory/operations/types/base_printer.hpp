@@ -52,12 +52,21 @@ struct base_printer : public common_utils
     using type     = Tp;
     using widths_t = std::vector<int64_t>;
 
+    TIMEMORY_DEFAULT_OBJECT(base_printer)
+
     base_printer(std::ostream& _os, const type& _obj) { (*this)(_os, _obj); }
 
     std::ostream& operator()(std::ostream& _os, const type& _obj) const
     {
         (*this)(_os, _obj, 0);
         return _os;
+    }
+
+    template <typename StreamT>
+    StreamT&& operator()(StreamT&& _os, const type& _obj) const
+    {
+        (*this)(_os, _obj, 0);
+        return std::move(_os);
     }
 
 private:
