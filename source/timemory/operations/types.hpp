@@ -1395,6 +1395,7 @@ protected:
     std::string json_diffname  = {};                                   // NOLINT
     stream_type data_stream    = stream_type{};                        // NOLINT
     stream_type diff_stream    = stream_type{};                        // NOLINT
+    std::function<void(const std::string&)> m_print;
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -1432,10 +1433,7 @@ struct print<Tp, true> : public base::print
         storage_type* _data, const settings_t& _settings = settings::shared_instance());
 
     print(const std::string& _label, storage_type* _data,
-          const settings_t& _settings = settings::shared_instance())
-    : base_type(_label, trait::requires_json<Tp>::value, _settings)
-    , data(_data)
-    {}
+          const settings_t& _settings = settings::shared_instance());
 
     ~print() override = default;
 
@@ -1470,11 +1468,6 @@ struct print<Tp, true> : public base::print
         {
             print_cout(data_stream);
         }
-        else
-        {
-            if(!m_settings || m_settings->get_verbose() >= 0)
-                fprintf(stderr, "\n");
-        }
 
         if(dart_output())
             print_dart();
@@ -1501,11 +1494,6 @@ struct print<Tp, true> : public base::print
             if(cout_output())
             {
                 print_cout(diff_stream);
-            }
-            else
-            {
-                if(!m_settings || m_settings->get_verbose() >= 0)
-                    fprintf(stderr, "\n");
             }
         }
 

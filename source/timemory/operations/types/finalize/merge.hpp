@@ -220,7 +220,7 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
                     }
                 }
 
-                TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s]> master has %zu records",
+                TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "%s master has %zu records",
                                                 Type::get_label().c_str(), lhs.size());
 
                 // remove the entry from this graph since it has been added
@@ -228,20 +228,23 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
             }
             else if(itr)
             {
-                TIMEMORY_PRINT_HERE("[%s]> entry is not valid: %s",
+                TIMEMORY_PRINT_HERE("%s entry is not valid: %s",
                                     Type::get_label().c_str(),
                                     TIMEMORY_JOIN("", *itr).c_str());
             }
             else
             {
-                TIMEMORY_PRINT_HERE("[%s]> bad iterator: %s", Type::get_label().c_str(),
+                TIMEMORY_PRINT_HERE("%s bad iterator: %s", Type::get_label().c_str(),
                                     TIMEMORY_JOIN("", eitr).c_str());
             }
         }
         else
         {
-            TIMEMORY_PRINT_HERE("[%s]> entry not found: %s", Type::get_label().c_str(),
-                                TIMEMORY_JOIN("", eitr).c_str());
+            if(!operation::get_is_invalid<Type, false>{}(eitr->data()))
+            {
+                TIMEMORY_PRINT_HERE("%s entry not found: %s", Type::get_label().c_str(),
+                                    TIMEMORY_JOIN("", *eitr).c_str());
+            }
         }
     }
 

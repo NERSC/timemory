@@ -31,6 +31,7 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/operations/types/file_output_message.hpp"
 #include "timemory/operations/types/finalize/get.hpp"
 #include "timemory/plotting/declaration.hpp"
 #include "timemory/settings/declaration.hpp"
@@ -98,10 +99,8 @@ base::print::print_text(const std::string& outfname, stream_type stream)  // NOL
         std::ofstream fout{};
         if(filepath::open(fout, outfname))
         {
-            if(!m_settings || m_settings->get_verbose() >= 0)
-                fprintf(stderr, "[%s][%s]|%i> Outputting '%s'...\n",
-                        TIMEMORY_PROJECT_NAME, label.c_str(), node_rank,
-                        outfname.c_str());
+            if(m_print)
+                m_print(outfname);
             write(fout, stream);
             manager::instance()->add_text_output(label, outfname);
         }
@@ -118,10 +117,27 @@ base::print::print_text(const std::string& outfname, stream_type stream)  // NOL
 #endif  // !defined(TIMEMORY_OPERATIONS_SOURCE)
 //
 template <typename Tp>
+print<Tp, true>::print(const std::string& _label, storage_type* _data,
+                       const settings_t& _settings)
+: base_type(_label, trait::requires_json<Tp>::value, _settings)
+, data(_data)
+{
+    m_print = [_settings, _label](const std::string& _v) {
+        if(!_settings || _settings->get_verbose() >= 0)
+            operation::file_output_message<Tp>{}(_v, std::string{ _label });
+    };
+}
+//
+template <typename Tp>
 print<Tp, true>::print(storage_type* _data, const settings_t& _settings)
 : base_type(trait::requires_json<Tp>::value, _settings)
 , data(_data)
 {
+    m_print = [_settings](const std::string& _v) {
+        if(!_settings || _settings->get_verbose() >= 0)
+            operation::file_output_message<Tp>{}(_v, std::string{ Tp::label() });
+    };
+
     dmp::barrier();
     node_init    = dmp::is_initialized();
     node_rank    = dmp::rank();
@@ -447,10 +463,8 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& _dist,
             if(fext.empty())
                 fext = "unknown";
             manager::instance()->add_file_output(fext, label, outfname);
-            if(!m_settings || m_settings->get_verbose() >= 0)
-                fprintf(stderr, "[%s][%s]|%i> Outputting '%s'...\n",
-                        TIMEMORY_PROJECT_NAME, label.c_str(), node_rank,
-                        outfname.c_str());
+            if(m_print)
+                m_print(outfname);
 
             // ensure write final block during destruction before the file is closed
             auto oa = policy_type::get(ofs);

@@ -251,7 +251,8 @@ vsettings::report_change(Tp _old, const Tp& _new)
         {
             timemory_print_demangled_backtrace<6, 3>(oss);
         }
-        std::cerr << oss.str() << std::flush;
+        log::stream(std::cerr, log::color::warning()) << oss.str();
+        std::cerr << std::flush;
     }
     return (_old != _new);
 }

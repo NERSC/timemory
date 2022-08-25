@@ -34,6 +34,7 @@
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/operations/types/file_output_message.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/filepath.hpp"
@@ -111,9 +112,7 @@ flamegraph<Type>::flamegraph(storage_type* _data, std::string _label,  // NOLINT
         {
             manager::instance()->add_json_output(_label, outfname);
             if(settings::verbose() >= 0)
-                fprintf(stderr, "[%s][%s]|%i> Outputting '%s'...\n",
-                        TIMEMORY_PROJECT_NAME, _label.c_str(), node_rank,
-                        outfname.c_str());
+                operation::file_output_message<Type>{}(outfname, std::string{ _label });
 
             // ensure write final block during destruction before the file is closed
             auto oa = policy_type::get(ofs);

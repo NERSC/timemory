@@ -25,6 +25,7 @@
 #ifndef TIMEMORY_UTILITY_ARGPARSE_CPP_
 #define TIMEMORY_UTILITY_ARGPARSE_CPP_
 
+#include "timemory/log/logger.hpp"
 #include "timemory/utility/delimit.hpp"
 
 #include <iostream>
@@ -427,7 +428,9 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
         if(_cmd.length() > 0)
         {
             _cmd = _cmd.substr(1);
-            std::cerr << "[argparse::parse]> parsing '" << _cmd << "'...\n";
+            if(verbose_level >= 1)
+                log::stream(std::cerr, log::color::info())
+                    << "[argparse::parse]> parsing '" << _cmd << "'...\n";
         }
     }
 

@@ -33,11 +33,13 @@
 #    include "timemory/backends/process.hpp"
 #    include "timemory/config/config.hpp"
 #    include "timemory/config/types.hpp"
+#    include "timemory/log/logger.hpp"
 #    include "timemory/manager/declaration.hpp"
 #    include "timemory/mpl/filters.hpp"
 #    include "timemory/settings/declaration.hpp"
 #    include "timemory/settings/types.hpp"
 #    include "timemory/utility/argparse.hpp"
+#    include "timemory/utility/delimit.hpp"
 #    include "timemory/utility/signals.hpp"
 #    include "timemory/utility/utility.hpp"
 
@@ -280,7 +282,8 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
 
     auto err_action = [=](const parser_err_t& _err) {
         if(dmp::rank() == 0 && _err)
-            std::cerr << "[timemory_argparse]> Error! " << _err << std::endl;
+            log::stream(std::cerr, log::color::warning())
+                << "[" << TIMEMORY_PROJECT_NAME << "][argparse]> Error! " << _err << "\n";
     };
 
     // if argument parser was not provided
@@ -334,10 +337,12 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
                     auto _val = (_pos == std::string::npos) ? "" : itr.substr(_pos + 1);
                     if(!_settings->update(_key, _val, false))
                     {
-                        std::cerr << "[timemory_argparse]> Warning! For "
-                                     "--" TIMEMORY_PROJECT_NAME "-args, key \""
-                                  << _key << "\" is not a recognized setting. \"" << _val
-                                  << "\" was not applied." << std::endl;
+                        log::stream(std::cerr, log::color::warning())
+                            << "[" << TIMEMORY_PROJECT_NAME
+                            << "][argparse]> Warning! For "
+                               "--" TIMEMORY_PROJECT_NAME "-args, key \""
+                            << _key << "\" is not a recognized setting. \"" << _val
+                            << "\" was not applied.\n";
                     }
                 }
             }

@@ -250,13 +250,11 @@ get_value_callback(void* userdata, CUpti_CallbackDomain domain, CUpti_CallbackId
     // Skip execution if kernel name is NULL string
     if(cbInfo->symbolName == nullptr)
     {
-        _LOG("Empty kernel name string. Skipping...");
         return;
     }
 
     if(cbInfo->context == nullptr)
     {
-        _LOG("Null context...");
         return;
     }
 
@@ -289,10 +287,8 @@ get_value_callback(void* userdata, CUpti_CallbackDomain domain, CUpti_CallbackId
     auto current_kernel_name = _kernel_name_ss.str();
 #    endif
 
-    _LOG("... begin callback for %s...\n", current_kernel_name.c_str());
     if(cbInfo->callbackSite == CUPTI_API_ENTER)
     {
-        _LOG("New kernel encountered: %s", current_kernel_name.c_str());
         kernel_data_t k_data = dummy;
         k_data.m_name        = demangle(cbInfo->symbolName);
         auto& pass_data      = k_data.m_pass_data;
@@ -301,7 +297,6 @@ get_value_callback(void* userdata, CUpti_CallbackDomain domain, CUpti_CallbackId
         {
             for(uint32_t i = 0; i < pass_data[j].event_groups->numEventGroups; i++)
             {
-                _LOG("  Enabling group %d", i);
                 uint32_t all = 1;
                 TIMEMORY_CUPTI_CALL(cuptiEventGroupSetAttribute(
                     pass_data[j].event_groups->eventGroups[i],
@@ -366,29 +361,6 @@ get_value_callback(void* userdata, CUpti_CallbackDomain domain, CUpti_CallbackId
                     uint64_t normalized = (sum * numTotalInstances) / numInstances;
                     pass_data.event_ids.push_back(eventIds[j]);
                     pass_data.event_values.push_back(normalized);
-
-// print collected value
-#    if defined(DEBUG)
-                    {
-                        char   eventName[128];
-                        size_t eventNameSize = sizeof(eventName) - 1;
-                        TIMEMORY_CUPTI_CALL(
-                            cuptiEventGetAttribute(eventIds[j], CUPTI_EVENT_ATTR_NAME,
-                                                   &eventNameSize, eventName));
-                        eventName[eventNameSize] = '\0';
-                        _DBG("\t%s = %llu (", eventName, (unsigned long long) sum);
-                        for(uint32_t k = 0; k < numInstances && numInstances > 1; k++)
-                        {
-                            if(k != 0)
-                                _DBG(", ");
-                            _DBG("%llu", (unsigned long long) values[k]);
-                        }
-                        _DBG(")\n");
-                        _LOG("\t%s (normalized) (%llu * %u) / %u = %llu", eventName,
-                             (unsigned long long) sum, numTotalInstances, numInstances,
-                             (unsigned long long) normalized);
-                    }
-#    endif
                 }
                 free(values);
                 free(eventIds);
@@ -400,7 +372,6 @@ get_value_callback(void* userdata, CUpti_CallbackDomain domain, CUpti_CallbackId
     {
         throw std::runtime_error("Unexpected callback site!");
     }
-    _LOG("... ending callback for %s...\n", current_kernel_name.c_str());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -478,9 +449,6 @@ struct profiler
             m_event_passes = m_event_pass_data->numSets;
         }
 
-        _LOG("# Metric Passes: %d\n", m_metric_passes);
-        _LOG("# Event Passes: %d\n", m_event_passes);
-
         assert((m_metric_passes + m_event_passes) > 0);
 
         impl::kernel_data_t dummy_data;
@@ -494,8 +462,7 @@ struct profiler
         auto& pass_data = dummy_data.m_pass_data;
         for(int i = 0; i < m_metric_passes; ++i)
         {
-            int total_events = 0;
-            _LOG("[metric] Looking at set (pass) %d", i);
+            int      total_events    = 0;
             uint32_t num_events      = 0;
             size_t   num_events_size = sizeof(num_events);
             for(uint32_t j = 0; j < m_metric_pass_data->sets[i].numEventGroups; ++j)
@@ -503,7 +470,6 @@ struct profiler
                 TIMEMORY_CUPTI_CALL(cuptiEventGroupGetAttribute(
                     m_metric_pass_data->sets[i].eventGroups[j],
                     CUPTI_EVENT_GROUP_ATTR_NUM_EVENTS, &num_events_size, &num_events));
-                _LOG("  Event Group %d, #Events = %d", j, num_events);
                 total_events += num_events;
             }
             pass_data[i].event_groups = m_metric_pass_data->sets + i;
@@ -512,8 +478,7 @@ struct profiler
 
         for(int i = 0; i < m_event_passes; ++i)
         {
-            int total_events = 0;
-            _LOG("[event] Looking at set (pass) %d", i);
+            int      total_events    = 0;
             uint32_t num_events      = 0;
             size_t   num_events_size = sizeof(num_events);
             for(uint32_t j = 0; j < m_event_pass_data->sets[i].numEventGroups; ++j)
@@ -521,7 +486,6 @@ struct profiler
                 TIMEMORY_CUPTI_CALL(cuptiEventGroupGetAttribute(
                     m_event_pass_data->sets[i].eventGroups[j],
                     CUPTI_EVENT_GROUP_ATTR_NUM_EVENTS, &num_events_size, &num_events));
-                _LOG("  Event Group %d, #Events = %d", j, num_events);
                 total_events += num_events;
             }
             pass_data[i + m_metric_passes].event_groups = m_event_pass_data->sets + i;
