@@ -41,7 +41,11 @@ namespace component
 template <typename Tp>
 struct base_data<Tp, 0>
 {
-    using value_type = null_type;
+    static constexpr size_t data_value_size = 0;
+    using value_type                        = null_type;
+    using accum_type                        = null_type;
+    using last_type                         = null_type;
+    using cref_return_type                  = null_type;
 
     TIMEMORY_INLINE value_type get_value() const { return value_type{}; }
     TIMEMORY_INLINE value_type get_accum() const { return value_type{}; }
@@ -82,20 +86,16 @@ struct base_data<Tp, 0>
     template <typename Up>
     void divide(Up&&)
     {}
-
-protected:
-    value_type value = {};  // NOLINT
-    value_type accum = {};  // NOLINT
-    value_type last  = {};  // NOLINT
 };
 //
 template <typename Tp>
 struct base_data<Tp, 1>
 {
-    using empty_type = std::tuple<>;
-    using value_type = Tp;
-    using accum_type = empty_type;
-    using last_type  = empty_type;
+    static constexpr size_t data_value_size = 1;
+    using value_type                        = Tp;
+    using empty_type                        = null_type;
+    using accum_type                        = empty_type;
+    using last_type                         = empty_type;
     using cref_return_type =
         std::conditional_t<std::is_trivially_copyable<value_type>::value, value_type,
                            const value_type&>;
@@ -191,10 +191,11 @@ struct base_data<Tp, 2>
     template <typename Up, typename ValueT>
     friend struct base;
 
-    using empty_type = std::tuple<>;
-    using value_type = Tp;
-    using accum_type = Tp;
-    using last_type  = empty_type;
+    static constexpr size_t data_value_size = 2;
+    using empty_type                        = null_type;
+    using value_type                        = Tp;
+    using accum_type                        = Tp;
+    using last_type                         = empty_type;
     using cref_return_type =
         std::conditional_t<std::is_trivially_copyable<value_type>::value, value_type,
                            const value_type&>;
@@ -313,9 +314,10 @@ struct base_data<Tp, 3>
     template <typename Up, typename ValueT>
     friend struct base;
 
-    using value_type = Tp;
-    using accum_type = Tp;
-    using last_type  = Tp;
+    static constexpr size_t data_value_size = 3;
+    using value_type                        = Tp;
+    using accum_type                        = Tp;
+    using last_type                         = Tp;
     using cref_return_type =
         std::conditional_t<std::is_trivially_copyable<value_type>::value, value_type,
                            const value_type&>;
