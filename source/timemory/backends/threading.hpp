@@ -51,11 +51,11 @@
 
 #if defined(TIMEMORY_UNIX)
 #    include <pthread.h>
+#    include <sys/syscall.h>
 #endif
 
 #if defined(TIMEMORY_LINUX)
 #    include <fstream>
-#    include <sys/syscall.h>
 #    include <unistd.h>
 #endif
 
@@ -272,15 +272,17 @@ is_master_thread()
 //
 //--------------------------------------------------------------------------------------//
 //
-inline uint32_t
+inline long
 get_sys_tid()
 {
 #if defined(TIMEMORY_LINUX)
     return syscall(SYS_gettid);
+#elif defined(TIMEMORY_MACOS)
+    return syscall(SYS_thread_selfid);
 #elif defined(TIMEMORY_WINDOWS)
     return GetCurrentThreadId();
 #else
-    return static_cast<uint32_t>(get_id());
+    return static_cast<long>(get_id());
 #endif
 }
 //
