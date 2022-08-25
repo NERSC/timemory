@@ -39,6 +39,12 @@ file(GLOB_RECURSE tpl_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*.hpp
      ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*.h)
 file(GLOB_RECURSE tpl_licenses ${CMAKE_CURRENT_LIST_DIR}/timemory/tpls/*license*)
 
+set(_TIMEMORY_CXX_LIBRARY_EXCLUDE)
+foreach(_SRC ${TIMEMORY_CXX_LIBRARY_EXCLUDE})
+    list(APPEND _TIMEMORY_CXX_LIBRARY_EXCLUDE ${CMAKE_CURRENT_LIST_DIR}/${_SRC} ${_SRC})
+endforeach()
+list(REMOVE_ITEM cxx_sources ${_TIMEMORY_CXX_LIBRARY_EXCLUDE})
+
 set(_CATEGORIES backends mpl utility variadic)
 # bits folder
 set(cxx_headers_category_bits)
