@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/mpl/concepts.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/utility/types.hpp"
 
 #include <ostream>
@@ -41,6 +42,23 @@ struct config
     using value_type = void;
 
     friend std::ostream& operator<<(std::ostream& _os, const config&) { return _os; }
+};
+
+//
+template <typename QuirkT, typename Tp>
+struct has_quirk
+: std::conditional_t<std::is_same<QuirkT, Tp>::value, std::true_type, std::false_type>
+{};
+
+//
+template <typename QuirkT, typename... Tp>
+struct has_quirk<QuirkT, config<Tp...>>
+{
+    using type = std::conditional_t<is_one_of<QuirkT, config<Tp...>>::value,
+                                    std::true_type, std::false_type>;
+    static constexpr bool value = type::value;
+
+    constexpr bool operator()() const { return type::value; }
 };
 
 /// \struct tim::quirk::config
@@ -278,6 +296,16 @@ struct unsafe : concepts::quirk_type
 ///
 struct fast : concepts::quirk_type
 {};
+
+/// \struct tim::quirk::static_data
+/// \brief When present, this argument instructs to assume set_data calls are cached
+/// statically Usage:
+/// - the second template argument to a gotcha component. The third template parameter
+///   must have a function operator accepting the: 1. gotcha data object, 2. a function
+///   pointer to the callee, and 3. the arguments.
+///
+struct static_data : concepts::quirk_type
+{};
 //
 }  // namespace quirk
 
@@ -291,6 +319,18 @@ struct tuple_type<quirk::fast>
 //
 template <>
 struct component_type<quirk::fast>
+{
+    using type = lightweight_tuple<>;
+};
+//
+template <typename... Tp>
+struct tuple_type<quirk::config<Tp...>>
+{
+    using type = std::tuple<>;
+};
+//
+template <typename... Tp>
+struct component_type<quirk::config<Tp...>>
 {
     using type = lightweight_tuple<>;
 };
