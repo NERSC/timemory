@@ -23,7 +23,7 @@
 //  SOFTWARE.
 
 #ifndef TIMEMORY_BACKENDS_GOTCHA_CPP_
-#define TIMEMORY_BACKENDS_GOTCHA_CPP_ 1
+#define TIMEMORY_BACKENDS_GOTCHA_CPP_
 
 #include "timemory/backends/defines.hpp"
 

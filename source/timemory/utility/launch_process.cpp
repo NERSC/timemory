@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_UTILITY_LAUNCH_PROCESS_CPP_
-#define TIMEMORY_UTILITY_LAUNCH_PROCESS_CPP_ 1
+#define TIMEMORY_UTILITY_LAUNCH_PROCESS_CPP_
 
 #include "timemory/utility/delimit.hpp"
 #include "timemory/utility/popen.hpp"

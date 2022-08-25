@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_UTILITY_UTILITY_CPP_
-#define TIMEMORY_UTILITY_UTILITY_CPP_ 1
+#define TIMEMORY_UTILITY_UTILITY_CPP_
 
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/filepath.hpp"

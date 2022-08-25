@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_STORAGE_IMPL_STORAGE_FALSE_CPP_
-#define TIMEMORY_STORAGE_IMPL_STORAGE_FALSE_CPP_ 1
+#define TIMEMORY_STORAGE_IMPL_STORAGE_FALSE_CPP_
 
 #include "timemory/storage/impl_storage_false.hpp"
 

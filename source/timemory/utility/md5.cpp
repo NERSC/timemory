@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_UTILITY_MD5_CPP_
-#define TIMEMORY_UTILITY_MD5_CPP_ 1
+#define TIMEMORY_UTILITY_MD5_CPP_
 
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/macros.hpp"

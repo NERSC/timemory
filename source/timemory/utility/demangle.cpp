@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_UTILITY_DEMANGLE_CPP_
-#define TIMEMORY_UTILITY_DEMANGLE_CPP_ 1
+#define TIMEMORY_UTILITY_DEMANGLE_CPP_
 
 #include "timemory/utility/macros.hpp"
 

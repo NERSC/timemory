@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_STORAGE_BASE_STORAGE_CPP_
-#define TIMEMORY_STORAGE_BASE_STORAGE_CPP_ 1
+#define TIMEMORY_STORAGE_BASE_STORAGE_CPP_
 
 #include "timemory/storage/macros.hpp"
 

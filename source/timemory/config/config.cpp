@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_CONFIG_CONFIG_CPP_
-#define TIMEMORY_CONFIG_CONFIG_CPP_ 1
+#define TIMEMORY_CONFIG_CONFIG_CPP_
 
 #include "timemory/config/macros.hpp"
 #include "timemory/defines.h"

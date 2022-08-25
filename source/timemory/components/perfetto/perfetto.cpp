@@ -24,7 +24,7 @@
 //
 
 #ifndef TIMEMORY_COMPONENTS_PERFETTO_PERFETTO_CPP_
-#define TIMEMORY_COMPONENTS_PERFETTO_PERFETTO_CPP_ 1
+#define TIMEMORY_COMPONENTS_PERFETTO_PERFETTO_CPP_
 
 #include "timemory/components/perfetto/types.hpp"
 

@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_STORAGE_RING_BUFFER_CPP_
-#define TIMEMORY_STORAGE_RING_BUFFER_CPP_ 1
+#define TIMEMORY_STORAGE_RING_BUFFER_CPP_
 
 #include "timemory/storage/macros.hpp"
 

@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_VARIADIC_FUNCTIONAL_CPP_
-#define TIMEMORY_VARIADIC_FUNCTIONAL_CPP_ 1
+#define TIMEMORY_VARIADIC_FUNCTIONAL_CPP_
 
 #include "timemory/api.hpp"
 #include "timemory/macros/language.hpp"

@@ -24,7 +24,7 @@
 //
 
 #ifndef TIMEMORY_VARIADIC_AUTO_BASE_BUNDLE_CPP_
-#define TIMEMORY_VARIADIC_AUTO_BASE_BUNDLE_CPP_ 1
+#define TIMEMORY_VARIADIC_AUTO_BASE_BUNDLE_CPP_
 
 #include "timemory/variadic/auto_base_bundle.hpp"
 

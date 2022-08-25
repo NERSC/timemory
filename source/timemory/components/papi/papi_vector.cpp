@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_COMPONENTS_PAPI_PAPI_VECTOR_CPP_
-#define TIMEMORY_COMPONENTS_PAPI_PAPI_VECTOR_CPP_ 1
+#define TIMEMORY_COMPONENTS_PAPI_PAPI_VECTOR_CPP_
 
 #include "timemory/components/papi/macros.hpp"
 

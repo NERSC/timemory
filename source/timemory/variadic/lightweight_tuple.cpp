@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_VARIADIC_LIGHTWEIGHT_TUPLE_CPP_
-#define TIMEMORY_VARIADIC_LIGHTWEIGHT_TUPLE_CPP_ 1
+#define TIMEMORY_VARIADIC_LIGHTWEIGHT_TUPLE_CPP_
 
 #include "timemory/variadic/lightweight_tuple.hpp"
 

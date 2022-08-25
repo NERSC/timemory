@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_COMPONENT_PRINTER_PRINTER_CPP_
-#define TIMEMORY_COMPONENT_PRINTER_PRINTER_CPP_ 1
+#define TIMEMORY_COMPONENT_PRINTER_PRINTER_CPP_
 
 #include "timemory/components/printer/types.hpp"
 

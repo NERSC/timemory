@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_HASH_STATIC_STRING_CPP_
-#define TIMEMORY_HASH_STATIC_STRING_CPP_ 1
+#define TIMEMORY_HASH_STATIC_STRING_CPP_
 
 #include "timemory/hash/macros.hpp"
 
