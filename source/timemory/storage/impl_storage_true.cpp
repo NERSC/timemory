@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_STORAGE_IMPL_STORAGE_TRUE_CPP_
-#define TIMEMORY_STORAGE_IMPL_STORAGE_TRUE_CPP_ 1
+#define TIMEMORY_STORAGE_IMPL_STORAGE_TRUE_CPP_
 
 #include "timemory/storage/impl_storage_true.hpp"
 
@@ -33,6 +33,7 @@
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
 #include "timemory/manager/declaration.hpp"
+#include "timemory/operations/types.hpp"
 #include "timemory/operations/types/decode.hpp"
 #include "timemory/operations/types/fini.hpp"
 #include "timemory/operations/types/init.hpp"
@@ -96,7 +97,13 @@ storage<Type, true>::storage()
     }
 
     get_shared_manager();
-    // m_printer = std::make_shared<printer_t>(Type::get_label(), this);
+
+    if(operation::get_storage<Type>{}(m_thread_idx) == nullptr)
+    {
+        using value_type = typename trait::collects_data<Type>::type;
+        operation::set_storage<Type>{}(static_cast<tim::storage<Type, value_type>*>(this),
+                                       m_thread_idx);
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -179,6 +186,9 @@ storage<Type, true>::~storage()
 
     TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> storage destroyed",
                                     m_label.c_str(), (long) m_instance_id);
+
+    if(operation::get_storage<Type>{}(m_thread_idx) == this)
+        operation::set_storage<Type>{}(nullptr, m_thread_idx);
 }
 //
 //--------------------------------------------------------------------------------------//
