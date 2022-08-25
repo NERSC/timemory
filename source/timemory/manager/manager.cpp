@@ -24,12 +24,13 @@
 
 // maybe included directly in header-only mode but pragma once will cause warnings
 #ifndef TIMEMORY_MANAGER_MANAGER_CPP_
-#define TIMEMORY_MANAGER_MANAGER_CPP_ 1
+#define TIMEMORY_MANAGER_MANAGER_CPP_
 
 #include "timemory/manager/manager.hpp"
 
 #include "timemory/backends/process.hpp"
 #include "timemory/defines.h"
+#include "timemory/log/logger.hpp"
 #include "timemory/manager/macros.hpp"
 #include "timemory/manager/types.hpp"
 #include "timemory/operations/types/decode.hpp"
@@ -53,6 +54,7 @@
 #    include "timemory/backends/threading.hpp"
 #    include "timemory/mpl/policy.hpp"
 #    include "timemory/mpl/type_traits.hpp"
+#    include "timemory/operations/types/file_output_message.hpp"
 #    include "timemory/operations/types/finalize/ctest_notes.hpp"
 #    include "timemory/settings/declaration.hpp"
 #    include "timemory/utility/macros.hpp"
@@ -469,12 +471,11 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
         return;
     }
 
-    auto fname = settings::compose_output_filename(
-        "metadata", "json", settings::use_output_suffix(),
-        settings::default_process_suffix(), false, _output_dir);
-    auto hname = settings::compose_output_filename(
-        "functions", "json", settings::use_output_suffix(),
-        settings::default_process_suffix(), false, _output_dir);
+    auto _cfg          = tim::settings::compose_filename_config{};
+    _cfg.explicit_path = _output_dir;
+
+    auto fname = settings::compose_output_filename("metadata", "json", _cfg);
+    auto hname = settings::compose_output_filename("functions", "json", _cfg);
 
     auto _settings = f_settings();
     auto _banner   = (_settings) ? _settings->get_banner() : false;
@@ -507,23 +508,24 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
        f_manager_persistent_data().metadata_count == 0)
         return;
 
-    if((f_verbose() >= 0 || _banner || f_debug()) && !_hashes.empty())
-        fprintf(stderr, "\n[%s][%s][metadata]> Outputting '%s' and '%s'...\n",
-                TIMEMORY_PROJECT_NAME, context, fname.c_str(), hname.c_str());
-    else if((f_verbose() >= 0 || _banner || f_debug()) && _hashes.empty())
-        fprintf(stderr, "\n[%s][%s][metadata]> Outputting '%s'...\n",
-                TIMEMORY_PROJECT_NAME, context, fname.c_str());
-
-    std::ofstream ofs{};
-    if(filepath::open(ofs, fname))
     {
-        write_metadata(ofs);
+        auto _fom = operation::file_output_message<manager>{};
+        if((f_verbose() >= 0 || _banner || f_debug()) && !_hashes.empty())
+            _fom(std::vector<std::string>{ fname, hname },
+                 std::vector<std::string>{ context, "metadata" });
+        else if((f_verbose() >= 0 || _banner || f_debug()) && _hashes.empty())
+            _fom(std::vector<std::string>{ fname },
+                 std::vector<std::string>{ context, "metadata" });
+
+        std::ofstream ofs{};
+        if(filepath::open(ofs, fname))
+            write_metadata(ofs);
+        if(ofs)
+            ofs << std::endl;
+        else
+            _fom.append("Warning! Error opening '%s'...", fname.c_str());
+        ofs.close();
     }
-    if(ofs)
-        ofs << std::endl;
-    else
-        printf("[manager]> Warning! Error opening '%s'...\n", fname.c_str());
-    ofs.close();
 
     if(_hashes.empty())
         return;
