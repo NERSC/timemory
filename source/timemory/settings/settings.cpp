@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 #ifndef TIMEMORY_SETTINGS_SETTINGS_CPP_
-#define TIMEMORY_SETTINGS_SETTINGS_CPP_ 1
+#define TIMEMORY_SETTINGS_SETTINGS_CPP_
 
 #include "timemory/settings/settings.hpp"
 
@@ -155,21 +155,49 @@ settings::toupper(std::string str)
 //
 //--------------------------------------------------------------------------------------//
 //
+namespace
+{
+inline std::string&
+_get_prefix_with_subdirectory(std::string& _prefix, std::string _subdir)
+{
+    if(_subdir.empty())
+        return _prefix;
+    if(_subdir.back() != '/')
+        _subdir += "/";
+    if(_prefix.empty())
+        _prefix = _subdir;
+    else
+    {
+        if(_prefix.back() == '-')
+            _prefix = _subdir + _prefix;
+        else if(_prefix.back() == '/')
+            _prefix += _subdir;
+        else
+            _prefix += std::string{ "/" } + _subdir;
+    }
+    return _prefix;
+}
+}  // namespace
+//
+//--------------------------------------------------------------------------------------//
+//
 TIMEMORY_SETTINGS_INLINE
 std::string
-settings::get_global_input_prefix()
+settings::get_global_input_prefix(std::string _subdir)
 {
     auto _dir    = input_path();
     auto _prefix = input_prefix();
 
-    return filepath::osrepr(_dir + std::string("/") + _prefix);
+    _get_prefix_with_subdirectory(_prefix, std::move(_subdir));
+
+    return filepath::osrepr(_dir + std::string{ "/" } + _prefix);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
-settings::get_global_output_prefix(bool _make_dir)
+settings::get_global_output_prefix(bool _make_dir, std::string _subdir)
 {
     using str_t = std::string;
 
@@ -195,11 +223,13 @@ settings::get_global_output_prefix(bool _make_dir)
         }
     }
 
+    _get_prefix_with_subdirectory(_out_prefix, std::move(_subdir));
+
     // always return zero if not making dir. if makedir failed, don't prefix with
     // directory
     auto ret = (_make_dir) ? makedir(_out_path) : 0;
-    return (ret == 0) ? filepath::osrepr(_out_path + std::string("/") + _out_prefix)
-                      : filepath::osrepr(std::string("./") + _out_prefix);
+    return (ret == 0) ? filepath::osrepr(_out_path + std::string{ "/" } + _out_prefix)
+                      : filepath::osrepr(std::string{ "./" } + _out_prefix);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -452,14 +482,17 @@ settings::format(std::string _prefix, std::string _tag, std::string _suffix,
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
-settings::compose_output_filename(std::string _tag, std::string _ext, bool _use_suffix,
-                                  int32_t _output_suffix, bool _make_dir,
-                                  std::string _explicit)
+settings::compose_output_filename(std::string _tag, std::string _ext,
+                                  const compose_filename_config& _config)
 {
-    bool _is_explicit = (!_explicit.empty());
+    bool _is_explicit = (!_config.explicit_path.empty());
     // if there isn't an explicit prefix, get the <OUTPUT_PATH>/<OUTPUT_PREFIX>
     auto _prefix =
-        (!_explicit.empty()) ? std::move(_explicit) : get_global_output_prefix(_make_dir);
+        (!_config.explicit_path.empty())
+            ? ((_config.subdirectory.empty())
+                   ? _config.explicit_path
+                   : (_config.explicit_path + std::string{ "/" } + _config.subdirectory))
+            : get_global_output_prefix(_config.make_dir, _config.subdirectory);
 
     // return on empty
     if(_prefix.empty())
@@ -471,17 +504,17 @@ settings::compose_output_filename(std::string _tag, std::string _ext, bool _use_
                   _prefix.end());
 
     // if explicit prefix is provided, then make the directory
-    if(_is_explicit && _make_dir)
+    if(_is_explicit && _config.make_dir)
     {
         auto ret = makedir(_prefix);
         if(ret != 0)
-            _prefix = filepath::osrepr(std::string("./"));
+            _prefix = filepath::osrepr(std::string{ "./" });
     }
 
     // add the mpi rank if not root
-    auto _suffix = (_use_suffix && _output_suffix >= 0)
-                       ? (std::string("-") + std::to_string(_output_suffix))
-                       : std::string("");
+    auto _suffix = (_config.use_suffix && _config.suffix >= 0)
+                       ? (std::string{ "-" } + std::to_string(_config.suffix))
+                       : std::string{};
 
     // create the path
     std::string _fpath = format(_prefix, std::move(_tag), _suffix, std::move(_ext));
@@ -493,8 +526,8 @@ settings::compose_output_filename(std::string _tag, std::string _ext, bool _use_
 //
 TIMEMORY_SETTINGS_INLINE
 std::string
-settings::compose_input_filename(std::string _tag, std::string _ext, bool _use_suffix,
-                                 int32_t _output_suffix, std::string _explicit)
+settings::compose_input_filename(std::string _tag, std::string _ext,
+                                 const compose_filename_config& _config)
 {
     if(settings::input_path().empty())
         settings::input_path() = settings::output_path();
@@ -503,16 +536,20 @@ settings::compose_input_filename(std::string _tag, std::string _ext, bool _use_s
         settings::input_prefix() = settings::output_prefix();
 
     auto _prefix =
-        (_explicit.length() > 0) ? std::move(_explicit) : get_global_input_prefix();
+        (_config.explicit_path.length() > 0)
+            ? ((_config.subdirectory.empty())
+                   ? _config.explicit_path
+                   : (_config.explicit_path + std::string{ "/" } + _config.subdirectory))
+            : get_global_input_prefix(_config.subdirectory);
 
     auto only_ascii = [](char c) { return isascii(c) == 0; };
 
     _prefix.erase(std::remove_if(_prefix.begin(), _prefix.end(), only_ascii),
                   _prefix.end());
 
-    auto _suffix = (_use_suffix && _output_suffix >= 0)
-                       ? (std::string("-") + std::to_string(_output_suffix))
-                       : std::string("");
+    auto _suffix = (_config.use_suffix && _config.suffix >= 0)
+                       ? (std::string{ "-" } + std::to_string(_config.suffix))
+                       : std::string{};
 
     // create the path
     std::string _fpath = format(_prefix, std::move(_tag), _suffix, std::move(_ext));

@@ -395,21 +395,32 @@ public:
     TIMEMORY_STATIC_ACCESSOR(int32_t, default_process_suffix, process::get_id())
 #endif
 
+    struct compose_filename_config
+    {
+        bool        use_suffix    = false;
+        int32_t     suffix        = process::get_id();
+        bool        make_dir      = false;
+        std::string explicit_path = {};
+        std::string subdirectory  = {};
+    };
+
     static strvector_t get_global_environment();
     static string_t    tolower(string_t str);
     static string_t    toupper(string_t str);
-    static string_t    get_global_input_prefix();
-    static string_t    get_global_output_prefix(bool _make_dir = false);
+    static string_t    get_global_input_prefix(std::string subdir = {});
+    static string_t    get_global_output_prefix(bool        _make_dir = false,
+                                                std::string subdir    = {});
     static void        store_command_line(int argc, char** argv);
     static string_t    compose_output_filename(string_t _tag, string_t _ext,
-                                               bool    _use_suffix = use_output_suffix(),
-                                               int32_t _suffix = default_process_suffix(),
-                                               bool    _make_dir     = false,
-                                               std::string _explicit = {});
+                                               const compose_filename_config& = {
+                                                use_output_suffix(),
+                                                default_process_suffix(), false,
+                                                std::string{}, std::string{} });
     static string_t    compose_input_filename(string_t _tag, string_t _ext,
-                                              bool        _use_suffix = use_output_suffix(),
-                                              int32_t     _suffix = default_process_suffix(),
-                                              std::string _explicit = {});
+                                              const compose_filename_config& = {
+                                               use_output_suffix(),
+                                               default_process_suffix(), false,
+                                               std::string{}, std::string{} });
 
     static void parse(settings* = instance<TIMEMORY_API>());
 
@@ -421,6 +432,22 @@ public:
         TIMEMORY_VISIBILITY("hidden");
     static std::string format(std::string _prefix, std::string _tag, std::string _suffix,
                               std::string _ext) TIMEMORY_VISIBILITY("hidden");
+
+    template <typename... Args>
+    static string_t compose_output_filename(string_t _tag, string_t _ext,
+                                            bool _use_suffix, Args... args)
+    {
+        return compose_output_filename(std::move(_tag), std::move(_ext),
+                                       compose_filename_config{ _use_suffix, args... });
+    }
+
+    template <typename... Args>
+    static string_t compose_input_filename(string_t _tag, string_t _ext, bool _use_suffix,
+                                           Args... args)
+    {
+        return compose_input_filename(std::move(_tag), std::move(_ext),
+                                      compose_filename_config{ _use_suffix, args... });
+    }
 
 public:
     template <typename ArchiveT>

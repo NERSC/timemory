@@ -398,20 +398,38 @@ generate(py::module& _pymod)
         "dump", _dump,
         "Dump settings to a file (if filename provided). Returns dictionary of settings",
         py::arg("filename") = std::string{}, py::arg("instance") = nullptr);
-    settings.def_static("compose_output_filename",
-                        &tim::settings::compose_output_filename,
-                        "Generate an output filename based on output path and output "
-                        "prefix settings. Use make_dir=True to ensure directory exists. "
-                        "Use explicit to specify an explicit output directory",
-                        py::arg("basename"), py::arg("extension"), py::arg("dmp") = false,
-                        py::arg("rank") = -1, py::arg("make_dir") = true,
-                        py::arg("explicit") = std::string{});
     settings.def_static(
-        "compose_input_filename", &tim::settings::compose_input_filename,
+        "compose_output_filename",
+        [](std::string _base, std::string _ext, bool _dmp, int _rank, bool _make_dir,
+           std::string _explicit, std::string _subdir) {
+            return tim::settings::compose_output_filename(
+                _base, _ext,
+                tim::settings::compose_filename_config{ _dmp, _rank, _make_dir, _explicit,
+                                                        _subdir });
+        },
+        "Generate an output filename based on output path and output "
+        "prefix settings. Use make_dir=True to ensure directory exists. "
+        "Use explicit to specify an explicit output directory",
+        py::arg("basename"), py::arg("extension"),
+        py::arg("dmp")      = tim::settings::use_output_suffix(),
+        py::arg("rank")     = tim::settings::default_process_suffix(),
+        py::arg("make_dir") = false, py::arg("explicit") = std::string{},
+        py::arg("subdirectory") = std::string{});
+    settings.def_static(
+        "compose_input_filename",
+        [](std::string _base, std::string _ext, bool _dmp, int _rank,
+           std::string _explicit, std::string _subdir) {
+            return tim::settings::compose_input_filename(
+                _base, _ext,
+                tim::settings::compose_filename_config{ _dmp, _rank, false, _explicit,
+                                                        _subdir });
+        },
         "Generate an input filename based on input path and input "
         "prefix settings. Use explicit to specify an explicit input directory",
-        py::arg("basename"), py::arg("extension"), py::arg("dmp") = false,
-        py::arg("rank") = -1, py::arg("explicit") = std::string{});
+        py::arg("basename"), py::arg("extension"),
+        py::arg("dmp")      = tim::settings::use_output_suffix(),
+        py::arg("rank")     = tim::settings::default_process_suffix(),
+        py::arg("explicit") = std::string{}, py::arg("subdirectory") = std::string{});
 
     std::set<std::string> names{};
     auto                  _settings = tim::settings::instance<TIMEMORY_API>();
