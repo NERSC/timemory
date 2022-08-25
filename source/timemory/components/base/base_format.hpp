@@ -60,10 +60,10 @@ private:
     using array_type = std::array<bool, LAST_idx>;
 
     // returns current precision, width, and format
-    static value_type& get_value();
+    static value_type& get_format_value();
 
     // returns whether values have been explicitly set
-    static array_type& get_status();
+    static array_type& get_format_status();
 };
 
 template <typename Tp>
@@ -73,8 +73,8 @@ base_format<Tp>::get_precision()
     constexpr bool timing_category_v = trait::is_timing_category<Tp>::value;
     constexpr bool memory_category_v = trait::is_memory_category<Tp>::value;
 
-    auto _v = std::get<PRECISION_idx>(get_value());
-    if(std::get<PRECISION_idx>(get_status()))
+    auto _v = std::get<PRECISION_idx>(get_format_value());
+    if(std::get<PRECISION_idx>(get_format_status()))
         return _v;
 
     auto* _settings = settings::instance();
@@ -103,8 +103,8 @@ base_format<Tp>::get_width()
     constexpr bool timing_category_v = trait::is_timing_category<Tp>::value;
     constexpr bool memory_category_v = trait::is_memory_category<Tp>::value;
 
-    auto _v = std::get<WIDTH_idx>(get_value());
-    if(std::get<WIDTH_idx>(get_status()))
+    auto _v = std::get<WIDTH_idx>(get_format_value());
+    if(std::get<WIDTH_idx>(get_format_status()))
         return _v;
 
     auto* _settings = settings::instance();
@@ -134,8 +134,8 @@ base_format<Tp>::get_format_flags()
     constexpr bool memory_category_v = trait::is_memory_category<Tp>::value;
     constexpr bool percent_units_v   = trait::uses_percent_units<Tp>::value;
 
-    auto _v = std::get<FORMAT_idx>(get_value());
-    if(std::get<FORMAT_idx>(get_status()))
+    auto _v = std::get<FORMAT_idx>(get_format_value());
+    if(std::get<FORMAT_idx>(get_format_status()))
         return _v;
 
     if(!percent_units_v &&
@@ -153,9 +153,9 @@ template <typename Tp>
 short
 base_format<Tp>::set_precision(short _new)
 {
-    auto _old                             = get_precision();
-    std::get<PRECISION_idx>(get_value())  = _new;
-    std::get<PRECISION_idx>(get_status()) = true;
+    auto _old                                    = get_precision();
+    std::get<PRECISION_idx>(get_format_value())  = _new;
+    std::get<PRECISION_idx>(get_format_status()) = true;
     return _old;
 }
 
@@ -163,9 +163,9 @@ template <typename Tp>
 short
 base_format<Tp>::set_width(short _new)
 {
-    auto _old                         = get_width();
-    std::get<WIDTH_idx>(get_value())  = _new;
-    std::get<WIDTH_idx>(get_status()) = true;
+    auto _old                                = get_width();
+    std::get<WIDTH_idx>(get_format_value())  = _new;
+    std::get<WIDTH_idx>(get_format_status()) = true;
     return _old;
 }
 
@@ -173,15 +173,15 @@ template <typename Tp>
 typename base_format<Tp>::fmtflags
 base_format<Tp>::set_format_flags(fmtflags _new)
 {
-    auto _old                          = get_format_flags();
-    std::get<FORMAT_idx>(get_value())  = _new;
-    std::get<FORMAT_idx>(get_status()) = true;
+    auto _old                                 = get_format_flags();
+    std::get<FORMAT_idx>(get_format_value())  = _new;
+    std::get<FORMAT_idx>(get_format_status()) = true;
     return _old;
 }
 
 template <typename Tp>
 typename base_format<Tp>::value_type&
-base_format<Tp>::get_value()
+base_format<Tp>::get_format_value()
 {
     static auto _v =
         value_type{ trait::format_precision<Tp>{}(), trait::format_width<Tp>{}(),
@@ -191,7 +191,7 @@ base_format<Tp>::get_value()
 
 template <typename Tp>
 typename base_format<Tp>::array_type&
-base_format<Tp>::get_status()
+base_format<Tp>::get_format_status()
 {
     static auto _v = array_type{ false, false, false };
     return _v;
