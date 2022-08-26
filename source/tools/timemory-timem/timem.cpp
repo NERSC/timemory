@@ -24,15 +24,17 @@
 
 #include "timem.hpp"
 
+#include "timemory/backends/process.hpp"
+#include "timemory/components/papi/types.hpp"
 #include "timemory/utility/argparse.hpp"
+
+#include <csignal>
 
 //--------------------------------------------------------------------------------------//
 
 namespace
 {
 std::exception_ptr global_exception_pointer = nullptr;
-}
-
 void
 forward_signal(int);
 void
@@ -44,10 +46,16 @@ childpid_catcher(int);
 void
 parent_process(pid_t pid);
 void
-      child_process(int argc, char** argv) TIMEMORY_ATTRIBUTE(noreturn);
-pid_t read_pid(pid_t);
-static bool&
+child_process(int argc, char** argv) TIMEMORY_ATTRIBUTE(noreturn);
+bool&
 timem_mpi_was_finalized();
+void
+create_signal_handler(int sig, signal_handler& sh, void (*func)(int));
+void
+restore_signal_handler(int sig, signal_handler& sh);
+
+pid_t read_pid(pid_t);
+}  // namespace
 
 //--------------------------------------------------------------------------------------//
 
@@ -76,10 +84,6 @@ main(int argc, char** argv)
     tim::manager::instance()->set_write_metadata(-1);
     // disable network stats by default
     tim::trait::apply<tim::trait::runtime_enabled>::set<network_stats>(false);
-
-    auto  _mpi_argc = 1;
-    auto* _mpi_argv = argv;
-    tim::mpi::initialize(_mpi_argc, _mpi_argv);
 
     using parser_t     = tim::argparse::argument_parser;
     using parser_err_t = typename parser_t::result_type;
@@ -257,16 +261,22 @@ main(int argc, char** argv)
     parser
         .add_argument({ "--mpi" }, "Launch processes via MPI_Comm_spawn_multiple "
                                    "(reduced functionality)")
-        .count(0);
+        .dtype("bool")
+        .max_count(1)
+        .action([](parser_t& p) { use_mpi() = p.get<bool>("mpi"); });
     parser.add_argument({ "--disable-mpi" }, "Disable MPI_Finalize")
-        .count(0)
-        .action([](parser_t&) { timem_mpi_was_finalized() = true; });
+        .max_count(1)
+        .action(
+            [](parser_t& p) { timem_mpi_was_finalized() = p.get<bool>("disable-mpi"); });
     parser
         .add_argument({ "-i", "--indiv" },
                       "Output individual results for each process (i.e. rank) instead of "
                       "reporting the aggregation")
-        .count(0)
-        .action([](parser_t&) { tim::settings::collapse_processes() = false; });
+        .dtype("bool")
+        .max_count(1)
+        .action([](parser_t& p) {
+            tim::settings::collapse_processes() = !p.get<bool>("indiv");
+        });
 #endif
 
     auto  _args = parser.parse_known_args(argc, argv);
@@ -285,13 +295,6 @@ main(int argc, char** argv)
     // sample_delay() = std::max<double>(sample_delay(), 1.0e-6);
     sample_freq() = std::min<double>(sample_freq(), 5000.);
 
-#if defined(TIMEMORY_USE_MPI)
-    if(parser.exists("mpi"))
-    {
-        use_mpi() = true;
-    }
-#endif
-
     if(parser.exists("events"))
     {
         if(!tim::trait::is_available<papi_array_t>::value)
@@ -306,17 +309,30 @@ main(int argc, char** argv)
 
     // parse for settings configurations
     if(argc > 1)
+    {
+        if(use_mpi())
+            tim::mpi::initialize(&argc, &argv);
+
         tim::timemory_init(argc, argv);
+    }
 
     // override a some settings
     tim::settings::suppress_parsing() = true;
+    tim::settings::papi_attach()      = true;
     tim::settings::papi_threading()   = false;
     tim::settings::auto_output()      = false;
     tim::settings::output_prefix()    = "";
 
     auto compose_prefix = [&]() {
         stringstream_t ss;
+#if defined(TIMEMORY_USE_MPI)
+        ss << "[" << command().c_str() << "]";
+        if(!use_mpi())
+            ss << "[PID=" << tim::process::get_id() << "]";
+        ss << "> Measurement totals";
+#else
         ss << "[" << command().c_str() << "]> Measurement totals";
+#endif
         if(use_mpi())
         {
             ss << " (# ranks = " << tim::mpi::size() << "):";
@@ -367,7 +383,7 @@ main(int argc, char** argv)
     {
         if(use_papi())
         {
-            tim::settings::papi_events() = "PAPI_TOT_CYC,PAPI_TOT_INS";
+            tim::settings::papi_events() = "PAPI_TOT_CYC";
         }
         else
         {
@@ -555,13 +571,15 @@ main(int argc, char** argv)
         TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "");
         tim::process::get_target_id() = worker_pid();
         tim::settings::papi_attach()  = true;
-        get_sampler()                 = new sampler_t{ compose_prefix(), signal_types() };
+        get_sampler()                 = new sampler_t{ compose_prefix() };
         if(use_sample() && !signal_types().empty())
         {
             get_measure()->set_buffer_size(buffer_size());
             buffer_thread() =
                 std::make_unique<std::thread>(&store_history, get_measure());
         }
+        if(use_papi())
+            papi_array_t::configure();
     }
 
     auto failed_fork = [&]() {
@@ -590,6 +608,24 @@ main(int argc, char** argv)
     }
     else if(is_child())
     {
+        if(!use_mpi())
+        {
+            TIMEMORY_CONDITIONAL_PRINT_HERE(
+                (debug() && verbose() > 1),
+                "waiting for signal to proceed (this=%i, parent=%i)", getpid(),
+                master_pid());
+
+            int      _sig = 0;
+            sigset_t _wait;
+            sigemptyset(&_wait);
+            sigaddset(&_wait, SIGINT);
+            sigwait(&_wait, &_sig);
+
+            TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1),
+                                            "proceeding (this=%i, parent=%i)", getpid(),
+                                            master_pid());
+        }
+
         child_process(_argc, _argv);
     }
     else
@@ -606,36 +642,29 @@ main(int argc, char** argv)
             ofs        = std::make_unique<std::ofstream>(fname.c_str());
         }
 
-        // means parent process
-        /// \variable TIMEM_SAMPLE_DELAY
-        /// \brief Environment variable, expressed in seconds, that sets the length
-        /// of time the timem executable waits before starting sampling of the
-        /// relevant measurements (components that read from child process status
-        /// files)
-        ///
-        get_sampler()->set_delay(sample_delay());
-
-        /// \variable TIMEM_SAMPLE_FREQ
-        /// \brief Environment variable, expressed in number of interrupts per second,
-        /// that sets the frequency that the timem executable samples the relevant
-        /// measurements (components that read from child process status files)
-        ///
-        get_sampler()->set_frequency(sample_freq());
-
         TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
-                                        "configuring signal types");
+                                        "configuring sampler");
 
-        get_sampler()->configure(signal_types(), verbose());
+        for(auto itr : signal_types())
+        {
+            get_sampler()->configure(tim::sampling::timer{
+                itr, CLOCK_REALTIME, SIGEV_SIGNAL, sample_freq(), sample_delay() });
+        }
 
-#if defined(TIMEMORY_USE_MPI)
-        TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s", "pausing");
-        // tim::mpi::barrier(comm_world_v);
-        get_sampler()->pause();
-#endif
+        if(!use_mpi())
+        {
+            TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1),
+                                            "notifying worker (PID=%i) process is ready",
+                                            worker_pid());
+            kill(worker_pid(), SIGINT);
+        }
 
         TIMEMORY_CONDITIONAL_PRINT_HERE((debug() && verbose() > 1), "%s",
                                         "starting sampler");
         get_sampler()->start();
+
+        if((debug() && verbose() > 1) || verbose() > 2)
+            std::cerr << "[AFTER START][" << pid << "]> " << *get_measure() << std::endl;
 
         if(ofs)
         {
@@ -684,6 +713,8 @@ main(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
+namespace
+{
 pid_t
 read_pid(pid_t _master)
 {
@@ -767,10 +798,12 @@ store_history(timem_bundle_t* _bundle)
     auto _sfullbuff  = []() { return full_buffer() ? "y" : "n"; };
     tim::consume_parameters(_scompleted, _sfullbuff);
 
+    static thread_local bool* notify_completed = nullptr;
     try
     {
-        _bundle->set_notify([]() {
-            full_buffer() = true;
+        _bundle->set_notify([](bool* _completed) {
+            full_buffer()    = true;
+            notify_completed = _completed;
             buffer_cv().notify_one();
         });
         while(!completed())
@@ -803,6 +836,15 @@ store_history(timem_bundle_t* _bundle)
                 "full buffer: %s, buffer: %zu, history: %zu",
                 _scompleted(), _sfullbuff(), _buff.size(), history().size());
 
+            // if the sampler requested to be notified when completed
+            // set the value (held by sampler) to true and set the
+            // local pointer to nullptr since the variable pointer to it
+            // was probably allocated on stack
+            if(notify_completed)
+            {
+                *notify_completed = true;
+                notify_completed  = nullptr;
+            }
             full_buffer() = false;
             history().reserve(history().size() + _buff.size());
             for(auto& itr : _buff)
@@ -1088,7 +1130,7 @@ child_process(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
-static bool&
+bool&
 timem_mpi_was_finalized()
 {
     static bool _instance = false;
@@ -1096,3 +1138,29 @@ timem_mpi_was_finalized()
 }
 
 //--------------------------------------------------------------------------------------//
+
+void
+create_signal_handler(int sig, signal_handler& sh, void (*func)(int))
+{
+    if(sig < 1)
+        return;
+    sh.m_custom_sigaction.sa_handler = func;
+    sigemptyset(&sh.m_custom_sigaction.sa_mask);
+    sh.m_custom_sigaction.sa_flags = SA_RESTART;
+    if(sigaction(sig, &sh.m_custom_sigaction, &sh.m_original_sigaction) == -1)
+    {
+        std::cerr << "Failed to create signal handler for " << sig << std::endl;
+    }
+}
+
+void
+restore_signal_handler(int sig, signal_handler& sh)
+{
+    if(sig < 1)
+        return;
+    if(sigaction(sig, &sh.m_original_sigaction, &sh.m_custom_sigaction) == -1)
+    {
+        std::cerr << "Failed to restore signal handler for " << sig << std::endl;
+    }
+}
+}  // namespace

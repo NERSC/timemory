@@ -489,12 +489,12 @@ public:
 public:
     TIMEMORY_DEFAULT_OBJECT(timem_tuple)
 
-    explicit timem_tuple(const string_t& key)
-    : base_type(key)
+    explicit timem_tuple(string_view_cref_t key)
+    : base_type{ key }
     {}
 
-    timem_tuple(const std::string& _key, data_type&& _data)
-    : base_type(_key)
+    timem_tuple(string_view_cref_t _key, data_type&& _data)
+    : base_type{ _key }
     {
         m_data = std::move(_data);
     }
@@ -510,7 +510,7 @@ public:
     template <typename FuncT>
     void set_notify(FuncT&& _v)
     {
-        m_notify = std::move(_v);
+        tim::sampling::set_notify(m_notify, std::forward<FuncT>(_v));
     }
 
     void set_history(std::vector<hist_type>* _v) { m_data_hist = _v; }
@@ -557,7 +557,7 @@ public:
                 {
                     m_hist_buff.emplace_back(clock_type::now(), m_data);
                     if(m_hist_buff.size() + 1 >= m_collect_size)
-                        m_notify();
+                        m_notify(nullptr);
                 }
             }
             if(m_ofs)
@@ -759,9 +759,12 @@ private:
     bool                       m_collect_hist = false;
     size_t                     m_collect_size = 0;
     std::ofstream*             m_ofs          = nullptr;
-    std::function<void()>      m_notify       = []() {};
-    std::vector<hist_type>*    m_data_hist    = nullptr;
-    std::vector<hist_type>     m_hist_buff    = {};
+    std::function<void(bool*)> m_notify       = [](bool* _v) {
+        if(_v)
+            *_v = true;
+    };
+    std::vector<hist_type>*    m_data_hist = nullptr;
+    std::vector<hist_type>     m_hist_buff = {};
     std::default_random_engine m_generator{ std::random_device{}() };
 };
 //
@@ -822,31 +825,6 @@ struct signal_handler
     sigaction_t m_custom_sigaction;
     sigaction_t m_original_sigaction;
 };
-//
-static void
-create_signal_handler(int sig, signal_handler& sh, void (*func)(int))
-{
-    if(sig < 1)
-        return;
-    sh.m_custom_sigaction.sa_handler = func;
-    sigemptyset(&sh.m_custom_sigaction.sa_mask);
-    sh.m_custom_sigaction.sa_flags = SA_RESTART;
-    if(sigaction(sig, &sh.m_custom_sigaction, &sh.m_original_sigaction) == -1)
-    {
-        std::cerr << "Failed to create signal handler for " << sig << std::endl;
-    }
-}
-//
-static void
-restore_signal_handler(int sig, signal_handler& sh)
-{
-    if(sig < 1)
-        return;
-    if(sigaction(sig, &sh.m_original_sigaction, &sh.m_custom_sigaction) == -1)
-    {
-        std::cerr << "Failed to restore signal handler for " << sig << std::endl;
-    }
-}
 //
 //--------------------------------------------------------------------------------------//
 //
