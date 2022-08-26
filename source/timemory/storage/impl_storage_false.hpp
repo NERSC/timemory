@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/hash/types.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/operations/types/cleanup.hpp"
 #include "timemory/operations/types/finalize/dmp_get.hpp"
@@ -68,7 +69,7 @@ public:
     using graph_type     = graph_t;
     using dmp_result_t   = std::vector<std::tuple<>>;
     using result_array_t = std::vector<std::tuple<>>;
-    using uintvector_t   = std::vector<uint64_t>;
+    using uintvector_t   = std::vector<hash_value_t>;
     using base_type      = base::storage;
     using component_type = Type;
     using this_type      = storage<Type, has_data_v>;

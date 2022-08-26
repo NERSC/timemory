@@ -235,7 +235,7 @@ free_memory<device::cpu>()
     }
     return 0;
 #elif defined(TIMEMORY_MACOS)
-    vm_statistics64_t stat;
+    vm_statistics64_t stat  = nullptr;
     unsigned int      count = HOST_VM_INFO64_COUNT;
     if(host_statistics64(mach_host_self(), HOST_VM_INFO64, (host_info64_t) stat,
                          &count) != KERN_SUCCESS)
@@ -244,7 +244,7 @@ free_memory<device::cpu>()
                 TIMEMORY_PROJECT_NAME);
         return 0;
     }
-    return stat.free_count * units::get_page_size();
+    return (stat) ? (stat->free_count * units::get_page_size()) : 0;
 #elif defined(TIMEMORY_WINDOWS)
     MEMORYSTATUSEX statex;
     statex.dwLength = sizeof(statex);

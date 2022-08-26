@@ -49,7 +49,7 @@
 #include <thread>
 #include <utility>
 
-#if defined(TIMEMORY_UNIX)
+#if defined(TIMEMORY_LINUX)
 #    include <pthread.h>
 #    include <sys/syscall.h>
 #endif
@@ -60,6 +60,7 @@
 #endif
 
 #if defined(TIMEMORY_MACOS)
+#    include <pthread.h>
 #    include <sys/sysctl.h>
 #endif
 
@@ -278,7 +279,9 @@ get_sys_tid()
 #if defined(TIMEMORY_LINUX)
     return syscall(SYS_gettid);
 #elif defined(TIMEMORY_MACOS)
-    return syscall(SYS_thread_selfid);
+    uint64_t _v = 0;
+    pthread_threadid_np(pthread_self(), &_v);
+    return _v;
 #elif defined(TIMEMORY_WINDOWS)
     return GetCurrentThreadId();
 #else

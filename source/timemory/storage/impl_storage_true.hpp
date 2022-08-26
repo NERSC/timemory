@@ -71,7 +71,7 @@ public:
     using result_node    = node::result<Type>;
     using graph_node     = node::graph<Type>;
     using strvector_t    = std::vector<string_t>;
-    using uintvector_t   = std::vector<uint64_t>;
+    using uintvector_t   = std::vector<hash_value_t>;
     using EmptyT         = std::tuple<>;
     using base_type      = base::storage;
     using component_type = Type;
