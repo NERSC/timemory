@@ -27,9 +27,6 @@ apt-add-repository "deb https://apt.kitware.com/ubuntu/ ${DISTRIB_CODENAME} main
 # llvm
 wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
 cat << EOF > /etc/apt/sources.list.d/llvm-toolchain.list
-# 8
-deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-8 main
-deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-8 main
 # 9
 deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-9 main
 deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-9 main
@@ -39,6 +36,12 @@ deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENA
 # 11
 deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-11 main
 deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-11 main
+# 12
+deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-12 main
+deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-12 main
+# 13
+deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-13 main
+deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-13 main
 # dev
 deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME} main
 EOF
@@ -70,7 +73,7 @@ fi
 #   UPDATE ALTERNATIVES -- GCC
 #-----------------------------------------------------------------------------#
 priority=10
-for i in 5 6 7 8 9 10 ${GCC_VERSION}
+for i in 5 6 7 8 9 10 11 12 13 14 ${GCC_VERSION}
 do
     if [ -n "$(which gcc-${i})" ]; then
         run-verbose update-alternatives --install $(which gcc) gcc $(which gcc-${i}) ${priority} \
@@ -83,7 +86,7 @@ done
 #   UPDATE ALTERNATIVES -- CLANG
 #-----------------------------------------------------------------------------#
 priority=10
-for i in 5.0 6.0 7.0 7 8 9 10 11 12 13 ${CLANG_VERSION}
+for i in 5.0 6.0 7.0 7 8 9 10 11 12 13 14 15 ${CLANG_VERSION}
 do
     if [ -n "$(which clang-${i})" ]; then
         run-verbose update-alternatives --install /usr/bin/clang clang $(which clang-${i}) ${priority}
@@ -121,7 +124,7 @@ fi
 #   UPDATE ALTERNATIVES -- CUDA compilers
 #-----------------------------------------------------------------------------#
 priority=10
-for i in clang++-{7.0,7,8,9,10,11,12,13,${CLANG_VERSION}} nvcc
+for i in clang++-{7.0,7,8,9,10,11,12,13,14,${CLANG_VERSION}} nvcc
 do
     if [ -n "$(which ${i})" ]; then
         run-verbose update-alternatives --install /usr/bin/cu cu $(which ${i}) ${priority}

@@ -2,54 +2,49 @@ name: continuous-integration
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ master, develop, omnitrace ]
   pull_request:
     branches: [ master, develop ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   linux-ci:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     continue-on-error: false
     strategy:
       fail-fast: true
       matrix:
         include:
-          - CC: clang-7
-            CXX: clang++-7
+          - CC: clang-9
+            CXX: clang++-9
             PYTHON_VERSION: '3.6'
-            BUILD_TYPE: 'RelWithDebInfo'
-            PACKAGES: 'clang-7 build-essential libmpich-dev mpich ccache graphviz'
+            BUILD_TYPE: 'MinSizeRel'
+            PACKAGES: 'clang-9 build-essential libopenmpi-dev openmpi-bin openmpi-common libfabric-dev ccache graphviz'
+            BUILD_ARGS: '--quick --build-libs shared --mpi --gotcha --tools mallocp mpip ompt --cxx-standard=17'
+            CTEST_ARGS: '-V --output-on-failure'
+            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
+          - CC: clang-10
+            CXX: clang++-10
+            PYTHON_VERSION: '3.7'
+            BUILD_TYPE: 'Release'
+            PACKAGES: 'clang-10 build-essential libmpich-dev mpich ccache graphviz'
             BUILD_ARGS: '--minimal --build-libs shared static --python --mpi --gotcha --stats --tools mallocp mpip --cxx-standard=17'
             CTEST_ARGS: '-V --output-on-failure'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_UNITY_BUILD=OFF -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
-          - CC: clang-8
-            CXX: clang++-8
-            PYTHON_VERSION: '3.6'
-            BUILD_TYPE: 'RelWithDebInfo'
-            PACKAGES: 'clang-8 build-essential ccache graphviz'
-            BUILD_ARGS: '--minimal --build-libs shared static --stats --tools kokkos-config timem --cxx-standard=14'
-            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
-          - CC: clang-9
-            CXX: clang++-9
+          - CC: clang-11
+            CXX: clang++-11
             PYTHON_VERSION: '3.7'
-            BUILD_TYPE: 'MinSizeRel'
-            PACKAGES: 'clang-9 build-essential libopenmpi-dev openmpi-bin openmpi-common libfabric-dev ccache graphviz'
-            BUILD_ARGS: '--quick --build-libs shared --mpi --gotcha --tools mallocp mpip ompt --cxx-standard=14'
-            CTEST_ARGS: '-V --output-on-failure'
+            BUILD_TYPE: 'Release'
+            PACKAGES: 'clang-11 build-essential ccache graphviz'
+            BUILD_ARGS: '--minimal --build-libs shared static --stats --tools kokkos-config timem --cxx-standard=17'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON'
-          - CC: gcc-6
-            CXX: g++-6
-            FC: gfortran-6
-            PYTHON_VERSION: '3.6'
-            BUILD_TYPE: 'RelWithDebInfo'
-            PACKAGES: 'gcc-6 g++-6 gfortran-6 build-essential libtbb-dev ccache graphviz'
-            BUILD_ARGS: '--minimal --build-libs shared --python --arch --extra-optimizations --caliper --cxx-standard=14'
-            CTEST_ARGS: '-V --output-on-failure'
-            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
           - CC: gcc-7
             CXX: g++-7
             FC: gfortran-7
-            PYTHON_VERSION: '3.7'
+            PYTHON_VERSION: '3.6'
             BUILD_TYPE: 'Debug'
             PACKAGES: 'gcc-7 g++-7 gfortran-7 build-essential libmpich-dev mpich libtbb-dev libpapi-dev papi-tools lcov ccache graphviz'
             BUILD_ARGS: '--minimal --build-libs shared --mpi --papi --gotcha --tools mpip --stats --cxx-standard=17 --coverage'
@@ -71,6 +66,15 @@ jobs:
             BUILD_TYPE: 'MinSizeRel'
             PACKAGES: 'gcc-9 g++-9 gfortran-9 build-essential ccache graphviz'
             BUILD_ARGS: '--minimal --build-libs shared --gotcha --stats --python --cxx-standard=17'
+            CTEST_ARGS: '-V --output-on-failure'
+            CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
+          - CC: gcc-10
+            CXX: g++-10
+            FC: gfortran-10
+            PYTHON_VERSION: '3.7'
+            BUILD_TYPE: 'Release'
+            PACKAGES: 'gcc-10 g++-10 gfortran-10 build-essential libtbb-dev ccache graphviz'
+            BUILD_ARGS: '--minimal --build-libs shared --python --arch --extra-optimizations --caliper --cxx-standard=17'
             CTEST_ARGS: '-V --output-on-failure'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
 
