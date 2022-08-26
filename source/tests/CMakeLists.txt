@@ -268,8 +268,10 @@ if(UNIX)
     timemory_add_google_test(
         backtrace_tests
         SOURCES backtrace_tests.cpp
-        LINK_LIBRARIES common-test-libs test-debug-flags
-                       $<IF:$<BOOL:${TIMEMORY_USE_COVERAGE}>,timemory::timemory-core,>)
+        LINK_LIBRARIES
+            common-test-libs test-debug-flags
+            $<IF:$<BOOL:${TIMEMORY_USE_COVERAGE}>,timemory::timemory-core,>
+            timemory::timemory-libunwind)
 endif()
 
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
@@ -345,7 +347,7 @@ if(NOT WIN32)
 endif()
 
 timemory_add_google_test(
-    archive_storage_tests RUN_SERIAL
+    archive_storage_tests RUN_SERIAL MPI NPROC 2
     SOURCES archive_storage_tests.cpp
     LINK_LIBRARIES common-test-libs timemory::timemory-dmp ${_LIBRARY})
 
@@ -422,7 +424,7 @@ if(TIMEMORY_USE_LIBUNWIND)
         libunwind_tests DISCOVER_TESTS
         SOURCES libunwind_tests.cpp
         LINK_LIBRARIES common-test-libs timemory::timemory-plotting
-                       timemory::timemory-core ${_LIBRARY})
+                       timemory::timemory-core timemory::timemory-libunwind ${_LIBRARY})
 endif()
 
 set(VALID_PARANOID OFF)

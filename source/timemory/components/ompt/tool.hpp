@@ -290,7 +290,7 @@ public:
     static void cleanup(size_t _idx, type_list<Tp...>);
     static void cleanup();
 
-    TIMEMORY_DEFAULT_OBJECT(context_handler);
+    TIMEMORY_DEFAULT_OBJECT(context_handler)
 
     explicit context_handler(mode _v)
     : m_mode{ _v }

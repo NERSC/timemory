@@ -22,6 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#define TIMEMORY_DISABLE_BACKTRACE_MACROS 1
+
 #include "test_macros.hpp"
 
 TIMEMORY_TEST_DEFAULT_MAIN
@@ -64,6 +66,44 @@ TIMEMORY_NOINLINE auto
 spam_d()
 {
     return bar_d();
+}
+
+//--------------------------------------------------------------------------------------//
+
+TIMEMORY_NOINLINE auto
+foo_unw()
+{
+    return tim::get_unw_backtrace<4, 1>();
+}
+
+TIMEMORY_NOINLINE auto
+bar_unw()
+{
+    return foo_unw();
+}
+
+TIMEMORY_NOINLINE auto
+spam_unw()
+{
+    return bar_unw();
+}
+
+TIMEMORY_NOINLINE auto
+foo_unw_d()
+{
+    return tim::get_demangled_unw_backtrace<4>();
+}
+
+TIMEMORY_NOINLINE auto
+bar_unw_d()
+{
+    return foo_unw_d();
+}
+
+TIMEMORY_NOINLINE auto
+spam_unw_d()
+{
+    return bar_unw_d();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -352,6 +392,67 @@ TEST_F(backtrace_tests, print_demangled_backtrace)
 
 //--------------------------------------------------------------------------------------//
 #if defined(TIMEMORY_USE_LIBUNWIND)
+
+TEST_F(backtrace_tests, backtrace_unw)
+{
+    auto              ret = spam_unw();
+    int               cnt = 0;
+    std::stringstream _bt{};
+    for(auto itr : ret)
+    {
+        if(strlen(itr) > 0)
+        {
+            _bt << "    " << itr << std::endl;
+            ++cnt;
+        }
+    }
+
+    std::cerr << "\nBacktrace:\n" << _bt.str() << "\n";
+
+    ASSERT_EQ(cnt, 4) << "Backtrace:\n" << _bt.str();
+
+    EXPECT_TRUE(std::string(ret.at(0)).find("_Z7foo_unw") != std::string::npos)
+        << ret.at(0);
+    EXPECT_TRUE(std::string(ret.at(1)).find("_Z7bar_unw") != std::string::npos)
+        << ret.at(1);
+    EXPECT_TRUE(std::string(ret.at(2)).find("_Z8spam_unw") != std::string::npos)
+        << ret.at(2);
+    EXPECT_TRUE(std::string(ret.at(3)).find("_ZN34backtrace_tests_backtrace_unw_Test") !=
+                std::string::npos)
+        << ret.at(3);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(backtrace_tests, demangled_backtrace_unw)
+{
+    auto ret = spam_unw_d();
+    int  cnt = 0;
+    auto _bt = std::stringstream{};
+
+    for(auto& itr : ret)
+        details::replace_seq(itr, "[abi:cxx11]");
+    for(auto itr : ret)
+    {
+        if(!itr.empty())
+        {
+            _bt << "    " << itr << std::endl;
+            ++cnt;
+        }
+    }
+
+    std::cerr << "\nBacktrace:\n" << _bt.str() << "\n";
+
+    ASSERT_EQ(cnt, 4) << "Backtrace:\n" << _bt.str();
+
+    EXPECT_TRUE(ret.at(0).find("foo_unw_d()") != std::string::npos) << ret.at(0);
+    EXPECT_TRUE(ret.at(1).find("bar_unw_d()") != std::string::npos) << ret.at(1);
+    EXPECT_TRUE(ret.at(2).find("spam_unw_d()") != std::string::npos) << ret.at(2);
+    EXPECT_TRUE(
+        ret.at(3).find("backtrace_tests_demangled_backtrace_unw_Test::TestBody") !=
+        std::string::npos)
+        << ret.at(3);
+}
 
 TEST_F(backtrace_tests, print_unw_backtrace)
 {

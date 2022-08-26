@@ -258,7 +258,7 @@ TEST_F(traits_tests, accum_type)
 
     auto void_test  = TYPE_TEST(void, void_component);
     auto int_test   = TYPE_TEST(int64_t, int64_component);
-    auto array_test = TYPE_TEST(std::tuple<>, array_component);
+    auto array_test = TYPE_TEST(tim::null_type, array_component);
     auto temp_i64_test =
         TYPE_TEST(TIMEMORY_ESC(std::pair<int, int64_t>), template_component<int64_t>);
     auto temp_i32_test =
@@ -289,11 +289,11 @@ TEST_F(traits_tests, last_type)
 
     auto void_test     = TYPE_TEST(void, void_component);
     auto int_test      = TYPE_TEST(int64_t, int64_component);
-    auto array_test    = TYPE_TEST(std::tuple<>, array_component);
-    auto temp_i64_test = TYPE_TEST(std::tuple<>, template_component<int64_t>);
-    auto temp_i32_test = TYPE_TEST(std::tuple<>, template_component<int32_t>);
-    auto temp_u64_test = TYPE_TEST(std::tuple<>, template_component<uint64_t>);
-    auto var_test      = TYPE_TEST(std::tuple<>, variadic_component<double, 1, 3>);
+    auto array_test    = TYPE_TEST(tim::null_type, array_component);
+    auto temp_i64_test = TYPE_TEST(tim::null_type, template_component<int64_t>);
+    auto temp_i32_test = TYPE_TEST(tim::null_type, template_component<int32_t>);
+    auto temp_u64_test = TYPE_TEST(tim::null_type, template_component<uint64_t>);
+    auto var_test      = TYPE_TEST(tim::null_type, variadic_component<double, 1, 3>);
 
     EXPECT_TRUE(void_test);
     EXPECT_TRUE(int_test);

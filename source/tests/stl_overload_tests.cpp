@@ -320,7 +320,7 @@ get_variant(type_list<Tp...>, Up _v)
 template <typename Up, typename... Tp>
 auto
 test_variant(int line_no, const std::variant<Tp...>& _var, Up _val,
-             double _tol = 2. * std::numeric_limits<float>::round_error())
+             double _tol = 2.0f * std::numeric_limits<float>::round_error())
 {
     using types           = type_list<Tp...>;
     constexpr auto _index = tim::index_of<Up, types>::value;
@@ -397,13 +397,13 @@ TEST_F(stl_overload_tests, variant)
     TEST_VARIANT(uint64_t, math::abs(_data.at(4)), std::numeric_limits<uint64_t>::max());
     TEST_VARIANT(double, math::abs(_data.at(5)), 1.0);
 
-    auto _reset_values = [](auto& _data, auto _v) {
-        _data.at(0) = get_variant<int32_t>(types{}, _v);
-        _data.at(1) = get_variant<uint32_t>(types{}, _v);
-        _data.at(2) = get_variant<float>(types{}, _v);
-        _data.at(3) = get_variant<int64_t>(types{}, _v);
-        _data.at(4) = get_variant<uint64_t>(types{}, _v);
-        _data.at(5) = get_variant<double>(types{}, _v);
+    auto _reset_values = [](auto& _d, auto _v) {
+        _d.at(0) = get_variant<int32_t>(types{}, _v);
+        _d.at(1) = get_variant<uint32_t>(types{}, _v);
+        _d.at(2) = get_variant<float>(types{}, _v);
+        _d.at(3) = get_variant<int64_t>(types{}, _v);
+        _d.at(4) = get_variant<uint64_t>(types{}, _v);
+        _d.at(5) = get_variant<double>(types{}, _v);
     };
 
     _reset_values(_data, 9.0);

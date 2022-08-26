@@ -131,7 +131,7 @@ do_backtrace(void)
     unw_proc_info_t pi;
     int             ret;
 
-    if(verbose)
+    if(verbose != 0)
         printf("\texplicit backtrace:\n");
 
     unw_getcontext(&uc);
@@ -148,13 +148,13 @@ do_backtrace(void)
         buf[0] = '\0';
         if(unw_get_proc_name(&cursor, name, sizeof(name), &off) == 0)
         {
-            if(off)
+            if(off != 0)
                 snprintf(buf, sizeof(buf), "<%s+0x%lx>", name, (long) off);
             else
                 snprintf(buf, sizeof(buf), "<%s>", name);
             name_buffer.write(&buf);
         }
-        if(verbose)
+        if(verbose != 0)
         {
             printf("%016lx %-32s (sp=%016lx)\n", (long) ip, buf, (long) sp);
 
@@ -189,10 +189,10 @@ do_backtrace(void)
         void* buffer[20];
         int   i, n;
 
-        if(verbose)
+        if(verbose != 0)
             printf("\n\tvia backtrace():\n");
         n = backtrace(buffer, 20);
-        if(verbose)
+        if(verbose != 0)
             for(i = 0; i < n; ++i)
                 printf("[%d] ip=%p\n", i, buffer[i]);
     }

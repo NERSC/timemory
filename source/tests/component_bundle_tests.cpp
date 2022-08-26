@@ -1015,7 +1015,7 @@ TEST_F(component_bundle_tests, piecewise_ignore)
     };
     tim::component_list<wall_clock, cpu_clock, trip_count> _cl{
         details::get_test_name(), tim::scope::get_default(),
-        [](auto& _cl) { _cl.template initialize<wall_clock, cpu_clock, trip_count>(); }
+        [](auto& _v) { _v.template initialize<wall_clock, cpu_clock, trip_count>(); }
     };
     tim::component_bundle<TIMEMORY_API, wall_clock, cpu_clock, trip_count> _cb{
         details::get_test_name()
