@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/defines.h"
+#include "timemory/log/logger.hpp"
 #include "timemory/macros/compiler.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/macros/os.hpp"
@@ -32,6 +33,7 @@
 #include "timemory/utility/locking.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
+#include "timemory/utility/unwind.hpp"
 
 #if defined(TIMEMORY_USE_LIBUNWIND)
 #    include <libunwind.h>
@@ -60,7 +62,7 @@ inline namespace backtrace
 {
 #if defined(TIMEMORY_UNIX)
 //
-template <size_t Depth, size_t Offset = 1>
+template <size_t Depth, int64_t Offset = 1>
 TIMEMORY_NOINLINE inline auto
 get_native_backtrace()
 {
@@ -99,7 +101,102 @@ get_native_backtrace()
     return btrace;
 }
 //
-template <size_t Depth, size_t Offset = 1, bool WFuncOffset = true>
+#    if defined(TIMEMORY_USE_LIBUNWIND)
+template <size_t Depth, int64_t Offset = 1, bool WSignalFrame = false>
+TIMEMORY_NOINLINE inline auto
+get_unw_backtrace_raw(unw_frame_regnum_t _reg = UNW_REG_IP)
+{
+    static_assert(Depth > 0, "Error !(Depth > 0)");
+    static_assert(Offset >= 0, "Error !(Offset >= 0)");
+
+    // destination
+    auto _stack = unwind::stack<Depth>{ _reg };
+
+    // Initialize cursor to current frame for local unwinding.
+    unw_getcontext(&_stack.context);
+    if(unw_init_local(&_stack.cursor, &_stack.context) < 0)
+    {
+        return _stack;
+    }
+
+    int     unw_ret = 0;
+    int64_t tot_idx = 0;
+    while((unw_ret = unw_step(&_stack.cursor)) != 0)
+    {
+        if(unw_ret < 0)
+        {
+            switch(unw_ret)
+            {
+                // instrumentation may cause one of these so continue
+                case UNW_ENOINFO:
+                case UNW_EBADVERSION:
+                case UNW_EINVALIDIP:
+                case UNW_EBADFRAME:
+                {
+                    goto unwind_continue;
+                    break;
+                }
+                // if error not specified or should stop, break from loop
+                case UNW_EUNSPEC:
+                case UNW_ESTOPUNWIND:
+                {
+                    goto unwind_break;
+                    break;
+                }
+                // if not one of cases above, break from the loop
+                default:
+                {
+                    goto unwind_break;
+                    break;
+                }
+            }
+        unwind_break:
+        {
+            break;
+        }
+        unwind_continue:
+        {
+            continue;
+        }
+        }
+
+        auto _idx = tot_idx++;
+
+        // skip all frames less than the offset
+        if(_idx < Offset)
+            continue;
+        // skip the signal frames
+        IF_CONSTEXPR(!WSignalFrame)
+        {
+            if(unw_is_signal_frame(&_stack.cursor) > 0)
+                continue;
+        }
+        // break when _idx - Offset will be >= max size
+        if(_idx >= static_cast<int64_t>(Depth + Offset))
+            break;
+        _idx -= Offset;             // index in stack
+        auto _addr = unw_word_t{};  // instruction pointer
+        unw_get_reg(&_stack.cursor, _reg, &_addr);
+        if(_reg == UNW_REG_IP && _addr == 0)
+            break;
+        _stack.at(_idx) = { _addr };
+    }
+    return _stack;
+}
+//
+#    else
+//
+template <size_t Depth, int64_t Offset = 1, bool WSignalFrame = false, typename Tp = int>
+TIMEMORY_NOINLINE inline auto get_unw_backtrace_raw(Tp = {})
+{
+    unwind::stack<Depth> _stack = {};
+    throw std::runtime_error("[timemory]> libunwind not available");
+    return _stack;
+}
+#    endif
+//
+template <size_t Depth, int64_t Offset = 1, bool WFuncOffset = true,
+          bool WSignalFrame = true>
 TIMEMORY_NOINLINE inline auto
 get_unw_backtrace()
 {
@@ -107,46 +204,36 @@ get_unw_backtrace()
     static_assert(Depth > 0, "Error !(Depth > 0)");
     static_assert(Offset >= 0, "Error !(Offset >= 0)");
 
-    static thread_local unw_cursor_t  cursor{};
-    static thread_local unw_context_t context{};
+    // raw backtrace
+    auto _raw = get_unw_backtrace_raw<Depth, Offset, WSignalFrame>(UNW_REG_IP);
 
     // destination
     std::array<char[512], Depth> btrace{};
     for(auto& itr : btrace)
         itr[0] = '\0';
 
-    // Initialize cursor to current frame for local unwinding.
-    unw_getcontext(&context);
-    if(unw_init_local(&cursor, &context) < 0)
+    for(size_t i = 0; i < _raw.size(); ++i)
     {
-        return btrace;
-    }
-
-    size_t tot_idx = 0;
-    while(unw_step(&cursor) > 0)
-    {
-        unw_word_t ip{};   // stack pointer
-        unw_word_t off{};  // offset
-        auto       _idx = ++tot_idx;
-        if(_idx >= Depth + Offset)
-            break;
-        unw_get_reg(&cursor, UNW_REG_IP, &ip);
-        if(ip == 0)
-            break;
+        auto _context = _raw.context;
+        if(!_raw.at(i))
+            continue;
+        auto             _addr    = _raw.at(i)->address();
+        unw_word_t       _off     = {};  // offset
         constexpr size_t NameSize = (WFuncOffset) ? 496 : 512;
-        char             name[NameSize];
-        name[0] = '\0';
-        if(unw_get_proc_name(&cursor, name, sizeof(name), &off) == 0)
+        char             _name[NameSize];
+        _name[0] = '\0';
+        if(unw_get_proc_name_by_ip(unw_local_addr_space, _addr, _name, sizeof(_name),
+                                   &_off, &_context) == 0)
         {
-            if(_idx >= Offset)
+            IF_CONSTEXPR(WFuncOffset)
             {
-                auto _lidx = _idx - Offset;
-                if(WFuncOffset && off != 0)
-                    snprintf(btrace[_lidx], sizeof(btrace[_lidx]), "%s +0x%lx", name,
-                             (long) off);
+                if(_off != 0)
+                    snprintf(btrace[i], sizeof(btrace[i]), "%s +0x%lx", _name,
+                             (long) _off);
                 else
-                    snprintf(btrace[_lidx], sizeof(btrace[_lidx]), "%s", name);
+                    snprintf(btrace[i], sizeof(btrace[i]), "%s", _name);
             }
+            else { snprintf(btrace[i], sizeof(btrace[i]), "%s", _name); }
         }
     }
 #    else
@@ -156,7 +243,7 @@ get_unw_backtrace()
     return btrace;
 }
 //
-template <size_t Depth, size_t Offset = 1, typename Func>
+template <size_t Depth, int64_t Offset = 1, typename Func>
 TIMEMORY_NOINLINE inline auto
 get_native_backtrace(Func&& func)
 {
@@ -174,7 +261,7 @@ get_native_backtrace(Func&& func)
     return btrace;
 }
 //
-template <size_t Depth, size_t Offset = 1, bool WFuncOffset = true, typename Func>
+template <size_t Depth, int64_t Offset = 1, bool WFuncOffset = true, typename Func>
 TIMEMORY_NOINLINE inline auto
 get_unw_backtrace(Func&& func)
 {
@@ -194,7 +281,7 @@ get_unw_backtrace(Func&& func)
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Depth, size_t Offset = 1>
+template <size_t Depth, int64_t Offset = 1>
 TIMEMORY_NOINLINE inline auto
 get_demangled_native_backtrace()
 {
@@ -204,7 +291,7 @@ get_demangled_native_backtrace()
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Depth, size_t Offset = 1, bool WFuncOffset = true>
+template <size_t Depth, int64_t Offset = 1, bool WFuncOffset = true>
 TIMEMORY_NOINLINE inline auto
 get_demangled_unw_backtrace()
 {
@@ -214,7 +301,7 @@ get_demangled_unw_backtrace()
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Depth, size_t Offset = 2>
+template <size_t Depth, int64_t Offset = 1>
 TIMEMORY_NOINLINE inline std::ostream&
 print_native_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
                        const std::string& _info = "", const std::string& _indent = "    ",
@@ -223,26 +310,27 @@ print_native_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
     auto_lock_t _lk{ type_mutex<std::ostream>(), std::defer_lock };
     if(_use_lock && !_lk.owns_lock())
         _lk.lock();
+    os << log::warning;
     os << _indent.substr(0, _indent.length() / 2) << "[" << TIMEMORY_PROJECT_NAME
        << "] Backtrace";
     if(!_info.empty())
         os << " " << _info;
     os << " [tid=" << std::this_thread::get_id() << "]:\n" << std::flush;
-    auto bt = ::tim::get_native_backtrace<Depth, Offset>();
+    auto bt = ::tim::get_native_backtrace<Depth, Offset + 1>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
     for(const auto& itr : bt)
     {
         if(strlen(itr) > 0)
-            os << _indent << _prefix << itr << "\n";
+            log::stream(os, log::color::source()) << _indent << _prefix << itr << "\n";
     }
-    os << std::flush;
+    os << log::flush;
     return os;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Depth, size_t Offset = 2>
+template <size_t Depth, int64_t Offset = 1>
 TIMEMORY_NOINLINE inline std::ostream&
 print_demangled_native_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
                                  const std::string& _info     = "",
@@ -252,26 +340,27 @@ print_demangled_native_backtrace(std::ostream& os = std::cerr, std::string _pref
     auto_lock_t _lk{ type_mutex<std::ostream>(), std::defer_lock };
     if(_use_lock && !_lk.owns_lock())
         _lk.lock();
+    os << log::warning;
     os << _indent.substr(0, _indent.length() / 2) << "[" << TIMEMORY_PROJECT_NAME
        << "] Backtrace";
     if(!_info.empty())
         os << " " << _info;
     os << " [tid=" << std::this_thread::get_id() << "]:\n" << std::flush;
-    auto bt = ::tim::get_demangled_native_backtrace<Depth, Offset>();
+    auto bt = ::tim::get_demangled_native_backtrace<Depth, Offset + 1>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
     for(const auto& itr : bt)
     {
         if(itr.length() > 0)
-            os << _indent << _prefix << itr << "\n";
+            log::stream(os, log::color::source()) << _indent << _prefix << itr << "\n";
     }
-    os << std::flush;
+    os << log::flush;
     return os;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Depth, size_t Offset = 2, bool WFuncOffset = true>
+template <size_t Depth, int64_t Offset = 1, bool WFuncOffset = true>
 TIMEMORY_NOINLINE inline std::ostream&
 print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
                     const std::string& _info = "", const std::string& _indent = "    ",
@@ -280,26 +369,27 @@ print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
     auto_lock_t _lk{ type_mutex<std::ostream>(), std::defer_lock };
     if(_use_lock && !_lk.owns_lock())
         _lk.lock();
+    os << log::warning;
     os << _indent.substr(0, _indent.length() / 2) << "[" << TIMEMORY_PROJECT_NAME
        << "] Backtrace";
     if(!_info.empty())
         os << " " << _info;
     os << " [tid=" << std::this_thread::get_id() << "]:\n" << std::flush;
-    auto bt = ::tim::get_unw_backtrace<Depth, Offset, WFuncOffset>();
+    auto bt = ::tim::get_unw_backtrace<Depth, Offset + 1, WFuncOffset>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
     for(const auto& itr : bt)
     {
         if(strlen(itr) > 0)
-            os << _indent << _prefix << itr << "\n";
+            log::stream(os, log::color::source()) << _indent << _prefix << itr << "\n";
     }
-    os << std::flush;
+    os << log::flush;
     return os;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <size_t Depth, size_t Offset = 3>
+template <size_t Depth, int64_t Offset = 1>
 TIMEMORY_NOINLINE inline std::ostream&
 print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
                               const std::string& _info   = "",
@@ -308,27 +398,36 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix 
     auto_lock_t _lk{ type_mutex<std::ostream>(), std::defer_lock };
     if(_use_lock && !_lk.owns_lock())
         _lk.lock();
+    os << log::warning;
     os << _indent.substr(0, _indent.length() / 2) << "[" << TIMEMORY_PROJECT_NAME
        << "] Backtrace";
     if(!_info.empty())
         os << " " << _info;
     os << " [tid=" << std::this_thread::get_id() << "]:\n" << std::flush;
-    auto bt = ::tim::get_demangled_unw_backtrace<Depth, Offset>();
+    auto bt = ::tim::get_demangled_unw_backtrace<Depth, Offset + 1>();
     if(!_prefix.empty() && _prefix.find_last_of(" \t") != _prefix.length() - 1)
         _prefix += " ";
     for(const auto& itr : bt)
     {
         if(itr.length() > 0)
-            os << _indent << _prefix << itr << "\n";
+            log::stream(os, log::color::source()) << _indent << _prefix << itr << "\n";
     }
-    os << std::flush;
+    os << log::flush;
     return os;
 }
 //
 //--------------------------------------------------------------------------------------//
 //
+#    if !defined(TIMEMORY_DISABLE_BACKTRACE_MACROS)
+#        if defined(TIMEMORY_SOURCE)
+#            define TIMEMORY_DISABLE_BACKTRACE_MACROS 0
+#        else
+#            define TIMEMORY_DISABLE_BACKTRACE_MACROS 1
+#        endif
+#    endif
+//
 // using macros here is not ideal but saves another frame being created
-#    if !defined(TIMEMORY_DISABLE_BACKTRACE_MACROS) || defined(TIMEMORY_SOURCE)
+#    if TIMEMORY_DISABLE_BACKTRACE_MACROS == 0
 #        if defined(TIMEMORY_USE_LIBUNWIND)
 #            if !defined(get_backtrace)
 #                define get_backtrace get_unw_backtrace
@@ -362,39 +461,43 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix 
 //
 // define these dummy functions since they are used in operation::decode
 //
-template <size_t Depth, size_t Offset = 2>
+template <size_t Depth, int64_t Offset = 2>
 static inline std::ostream&
 print_native_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {},
                        std::string = {})
 {
-    os << "[timemory]> Backtrace not supported on this platform\n";
+    log::stream(os, log::color::warning())
+        << "[timemory]> Backtrace not supported on this platform\n";
     return os;
 }
 //
-template <size_t Depth, size_t Offset = 3>
+template <size_t Depth, int64_t Offset = 3>
 static inline std::ostream&
 print_demangled_native_backtrace(std::ostream& os = std::cerr, std::string = {},
                                  std::string = {}, std::string = {})
 {
-    os << "[timemory]> Backtrace not supported on this platform\n";
+    log::stream(os, log::color::warning())
+        << "[timemory]> Backtrace not supported on this platform\n";
     return os;
 }
 //
-template <size_t Depth, size_t Offset = 2>
+template <size_t Depth, int64_t Offset = 2>
 static inline std::ostream&
 print_unw_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {},
                     std::string = {})
 {
-    os << "[timemory]> libunwind backtrace not supported on this platform\n";
+    log::stream(os, log::color::warning())
+        << "[timemory]> libunwind backtrace not supported on this platform\n";
     return os;
 }
 //
-template <size_t Depth, size_t Offset = 3>
+template <size_t Depth, int64_t Offset = 3>
 static inline std::ostream&
 print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string = {},
                               std::string = {}, std::string = {})
 {
-    os << "[timemory]> libunwind backtrace not supported on this platform\n";
+    log::stream(os, log::color::warning())
+        << "[timemory]> libunwind backtrace not supported on this platform\n";
     return os;
 }
 //
