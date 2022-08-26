@@ -405,13 +405,14 @@ TIMEMORY_SETTINGS_INLINE std::string
                     }
                 }
                 if(_verbose >= 1 && _val.empty())
-                    fprintf(stderr,
-                            "[%s][settings][%s] '%s' not found! Removing '%s%s%s' from "
-                            "'%s'...\n",
-                            TIMEMORY_PROJECT_NAME, __FUNCTION__, _var.c_str(),
-                            _cbeg.c_str(), _var.c_str(), _cend.c_str(), _fpath.c_str());
+                    TIMEMORY_PRINTF(
+                        stderr,
+                        "[%s][settings][%s] '%s' not found! Removing '%s%s%s' from "
+                        "'%s'...\n",
+                        TIMEMORY_PROJECT_NAME, __FUNCTION__, _var.c_str(), _cbeg.c_str(),
+                        _var.c_str(), _cend.c_str(), _fpath.c_str());
                 else if(_verbose >= 4 && !_val.empty())
-                    fprintf(
+                    TIMEMORY_PRINTF(
                         stderr,
                         "[%s][settings][%s] replacing '%s%s%s' in '%s' with '%s'...\n",
                         TIMEMORY_PROJECT_NAME, __FUNCTION__, _cbeg.c_str(), _var.c_str(),
@@ -420,10 +421,11 @@ TIMEMORY_SETTINGS_INLINE std::string
                 auto _end = std::regex_replace(_fpath, _re, "$4");
                 _fpath    = _beg + _val + _end;
                 if(_verbose >= 3)
-                    fprintf(stderr,
-                            "[%s][settings][%s] replacing '%s%s%s' resulted in '%s'...\n",
-                            TIMEMORY_PROJECT_NAME, __FUNCTION__, _cbeg.c_str(),
-                            _var.c_str(), _cend.c_str(), _fpath.c_str());
+                    TIMEMORY_PRINTF(
+                        stderr,
+                        "[%s][settings][%s] replacing '%s%s%s' resulted in '%s'...\n",
+                        TIMEMORY_PROJECT_NAME, __FUNCTION__, _cbeg.c_str(), _var.c_str(),
+                        _cend.c_str(), _fpath.c_str());
             }
         }
     } catch(std::exception& _e)
@@ -1760,8 +1762,8 @@ settings::read(std::string inp)
 
     if(inp != _orig && _verbose >= 3)
     {
-        fprintf(stderr, "[%s][settings][%s]> '%s' was expanded to '%s'...\n",
-                TIMEMORY_PROJECT_NAME, __FUNCTION__, _orig.c_str(), inp.c_str());
+        TIMEMORY_PRINTF(stderr, "[%s][settings][%s]> '%s' was expanded to '%s'...\n",
+                        TIMEMORY_PROJECT_NAME, __FUNCTION__, _orig.c_str(), inp.c_str());
     }
 
 #if defined(TIMEMORY_UNIX)
@@ -1969,9 +1971,10 @@ settings::read(std::istream& ifs, std::string inp)
                 return std::make_pair(_v, false);
 
             if(_verbose >= 5)
-                fprintf(stderr,
-                        "[%s][settings]['%s']> Resolving environment variables in '%s'\n",
-                        TIMEMORY_PROJECT_NAME, _inp.c_str(), _v.c_str());
+                TIMEMORY_PRINTF(
+                    stderr,
+                    "[%s][settings]['%s']> Resolving environment variables in '%s'\n",
+                    TIMEMORY_PROJECT_NAME, _inp.c_str(), _v.c_str());
 
             // remove the $env: and store everything before it
             std::string _prefix = _v.substr(0, _pos);
@@ -2013,8 +2016,9 @@ settings::read(std::istream& ifs, std::string inp)
                 return std::make_pair(_v, false);
 
             if(_verbose >= 5)
-                fprintf(stderr, "[%s][settings]['%s']> Expanding settings in '%s'\n",
-                        TIMEMORY_PROJECT_NAME, _inp.c_str(), _v.c_str());
+                TIMEMORY_PRINTF(stderr,
+                                "[%s][settings]['%s']> Expanding settings in '%s'\n",
+                                TIMEMORY_PROJECT_NAME, _inp.c_str(), _v.c_str());
 
             // remove the $ and store everything before it
             std::string _prefix = _v.substr(0, _pos);
@@ -2051,12 +2055,12 @@ settings::read(std::istream& ifs, std::string inp)
                     throw std::runtime_error(_msg.str());
                 }
 
-                for(const auto& itr : *this)
+                for(const auto& iitr : *this)
                 {
-                    if(itr.second->matches(_v))
+                    if(iitr.second->matches(_v))
                         return std::make_pair(_prefix +
                                                   _v.replace(0, _var_name.length(),
-                                                             itr.second->as_string()),
+                                                             iitr.second->as_string()),
                                               true);
                 }
             }
@@ -2075,8 +2079,9 @@ settings::read(std::istream& ifs, std::string inp)
                 return _results;
 
             if(_verbose >= 5)
-                fprintf(stderr, "[%s][settings]['%s']> Resolving variables in '%s'\n",
-                        TIMEMORY_PROJECT_NAME, _inp.c_str(), _v.c_str());
+                TIMEMORY_PRINTF(stderr,
+                                "[%s][settings]['%s']> Resolving variables in '%s'\n",
+                                TIMEMORY_PROJECT_NAME, _inp.c_str(), _v.c_str());
 
             std::pair<std::string, bool> _replace_results = {};
             while((_replace_results = _resolve_env(_v)).second)
@@ -2099,8 +2104,8 @@ settings::read(std::istream& ifs, std::string inp)
             if(line.empty())
                 continue;
             if(_verbose >= 5)
-                fprintf(stderr, "[%s][settings]['%s']> %s\n", TIMEMORY_PROJECT_NAME,
-                        _inp.c_str(), line.c_str());
+                TIMEMORY_PRINTF(stderr, "[%s][settings]['%s']> %s\n",
+                                TIMEMORY_PROJECT_NAME, _inp.c_str(), line.c_str());
             if(_is_comment(line))
                 continue;
             ++expected;
@@ -2178,28 +2183,29 @@ settings::read(std::istream& ifs, std::string inp)
                     if(itr.second->matches(key))
                     {
                         if(_verbose >= 2)
-                            fprintf(stderr, "[%s][settings]['%s']> %-30s :: %s\n",
-                                    TIMEMORY_PROJECT_NAME, _inp.c_str(), key.c_str(),
-                                    val.c_str());
+                            TIMEMORY_PRINTF(stderr, "[%s][settings]['%s']> %-30s :: %s\n",
+                                            TIMEMORY_PROJECT_NAME, _inp.c_str(),
+                                            key.c_str(), val.c_str());
                         ++valid;
                         if(itr.second->matches("config_file"))
                         {
                             auto _cfgs = tim::delimit(val, ";,: ");
-                            for(const auto& itr : _cfgs)
+                            for(const auto& fitr : _cfgs)
                             {
-                                if(format(itr, get_tag()) != format(inp, get_tag()))
+                                if(format(fitr, get_tag()) != format(inp, get_tag()))
                                 {
                                     try
                                     {
-                                        read(itr);
+                                        read(fitr);
                                     } catch(std::runtime_error& _e)
                                     {
                                         if(_verbose >= 0)
-                                            fprintf(stderr,
-                                                    "[%s][settings]['%s']> Error reading "
-                                                    "'%s' :: %s\n",
-                                                    TIMEMORY_PROJECT_NAME, _inp.c_str(),
-                                                    itr.c_str(), _e.what());
+                                            TIMEMORY_PRINTF(
+                                                stderr,
+                                                "[%s][settings]['%s']> Error reading "
+                                                "'%s' :: %s\n",
+                                                TIMEMORY_PROJECT_NAME, _inp.c_str(),
+                                                fitr.c_str(), _e.what());
                                     }
                                 }
                             }
@@ -2225,12 +2231,13 @@ settings::read(std::istream& ifs, std::string inp)
                     {
                         if(_verbose >= 3)
                         {
-                            fprintf(stderr,
-                                    "[%s][settings]['%s']> Unknown setting with "
-                                    "recognized prefix ('%s') exported to environment: "
-                                    "'%s' (value = '%s')\n",
-                                    TIMEMORY_PROJECT_NAME, _inp.c_str(),
-                                    TIMEMORY_SETTINGS_PREFIX, _key.c_str(), val.c_str());
+                            TIMEMORY_PRINTF(
+                                stderr,
+                                "[%s][settings]['%s']> Unknown setting with "
+                                "recognized prefix ('%s') exported to environment: "
+                                "'%s' (value = '%s')\n",
+                                TIMEMORY_PROJECT_NAME, _inp.c_str(),
+                                TIMEMORY_SETTINGS_PREFIX, _key.c_str(), val.c_str());
                         }
                         tim::set_env(key, val, 0);
                         if(!std::any_of(m_unknown_configs.begin(),
@@ -2245,11 +2252,12 @@ settings::read(std::istream& ifs, std::string inp)
                     {
                         if(_verbose >= 2)
                         {
-                            fprintf(stderr,
-                                    "[%s][settings]['%s']> WARNING! Unknown setting "
-                                    "ignored: '%s' (value = '%s')\n",
-                                    TIMEMORY_PROJECT_NAME, _inp.c_str(), key.c_str(),
-                                    val.c_str());
+                            TIMEMORY_PRINTF(
+                                stderr,
+                                "[%s][settings]['%s']> WARNING! Unknown setting "
+                                "ignored: '%s' (value = '%s')\n",
+                                TIMEMORY_PROJECT_NAME, _inp.c_str(), key.c_str(),
+                                val.c_str());
                         }
                     }
                 }
