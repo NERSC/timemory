@@ -24,8 +24,11 @@
 
 #pragma once
 
+#include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/defines.h"
 #include "timemory/macros/os.hpp"
+#include "timemory/sampling/signals.hpp"
 #include "timemory/storage/ring_buffer.hpp"
 
 #include <atomic>
@@ -44,28 +47,34 @@
 #include <vector>
 
 #define TIMEMORY_SEMAPHORE_CHECK(VAL)                                                    \
-    if(VAL != 0)                                                                         \
     {                                                                                    \
-        perror(#VAL);                                                                    \
-        throw std::runtime_error(#VAL);                                                  \
+        if(VAL != 0)                                                                     \
+        {                                                                                \
+            perror(#VAL);                                                                \
+            throw std::runtime_error(#VAL);                                              \
+        }                                                                                \
     }
 
 #define TIMEMORY_SEMAPHORE_CHECK_MSG(VAL, ...)                                           \
-    if(VAL != 0)                                                                         \
     {                                                                                    \
-        perror(__VA_ARGS__);                                                             \
-        throw std::runtime_error(__VA_ARGS__);                                           \
+        if(VAL != 0)                                                                     \
+        {                                                                                \
+            perror(__VA_ARGS__);                                                         \
+            throw std::runtime_error(__VA_ARGS__);                                       \
+        }                                                                                \
     }
 
 #define TIMEMORY_SEMAPHORE_HANDLE_EINTR(FUNC, EC, ...)                                   \
-    EC = FUNC(__VA_ARGS__);                                                              \
-    if(EC != 0)                                                                          \
-        EC = errno;                                                                      \
-    while(EC == EINTR)                                                                   \
     {                                                                                    \
         EC = FUNC(__VA_ARGS__);                                                          \
         if(EC != 0)                                                                      \
             EC = errno;                                                                  \
+        while(EC == EINTR)                                                               \
+        {                                                                                \
+            EC = FUNC(__VA_ARGS__);                                                      \
+            if(EC != 0)                                                                  \
+                EC = errno;                                                              \
+        }                                                                                \
     }
 
 #define TIMEMORY_SEMAPHORE_TRYWAIT(SEM, EC)                                              \
@@ -76,62 +85,6 @@ namespace tim
 namespace sampling
 {
 using semaphore_t = sem_t;
-
-enum class sigmask_scope : short
-{
-    thread  = 0,
-    process = 1
-};
-
-inline sigset_t
-block_signals(const std::set<int>& _signals, sigmask_scope _scope)
-{
-    sigset_t _old;
-    sigset_t _new;
-
-    sigemptyset(&_new);
-    for(auto itr : _signals)
-        sigaddset(&_new, itr);
-
-    auto _err = (_scope == sigmask_scope::thread)
-                    ? pthread_sigmask(SIG_BLOCK, &_new, &_old)
-                    : sigprocmask(SIG_BLOCK, &_new, &_old);
-
-    if(_err != 0)
-    {
-        std::string _msg =
-            (_scope == sigmask_scope::thread) ? "pthread_sigmask" : "sigprocmask";
-        perror(_msg.c_str());
-        throw std::runtime_error(_msg);
-    }
-
-    return _old;
-}
-
-inline sigset_t
-unblock_signals(const std::set<int>& _signals, sigmask_scope _scope)
-{
-    sigset_t _old;
-    sigset_t _new;
-
-    sigemptyset(&_new);
-    for(auto itr : _signals)
-        sigaddset(&_new, itr);
-
-    auto _err = (_scope == sigmask_scope::thread)
-                    ? pthread_sigmask(SIG_UNBLOCK, &_new, &_old)
-                    : sigprocmask(SIG_UNBLOCK, &_new, &_old);
-
-    if(_err != 0)
-    {
-        std::string _msg =
-            (_scope == sigmask_scope::thread) ? "pthread_sigmask" : "sigprocmask";
-        perror(_msg.c_str());
-        throw std::runtime_error(_msg);
-    }
-
-    return _old;
-}
 
 /// \struct tim::sampling::allocator
 /// \tparam Tp The tim::sampling::sampler template type
@@ -156,19 +109,21 @@ struct allocator
     allocator& operator=(const allocator&) = delete;
     allocator& operator=(allocator&&) noexcept = default;
 
+    auto&       get_data();
     const auto& get_data() const;
     bool        is_alive() const { return m_alive; }
     void        join();
+    void        start() { m_start.set_value(); }
     void        restart(Tp* _obj);
     void        block_signal(int _v);
     void        emplace(buffer_type&&);
+    void        set_verbose(int _v) { m_verbose = _v; }
 
     static void execute(allocator*, Tp*);
 
 private:
     /// this function makes sure that allocator isn't interrupted by signals
     void block_pending_signals();
-
     void update_data();
 
     std::atomic<bool>        m_alive{ false };
@@ -177,7 +132,8 @@ private:
     semaphore_t              m_sem;
     std::mutex               m_signal_mutex;
     std::mutex               m_buffer_mutex;
-    std::promise<void>       m_promise                 = {};
+    std::promise<void>       m_ready                   = {};
+    std::promise<void>       m_start                   = {};
     std::vector<data_type>   m_data                    = {};
     std::vector<buffer_type> m_buffers                 = {};
     std::set<int>            m_block_signals_pending   = { SIGALRM, SIGVTALRM, SIGPROF };
@@ -190,16 +146,13 @@ template <typename Tp>
 allocator<Tp>::allocator(Tp* _obj)
 : m_thread{ &execute, this, _obj }
 {
-    m_promise.get_future().wait();
+    m_ready.get_future().wait();
 }
 
 template <typename Tp>
 allocator<Tp>::~allocator()
 {
-    if(m_thread.joinable())
-        m_thread.join();
-
-    sem_destroy(&m_sem);
+    join();
 }
 
 template <typename Tp>
@@ -219,12 +172,11 @@ allocator<Tp>::restart(Tp* _obj)
     if(!_obj)
         return;
     _obj->m_exit();
-    if(m_thread.joinable())
-        m_thread.join();
-    m_promise = std::promise<void>{};
+    join();
+    m_ready = std::promise<void>{};
     m_alive.store(false);
     m_thread = std::thread{ &execute, this, _obj };
-    m_promise.get_future().wait();
+    m_ready.get_future().wait();
 }
 
 template <typename Tp>
@@ -300,6 +252,14 @@ allocator<Tp>::update_data()
 }
 
 template <typename Tp>
+auto&
+allocator<Tp>::get_data()
+{
+    update_data();
+    return m_data;
+}
+
+template <typename Tp>
 const auto&
 allocator<Tp>::get_data() const
 {
@@ -314,60 +274,121 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
     threading::set_thread_name(
         std::string{ "samp.alloc." + std::to_string(_alloc->m_tid) }.c_str());
 
-    bool   _completed  = false;
-    size_t _swap_count = 0;
-    sem_t& _sem        = _alloc->m_sem;
-    TIMEMORY_SEMAPHORE_CHECK(sem_init(&_sem, 0, 0));
+    using buffer_vec_t = std::vector<buffer_type>;
 
+    bool          _completed         = false;
+    bool          _clean_exit        = true;
+    size_t        _swap_count        = 0;
+    const int64_t _local_buffer_size = 10;
+    auto          _local_buffer      = buffer_vec_t{};
+    auto          _pending           = std::atomic<int64_t>{ 0 };
+    auto          _wait              = std::atomic<bool>{ false };
+    auto          _swap_buffer       = [&](buffer_vec_t& _new_buffer) {
+        if(_local_buffer.empty() || _pending.load() == 0)
+            return;
+        _wait.store(true);
+        std::swap(_local_buffer, _new_buffer);
+        auto _n = _new_buffer.size();
+        _wait.store(false);
+        _pending -= _n;
+        for(auto& itr : _new_buffer)
+        {
+            if(!itr.is_empty())
+            {
+                _alloc->emplace(std::move(itr));
+                ++_swap_count;
+            }
+        }
+    };
+    auto _notify = [&](semaphore_t* _sem) {
+        if(_alloc && _sem)
+        {
+            TIMEMORY_SEMAPHORE_CHECK(sem_post(_sem));
+        }
+    };
+
+    TIMEMORY_SEMAPHORE_CHECK(sem_init(&_alloc->m_sem, 0, 0));
+    _local_buffer.reserve(_local_buffer_size);
     _alloc->m_alive.store(true);
+    semaphore_t* _sem = &_alloc->m_sem;
     try
     {
-        _obj->set_notify([&]() { TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem)); });
+        _obj->set_notify([&]() { _notify(_sem); });
 
-        _obj->set_exit([&_sem, &_completed]() {
-            _completed = true;
-            int _val   = 0;
-            do
-            {
-                std::this_thread::sleep_for(std::chrono::microseconds{ 10 });
-                TIMEMORY_SEMAPHORE_CHECK(sem_getvalue(&_sem, &_val));
-            } while(_val > 0);
-            TIMEMORY_SEMAPHORE_CHECK(sem_post(&_sem));
+        _obj->set_move([&](buffer_type&& _buffer) {
+            ++_pending;
+            if(_pending.load() >= _local_buffer_size)
+                _notify(_sem);
+            while(_wait.load() || _pending.load() >= _local_buffer_size)
+                std::this_thread::yield();
+            _local_buffer.emplace_back(std::move(_buffer));
+            _notify(_sem);
         });
 
-        _alloc->m_promise.set_value();
+        _obj->set_exit([&]() {
+            _completed = true;
+            TIMEMORY_SEMAPHORE_CHECK(sem_post(_sem));
+        });
+
+        _alloc->m_ready.set_value();
+
+        // wait for start post
+        // TIMEMORY_SEMAPHORE_CHECK(sem_wait(_sem));
+        _alloc->m_start.get_future().wait();
+        // block the pending signals
+        _alloc->block_pending_signals();
 
         while(!_completed)
         {
-            _alloc->block_pending_signals();
+            auto _new_buffer = buffer_vec_t{};
+            _new_buffer.reserve(_local_buffer_size);
 
-            auto _buff = buffer_type{};
+            TIMEMORY_SEMAPHORE_CHECK(sem_wait(_sem));
 
-            TIMEMORY_SEMAPHORE_CHECK(sem_wait(&_sem));
-            if(!_obj->m_filled.is_empty())
-            {
-                std::swap(_buff, _obj->m_filled);
-                ++_swap_count;
-                if(!_buff.is_empty())
-                    _alloc->emplace(std::move(_buff));
-            }
+            _swap_buffer(_new_buffer);
         }
     } catch(...)
     {
+        _clean_exit = false;
         // Set the exception pointer in case of an exception
         _alloc->m_thread_exception = std::current_exception();
     }
 
-    _obj->set_notify([]() {});
-    _obj->set_exit([]() {});
-    _alloc->m_alive.store(false);
-
-    if(_alloc->m_verbose > 0)
+    if(_clean_exit)
     {
-        std::cerr << "[" << _alloc->m_tid << "] Sampler allocator performed "
-                  << _swap_count << " swaps and has " << _alloc->m_data.size()
-                  << " entries\n";
+        while(_pending.load() > 0)
+        {
+            auto _new_buffer = buffer_vec_t{};
+            _new_buffer.reserve(_pending.load());
+            _swap_buffer(_new_buffer);
+        }
+
+        auto _new_buffer = buffer_vec_t{};
+        _new_buffer.reserve(1);
+
+        _swap_buffer(_new_buffer);
+
+        _alloc->update_data();
+
+        if(_alloc->m_verbose >= 1)
+        {
+            std::cerr << "[" << TIMEMORY_PROJECT_NAME << "][pid=" << process::get_id()
+                      << "][tid=" << _alloc->m_tid << "] Sampler allocator performed "
+                      << _swap_count << " swaps and has " << _alloc->m_data.size()
+                      << " entries\n";
+        }
     }
+    _sem = nullptr;
+
+    // disable communication with allocator
+    _obj->set_notify([]() {});
+    _obj->set_move([](buffer_type&&) {});
+    _obj->set_exit([]() {});
+
+    // destroy the semaphore since it was initialized in this routine
+    TIMEMORY_SEMAPHORE_CHECK(sem_destroy(&_alloc->m_sem));
+
+    _alloc->m_alive.store(false);
 }
 
 template <>
@@ -377,6 +398,7 @@ struct allocator<void>
     explicit allocator(Tp*)
     {}
 
+    allocator()                     = default;
     ~allocator()                    = default;
     allocator(const allocator&)     = delete;
     allocator(allocator&&) noexcept = default;
@@ -385,6 +407,7 @@ struct allocator<void>
 
     static constexpr bool is_alive() { return false; }
     static constexpr void block_signal(int) {}
+    static constexpr void join() {}
 
     template <typename Tp>
     static constexpr void emplace(Tp&&)
@@ -393,6 +416,8 @@ struct allocator<void>
     template <typename Tp>
     static constexpr void restart(Tp*)
     {}
+
+    void set_verbose(int) {}
 };
 
 }  // namespace sampling
