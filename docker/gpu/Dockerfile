@@ -1,5 +1,5 @@
 # Build stage with Spack pre-installed and ready to be used
-FROM spack/ubuntu-bionic:latest as builder
+FROM spack/ubuntu-focal:latest as builder
 # FROM ecpe4s/ubuntu18.04-spack-x86_64:0.15.3 as builder
 
 ARG VERSION=develop
@@ -31,7 +31,8 @@ RUN mkdir /opt/environment \
     &&   echo "  - py-mpi4py" \
     &&   echo "  - py-pip" \
     &&   echo "  - timemory@${VERSION}%${COMPILER_SPEC} +caliper+cuda+cupti+dyninst+gotcha+kokkos_tools+kokkos_build_config+mpi+mpip_library+nccl+ompt+ompt_library+papi+python+tools cuda_arch=${CUDA_ARCH_NAME}" \
-    &&   echo "  concretization: together" \
+    &&   echo "  concretizer:" \
+    &&   echo "    unify: when_possible" \
     &&   echo "  config:" \
     &&   echo "    install_tree: /opt/software" \
     &&   echo "  view: /opt/view") > /opt/environment/spack.yaml
@@ -58,7 +59,7 @@ RUN cd /opt/environment && \
     rm e4s.pub && \
     spack compiler find && \
     spack external find && \
-    spack --env . install && \
+    spack --env . install --reuse && \
     spack gc -y
 
 # Modifications to the environment that are necessary to run
@@ -66,7 +67,7 @@ RUN cd /opt/environment && \
     spack env activate --sh -d . >> /etc/profile.d/z10_spack_environment.sh
 
 # Bare OS image to run the installed executables
-FROM spack/ubuntu-bionic:latest
+FROM spack/ubuntu-focal:latest
 
 COPY --from=builder /opt/environment /opt/environment
 COPY --from=builder /opt/software /opt/software

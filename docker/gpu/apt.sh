@@ -28,9 +28,6 @@ rm -f ./kitware-archive.sh
 # llvm
 wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
 cat << EOF > /etc/apt/sources.list.d/llvm-toolchain.list
-# 8
-deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-8 main
-deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-8 main
 # 9
 deb http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-9 main
 deb-src http://apt.llvm.org/${DISTRIB_CODENAME}/ llvm-toolchain-${DISTRIB_CODENAME}-9 main
