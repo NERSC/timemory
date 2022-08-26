@@ -57,9 +57,9 @@
 
 //--------------------------------------------------------------------------------------//
 
-#if !defined(CXX14)
+#if !defined(CXX17)
 #    if !defined(TIMEMORY_WINDOWS)
-#        error "timemory requires __cplusplus > 201103L (C++14)"
+#        error "timemory requires __cplusplus > 201402L (C++17)"
 #    endif
 #endif
 

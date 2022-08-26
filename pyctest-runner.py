@@ -338,7 +338,7 @@ def configure():
         help="C++ standard",
         type=str,
         default="17",
-        choices=("14", "17", "20"),
+        choices=("17", "20", "23"),
     )
     parser.add_argument(
         "--generate", help="Generate the tests only", action="store_true"
