@@ -220,9 +220,9 @@ get_main_tid()
 //--------------------------------------------------------------------------------------//
 
 inline auto
-is_master_thread()
+is_main_thread()
 {
-    return threading::is_master_thread();
+    return threading::is_main_thread();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -412,7 +412,7 @@ init_threading()
         return false;
 
     static bool threading_initialized = false;
-    if(is_master_thread() && !threading_initialized && working())
+    if(is_main_thread() && !threading_initialized && working())
     {
         int retval = PAPI_thread_init(get_thread_index);
         working()  = check(retval, "Warning!! Failure initializing PAPI thread support");
@@ -420,7 +420,7 @@ init_threading()
     }
     else if(!threading_initialized)
     {
-        if(is_master_thread() && !working())
+        if(is_main_thread() && !working())
         {
             static std::atomic<int> _once(0);
             if(_once++ == 0)

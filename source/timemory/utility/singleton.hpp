@@ -158,7 +158,7 @@ public:
 
     static children_t children() { return f_children(); }
     static bool       is_master(pointer ptr) { return ptr == master_instance_ptr(); }
-    static bool       is_master_thread();
+    static bool       is_main_thread();
     static void       insert(smart_pointer& itr);
     static void       remove(pointer itr);
     static mutex_t&   get_mutex() { return f_mutex(); }
@@ -416,14 +416,14 @@ template <typename Type, typename PointerT, typename TagT>
 typename singleton<Type, PointerT, TagT>::pointer
 singleton<Type, PointerT, TagT>::instance_ptr()
 {
-    return is_master_thread() ? f_master_instance() : _local_instance().get();
+    return is_main_thread() ? f_master_instance() : _local_instance().get();
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename Type, typename PointerT, typename TagT>
 bool
-singleton<Type, PointerT, TagT>::is_master_thread()
+singleton<Type, PointerT, TagT>::is_main_thread()
 {
     return std::this_thread::get_id() == f_master_thread();
 }

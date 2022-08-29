@@ -67,7 +67,7 @@ namespace impl
 //
 template <typename Type>
 storage<Type, false>::storage()
-: base_type(singleton_t::is_master_thread(), instance_count()++, demangle<Type>())
+: base_type(singleton_t::is_main_thread(), instance_count()++, demangle<Type>())
 {
     TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "constructing %s",
                                     m_label.c_str());
