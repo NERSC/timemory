@@ -610,6 +610,16 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
+    template <bool PrintPrefix = true, bool PrintLaps = true>
+    std::string as_string(bool skip_wo_hash = false) const
+    {
+        std::stringstream _os{};
+        print<PrintPrefix, PrintLaps>(_os, skip_wo_hash);
+        return _os.str();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
         obj.print<true, true>(os);
