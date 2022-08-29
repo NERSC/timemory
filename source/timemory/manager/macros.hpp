@@ -28,18 +28,13 @@
 #include "timemory/dll.hpp"
 
 #if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_MANAGER_EXTERN)
-#    define TIMEMORY_USE_MANAGER_EXTERN
+#    define TIMEMORY_USE_MANAGER_EXTERN 1
 #endif
-//
+
 #if defined(TIMEMORY_MANAGER_SOURCE)
-#    define TIMEMORY_MANAGER_LINKAGE(...) __VA_ARGS__
-#    define TIMEMORY_MANAGER_LINKAGE_API
-#elif defined(TIMEMORY_USE_MANAGER_EXTERN)
-#    define TIMEMORY_MANAGER_LINKAGE(...) extern __VA_ARGS__
-#    define TIMEMORY_MANAGER_LINKAGE_API
-#else
 #    define TIMEMORY_MANAGER_INLINE
-#    define TIMEMORY_MANAGER_LINKAGE(...) inline __VA_ARGS__
-#    define TIMEMORY_MANAGER_LINKAGE_API inline
+#elif defined(TIMEMORY_USE_MANAGER_EXTERN)
+#    define TIMEMORY_MANAGER_INLINE
+#else
+#    define TIMEMORY_MANAGER_INLINE inline
 #endif
-//

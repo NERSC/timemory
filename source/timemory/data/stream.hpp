@@ -33,6 +33,7 @@
 #include "timemory/mpl/stl.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/delimit.hpp"
 #include "timemory/utility/demangle.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -75,15 +76,15 @@ struct stream_entry
     stream_entry& operator=(const stream_entry&) = default;
     stream_entry& operator=(stream_entry&&) = default;
 
-    TIMEMORY_NODISCARD string_t get() const { return m_value; }
+    string_t get() const { return m_value; }
 
-    TIMEMORY_NODISCARD bool         center() const { return m_center; }
-    TIMEMORY_NODISCARD bool         left() const { return m_left; }
-    TIMEMORY_NODISCARD int          row() const { return m_row; }
-    TIMEMORY_NODISCARD int          width() const { return m_width; }
-    TIMEMORY_NODISCARD int          column() const { return m_column; }
-    TIMEMORY_NODISCARD int          precision() const { return m_precision; }
-    TIMEMORY_NODISCARD format_flags flags() const { return m_format; }
+    bool         center() const { return m_center; }
+    bool         left() const { return m_left; }
+    int          row() const { return m_row; }
+    int          width() const { return m_width; }
+    int          column() const { return m_column; }
+    int          precision() const { return m_precision; }
+    format_flags flags() const { return m_format; }
 
     void center(bool v) { m_center = v; }
     void left(bool v) { m_left = v; }
@@ -247,18 +248,18 @@ struct entry : base::stream_entry
     entry& operator=(const entry&) = default;
     entry& operator=(entry&&) = default;
 
-    TIMEMORY_NODISCARD bool         permit_empty() const { return m_permit_empty; }
-    TIMEMORY_NODISCARD int          width() const { return m_hdr->width(); }
-    TIMEMORY_NODISCARD int          precision() const { return m_hdr->precision(); }
-    TIMEMORY_NODISCARD format_flags flags() const { return m_hdr->flags(); }
+    bool         permit_empty() const { return m_permit_empty; }
+    int          width() const { return m_hdr->width(); }
+    int          precision() const { return m_hdr->precision(); }
+    format_flags flags() const { return m_hdr->flags(); }
 
     void permit_empty(bool v) { m_permit_empty = v; }
     void width(int v) { m_hdr->width(v); }
     void precision(int v) { m_hdr->precision(v); }
     void setf(format_flags v) { m_hdr->setf(v); }
 
-    TIMEMORY_NODISCARD const header& get_header() const { return *m_hdr; }
-    header&                          get_header() { return *m_hdr; }
+    const header& get_header() const { return *m_hdr; }
+    header&       get_header() { return *m_hdr; }
 
 private:
     header* m_hdr          = nullptr;
@@ -310,12 +311,12 @@ public:
     , m_format(_fmt)
     {}
 
-    TIMEMORY_NODISCARD bool         center() const { return m_center; }
-    TIMEMORY_NODISCARD int          precision() const { return m_precision; }
-    TIMEMORY_NODISCARD int          width() const { return m_width; }
-    TIMEMORY_NODISCARD char         delim() const { return m_delim; }
-    TIMEMORY_NODISCARD format_flags flags() const { return m_format; }
-    TIMEMORY_NODISCARD int64_t      freq() const { return m_separator_freq; }
+    bool         center() const { return m_center; }
+    int          precision() const { return m_precision; }
+    int          width() const { return m_width; }
+    char         delim() const { return m_delim; }
+    format_flags flags() const { return m_format; }
+    int64_t      freq() const { return m_separator_freq; }
 
     void center(bool v) { m_center = v; }
     void precision(int v) { m_precision = v; }
@@ -324,10 +325,8 @@ public:
     void setf(format_flags v) { m_format = v; }
     void setfreq(int64_t v) { m_separator_freq = v; }
 
-    // NOLINTNEXTLINE
-    void set_name(string_t v) { m_name = v; }
-    // NOLINTNEXTLINE
-    void set_banner(string_t v) { m_banner = v; }
+    void set_name(string_t v) { m_name = std::move(v); }
+    void set_banner(string_t v) { m_banner = std::move(v); }
 
     static int64_t index(const string_t& _val, const vector_t<string_t>& _obj)
     {
@@ -458,10 +457,9 @@ public:
             int64_t col = ++norder_col;
 
             stringstream_t _ss;
-            // NOLINTNEXTLINE
-            auto _key    = itr;
-            auto _offset = offset[_key]++;
-            auto _idx    = index(_key, obj.m_headers);
+            const auto&    _key    = itr;
+            auto           _offset = offset[_key]++;
+            auto           _idx    = index(_key, obj.m_headers);
             if(_idx < 0 ||
                (_idx >= 0 && !(_offset < (int) obj.m_headers[_idx].second.size())))
             {
@@ -501,7 +499,7 @@ public:
                 int64_t col = ++norder_col;
 
                 stringstream_t _ss;
-                auto           _key    = itr;  // NOLINT
+                const auto&    _key    = itr;
                 auto           _offset = offset[_key]++;
 
                 auto _hidx = index(_key, obj.m_headers);

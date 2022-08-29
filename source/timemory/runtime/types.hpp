@@ -35,6 +35,7 @@
 #include "timemory/environment/declaration.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/runtime/macros.hpp"
+#include "timemory/utility/delimit.hpp"
 
 #include <initializer_list>
 #include <string>
@@ -206,13 +207,13 @@ void
 configure(Tp& obj, int idx, Arg&&, Args&&... args);
 //
 int
-enumerate(tim::string_view_cref_t key);
+enumerate(string_view_cref_t key);
 //
 component::info
 get_info(int);
 //
 component::info
-get_info(tim::string_view_cref_t key);
+get_info(string_view_cref_t key);
 //
 template <typename Tp>
 void
@@ -256,8 +257,8 @@ void
 initialize(CompList<CompTypes...>& obj, const std::string& env_var,
            const std::string& default_env)
 {
-    auto env_result = tim::get_env(env_var, default_env);
-    tim::initialize(obj, enumerate_components(tim::delimit(env_result)));
+    auto env_result = get_env(env_var, default_env);
+    tim::initialize(obj, enumerate_components(delimit(env_result)));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -284,8 +285,8 @@ template <size_t Idx, typename Type, template <size_t, typename> class Bundle>
 void
 insert(Bundle<Idx, Type>& obj, const std::string& env_var, const std::string& default_env)
 {
-    auto env_result = tim::get_env(env_var, default_env);
-    tim::insert(obj, enumerate_components(tim::delimit(env_result)));
+    auto env_result = get_env(env_var, default_env);
+    tim::insert(obj, enumerate_components(delimit(env_result)));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -304,8 +305,8 @@ template <typename Bundle, typename... Args>
 void
 configure(const std::string& env_var, const std::string& default_env, Args&&... args)
 {
-    auto env_result = tim::get_env(env_var, default_env);
-    tim::configure<Bundle>(enumerate_components(tim::delimit(env_result)),
+    auto env_result = get_env(env_var, default_env);
+    tim::configure<Bundle>(enumerate_components(delimit(env_result)),
                            std::forward<Args>(args)...);
 }
 

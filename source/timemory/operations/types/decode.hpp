@@ -26,6 +26,7 @@
 
 #include "timemory/hash/declaration.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/utility/delimit.hpp"
 
 #include <string>
 #include <utility>

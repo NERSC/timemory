@@ -35,6 +35,7 @@
 #include "timemory/manager/types.hpp"
 #include "timemory/operations/types/decode.hpp"
 #include "timemory/settings/settings.hpp"
+#include "timemory/utility/delimit.hpp"
 #include "timemory/utility/filepath.hpp"
 #include "timemory/utility/signals.hpp"
 
@@ -80,7 +81,7 @@ namespace tim
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE_API
+TIMEMORY_MANAGER_INLINE
 manager::manager()
 : m_instance_count(f_manager_instance_count()++)
 , m_rank(dmp::rank())
@@ -161,7 +162,7 @@ manager::manager()
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE_API
+TIMEMORY_MANAGER_INLINE
 manager::~manager()
 {
     auto _remain = --f_manager_instance_count();
@@ -186,7 +187,7 @@ manager::~manager()
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::cleanup(const std::string& key)
 {
     if(f_debug())
@@ -217,7 +218,7 @@ manager::cleanup(const std::string& key)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::cleanup()
 {
     m_is_finalizing = true;
@@ -250,7 +251,7 @@ manager::cleanup()
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::initialize()
 {
     if(m_is_initialized)
@@ -266,7 +267,7 @@ manager::initialize()
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::finalize()
 {
     auto _print_size = [&](const char* _msg) {
@@ -348,7 +349,7 @@ manager::finalize()
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::exit_hook()
 {
     if(f_debug())
@@ -379,7 +380,7 @@ manager::exit_hook()
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::update_metadata_prefix()
 {
     m_rank = std::max<int32_t>(m_rank, dmp::rank());
@@ -397,8 +398,8 @@ manager::update_metadata_prefix()
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(std::ostream&)
-manager::write_metadata(std::ostream& ofs)
+TIMEMORY_MANAGER_INLINE std::ostream&
+                        manager::write_metadata(std::ostream& ofs)
 {
     auto_lock_t _lk(type_mutex<manager>(), std::defer_lock);
 
@@ -453,7 +454,7 @@ manager::write_metadata(std::ostream& ofs)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::write_metadata(const std::string& _output_dir, const char* context)
 {
     if(m_rank != 0)
@@ -561,7 +562,7 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::internal_write_metadata(const char* context)
 {
     if(m_rank != 0)
@@ -662,7 +663,7 @@ manager::internal_write_metadata(const char* context)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::add_file_output(const string_t& _category, const string_t& _label,
                          const string_t& _file)
 {
@@ -674,7 +675,7 @@ manager::add_file_output(const string_t& _category, const string_t& _label,
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::add_text_output(const string_t& _label, const string_t& _file)
 {
     add_file_output("text", _label, _file);
@@ -685,7 +686,7 @@ manager::add_text_output(const string_t& _label, const string_t& _file)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::add_json_output(const string_t& _label, const string_t& _file)
 {
     add_file_output("json", _label, _file);
@@ -693,7 +694,7 @@ manager::add_json_output(const string_t& _label, const string_t& _file)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::remove_cleanup(void* _key)
 {
     if(m_pointer_fini.find(_key) != m_pointer_fini.end())
@@ -702,7 +703,7 @@ manager::remove_cleanup(void* _key)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::remove_cleanup(const std::string& _key)
 {
     auto _remove_functor = [&](finalizer_list_t& _functors) {
@@ -721,7 +722,7 @@ manager::remove_cleanup(const std::string& _key)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::remove_finalizer(const std::string& _key)
 {
     auto _remove_finalizer = [&](finalizer_pmap_t& _pdata) {
@@ -746,7 +747,7 @@ manager::remove_finalizer(const std::string& _key)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::add_metadata(const std::string& _key, const char* _value)
 {
     auto_lock_t _lk(type_mutex<manager>());
@@ -756,7 +757,7 @@ manager::add_metadata(const std::string& _key, const char* _value)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::add_metadata(const std::string& _key, const std::string& _value)
 {
     auto_lock_t _lk(type_mutex<manager>());
@@ -766,7 +767,7 @@ manager::add_metadata(const std::string& _key, const std::string& _value)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::add_synchronization(const std::string& _key, int64_t _id,
                              std::function<void()> _func)
 {
@@ -778,7 +779,7 @@ manager::add_synchronization(const std::string& _key, int64_t _id,
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::remove_synchronization(const std::string& _key, int64_t _id)
 {
     auto_lock_t _lk{ m_mutex, std::defer_lock };
@@ -790,7 +791,7 @@ manager::remove_synchronization(const std::string& _key, int64_t _id)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 manager::synchronize()
 {
     for(auto& itr : m_synchronize)
@@ -804,56 +805,10 @@ manager::synchronize()
 //
 //----------------------------------------------------------------------------------//
 //
-/*TIMEMORY_MANAGER_LINKAGE(manager::comm_group_t)
-manager::get_communicator_group()
-{
-    int32_t max_concurrency = std::thread::hardware_concurrency();
-    // We want on-node communication only
-    int32_t nthreads         = f_thread_counter().load();
-    int32_t max_processes    = max_concurrency / nthreads;
-    int32_t mpi_node_default = mpi::size() / max_processes;
-    if(mpi_node_default < 1)
-        mpi_node_default = 1;
-    int32_t mpi_node_count = get_env<int32_t>("TIMEMORY_NODE_COUNT",
-mpi_node_default); int32_t mpi_split_size = mpi::rank() / (mpi::size() /
-mpi_node_count);
-
-    // Split the communicator based on the number of nodes and use the
-    // original rank for ordering
-    mpi::comm_t local_mpi_comm;
-    mpi::comm_split(mpi::comm_world_v, mpi_split_size, mpi::rank(), &local_mpi_comm);
-
-#    if defined(DEBUG)
-    if(f_verbose() > 1 || f_debug())
-    {
-        int32_t local_mpi_rank = mpi::rank(local_mpi_comm);
-        int32_t local_mpi_size = mpi::size(local_mpi_comm);
-        int32_t local_mpi_file = mpi::rank() / local_mpi_size;
-
-        std::stringstream _info;
-        _info << "\t" << mpi::rank() << " Rank      : " << mpi::rank() << std::endl;
-        _info << "\t" << mpi::rank() << " Size      : " << mpi::size() << std::endl;
-        _info << "\t" << mpi::rank() << " Node      : " << mpi_node_count <<
-std::endl; _info << "\t" << mpi::rank() << " Local Size: " << local_mpi_size <<
-std::endl; _info << "\t" << mpi::rank() << " Local Rank: " << local_mpi_rank <<
-std::endl; _info << "\t" << mpi::rank() << " Local File: " << local_mpi_file <<
-std::endl; std::cout << "tim::manager::" << __FUNCTION__ << "\n" << _info.str();
-    }
-#    endif
-
-    auto local_rank = mpi::rank() / mpi::size(local_mpi_comm);
-    // check
-    assert(local_rank == mpi::get_node_index());
-
-    return comm_group_t(local_mpi_comm, local_rank);
-}*/
-//
-//----------------------------------------------------------------------------------//
-//
 // persistent data for instance counting, threading counting, and exit-hook control
 //
-TIMEMORY_MANAGER_LINKAGE(manager::persistent_data&)
-manager::f_manager_persistent_data()
+TIMEMORY_MANAGER_INLINE manager::persistent_data&
+                        manager::f_manager_persistent_data()
 {
     static persistent_data _instance{};
     return _instance;
@@ -863,8 +818,8 @@ manager::f_manager_persistent_data()
 //
 // get either master or thread-local instance
 //
-TIMEMORY_MANAGER_LINKAGE(manager::pointer_t)
-manager::instance()
+TIMEMORY_MANAGER_INLINE manager::pointer_t
+                        manager::instance()
 {
     static thread_local auto _inst =
         get_shared_ptr_pair_instance<manager, TIMEMORY_API>();
@@ -875,8 +830,8 @@ manager::instance()
 //
 // get master instance
 //
-TIMEMORY_MANAGER_LINKAGE(manager::pointer_t)
-manager::master_instance()
+TIMEMORY_MANAGER_INLINE manager::pointer_t
+                        manager::master_instance()
 {
     static auto _pinst = get_shared_ptr_pair_main_instance<manager, TIMEMORY_API>();
     manager::f_manager_persistent_data().master_instance = _pinst;
@@ -885,7 +840,7 @@ manager::master_instance()
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(bool)
+TIMEMORY_MANAGER_INLINE bool
 manager::get_is_main_thread()
 {
     if(!master_instance())
@@ -895,8 +850,8 @@ manager::get_is_main_thread()
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(manager*)
-timemory_manager_master_instance()
+TIMEMORY_MANAGER_INLINE manager*
+                        timemory_manager_master_instance()
 {
     static auto _pinst = tim::get_shared_ptr_pair<manager, TIMEMORY_API>();
     manager::set_persistent_master(_pinst.first);
@@ -905,7 +860,7 @@ timemory_manager_master_instance()
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_LINKAGE(void)
+TIMEMORY_MANAGER_INLINE void
 timemory_library_constructor()
 {
     static auto _preloaded = []() {
