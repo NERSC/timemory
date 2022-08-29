@@ -340,6 +340,26 @@ struct max_threads
     static constexpr size_t value = TIMEMORY_MAX_THREADS;
 };
 
+template <typename Tp>
+struct prevent_reentry;
+
+template <typename Tp>
+struct static_data;
+
+/// \struct tim::trait::gotcha_trait
+/// \tparam TraitT An existing type-trait
+/// \tparam Tp gotcha component type
+/// \tparam Idx gotcha index
+/// \tparam TailT Any additional arguments for the type-trait
+///
+/// \brief Provides a way to specialize type traits for an individual gotcha wrapper
+/// index within a gotcha component. If not specialized, it will inherit from the
+/// non-index specialized type-trait.
+template <template <typename, typename...> class TraitT, typename Tp, size_t Idx,
+          typename... TailT>
+struct gotcha_trait : TraitT<Tp, TailT...>
+{};
+
 //--------------------------------------------------------------------------------------//
 //
 //                              ALIASES
@@ -489,7 +509,74 @@ using output_archive_t = output_archive<trait::output_archive_t<T>, TIMEMORY_API
 //
 //--------------------------------------------------------------------------------------//
 //
-
+/// \struct tim::policy::static_data
+/// \tparam Tp The data type required
+/// \tparam ContextT The data type requesting the static data.
+///
+/// \brief This policy allows users to customize how static data is generated when
+/// a type has `trait::static_data<T>::value == True`. This is typically used
+/// for optimization purposes with gotcha. For example, if one has a gotcha
+/// replacement function for a performance critical component, such as
+/// `pthread_mutex_lock`, you will want to cache `gotcha_data` and, potentially, just
+/// immediately invoke the underlying function pointer on some threads (such as a thread
+/// being used for profiling purposes). In this scenario, you want your policy to return
+/// a thread-local instance to `pthread_mutex_gotcha` which, upon construction,
+/// sets some value about whether it should just immmediately invoke the underlying
+/// function pointer.
+/// The user must provide the policy implementation. E.g. if you want all threads
+/// to use the same `foo` instance in all contexts and the `bar` instance to be
+/// thread-local when accessed by `foo` but unique in all other instances:
+///
+/// \code{.cpp}
+/// namespace tim
+/// {
+/// namespace policy
+/// {
+/// template <typename ContexT>
+/// struct static_data<foo, ContextT>
+/// {
+///     template <typename... Args>
+///     foo& operator()(Args&&... args)
+///     {
+///         static auto _v = foo{ std::forward<Args>(args)... };
+///         return _v;
+///     }
+/// };
+///
+/// template <ContextT>
+/// struct static_data<bar, ContexT>
+/// {
+///     template <typename... Args>
+///     bar operator()(Args&&... args)
+///     {
+///         return bar{ std::forward<Args>(args)... };
+///     }
+/// };
+///
+/// template <>
+/// struct static_data<bar, foo>
+/// {
+///     template <typename... Args>
+///     bar& operator()(Args&&... args)
+///     {
+///         static thread_local auto _v = bar{ std::forward<Args>(args)... };
+///         return _v;
+///     }
+/// };
+/// }
+/// }
+/// \endcode
+template <typename Tp, typename ContextT = Tp>
+struct static_data
+{
+    template <typename... Args>
+    Tp operator()(Args&&...)
+    {
+        static_assert(std::is_void<Tp>::value && std::is_empty<Tp>::value,
+                      "Error! Full or partial specialization for Tp in ContextT not "
+                      "provided by default");
+    }
+};
 }  // namespace policy
 //
 //--------------------------------------------------------------------------------------//

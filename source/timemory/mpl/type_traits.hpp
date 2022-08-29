@@ -1102,6 +1102,23 @@ struct perfetto_category<TIMEMORY_API>
     static constexpr auto value = TIMEMORY_PROJECT_NAME;
 };
 
+/// \struct tim::trait::prevent_reentry
+/// \brief trait that specifies that the type should protect itself from recursion
+/// or reentry if necessary globally.
+template <typename Tp>
+struct prevent_reentry : std::true_type
+{};
+
+/// \struct tim::trait::static_data
+/// \brief trait that specifies that the type (or types used by this type)
+/// should use static data retrieved via:
+/// `decltype(auto) _value = policy::static_data<Tp>{}(Args...);`
+/// The user must provide the policy implementation. See \ref tim::policy::static_data.
+///
+template <typename Tp>
+struct static_data : std::false_type
+{};
+
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::is_component
 /// \brief trait that designates the type is a timemory component

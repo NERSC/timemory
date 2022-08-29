@@ -25,10 +25,14 @@
 #ifndef TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_CPP_
 #define TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_CPP_
 
-#include "timemory/components/gotcha/components.hpp"
+#if !defined(TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_HPP_)
+#    include "timemory/components/gotcha/components.hpp"
+#endif
 
 #include "timemory/components/gotcha/backends.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/operations/types.hpp"
 
 #include <cstddef>
 #include <string>
@@ -322,6 +326,7 @@ template <size_t Nt, typename BundleT, typename DiffT>
 void
 gotcha<Nt, BundleT, DiffT>::configure()
 {
+    // do not release lock until fully constructed
     std::unique_lock<std::mutex> lk(get_mutex(), std::defer_lock);
     if(!lk.owns_lock())
         lk.lock();
@@ -329,11 +334,18 @@ gotcha<Nt, BundleT, DiffT>::configure()
     if(!is_configured())
     {
         is_configured() = true;
-        lk.unlock();
-        auto& _init = get_initializer();
+        auto& _init     = get_initializer();
         _init();
         operation::set_data<operator_type>{}(get_data());
         operation::set_data<bundle_type>{}(get_data());
+        for(auto& itr : get_data())
+        {
+            if(itr.is_finalized)
+            {
+                itr.is_finalized = false;
+                itr.constructor();
+            }
+        }
     }
 }
 
@@ -343,6 +355,7 @@ template <size_t Nt, typename BundleT, typename DiffT>
 void
 gotcha<Nt, BundleT, DiffT>::disable()
 {
+    // do not release lock until fully destroyed
     std::unique_lock<std::mutex> lk(get_mutex(), std::defer_lock);
     if(!lk.owns_lock())
         lk.lock();
@@ -350,7 +363,6 @@ gotcha<Nt, BundleT, DiffT>::disable()
     if(is_configured())
     {
         is_configured() = false;
-        lk.unlock();
         for(auto& itr : get_data())
         {
             if(!itr.is_finalized)
@@ -611,183 +623,225 @@ gotcha<Nt, BundleT, DiffT>::wrap(Args... _args)
 {
     static_assert(N < Nt, "Error! N must be less than Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
-    auto& _data = get_data()[N];
-
-    static constexpr bool void_operator = std::is_same<operator_type, void>::value;
-    static_assert(void_operator, "operator_type should be void!");
-    // protects against TLS calling malloc when malloc is wrapped
-    static bool _protect_tls_alloc = false;
-
     using func_t = Ret (*)(Args...);
-    func_t _func = (func_t)(gotcha_get_wrappee(_data.wrappee));
 
-    if(!_func)
-    {
-        TIMEMORY_PRINT_HERE("nullptr to original function! wrappee: %s",
-                            _data.tool_id.c_str());
-        return Ret{};
-    }
-
-    if(_data.is_finalized || _protect_tls_alloc)
-        return (*_func)(_args...);
-
-    _protect_tls_alloc = true;
-    auto _suppress =
-        gotcha_suppression::get() || (_data.suppression && *_data.suppression);
-    _protect_tls_alloc = false;
-
-    if(!_data.ready || _suppress)
-    {
-        _protect_tls_alloc                  = true;
-        static thread_local bool _recursive = false;
-        _protect_tls_alloc                  = false;
-        if(!_recursive && _data.debug && *_data.debug)
-        {
-            _recursive = true;
-            auto _tid  = threading::get_id();
-            fprintf(stderr,
-                    "[T%i][%s]> %s is either not ready (ready=%s) or is globally "
-                    "suppressed (suppressed=%s)\n",
-                    (int) _tid, __FUNCTION__, _data.tool_id.c_str(),
-                    (_data.ready) ? "true" : "false", (_suppress) ? "true" : "false");
-            fflush(stderr);
-            _recursive = false;
-        }
-        return (*_func)(_args...);
-    }
-
-    bool did_data_toggle = false;
-    bool did_glob_toggle = false;
-
-    // make sure the function is not recursively entered
-    // (important for allocation-based wrappers)
-    _data.ready = false;
-    toggle_suppress_on(_data.suppression, did_data_toggle);
-
-    // bundle_type is always: component_{tuple,list,bundle}
-    toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
-    //
-    bundle_type _bundle{ _data.tool_id };
-    _bundle.construct(_args...);
-    _bundle.start(_data);
-    _bundle.store(_data);
-    _bundle.audit(_data, audit::incoming{}, _args...);
-    toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
-
-    _data.ready = true;
-    Ret _ret    = invoke<bundle_type>(std::forward<gotcha_data>(_data), _bundle, _func,
-                                   std::forward<Args>(_args)...);
-    _data.ready = false;
-
-    toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
-    _bundle.audit(_data, audit::outgoing{}, _ret);
-    _bundle.stop(_data);
-    toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
-
-    // allow re-entrance into wrapper
-    toggle_suppress_off(_data.suppression, did_data_toggle);
-    _data.ready = true;
-
-    return _ret;
-#else
-    consume_parameters(_args...);
-    TIMEMORY_PRINT_HERE("%s", "should not be here!");
-#endif
-    return Ret{};
-}
-
-//----------------------------------------------------------------------------------//
-
-template <size_t Nt, typename BundleT, typename DiffT>
-template <size_t N, typename... Args>
-void
-gotcha<Nt, BundleT, DiffT>::wrap_void(Args... _args)
-{
-    static_assert(N < Nt, "Error! N must be less than Nt!");
-#if defined(TIMEMORY_USE_GOTCHA)
     auto& _data = get_data()[N];
+    auto  _func = reinterpret_cast<func_t>(gotcha_get_wrappee(_data.wrappee));
 
-    static constexpr bool void_operator = std::is_same<operator_type, void>::value;
-    static_assert(void_operator, "operator_type should be void!");
-    // protects against TLS calling malloc when malloc is wrapped
-    static bool _protect_tls_alloc = false;
+    static_assert(std::is_void<operator_type>::value, "operator_type should be void!");
 
-    using func_t = void (*)(Args...);
-    auto _func   = (func_t)(gotcha_get_wrappee(_data.wrappee));
+    constexpr bool _prevent_reentry =
+        trait::gotcha_trait<trait::prevent_reentry, this_type, N>::value;
+    constexpr bool _static_data =
+        trait::gotcha_trait<trait::static_data, this_type, N>::value;
 
-    if(!_func)
+    if constexpr(!_prevent_reentry)
     {
-        TIMEMORY_PRINT_HERE("nullptr to original function! wrappee: %s",
-                            _data.tool_id.c_str());
-        return;
-    }
-
-    if(_data.is_finalized || _protect_tls_alloc)
-    {
-        (*_func)(_args...);
-        return;
-    }
-
-    _protect_tls_alloc = true;
-    auto _suppress =
-        gotcha_suppression::get() || (_data.suppression && *_data.suppression);
-    _protect_tls_alloc = false;
-
-    if(!_data.ready || _suppress)
-    {
-        _protect_tls_alloc                  = true;
-        static thread_local bool _recursive = false;
-        _protect_tls_alloc                  = false;
-        if(!_recursive && _data.debug && *_data.debug)
+        if constexpr(!std::is_void<Ret>::value)
         {
-            _recursive = true;
-            auto _tid  = threading::get_id();
-            fprintf(stderr,
-                    "[T%i][%s]> %s is either not ready (ready=%s) or is globally "
-                    "suppressed (suppressed=%s)\n",
-                    (int) _tid, __FUNCTION__, _data.tool_id.c_str(),
-                    (_data.ready) ? "true" : "false", (_suppress) ? "true" : "false");
-            fflush(stderr);
-            _recursive = false;
+            if constexpr(_static_data)
+            {
+                static bundle_type _bundle = []() {
+                    bundle_type _v{ _data.tool_id };
+                    return _v;
+                }();
+
+                _bundle.construct(_args...);
+                _bundle.start();
+                _bundle.store();
+                _bundle.audit(audit::incoming{}, _args...);
+                Ret _ret = invoke<bundle_type>(std::forward<gotcha_data>(_data), _bundle,
+                                               _func, std::forward<Args>(_args)...);
+                _bundle.audit(_data, audit::outgoing{}, _ret);
+                _bundle.stop(_data);
+                return _ret;
+            }
+            else
+            {
+                bundle_type _bundle{ _data.tool_id };
+                _bundle.construct(_args...);
+                _bundle.start(_data);
+                _bundle.store(_data);
+                _bundle.audit(_data, audit::incoming{}, _args...);
+                Ret _ret = invoke<bundle_type>(std::forward<gotcha_data>(_data), _bundle,
+                                               _func, std::forward<Args>(_args)...);
+                _bundle.audit(_data, audit::outgoing{}, _ret);
+                _bundle.stop(_data);
+                return _ret;
+            }
         }
-        (*_func)(_args...);
-        return;
+        else
+        {
+            if constexpr(_static_data)
+            {
+                static bundle_type _bundle{ _data.tool_id };
+                _bundle.construct(_args...);
+                _bundle.start(_data);
+                _bundle.store(_data);
+                _bundle.audit(_data, audit::incoming{}, _args...);
+                invoke<bundle_type>(std::forward<gotcha_data>(_data), _bundle, _func,
+                                    std::forward<Args>(_args)...);
+                _bundle.audit(_data, audit::outgoing{});
+                _bundle.stop(_data);
+            }
+            else
+            {
+                bundle_type _bundle{ _data.tool_id };
+                _bundle.construct(_args...);
+                _bundle.start(_data);
+                _bundle.store(_data);
+                _bundle.audit(_data, audit::incoming{}, _args...);
+                invoke<bundle_type>(std::forward<gotcha_data>(_data), _bundle, _func,
+                                    std::forward<Args>(_args)...);
+                _bundle.audit(_data, audit::outgoing{});
+                _bundle.stop(_data);
+            }
+        }
     }
+    else
+    {
+        (void) _static_data;
+        // protects against TLS calling malloc when malloc is wrapped
+        static bool _protect_tls_alloc = false;
 
-    bool did_data_toggle = false;
-    bool did_glob_toggle = false;
+        if constexpr(!std::is_void<Ret>::value)
+        {
+            if(_data.is_finalized || _protect_tls_alloc)
+                return (*_func)(_args...);
 
-    // make sure the function is not recursively entered
-    // (important for allocation-based wrappers)
-    _data.ready = false;
-    toggle_suppress_on(_data.suppression, did_data_toggle);
-    toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
+            _protect_tls_alloc = true;
+            auto _suppress =
+                gotcha_suppression::get() || (_data.suppression && *_data.suppression);
+            _protect_tls_alloc = false;
 
-    //
-    bundle_type _bundle{ _data.tool_id };
-    _bundle.construct(_args...);
-    _bundle.start(_data);
-    _bundle.store(_data);
-    _bundle.audit(_data, audit::incoming{}, _args...);
-    toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
+            if(!_data.ready || _suppress)
+            {
+                _protect_tls_alloc                  = true;
+                static thread_local bool _recursive = false;
+                _protect_tls_alloc                  = false;
+                if(!_recursive && _data.debug && *_data.debug)
+                {
+                    _recursive = true;
+                    auto _tid  = threading::get_id();
+                    fprintf(stderr,
+                            "[T%i][%s]> %s is either not ready (ready=%s) or is globally "
+                            "suppressed (suppressed=%s)\n",
+                            (int) _tid, __FUNCTION__, _data.tool_id.c_str(),
+                            (_data.ready) ? "true" : "false",
+                            (_suppress) ? "true" : "false");
+                    fflush(stderr);
+                    _recursive = false;
+                }
+                return (*_func)(_args...);
+            }
 
-    _data.ready = true;
-    invoke<bundle_type>(std::forward<gotcha_data>(_data), _bundle, _func,
-                        std::forward<Args>(_args)...);
-    _data.ready = false;
+            bool did_data_toggle = false;
+            bool did_glob_toggle = false;
 
-    toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
-    _bundle.audit(_data, audit::outgoing{});
-    _bundle.stop(_data);
+            // make sure the function is not recursively entered
+            // (important for allocation-based wrappers)
+            _data.ready = false;
+            toggle_suppress_on(_data.suppression, did_data_toggle);
 
-    // allow re-entrance into wrapper
-    toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
-    toggle_suppress_off(_data.suppression, did_data_toggle);
-    _data.ready = true;
+            // bundle_type is always: component_{tuple,list,bundle}
+            toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
+            //
+            bundle_type _bundle{ _data.tool_id };
+            _bundle.construct(_args...);
+            _bundle.start(_data);
+            _bundle.store(_data);
+            _bundle.audit(_data, audit::incoming{}, _args...);
+            toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
+
+            _data.ready = true;
+            Ret _ret    = invoke<bundle_type>(std::forward<gotcha_data>(_data), _bundle,
+                                           _func, std::forward<Args>(_args)...);
+            _data.ready = false;
+
+            toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
+            _bundle.audit(_data, audit::outgoing{}, _ret);
+            _bundle.stop(_data);
+            toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
+
+            // allow re-entrance into wrapper
+            toggle_suppress_off(_data.suppression, did_data_toggle);
+            _data.ready = true;
+
+            return _ret;
+        }
+        else
+        {
+            if(_data.is_finalized || _protect_tls_alloc)
+            {
+                (*_func)(_args...);
+                return;
+            }
+
+            _protect_tls_alloc = true;
+            auto _suppress =
+                gotcha_suppression::get() || (_data.suppression && *_data.suppression);
+            _protect_tls_alloc = false;
+
+            if(!_data.ready || _suppress)
+            {
+                _protect_tls_alloc                  = true;
+                static thread_local bool _recursive = false;
+                _protect_tls_alloc                  = false;
+                if(!_recursive && _data.debug && *_data.debug)
+                {
+                    _recursive = true;
+                    auto _tid  = threading::get_id();
+                    fprintf(stderr,
+                            "[T%i][%s]> %s is either not ready (ready=%s) or is globally "
+                            "suppressed (suppressed=%s)\n",
+                            (int) _tid, __FUNCTION__, _data.tool_id.c_str(),
+                            (_data.ready) ? "true" : "false",
+                            (_suppress) ? "true" : "false");
+                    fflush(stderr);
+                    _recursive = false;
+                }
+                (*_func)(_args...);
+                return;
+            }
+
+            bool did_data_toggle = false;
+            bool did_glob_toggle = false;
+
+            // make sure the function is not recursively entered
+            // (important for allocation-based wrappers)
+            _data.ready = false;
+            toggle_suppress_on(_data.suppression, did_data_toggle);
+            toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
+
+            //
+            bundle_type _bundle{ _data.tool_id };
+            _bundle.construct(_args...);
+            _bundle.start(_data);
+            _bundle.store(_data);
+            _bundle.audit(_data, audit::incoming{}, _args...);
+            toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
+
+            _data.ready = true;
+            invoke<bundle_type>(std::forward<gotcha_data>(_data), _bundle, _func,
+                                std::forward<Args>(_args)...);
+            _data.ready = false;
+
+            toggle_suppress_on(&gotcha_suppression::get(), did_glob_toggle);
+            _bundle.audit(_data, audit::outgoing{});
+            _bundle.stop(_data);
+
+            // allow re-entrance into wrapper
+            toggle_suppress_off(&gotcha_suppression::get(), did_glob_toggle);
+            toggle_suppress_off(_data.suppression, did_data_toggle);
+            _data.ready = true;
+        }
+    }
 #else
     consume_parameters(_args...);
     TIMEMORY_PRINT_HERE("%s", "should not be here!");
 #endif
+    if constexpr(!std::is_void<Ret>::value)
+        return Ret{};
 }
 
 //----------------------------------------------------------------------------------//
@@ -801,64 +855,73 @@ gotcha<Nt, BundleT, DiffT>::replace_func(Args... _args)
     static_assert(components_size == 0, "Error! Number of components must be zero!");
 
 #if defined(TIMEMORY_USE_GOTCHA)
-    static auto& _data = get_data()[N];
+    using func_t       = Ret (*)(Args...);
+    using replace_type = tim::component_tuple<operator_type>;
 
-    using func_t    = Ret (*)(Args...);
-    using wrap_type = tim::component_tuple<operator_type>;
+    static_assert(!std::is_void<operator_type>::value, "operator_type cannot be void!");
 
-    static constexpr bool void_operator = std::is_same<operator_type, void>::value;
-    static_assert(!void_operator, "operator_type cannot be void!");
+    constexpr bool _prevent_reentry =
+        trait::gotcha_trait<trait::prevent_reentry, this_type, N>::value;
+    constexpr bool _static_data =
+        trait::gotcha_trait<trait::static_data, this_type, N>::value;
 
-    auto _func = (func_t) gotcha_get_wrappee(_data.wrappee);
-    if(!_data.ready)
-        return (*_func)(_args...);
+    auto& _data = get_data()[N];
+    auto  _func = reinterpret_cast<func_t>(gotcha_get_wrappee(_data.wrappee));
 
-    _data.ready = false;
-    static wrap_type _bundle{ _data.tool_id };
-    Ret _ret    = invoke<wrap_type>(std::forward<gotcha_data>(_data), _bundle, _func,
-                                 std::forward<Args>(_args)...);
-    _data.ready = true;
-    return _ret;
-#else
-    consume_parameters(_args...);
-    TIMEMORY_PRINT_HERE("%s", "should not be here!");
-    return Ret{};
-#endif
-}
-
-//----------------------------------------------------------------------------------//
-
-template <size_t Nt, typename BundleT, typename DiffT>
-template <size_t N, typename... Args>
-void
-gotcha<Nt, BundleT, DiffT>::replace_void_func(Args... _args)
-{
-    static_assert(N < Nt, "Error! N must be less than Nt!");
-#if defined(TIMEMORY_USE_GOTCHA)
-    static auto& _data = get_data()[N];
-
-    // TIMEMORY_PRINT_HERE("%s", _data.tool_id.c_str());
-
-    using func_t    = void (*)(Args...);
-    using wrap_type = tim::component_tuple<operator_type>;
-
-    static constexpr bool void_operator = std::is_same<operator_type, void>::value;
-    static_assert(!void_operator, "operator_type cannot be void!");
-
-    auto _func = (func_t) gotcha_get_wrappee(_data.wrappee);
-    if(!_data.ready)
-        (*_func)(_args...);
+    if constexpr(!std::is_void<Ret>::value)
+    {
+        if constexpr(_prevent_reentry)
+        {
+            if(!_data.ready)
+                return (*_func)(_args...);
+            _data.ready = false;
+        }
+        Ret _ret{};
+        if constexpr(_static_data)
+        {
+            static replace_type _bundle{ _data.tool_id };
+            _ret = invoke<replace_type>(std::forward<gotcha_data>(_data), _bundle, _func,
+                                        std::forward<Args>(_args)...);
+        }
+        else
+        {
+            replace_type _bundle{};
+            _ret = invoke<replace_type>(std::forward<gotcha_data>(_data), _bundle, _func,
+                                        std::forward<Args>(_args)...);
+        }
+        if constexpr(_prevent_reentry)
+            _data.ready = true;
+        return _ret;
+    }
     else
     {
-        _data.ready = false;
-        static wrap_type _bundle{ _data.tool_id };
-        invoke<wrap_type>(std::forward<gotcha_data>(_data), _bundle, _func,
-                          std::forward<Args>(_args)...);
-        _data.ready = true;
+        if constexpr(_prevent_reentry)
+        {
+            if(!_data.ready)
+                (*_func)(_args...);
+
+            _data.ready = false;
+        }
+        if constexpr(_static_data)
+        {
+            static replace_type _bundle{ _data.tool_id };
+            invoke<replace_type>(std::forward<gotcha_data>(_data), _bundle, _func,
+                                 std::forward<Args>(_args)...);
+        }
+        else
+        {
+            replace_type _bundle{};
+            invoke<replace_type>(std::forward<gotcha_data>(_data), _bundle, _func,
+                                 std::forward<Args>(_args)...);
+        }
+        if constexpr(_prevent_reentry)
+            _data.ready = true;
     }
 #else
     consume_parameters(_args...);
     TIMEMORY_PRINT_HERE("%s", "should not be here!");
+    if constexpr(!std::is_void<Ret>::value)
+        return Ret{};
 #endif
 }
 
@@ -874,10 +937,24 @@ gotcha<Nt, BundleT, DiffT>::fast_func(Args... _args)
 
 #if defined(TIMEMORY_USE_GOTCHA)
     using func_t = Ret (*)(Args...);
-    return operator_type{}(
-        get_data()[N],
-        reinterpret_cast<func_t>(gotcha_get_wrappee(get_data()[N].wrappee)),
-        std::forward<Args>(_args)...);
+    constexpr bool _static_data =
+        trait::gotcha_trait<trait::static_data, this_type, N>::value;
+    if constexpr(_static_data)
+    {
+        using static_data_type = policy::static_data<operator_type, this_type>;
+        decltype(auto) _v =
+            static_data_type{}(std::integral_constant<size_t, N>{}, get_data()[N]);
+        return std::invoke(
+            _v, reinterpret_cast<func_t>(gotcha_get_wrappee(get_data()[N].wrappee)),
+            std::forward<Args>(_args)...);
+    }
+    else
+    {
+        return operator_type{}(
+            get_data()[N],
+            reinterpret_cast<func_t>(gotcha_get_wrappee(get_data()[N].wrappee)),
+            std::forward<Args>(_args)...);
+    }
 #else
     consume_parameters(_args...);
     TIMEMORY_PRINT_HERE("%s", "should not be here!");

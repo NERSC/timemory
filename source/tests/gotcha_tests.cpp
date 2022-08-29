@@ -29,6 +29,8 @@ TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "gotcha_tests_lib.hpp"
 #include "timemory/components/gotcha/memory_allocations.hpp"
+#include "timemory/mpl/macros.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/timemory.hpp"
 
 #include "gtest/gtest.h"
@@ -68,6 +70,7 @@ using vector_t = std::vector<Tp>;
 
 static constexpr int64_t nitr      = 100000;
 static const double      tolerance = 1.0e-2;
+static constexpr size_t  exp_nitr  = 10;
 
 namespace details
 {
@@ -557,20 +560,21 @@ struct cmath_intercept : public base<cmath_intercept, void>
 {
     static auto& get_intercepts()
     {
-        static unsigned long _instance{ 0 };
+        static std::atomic<unsigned long> _instance{ 0 };
         return _instance;
     }
 
     static auto& puts_intercepts()
     {
-        static unsigned long _instance{ 0 };
+        static std::atomic<unsigned long> _instance{ 0 };
         return _instance;
     }
 
     TIMEMORY_NOINLINE void operator()(const char* msg) const
     {
-        ++puts_intercepts();
-        puts(msg);
+        auto _n = ++puts_intercepts();
+        if(_n < 10)
+            puts(msg);
     }
 
     TIMEMORY_NOINLINE double operator()(double val) const
@@ -593,8 +597,7 @@ TEST_F(gotcha_tests, replacement)
 
     static_assert(cmath_intercept_t::components_size == 0,
                   "cmath_intercept_t should have no components");
-    static_assert(cmath_intercept_t::differentiator_is_component,
-                  "cmath_intercept_t won't replace exp");
+    static_assert(cmath_intercept_t::replaces, "cmath_intercept_t does not replace exp!");
 
     //
     // configure the initializer for the gotcha component which replaces exp
@@ -617,18 +620,34 @@ TEST_F(gotcha_tests, replacement)
 #endif
     };
 
-    auto inp = std::min<double>(10.0, exp(5.0));
-    {
+    auto _func = [](bool _first) {
+        if(!_first)
+            cmath_intercept_t::enable();
+
+        auto inp = std::min<double>(10.0, exp(5.0));
         {
             auto _configured = cmath_intercept_t::is_configured();
-            EXPECT_FALSE(_configured);
+            if(_first)
+            {
+                EXPECT_FALSE(_configured);
+            }
+            else
+            {
+                EXPECT_TRUE(_configured);
+            }
         }
-        // TIMEMORY_BLANK_MARKER(exp_bundle_t, details::get_test_name());
         auto _handle = exp_bundle_t(details::get_test_name());
         {
             auto _info = cmath_intercept_t::get_info();
             EXPECT_GE(_info[0], 0) << "# ready";
-            EXPECT_GE(_info[1], 0) << "# filled";
+            if(_first)
+            {
+                EXPECT_GE(_info[1], 0) << "# filled";
+            }
+            else
+            {
+                EXPECT_GE(_info[1], 2) << "# filled";
+            }
             EXPECT_GE(_info[2], 0) << "# is_active";
             EXPECT_EQ(_info[3], 0) << "# is_finalized";
             EXPECT_EQ(_info[4], 0) << "# suppression";
@@ -644,7 +663,7 @@ TEST_F(gotcha_tests, replacement)
             EXPECT_EQ(_info[3], 0) << "# is_finalized";
             EXPECT_EQ(_info[4], 0) << "# suppression";
         }
-        double ret = inp;
+        volatile double ret = inp;
         for(int i = 0; i < 10; ++i)
         {
             auto val = ret / ::pow(ret, 2);
@@ -679,16 +698,193 @@ TEST_F(gotcha_tests, replacement)
             EXPECT_GE(_info[3], 2) << "# is_finalized";
             EXPECT_EQ(_info[4], 0) << "# suppression";
         }
-        printf("result: %f\n", ret);
-        EXPECT_GT(ret, 10.9);
-        // EXPECT_LT(ret, 11.0);
+        if(_first)
+            printf("result: %f\n", ret);
+        EXPECT_GT(ret, 10.9) << "result: " << ret;
+    };
+
+    for(size_t j = 0; j < exp_nitr; ++j)
+    {
+        printf("Starting iteration %zu...\n", j);
+        _func(j == 0);
     }
 
-    printf("number of exp  intercepts: %lu\n", cmath_intercept::get_intercepts());
-    printf("number of puts intercepts: %lu\n", cmath_intercept::puts_intercepts());
+    printf("number of exp  intercepts: %lu\n", cmath_intercept::get_intercepts().load());
+    printf("number of puts intercepts: %lu\n", cmath_intercept::puts_intercepts().load());
 
-    EXPECT_EQ(cmath_intercept::get_intercepts(), 10);
-    EXPECT_EQ(cmath_intercept::puts_intercepts(), 10);
+    EXPECT_EQ(cmath_intercept::get_intercepts(), 10 * exp_nitr);
+    EXPECT_EQ(cmath_intercept::puts_intercepts(), 10 * exp_nitr);
+
+    tim::settings::debug() = _dbg;
+}
+
+//======================================================================================//
+
+namespace tim
+{
+namespace component
+{
+struct cmath_reentry : public base<cmath_reentry, void>
+{
+    static auto& get_intercepts()
+    {
+        static std::atomic<unsigned long> _instance{ 0 };
+        return _instance;
+    }
+
+    static auto& puts_intercepts()
+    {
+        static std::atomic<unsigned long> _instance{ 0 };
+        return _instance;
+    }
+
+    TIMEMORY_NOINLINE void operator()(const gotcha_data&, void (*_func)(const char*),
+                                      const char* msg) const
+    {
+        auto _n = ++puts_intercepts();
+        if(_n < 10)
+            (*_func)(msg);
+    }
+
+    TIMEMORY_NOINLINE double operator()(double (*_func)(double), double val) const
+    {
+        ++get_intercepts();
+        return (*_func)(val);
+    }
+};
+}  // namespace component
+}  // namespace tim
+
+using cmath_reentry_t = gotcha<4, std::tuple<>, cmath_reentry>;
+
+TIMEMORY_DEFINE_CONCRETE_TRAIT(static_data_gotcha, cmath_reentry_t, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(prevent_reentry, cmath_reentry_t, false_type)
+
+TEST_F(gotcha_tests, unprotected_replacement)
+{
+    auto _dbg = tim::settings::debug();
+    // tim::settings::debug() = true;
+
+    using exp_bundle_t = tim::component_bundle<TIMEMORY_API, cmath_reentry_t>;
+
+    static_assert(cmath_reentry_t::components_size == 0,
+                  "cmath_reentry_t should have no components");
+    static_assert(cmath_reentry_t::replaces, "cmath_reentry_t does not replace exp!");
+
+    //
+    // configure the initializer for the gotcha component which replaces exp
+    //
+    cmath_reentry_t::get_default_ready() = true;
+    cmath_reentry_t::get_initializer()   = []() {
+        puts("Generating exp intercept...");
+#if defined(TIMEMORY_HIPCC)
+        cmath_reentry_t::template instrument<0, double, double>::generate("exp");
+#else
+        TIMEMORY_C_GOTCHA(cmath_reentry_t, 0, exp);
+#endif
+        // TIMEMORY_C_GOTCHA(cmath_reentry_t, 1, test_exp);
+        TIMEMORY_CXX_GOTCHA(cmath_reentry_t, 2, ext::do_puts);
+#if defined(TIMEMORY_HIPCC)
+        cmath_reentry_t::template instrument<0, double, double>::generate("__exp_finite");
+#else
+        TIMEMORY_DERIVED_GOTCHA(cmath_reentry_t, 3, exp, "__exp_finite");
+#endif
+    };
+
+    auto _func = [](bool _first) {
+        if(!_first)
+            cmath_reentry_t::enable();
+
+        auto inp = std::min<double>(10.0, exp(5.0));
+        {
+            auto _configured = cmath_reentry_t::is_configured();
+            if(_first)
+            {
+                EXPECT_FALSE(_configured);
+            }
+            else
+            {
+                EXPECT_TRUE(_configured);
+            }
+        }
+        auto _handle = exp_bundle_t(details::get_test_name());
+        {
+            auto _info = cmath_reentry_t::get_info();
+            EXPECT_GE(_info[0], 0) << "# ready";
+            EXPECT_GE(_info[1], (_first) ? 0 : 2) << "# filled";
+            EXPECT_GE(_info[2], 0) << "# is_active";
+            EXPECT_EQ(_info[3], 0) << "# is_finalized";
+            EXPECT_EQ(_info[4], 0) << "# suppression";
+        }
+        _handle.start();
+        {
+            auto _configured = cmath_reentry_t::is_configured();
+            EXPECT_TRUE(_configured);
+            auto _info = cmath_reentry_t::get_info();
+            EXPECT_GE(_info[0], 2) << "# ready";
+            EXPECT_GE(_info[1], 2) << "# filled";
+            EXPECT_GE(_info[2], 2) << "# is_active";
+            EXPECT_EQ(_info[3], 0) << "# is_finalized";
+            EXPECT_EQ(_info[4], 0) << "# suppression";
+        }
+        volatile double ret = inp;
+        for(int i = 0; i < 10; ++i)
+        {
+            auto val = ret / ::pow(ret, 2);
+            ret += test_exp(val);
+            ext::do_puts(TIMEMORY_JOIN("", "computing exp(", val, ")").c_str());
+        }
+        {
+            auto _info = cmath_reentry_t::get_info();
+            EXPECT_GE(_info[0], 2) << "# ready";
+            EXPECT_GE(_info[1], 2) << "# filled";
+            EXPECT_GE(_info[2], 2) << "# is_active";
+            EXPECT_EQ(_info[3], 0) << "# is_finalized";
+            EXPECT_EQ(_info[4], 0) << "# suppression";
+        }
+        _handle.stop();
+        {
+            auto _info = cmath_reentry_t::get_info();
+            EXPECT_GE(_info[0], 0) << "# ready";
+            EXPECT_GE(_info[1], 2) << "# filled";
+            EXPECT_GE(_info[2], 0) << "# is_active";
+            EXPECT_EQ(_info[3], 0) << "# is_finalized";
+            EXPECT_EQ(_info[4], 0) << "# suppression";
+        }
+        cmath_reentry_t::disable();
+        {
+            auto _configured = cmath_reentry_t::is_configured();
+            EXPECT_FALSE(_configured);
+            auto _info = cmath_reentry_t::get_info();
+            EXPECT_GE(_info[0], 0) << "# ready";
+            EXPECT_GE(_info[1], 2) << "# filled";
+            EXPECT_GE(_info[2], 0) << "# is_active";
+            EXPECT_GE(_info[3], 2) << "# is_finalized";
+            EXPECT_EQ(_info[4], 0) << "# suppression";
+        }
+        if(_first)
+            printf("result: %f\n", ret);
+        EXPECT_GT(ret, 10.9) << "result: " << ret;
+    };
+
+    auto _parallel_func = [_func](size_t _beg, size_t _end) {
+        for(size_t j = _beg; j < _end; ++j)
+        {
+            printf("Starting iteration %zu...\n", j);
+            _func(j == 0);
+        }
+    };
+
+    std::thread{ _parallel_func, 0, exp_nitr / 2 }.join();
+    _parallel_func(exp_nitr / 2, exp_nitr);
+
+    printf("number of exp  intercepts: %lu\n", cmath_intercept::get_intercepts().load());
+    printf("number of puts intercepts: %lu\n", cmath_intercept::puts_intercepts().load());
+
+    EXPECT_EQ(cmath_reentry::get_intercepts(), 10 * exp_nitr)
+        << "number of exp intercepts: " << cmath_reentry::get_intercepts();
+    EXPECT_EQ(cmath_reentry::puts_intercepts(), 10 * exp_nitr)
+        << "number of puts intercepts: " << cmath_reentry::puts_intercepts();
 
     tim::settings::debug() = _dbg;
 }
@@ -936,5 +1132,5 @@ TEST_F(gotcha_tests, mpip)
 //======================================================================================//
 
 TIMEMORY_INITIALIZE_STORAGE(mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t, malloc_gotcha_t,
-                            cmath_intercept, cmath_intercept_t, wall_clock, cpu_clock,
-                            peak_rss)
+                            cmath_intercept, cmath_intercept_t, cmath_reentry,
+                            cmath_reentry_t, wall_clock, cpu_clock, peak_rss)

@@ -26,65 +26,67 @@
 
 #ifndef TIMEMORY_SAMPLING_SAMPLER_HPP_
 #    define TIMEMORY_SAMPLING_SAMPLER_HPP_
+#endif
 
-#    include "timemory/backends/threading.hpp"
-#    include "timemory/components/base.hpp"
-#    include "timemory/macros/language.hpp"
-#    include "timemory/macros/os.hpp"
-#    include "timemory/mpl/apply.hpp"
-#    include "timemory/operations/types/sample.hpp"
-#    include "timemory/sampling/allocator.hpp"
-#    include "timemory/sampling/timer.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/settings/settings.hpp"
-#    include "timemory/units.hpp"
-#    include "timemory/utility/backtrace.hpp"
-#    include "timemory/utility/demangle.hpp"
-#    include "timemory/utility/macros.hpp"
-#    include "timemory/variadic/macros.hpp"
+#include "timemory/backends/threading.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/macros/language.hpp"
+#include "timemory/macros/os.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/operations/types/sample.hpp"
+#include "timemory/sampling/allocator.hpp"
+#include "timemory/sampling/timer.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/settings/settings.hpp"
+#include "timemory/units.hpp"
+#include "timemory/utility/backtrace.hpp"
+#include "timemory/utility/demangle.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/variadic/macros.hpp"
 
 // C++ includes
-#    include <array>
-#    include <atomic>
-#    include <deque>
-#    include <functional>
-#    include <map>
-#    include <set>
-#    include <string>
-#    include <type_traits>
-#    include <utility>
-#    include <vector>
+#include <array>
+#include <atomic>
+#include <deque>
+#include <functional>
+#include <map>
+#include <set>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 // C includes
-#    include <cassert>
-#    include <cerrno>
-#    include <csignal>
-#    include <cstdio>
-#    include <cstdlib>
-#    include <cstring>
-#    include <sys/time.h>
-#    include <sys/types.h>
-#    include <sys/wait.h>
+#include <cassert>
+#include <cerrno>
+#include <csignal>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
-#    if defined(TIMEMORY_UNIX)
-#        include <unistd.h>
-#    endif
+#if defined(TIMEMORY_UNIX)
+#    include <unistd.h>
+#endif
 
-#    if !defined(TIMEMORY_SAMPLER_DEPTH_DEFAULT)
-#        define TIMEMORY_SAMPLER_DEPTH_DEFAULT 64
-#    endif
+#if !defined(TIMEMORY_SAMPLER_DEPTH_DEFAULT)
+#    define TIMEMORY_SAMPLER_DEPTH_DEFAULT 64
+#endif
 
-#    if !defined(TIMEMORY_SAMPLER_OFFSET_DEFAULT)
-#        define TIMEMORY_SAMPLER_OFFSET_DEFAULT 3
-#    endif
+#if !defined(TIMEMORY_SAMPLER_OFFSET_DEFAULT)
+#    define TIMEMORY_SAMPLER_OFFSET_DEFAULT 3
+#endif
 
-#    if !defined(TIMEMORY_SAMPLER_USE_LIBUNWIND_DEFAULT)
-#        if defined(TIMEMORY_USE_LIBUNWIND)
-#            define TIMEMORY_SAMPLER_USE_LIBUNWIND_DEFAULT true
-#        else
-#            define TIMEMORY_SAMPLER_USE_LIBUNWIND_DEFAULT false
-#        endif
+#if !defined(TIMEMORY_SAMPLER_USE_LIBUNWIND_DEFAULT)
+#    if defined(TIMEMORY_USE_LIBUNWIND)
+#        define TIMEMORY_SAMPLER_USE_LIBUNWIND_DEFAULT true
+#    else
+#        define TIMEMORY_SAMPLER_USE_LIBUNWIND_DEFAULT false
 #    endif
+#endif
 
 namespace tim
 {
@@ -100,10 +102,6 @@ namespace trait
 {
 template <typename CompT, size_t N>
 struct is_component<sampling::sampler<CompT, N>> : true_type
-{};
-
-template <typename Tp>
-struct prevent_reentry : std::true_type
 {};
 
 template <typename Tp>
@@ -545,8 +543,7 @@ public:
 }  // namespace sampling
 }  // namespace tim
 
-#    if !defined(TIMEMORY_SAMPLING_SAMPLER_USE_EXTERN) &&                                \
-        !defined(TIMEMORY_SAMPLING_SAMPLER_CPP_)
-#        include "timemory/sampling/sampler.cpp"
-#    endif
+#if !defined(TIMEMORY_SAMPLING_SAMPLER_USE_EXTERN) &&                                    \
+    !defined(TIMEMORY_SAMPLING_SAMPLER_CPP_)
+#    include "timemory/sampling/sampler.cpp"
 #endif

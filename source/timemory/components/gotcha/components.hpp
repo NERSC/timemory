@@ -30,18 +30,23 @@
 #pragma once
 
 #ifndef TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_HPP_
-#    define TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_HPP_ 1
+#    define TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_HPP_
+#endif
 
-#    include "timemory/components/base.hpp"
-#    include "timemory/components/gotcha/backends.hpp"
-#    include "timemory/components/gotcha/types.hpp"
-#    include "timemory/macros.hpp"
-#    include "timemory/mpl/apply.hpp"
-#    include "timemory/mpl/function_traits.hpp"
-#    include "timemory/mpl/types.hpp"
-#    include "timemory/settings/declaration.hpp"
-#    include "timemory/units.hpp"
-#    include "timemory/variadic/types.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/gotcha/backends.hpp"
+#include "timemory/components/gotcha/types.hpp"
+#include "timemory/macros.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/function_traits.hpp"
+#include "timemory/mpl/quirks.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/settings/declaration.hpp"
+#include "timemory/units.hpp"
+#include "timemory/utility/types.hpp"
+#include "timemory/variadic/types.hpp"
+
+#include <type_traits>
 
 //======================================================================================//
 //
@@ -213,16 +218,9 @@ struct gotcha
     using get_initializer_t = std::function<config_t()>;
     using get_select_list_t = std::function<select_list_t()>;
 
-    static constexpr bool   is_fast = backend::gotcha::is_fast<BundleT>::value;
-    static constexpr size_t components_size =
-        backend::gotcha::num_components<DiffT, tuple_type>::value;
-    static constexpr bool differ_is_component =
-        backend::gotcha::replaces<DiffT, tuple_type>::value;
-    // backwards-compat
-    static constexpr bool differentiator_is_component = differ_is_component;
-
-    using operator_type =
-        typename std::conditional<differ_is_component, DiffT, void>::type;
+    static constexpr size_t components_size = mpl::get_tuple_size<tuple_type>::value;
+    static constexpr bool replaces = backend::gotcha::replaces<DiffT, tuple_type>::value;
+    using operator_type = typename std::conditional<replaces, DiffT, void>::type;
 
     static constexpr size_t capacity() { return Nt; }
 
@@ -297,7 +295,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-#    if !defined(TIMEMORY_NVCC_COMPILER)
+#if !defined(TIMEMORY_NVCC_COMPILER)
     template <size_t N, typename Ret, typename... Args>
     struct instrument<N, Ret, type_list<Args...>> : instrument<N, Ret, Args...>
     {};
@@ -305,7 +303,7 @@ public:
     template <size_t N, typename Ret, typename... Args>
     struct instrument<N, Ret, std::tuple<Args...>> : instrument<N, Ret, Args...>
     {};
-#    endif
+#endif
 
     template <size_t N, typename Ret, typename... Args>
     static void gotcha_factory(const std::string& _func, const std::string& _tool = "",
@@ -391,120 +389,59 @@ private:
 
     //----------------------------------------------------------------------------------//
 
-    template <size_t N, typename Ret, typename... Args, typename Tp = DiffT,
-              typename TupleT = tuple_type>
-    static binding_t construct_binder(
-        const std::string& _func,
-        std::enable_if_t<backend::gotcha::wraps<Tp, TupleT>::value, int> = 0,
-        std::enable_if_t<!std::is_same<Ret, void>::value, int>           = 0)
+    template <size_t N, typename Ret, typename... Args>
+    static binding_t construct_binder(const std::string& _func)
     {
-        static_assert(!backend::gotcha::replaces<Tp, tuple_type>::value,
-                      "Error! binder should not satisfy the replaces concept");
-        static_assert(!backend::gotcha::is_fast<BundleT>::value,
-                      "Error! binder should not satisfy the is_fast concept");
+        auto& _data = get_data()[N];
 
-        auto& _data   = get_data()[N];
-        _data.wrapper = (void*) this_type::wrap<N, Ret, Args...>;
-        return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
+        constexpr bool _is_fast =
+            trait::gotcha_trait<trait::fast_gotcha, this_type, N>::value;
+        if constexpr(_is_fast)
+        {
+            _data.wrapper = (void*) this_type::fast_func<N, Ret, Args...>;
+            return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
+        }
+        else
+        {
+            if constexpr(replaces)
+            {
+                _data.wrapper = (void*) this_type::replace_func<N, Ret, Args...>;
+                return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
+            }
+            else
+            {
+                _data.wrapper = (void*) this_type::wrap<N, Ret, Args...>;
+                return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
+            }
+        }
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <size_t N, typename Ret, typename... Args, typename Tp = DiffT,
-              typename TupleT = tuple_type>
-    static binding_t construct_binder(
-        const std::string& _func,
-        std::enable_if_t<backend::gotcha::wraps<Tp, TupleT>::value, int> = 0,
-        std::enable_if_t<std::is_same<Ret, void>::value, long>           = 0)
-    {
-        static_assert(!backend::gotcha::replaces<Tp, tuple_type>::value,
-                      "Error! binder should not satisfy the replaces concept");
-        static_assert(!backend::gotcha::is_fast<BundleT>::value,
-                      "Error! binder should not satisfy the is_fast concept");
-
-        auto& _data   = get_data()[N];
-        _data.wrapper = (void*) this_type::wrap_void<N, Args...>;
-        return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <size_t N, typename Ret, typename... Args, typename Tp = DiffT,
-              typename Up = BundleT, typename TupleT = tuple_type>
-    static binding_t construct_binder(
-        const std::string& _func,
-        std::enable_if_t<backend::gotcha::replaces<Tp, TupleT>::value, int> = 0,
-        std::enable_if_t<!backend::gotcha::is_fast<Up>::value, int>         = 0,
-        std::enable_if_t<!std::is_same<Ret, void>::value, int>              = 0)
-    {
-        static_assert(!backend::gotcha::wraps<Tp, tuple_type>::value,
-                      "Error! binder should not satisfy the wraps concept");
-        static_assert(!backend::gotcha::is_fast<BundleT>::value,
-                      "Error! binder should not satisfy the is_fast concept");
-
-        auto& _data   = get_data()[N];
-        _data.wrapper = (void*) this_type::replace_func<N, Ret, Args...>;
-        return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <size_t N, typename Ret, typename... Args, typename Tp = DiffT,
-              typename Up = BundleT, typename TupleT = tuple_type>
-    static binding_t construct_binder(
-        const std::string& _func,
-        std::enable_if_t<backend::gotcha::replaces<Tp, TupleT>::value, int> = 0,
-        std::enable_if_t<!backend::gotcha::is_fast<Up>::value, int>         = 0,
-        std::enable_if_t<std::is_same<Ret, void>::value, long>              = 0)
-    {
-        static_assert(!backend::gotcha::wraps<Tp, tuple_type>::value,
-                      "Error! binder should not satisfy the wraps concept");
-        static_assert(!backend::gotcha::is_fast<BundleT>::value,
-                      "Error! binder should not satisfy the is_fast concept");
-
-        auto& _data   = get_data()[N];
-        _data.wrapper = (void*) this_type::replace_void_func<N, Args...>;
-        return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <size_t N, typename Ret, typename... Args, typename Tp = DiffT,
-              typename Up = BundleT, typename TupleT = tuple_type>
-    static binding_t construct_binder(
-        const std::string& _func,
-        std::enable_if_t<backend::gotcha::replaces<Tp, TupleT>::value, int> = 0,
-        std::enable_if_t<backend::gotcha::is_fast<Up>::value, long>         = 0)
-    {
-        static_assert(!backend::gotcha::wraps<Tp, tuple_type>::value,
-                      "Error! binder should not satisfy the wraps concept");
-
-        auto& _data   = get_data()[N];
-        _data.wrapper = (void*) this_type::fast_func<N, Ret, Args...>;
-        return binding_t{ _func.c_str(), _data.wrapper, &_data.wrappee };
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename Comp, typename Ret, typename... Args, typename Tp = DiffT,
-              enable_if_t<backend::gotcha::replaces<Tp, tuple_type>::value, int> = 0>
+    template <typename Comp, typename Ret, typename... Args>
     static Ret invoke(gotcha_data&& _data, Comp& _comp, Ret (*_func)(Args...),
                       Args&&... _args)
     {
-        constexpr bool set_data_v = !quirk::has_quirk<quirk::static_data, BundleT>::value;
-        using Type                = DiffT;
-        Type& _obj                = *_comp.template get<Type>();
-        return gotcha_invoker<Type, Ret, set_data_v>{}(
-            _obj, std::forward<gotcha_data>(_data), _func, std::forward<Args>(_args)...);
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename Comp, typename Ret, typename... Args, typename Tp = DiffT,
-              enable_if_t<!backend::gotcha::replaces<Tp, tuple_type>::value, int> = 0>
-    static Ret invoke(gotcha_data&&, Comp&, Ret (*_func)(Args...), Args&&... _args)
-    {
-        return _func(std::forward<Args>(_args)...);
+        if constexpr(backend::gotcha::replaces<DiffT, tuple_type>::value)
+        {
+            constexpr bool set_data_v =
+                !quirk::has_quirk<quirk::static_data, BundleT>::value;
+            using Type = DiffT;
+            Type& _obj = *_comp.template get<Type>();
+            return gotcha_invoker<Type, Ret, set_data_v>{}(
+                _obj, std::forward<gotcha_data>(_data), _func,
+                std::forward<Args>(_args)...);
+        }
+        else if constexpr(!backend::gotcha::replaces<DiffT, tuple_type>::value)
+        {
+            return _func(std::forward<Args>(_args)...);
+        }
+        else
+        {
+            static_assert(std::is_empty<this_type>::value,
+                          "Error! invoke did not satisfy any expected conditions");
+        }
+        consume_parameters(_data, _comp);
     }
 
     //----------------------------------------------------------------------------------//
@@ -532,14 +469,8 @@ private:
     template <size_t N, typename Ret, typename... Args>
     static TIMEMORY_NOINLINE Ret wrap(Args... _args);
 
-    template <size_t N, typename... Args>
-    static TIMEMORY_NOINLINE void wrap_void(Args... _args);
-
     template <size_t N, typename Ret, typename... Args>
     static TIMEMORY_NOINLINE Ret replace_func(Args... _args);
-
-    template <size_t N, typename... Args>
-    static TIMEMORY_NOINLINE void replace_void_func(Args... _args);
 
     template <size_t N, typename Ret, typename... Args>
     static TIMEMORY_INLINE Ret fast_func(Args... _args);
@@ -564,8 +495,6 @@ public:
 //
 }  // namespace component
 }  // namespace tim
-
-#endif  // TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_HPP_
 
 #if !defined(TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_CPP_)
 #    include "timemory/components/gotcha/components.cpp"

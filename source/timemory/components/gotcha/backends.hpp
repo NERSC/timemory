@@ -45,38 +45,34 @@
 //
 namespace tim
 {
-namespace quirk
+namespace trait
 {
-struct fast;
-}
+template <typename Tp>
+struct fast_gotcha : std::false_type
+{};
+//
+template <size_t N, typename CompT, typename DiffT>
+struct static_data<component::gotcha<N, CompT, DiffT>>
+{
+    using type                  = std::conditional_t<is_one_of<DiffT, CompT>::value ||
+                                        (mpl::get_tuple_size<CompT>::value == 0 &&
+                                         concepts::is_component<DiffT>::value),
+                                    std::true_type, std::false_type>;
+    static constexpr bool value = type::value;
+};
+}  // namespace trait
 //
 namespace backend
 {
 namespace gotcha
 {
-template <typename Tp>
-struct is_fast : quirk::has_quirk<quirk::fast, Tp>
-{};
 //
-template <typename Tp, typename Up>
-struct num_components
-{
-    static constexpr size_t value =
-        (is_fast<Tp>::value) ? 0 : mpl::get_tuple_size<Up>::value;
-};
-//
-template <typename Tp, typename Up>
-struct wraps
-{
-    static constexpr bool value = num_components<Tp, Up>::value > 0;
-};
-//
-template <typename Tp, typename Up>
+template <typename DiffT, typename DataT>
 struct replaces
 {
     static constexpr bool value =
-        is_one_of<Tp, Up>::value ||
-        (num_components<Tp, Up>::value == 0 && concepts::is_component<Tp>::value);
+        is_one_of<DiffT, DataT>::value ||
+        (mpl::get_tuple_size<DataT>::value == 0 && concepts::is_component<DiffT>::value);
 };
 }  // namespace gotcha
 }  // namespace backend

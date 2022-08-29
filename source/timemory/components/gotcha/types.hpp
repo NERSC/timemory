@@ -27,13 +27,10 @@
 #include "timemory/components/gotcha/suppression.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
+#include "timemory/mpl/concepts.hpp"  // component::gotcha forward decl
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 
-// Declared in timemory/mpl/concepts.hpp
-// TIMEMORY_DECLARE_TEMPLATE_COMPONENT(gotcha, size_t Nt, typename Components,
-//                                    typename Differentiator = anonymous_t<void>)
-//
 TIMEMORY_DECLARE_COMPONENT(malloc_gotcha)
 TIMEMORY_DECLARE_COMPONENT(memory_allocations)
 //

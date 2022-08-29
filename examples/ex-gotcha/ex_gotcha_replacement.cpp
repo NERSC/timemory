@@ -96,7 +96,7 @@ using exp2expf_ot = typename exp_repl_t::operator_type;
 static_assert(std::is_same<exp2expf_ot, exp_replace>::value,
               "exp_repl_t operator_type is not exp_replace");
 static_assert(exp_repl_t::components_size == 0, "exp_repl_t should have no components");
-static_assert(exp_repl_t::differ_is_component, "exp_repl_t won't replace exp");
+static_assert(exp_repl_t::replaces, "exp_repl_t does not replace exp!");
 
 using exptime_ot = typename exp_time_t::operator_type;
 using exptime_ct = typename exp_time_t::bundle_type;
@@ -105,7 +105,7 @@ static_assert(std::is_same<exptime_ot, void>::value,
 static_assert(exp_time_t::components_size == 1, "exp_time_t should have no components");
 static_assert(std::is_same<exptime_ct, wc_t>::value,
               "exp_time_t has incorrect components");
-static_assert(!exp_time_t::differ_is_component, "exp_repl_t won't replace exp");
+static_assert(!exp_time_t::replaces, "exp_time_t replaces exp!");
 
 //======================================================================================//
 
