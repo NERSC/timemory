@@ -157,6 +157,8 @@ struct vsettings
     }
 
 protected:
+    friend struct settings;
+
     static int get_debug()
     {
         static bool _bool_val = get_env(TIMEMORY_SETTINGS_PREFIX "DEBUG_SETTINGS", false);
@@ -245,9 +247,15 @@ vsettings::report_change(Tp _old, const Tp& _new)
     {
         std::ostringstream oss;
         oss << std::boolalpha;
-        oss << "[timemory::settings] " << m_name << " (env: " << m_env_name
-            << ") changed: " << _old << " --> " << _new << "\n";
-        if(get_debug() > 1)
+        oss << "[" << TIMEMORY_PROJECT_NAME << "][settings] " << m_name << " ("
+            << m_env_name << ") changed: " << _old << " --> " << _new;
+        if(m_cfg_updated)
+            oss << " [via config]\n";
+        else if(m_env_updated)
+            oss << " [via environ]\n";
+        else
+            oss << "\n";
+        if(get_debug() >= 2)
         {
             timemory_print_demangled_backtrace<6, 3>(oss);
         }

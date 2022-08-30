@@ -119,6 +119,14 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
         // allow environment overrides
         settings::parse(_settings);
 
+        auto _unknown = _settings->get_unknown_configs();
+        for(const auto& itr : _unknown)
+        {
+            auto _v = _settings->find(itr.first);
+            if(_v == _settings->end())
+                set_env(itr.first, itr.second, 0);
+        }
+
         if(_settings->get_enable_signal_handler())
         {
             auto _exit_action = [](int nsig) {

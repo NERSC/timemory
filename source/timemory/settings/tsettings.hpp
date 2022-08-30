@@ -253,11 +253,18 @@ tsettings<Tp, Vp>::parse()
         char* c_env_val = std::getenv(m_env_name.c_str());
         if(c_env_val)
         {
+            auto _env_upd = get_environ_updated();
+            auto _cfg_upd = get_config_updated();
+
+            set_config_updated(false);
+            set_environ_updated(true);
+
             auto _updated = parse(std::string{ c_env_val });
-            if(_updated)
+
+            if(!_updated)
             {
-                set_config_updated(false);
-                set_environ_updated(true);
+                set_config_updated(_cfg_upd);
+                set_environ_updated(_env_upd);
             }
             return _updated;
         }

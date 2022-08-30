@@ -37,6 +37,7 @@
 #include "timemory/utility/argparse.hpp"
 #include "timemory/utility/bits/signals.hpp"
 #include "timemory/utility/declaration.hpp"
+#include "timemory/utility/delimit.hpp"
 #include "timemory/utility/filepath.hpp"
 #include "timemory/utility/md5.hpp"
 #include "timemory/utility/types.hpp"
@@ -1842,7 +1843,7 @@ settings::read(std::istream& ifs, std::string inp)
     std::string _inp = inp;
     if(_inp.length() > 30)
     {
-        auto _inp_delim = tim::delimit(filepath::canonical(inp), "/");
+        auto _inp_delim = delimit(filepath::canonical(inp), "/");
         auto _sz        = _inp_delim.size();
         if(_sz > 4)
             _inp = TIMEMORY_JOIN('/', "", _inp_delim.at(0), _inp_delim.at(1), "...",
@@ -2116,15 +2117,15 @@ settings::read(std::istream& ifs, std::string inp)
             {
                 auto line_key  = line.substr(0, _equal_pos);
                 auto line_data = line.substr(_equal_pos + 1);
-                delim          = tim::delimit(line_key, "\n\t ");
+                delim          = delimit(line_key, "\n\t ");
                 while(delim.size() > 1)
                     delim.pop_back();
-                for(const auto& ditr : tim::delimit(line_data, "\n\t,; "))
+                for(const auto& ditr : delimit(line_data, "\n\t,; "))
                     delim.emplace_back(ditr);
             }
             else
             {
-                delim = tim::delimit(line, "\n\t,;= ");
+                delim = delimit(line, "\n\t,;= ");
             }
             if(!delim.empty())
             {
@@ -2139,7 +2140,7 @@ settings::read(std::istream& ifs, std::string inp)
                     if(_v != delim.at(i))
                     {
                         std::string _nv = {};
-                        for(const auto& itr : tim::delimit(_v, "\n\t,; "))
+                        for(const auto& itr : delimit(_v, "\n\t,; "))
                             _nv += "," + itr;
                         if(!_nv.empty())
                             _nv = _nv.substr(1);
@@ -2189,7 +2190,7 @@ settings::read(std::istream& ifs, std::string inp)
                         ++valid;
                         if(itr.second->matches("config_file"))
                         {
-                            auto _cfgs = tim::delimit(val, ";,: ");
+                            auto _cfgs = delimit(val, ";,: ");
                             for(const auto& fitr : _cfgs)
                             {
                                 if(format(fitr, get_tag()) != format(inp, get_tag()))
@@ -2233,13 +2234,13 @@ settings::read(std::istream& ifs, std::string inp)
                         {
                             TIMEMORY_PRINTF(
                                 stderr,
-                                "[%s][settings]['%s']> Unknown setting with "
-                                "recognized prefix ('%s') exported to environment: "
+                                "[settings]['%s']> Unknown setting with "
+                                "recognized prefix ('%s') will be exported to "
+                                "environment after timemory_init (if not found later): "
                                 "'%s' (value = '%s')\n",
-                                TIMEMORY_PROJECT_NAME, _inp.c_str(),
-                                TIMEMORY_SETTINGS_PREFIX, _key.c_str(), val.c_str());
+                                _inp.c_str(), TIMEMORY_SETTINGS_PREFIX, _key.c_str(),
+                                val.c_str());
                         }
-                        tim::set_env(key, val, 0);
                         if(!std::any_of(m_unknown_configs.begin(),
                                         m_unknown_configs.end(),
                                         [&key, &val](auto&& itr) {
@@ -2252,12 +2253,10 @@ settings::read(std::istream& ifs, std::string inp)
                     {
                         if(_verbose >= 2)
                         {
-                            TIMEMORY_PRINTF(
-                                stderr,
-                                "[%s][settings]['%s']> WARNING! Unknown setting "
-                                "ignored: '%s' (value = '%s')\n",
-                                TIMEMORY_PROJECT_NAME, _inp.c_str(), key.c_str(),
-                                val.c_str());
+                            TIMEMORY_PRINTF(stderr,
+                                            "[settings]['%s']> WARNING! Unknown setting "
+                                            "ignored: '%s' (value = '%s')\n",
+                                            _inp.c_str(), key.c_str(), val.c_str());
                         }
                     }
                 }
@@ -2285,7 +2284,7 @@ settings::init_config(bool _search_default)
     };
 
     auto _cfg   = get_config_file();
-    auto _files = tim::delimit(_cfg, ",;:");
+    auto _files = delimit(_cfg, ",;:");
     for(auto citr : _files)
     {
         // resolve any keys

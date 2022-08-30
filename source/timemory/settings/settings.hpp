@@ -1061,7 +1061,34 @@ settings::insert(Sp&& _env, const std::string& _name, const std::string& _desc, 
 
     auto _sid = std::string{ std::forward<Sp>(_env) };
     if(get_initialized())  // don't set env before timemory_init
+    {
+        if(vsettings::get_debug() >= 1)
+        {
+            std::ostringstream oss;
+            oss << "[" << TIMEMORY_PROJECT_NAME << "][settings] set_env(\"" << _sid
+                << "\", \"" << _init << "\", 0);\n";
+            log::stream(std::cerr, log::color::warning()) << oss.str();
+        }
         set_env(_sid, _init, 0);
+    }
+    else
+    {
+        auto _find_unknown = [&]() {
+            for(auto itr = m_unknown_configs.begin(); itr != m_unknown_configs.end();
+                ++itr)
+            {
+                if(itr->first == _sid || itr->first == _name)
+                    return itr;
+            }
+            return m_unknown_configs.end();
+        };
+        auto itr = _find_unknown();
+        while(itr != m_unknown_configs.end())
+        {
+            m_unknown_configs.erase(itr);
+            itr = _find_unknown();
+        }
+    }
     m_order.emplace_back(_sid);
     auto& _back = m_order.back();
     return m_data.emplace(string_view_t{ _back },
@@ -1085,7 +1112,35 @@ settings::insert(tsetting_pointer_t<Tp, Vp> _ptr, Sp&& _env)
         if(!_sid.empty())
         {
             if(get_initialized())  // don't set env before timemory_init
+            {
+                if(vsettings::get_debug() >= 1)
+                {
+                    std::ostringstream oss;
+                    oss << "[" << TIMEMORY_PROJECT_NAME << "][settings] set_env(\""
+                        << _sid << "\", \"" << _ptr->as_string() << "\", 0);\n";
+                    log::stream(std::cerr, log::color::warning()) << oss.str();
+                }
                 set_env(_sid, _ptr->as_string(), 0);
+            }
+            else
+            {
+                auto _find_unknown = [&]() {
+                    for(auto itr = m_unknown_configs.begin();
+                        itr != m_unknown_configs.end(); ++itr)
+                    {
+                        if(itr->first == _ptr->get_name() ||
+                           itr->first == _ptr->get_env_name())
+                            return itr;
+                    }
+                    return m_unknown_configs.end();
+                };
+                auto itr = _find_unknown();
+                while(itr != m_unknown_configs.end())
+                {
+                    m_unknown_configs.erase(itr);
+                    itr = _find_unknown();
+                }
+            }
             m_order.emplace_back(_sid);
             auto& _back = m_order.back();
             return m_data.emplace(string_view_t{ _back }, _ptr);

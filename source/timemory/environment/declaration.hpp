@@ -257,8 +257,22 @@ template <typename Tp>
 void
 set_env(const std::string& env_var, const Tp& _val, int override)
 {
+    static bool _debug = []() {
+        bool _env_val = get_env(TIMEMORY_SETTINGS_PREFIX "DEBUG_ENV", false);
+        return get_env(TIMEMORY_SETTINGS_PREFIX "DEBUG_SETTINGS", _env_val);
+    }();
+
     std::stringstream ss_val;
     ss_val << _val;
+
+    if(_debug)
+    {
+        std::ostringstream oss;
+        oss << "[" << TIMEMORY_PROJECT_NAME << "] set_env(\"" << env_var << "\", \""
+            << ss_val.str() << "\", " << override << ");\n";
+        std::cerr << log::color::warning() << oss.str() << log::color::end();
+    }
+
 #if defined(TIMEMORY_MACOS) || (defined(TIMEMORY_LINUX) && (_POSIX_C_SOURCE >= 200112L))
     setenv(env_var.c_str(), ss_val.str().c_str(), override);
 #elif defined(TIMEMORY_WINDOWS)
