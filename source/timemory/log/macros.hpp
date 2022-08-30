@@ -31,6 +31,7 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <iosfwd>
 #include <string>
 #include <utility>
@@ -142,7 +143,14 @@ timemory_printf(FILE* _file, const char _fmt[], Arg arg, Args... args)
     if(_file == stdout || _file == stderr)
     {
 #if defined(TIMEMORY_PROJECT_NAME)
-        fprintf(_file, "%s[%s] ", ::tim::log::color::info(), TIMEMORY_PROJECT_NAME);
+        if(std::string_view{ _fmt }.find("[" TIMEMORY_PROJECT_NAME "]") != 0)
+        {
+            fprintf(_file, "%s[%s]", ::tim::log::color::info(), TIMEMORY_PROJECT_NAME);
+            if(strlen(_fmt) > 0 && _fmt[0] != '[')
+                fprintf(_file, " ");
+        }
+        else
+            fprintf(_file, "%s", ::tim::log::color::info());
 #else
         fprintf(_file, "%s", ::tim::log::color::info());
 #endif
