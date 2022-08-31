@@ -271,6 +271,7 @@ template <typename Tp>
 void
 allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
 {
+    threading::offset_this_id(true);
     threading::set_thread_name(
         std::string{ "samp.alloc." + std::to_string(_alloc->m_tid) }.c_str());
 
