@@ -130,7 +130,8 @@ get_id(std::atomic<int64_t>& _global_counter, std::atomic<int64_t>& _offset_coun
         timemory_print_demangled_backtrace<8>(std::cerr, std::string{},
                                               std::string{ "threading::get_id() [id=" } +
                                                   std::to_string(_id) +
-                                                  std::string{ "]" });
+                                                  std::string{ "]" },
+                                              std::string{ " " }, false);
     }
 
     // disable the ability to offset the thread id
