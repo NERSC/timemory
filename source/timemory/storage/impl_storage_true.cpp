@@ -883,7 +883,7 @@ storage<Type, true>::get_shared_manager()
             {
                 auto _debug_v = _settings->get_debug();
                 auto _verb_v  = _settings->get_verbose();
-                if(_debug_v || _verb_v > 1)
+                if(_debug_v || _verb_v >= 3)
                 {
                     TIMEMORY_PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                         "calling singleton::reset(this)");
@@ -892,7 +892,7 @@ storage<Type, true>::get_shared_manager()
                 _instance = this_type::get_singleton();
                 if((_is_master || common_singleton::is_main_thread()) && _instance)
                 {
-                    if(_debug_v || _verb_v > 1)
+                    if(_debug_v || _verb_v >= 3)
                     {
                         TIMEMORY_PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
                                             "calling singleton::reset()");
