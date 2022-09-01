@@ -645,19 +645,19 @@ gotcha<Nt, BundleT, DiffT>::wrap(Args... _args)
         {
             if constexpr(_static_data)
             {
-                static bundle_type _bundle = []() {
-                    bundle_type _v{ _data.tool_id };
-                    return _v;
-                }();
+                static bool        _once = false;
+                static bundle_type _bundle =
+                    operation::construct<bundle_type>{}(_data.tool_id);
+                if(!_once && (_once = true))
+                    operation::set_data<bundle_type>{}(_bundle, get_data()[N]);
 
                 _bundle.construct(_args...);
                 _bundle.start();
-                _bundle.store();
                 _bundle.audit(audit::incoming{}, _args...);
                 Ret _ret = invoke<bundle_type>(std::forward<gotcha_data>(_data), _bundle,
                                                _func, std::forward<Args>(_args)...);
-                _bundle.audit(_data, audit::outgoing{}, _ret);
-                _bundle.stop(_data);
+                _bundle.audit(audit::outgoing{}, _ret);
+                _bundle.stop();
                 return _ret;
             }
             else
@@ -678,15 +678,19 @@ gotcha<Nt, BundleT, DiffT>::wrap(Args... _args)
         {
             if constexpr(_static_data)
             {
-                static bundle_type _bundle{ _data.tool_id };
+                static bool        _once = false;
+                static bundle_type _bundle =
+                    operation::construct<bundle_type>{}(_data.tool_id);
+                if(!_once && (_once = true))
+                    operation::set_data<bundle_type>{}(_bundle, get_data()[N]);
+
                 _bundle.construct(_args...);
-                _bundle.start(_data);
-                _bundle.store(_data);
-                _bundle.audit(_data, audit::incoming{}, _args...);
+                _bundle.start();
+                _bundle.audit(audit::incoming{}, _args...);
                 invoke<bundle_type>(std::forward<gotcha_data>(_data), _bundle, _func,
                                     std::forward<Args>(_args)...);
-                _bundle.audit(_data, audit::outgoing{});
-                _bundle.stop(_data);
+                _bundle.audit(audit::outgoing{});
+                _bundle.stop();
             }
             else
             {

@@ -221,10 +221,11 @@ struct gotcha_data
     wrappee_t     wrappee      = nullptr;      /// the func pointer being wrapped
     wrappid_t     wrap_id      = {};           /// function name (possibly mangled)
     wrappid_t     tool_id      = {};           /// function name (unmangled)
+    bool*         suppression  = nullptr;      /// turn on/off some suppression var
+    bool*         debug        = nullptr;      /// enable debugging
+    void*         instance     = nullptr;      /// static instance of caller
     constructor_t constructor  = []() {};      /// wrap the function
     destructor_t  destructor   = []() {};      /// unwrap the function
-    bool*         suppression  = nullptr;      /// turn on/off some suppression var
-    bool*         debug        = nullptr;      //
 };
 //
 //======================================================================================//
