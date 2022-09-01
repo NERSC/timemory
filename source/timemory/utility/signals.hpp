@@ -299,7 +299,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
     auto&      message = os;
     sys_signal _sig    = (sys_signal)(sig);
 
-    message << "\n### ERROR ### ";
+    message << log::color::fatal() << "\n### ERROR ### ";
     if(dmp::is_initialized())
         message << " [ rank : " << dmp::rank() << " ] ";
     message << "Error code : " << sig;
