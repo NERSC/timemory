@@ -359,6 +359,13 @@ public:
         return invoke<operation::add_secondary>(std::forward<Args>(_args)...);
     }
 
+    /// pass data onto the components
+    template <typename... Args>
+    this_type& set_data(Args&&... _args)
+    {
+        return invoke<operation::set_data>(std::forward<Args>(_args)...);
+    }
+
     /// perform an add_secondary operation. This operation allows components to add
     /// additional entries to storage which are their direct descendant
     template <typename... Args>
@@ -663,8 +670,7 @@ public:
     int64_t     laps() const { return bundle_type::laps(); }
     std::string key() const { return bundle_type::key(); }
     uint64_t    hash() const { return bundle_type::hash(); }
-    bool&       store() { return bundle_type::store(); }
-    const bool& store() const { return bundle_type::store(); }
+    bool        store() const { return bundle_type::store(); }
     auto        prefix() const { return bundle_type::prefix(); }
     auto        get_prefix() const { return bundle_type::get_prefix(); }
 

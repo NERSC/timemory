@@ -540,6 +540,10 @@ public:
     template <typename... Args>
     this_type& update_statistics(Args&&... _args);
 
+    /// pass data onto the components
+    template <typename... Args>
+    this_type& set_data(Args&&... _args);
+
     /// generic member function for invoking user-provided operations
     /// \tparam OpT Operation struct
     template <template <typename> class OpT, typename... Args>

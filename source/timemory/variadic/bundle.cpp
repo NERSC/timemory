@@ -825,6 +825,17 @@ bundle<Tag, BundleT, TupleT>::update_statistics(Args&&... _args)
 //
 //
 template <typename Tag, typename BundleT, typename TupleT>
+template <typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::set_data(Args&&... _args)
+{
+    return invoke<operation::set_data>(std::forward<Args>(_args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
 template <template <typename> class OpT, typename... Args>
 typename bundle<Tag, BundleT, TupleT>::this_type&
 bundle<Tag, BundleT, TupleT>::invoke(Args&&... _args)
