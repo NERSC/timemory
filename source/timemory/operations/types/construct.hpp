@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/mpl/concepts.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
@@ -52,7 +53,7 @@ struct construct
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(construct)
+    TIMEMORY_DEFAULT_OBJECT(construct)
 
     template <typename Arg, typename... Args>
     construct(type& obj, Arg&& arg, Args&&... args);
@@ -75,21 +76,36 @@ struct construct
         return Tp{};
     }
 
+    template <typename Arg, typename... Args>
+    decltype(auto) operator()(Arg&& arg, Args&&... args) const
+    {
+        if constexpr(concepts::is_unqualified_same<Arg, type>::value)
+        {
+            return sfinae(std::forward<Arg>(arg), 0, std::forward<Args>(args)...);
+        }
+        else if constexpr(std::is_default_constructible<Tp>::value)
+        {
+            return sfinae(Tp{}, 0, std::forward<Args>(args)...);
+        }
+    }
+
 private:
     // resolution #1 (best)
     // construction is possible with given arguments
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, Args&&... args)
-        -> decltype(Up(std::forward<Args>(args)...), void())
+    static auto sfinae(Up&& obj, int, Args&&... args)
+        -> decltype(Up{ std::forward<Args>(args)... })
     {
-        obj = Up(std::forward<Args>(args)...);
+        return (obj = Up{ std::forward<Args>(args)... });
     }
 
     // resolution #2
     // construction is not possible with given arguments
     template <typename Up, typename... Args>
-    auto sfinae(Up&, long, Args&&...) -> decltype(void(), void())
-    {}
+    static decltype(auto) sfinae(Up&& _v, long, Args&&...)
+    {
+        return std::forward<Up>(_v);
+    }
 };
 //
 template <typename Tp>
