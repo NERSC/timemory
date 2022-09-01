@@ -29,12 +29,15 @@
 
 #pragma once
 
+#include "timemory/compat/macros.h"
 #include "timemory/enum.h"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/utility/backtrace.hpp"
+#include "timemory/utility/demangle.hpp"
 
 #include <algorithm>
 #include <bitset>
@@ -61,9 +64,13 @@
                 if(!_once)                                                               \
                 {                                                                        \
                     _once = true;                                                        \
-                    fprintf(stderr, "[%s@%s:%i]> Warning! SFINAE disabled for %s\n",     \
-                            __FUNCTION__, __FILE__, __LINE__,                            \
-                            ::tim::demangle<TYPE>().c_str());                            \
+                    fprintf(stderr,                                                      \
+                            "%s[%s][%s:%i]> Warning! SFINAE disabled for %s\n%s",        \
+                            ::tim::log::color::warning(), TIMEMORY_PRETTY_FUNCTION,      \
+                            __FILE__, __LINE__, ::tim::demangle<TYPE>().c_str(),         \
+                            ::tim::log::color::end());                                   \
+                    timemory_print_demangled_backtrace<16>(std::cerr, std::string{},     \
+                                                           ::tim::demangle<TYPE>());     \
                 }                                                                        \
             }
 #    else

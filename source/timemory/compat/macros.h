@@ -58,11 +58,19 @@
 #    define TIMEMORY_LINESTR TIMEMORY_STRINGIZE(__LINE__)
 #endif
 
+#if !defined(TIMEMORY_PRETTY_FUNCTION)
+#    if defined(__GNUC__) || defined(__clang__)
+#        define TIMEMORY_PRETTY_FUNCTION __PRETTY_FUNCTION__
+#    elif defined(_MSC_VER) && _MSC_VER > 0
+#        define TIMEMORY_PRETTY_FUNCTION __FUNCSIG__
+#    else
+#        define TIMEMORY_PRETTY_FUNCTION __FUNCTION__
+#    endif
+#endif
+
 #if !defined(TIMEMORY_FUNC)
-#    if defined(TIMEMORY_USE_PRETTY_FUNCTION) && !defined(_WINDOWS)
-#        define TIMEMORY_FUNC __PRETTY_FUNCTION__
-#    elif defined(TIMEMORY_USE_PRETTY_FUNCTION) && defined(_WINDOWS)
-#        define TIMEMORY_FUNC __FUNCSIG__
+#    if defined(TIMEMORY_USE_PRETTY_FUNCTION)
+#        define TIMEMORY_FUNC TIMEMORY_PRETTY_FUNCTION
 #    else
 #        define TIMEMORY_FUNC __FUNCTION__
 #    endif
