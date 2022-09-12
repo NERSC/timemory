@@ -35,6 +35,8 @@
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/signals.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/log/color.hpp"
+#include "timemory/log/logger.hpp"
 #include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/declaration.hpp"
 #include "timemory/utility/macros.hpp"
@@ -358,26 +360,47 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
     sprintf(prefix, "[PID=%i][TID=%i]", (int) process::get_id(),
             (int) threading::get_id());
 
-    size_t ntot = 0;
-    auto   bt   = timemory_get_backtrace<64>();
-    for(const auto& itr : bt)
+#    if defined(TIMEMORY_USE_LIBUNWIND)
     {
-        if(strlen(itr) == 0)
-            break;
-        ++ntot;
-    }
+        size_t ntot = 0;
+        auto   bt   = get_demangled_unw_backtrace<64>();
+        for(const auto& itr : bt)
+        {
+            if(itr.empty())
+                continue;
+            ++ntot;
+        }
 
-    std::stringstream serr;
-    serr << "\nBacktrace:\n";
-    for(size_t i = 0; i < bt.size(); ++i)
+        log::stream(message, log::color::fatal()) << "\nBacktrace:\n";
+        for(size_t i = 0; i < bt.size(); ++i)
+        {
+            if(bt.at(i).empty())
+                continue;
+            log::stream(message, log::color::fatal())
+                << prefix << "[" << i << '/' << ntot << "]> " << bt.at(i) << "\n";
+        }
+    }
+#    endif
+
     {
-        if(!bt.at(i))
-            break;
-        if(strlen(bt.at(i)) == 0)
-            break;
-        message << prefix << "[" << i << '/' << ntot << "]> " << bt.at(i) << "\n";
-    }
+        size_t ntot = 0;
+        auto   bt   = get_demangled_native_backtrace<64>();
+        for(const auto& itr : bt)
+        {
+            if(itr.empty())
+                continue;
+            ++ntot;
+        }
 
+        log::stream(message, log::color::fatal()) << "\nBacktrace:\n";
+        for(size_t i = 0; i < bt.size(); ++i)
+        {
+            if(bt.at(i).empty())
+                continue;
+            log::stream(message, log::color::fatal())
+                << prefix << "[" << i << '/' << ntot << "]> " << bt.at(i) << "\n";
+        }
+    }
     // message << serr.str().c_str() << std::flush;
     os << std::flush;
 

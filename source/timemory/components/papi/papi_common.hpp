@@ -36,6 +36,7 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/delimit.hpp"
 
 #include <algorithm>
 #include <array>
@@ -217,11 +218,11 @@ papi_common::get_initializer()
         if(!papi_common::initialize_papi())
         {
             if(!settings::papi_quiet() && _changed)
-                fprintf(stderr,
-                        "[%s][papi_common]> PAPI could not be initialized "
-                        "(initialized: %s, working: %s)\n",
-                        TIMEMORY_PROJECT_NAME, state().is_initialized ? "y" : "n",
-                        state().is_working ? "y" : "n");
+                TIMEMORY_PRINTF(stderr,
+                                "[papi_common] PAPI could not be initialized "
+                                "(initialized: %s, working: %s)\n",
+                                state().is_initialized ? "y" : "n",
+                                state().is_working ? "y" : "n");
             return papi_event_vector{};
         }
 
@@ -231,16 +232,15 @@ papi_common::get_initializer()
                 (settings::verbose() > 1 || settings::debug()))
         {
             if(!_last_events_str.empty())
-                fprintf(stderr,
-                        "[%s][papi_common]> configuring new set of papi events: "
-                        "'%s'... (was: '%s')\n",
-                        TIMEMORY_PROJECT_NAME, events_str.c_str(),
-                        _last_events_str.c_str());
+                TIMEMORY_PRINTF(stderr,
+                                "[papi_common] configuring new set of papi events: "
+                                "'%s'... (was: '%s')\n",
+                                events_str.c_str(), _last_events_str.c_str());
             else
-                fprintf(stderr,
-                        "[%s][papi_common]> configuring new set of papi events: "
-                        "'%s'...\n",
-                        TIMEMORY_PROJECT_NAME, events_str.c_str());
+                TIMEMORY_PRINTF(stderr,
+                                "[papi_common] configuring new set of papi events: "
+                                "'%s'...\n",
+                                events_str.c_str());
         }
 
         // don't delimit colons!
@@ -283,23 +283,22 @@ papi_common::get_initializer()
 
             if(settings::debug())
             {
-                fprintf(stderr, "[%s][papi_common]> Querying event '%s'...\n",
-                        TIMEMORY_PROJECT_NAME, itr.c_str());
+                TIMEMORY_PRINTF(stderr, "[papi_common] Querying event '%s'...\n",
+                                itr.c_str());
             }
 
             if(!_query_event(itr))
             {
                 std::stringstream _ss{};
-                _ss << "[" << TIMEMORY_PROJECT_NAME << "][papi_common]> Event '" << itr
-                    << "' not valid";
+                log::stream(_ss, log::color::warning())
+                    << "[papi_common] Event '" << itr << "' not valid";
                 if(settings::papi_fail_on_error())
                 {
                     TIMEMORY_EXCEPTION(_ss.str());
                 }
                 else if(settings::verbose() >= 0)
                 {
-                    fprintf(stderr, "[%s] %s\n", TIMEMORY_PROJECT_NAME,
-                            _ss.str().c_str());
+                    TIMEMORY_PRINTF(stderr, "%s\n", _ss.str().c_str());
                 }
                 continue;
             }
@@ -309,9 +308,9 @@ papi_common::get_initializer()
             {
                 if(settings::debug() || settings::verbose() > 1)
                 {
-                    fprintf(stderr,
-                            "[%s][papi_common] Successfully queried event '%s'...\n",
-                            TIMEMORY_PROJECT_NAME, itr.c_str());
+                    TIMEMORY_PRINTF(stderr,
+                                    "[papi_common] Successfully queried event '%s'...\n",
+                                    itr.c_str());
                 }
                 events_list.push_back(itr);
             }
@@ -319,8 +318,9 @@ papi_common::get_initializer()
             {
                 if(settings::debug() || settings::verbose() > 1)
                 {
-                    fprintf(stderr, "[%s][papi_common] Event '%s' already exists...\n",
-                            TIMEMORY_PROJECT_NAME, itr.c_str());
+                    TIMEMORY_PRINTF(stderr,
+                                    "[papi_common] Event '%s' already exists...\n",
+                                    itr.c_str());
                 }
             }
         }
