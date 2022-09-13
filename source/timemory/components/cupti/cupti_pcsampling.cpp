@@ -164,7 +164,7 @@ TIMEMORY_CUPTI_INLINE cupti_pcsampling::config_type
 
     if(deviceCount == 0)
     {
-        fprintf(stderr, "There is no device supporting CUDA.\n");
+        TIMEMORY_PRINTF_FATAL(stderr, "There is no device supporting CUDA.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -181,12 +181,13 @@ TIMEMORY_CUPTI_INLINE cupti_pcsampling::config_type
     }
 
     TIMEMORY_CUDA_RUNTIME_API_CALL(cudaGetDeviceProperties(&prop, deviceNum));
-    printf("Device Name: %s\n", prop.name);
-    printf("Device compute capability: %d.%d\n", prop.major, prop.minor);
+    TIMEMORY_PRINTF(stderr, "Device Name: %s\n", prop.name);
+    TIMEMORY_PRINTF(stderr, "Device compute capability: %d.%d\n", prop.major, prop.minor);
     if(prop.major < 7)
     {
-        printf("Component is unavailable on this device, supported on devices with "
-               "compute capability 7.0 and higher\n");
+        TIMEMORY_PRINTF(
+            stderr, "Component is unavailable on this device, supported on devices with "
+                    "compute capability 7.0 and higher\n");
         exit(EXIT_FAILURE);
     }
 
@@ -270,12 +271,13 @@ TIMEMORY_CUPTI_INLINE cupti_pcsampling::config_type
     }
     if(settings::debug() || settings::verbose() > 0)
     {
-        printf("[runtime]> numStallReasons = %lu\n", (unsigned long) numStallReasons);
-        printf("[compile]> numStallReasons = %lu\n",
-               (unsigned long) cupti::pcsample::stall_reasons_size);
+        TIMEMORY_PRINTF(stderr, "[cupti_pcsampling][runtime] numStallReasons = %lu\n",
+                        (unsigned long) numStallReasons);
+        TIMEMORY_PRINTF(stderr, "[cupti_pcsampling][compile] numStallReasons = %lu\n",
+                        (unsigned long) cupti::pcsample::stall_reasons_size);
         for(size_t i = 0; i < stallReasonCount; ++i)
-            printf("%s index: %lu\n", pStallReasons[i],
-                   (long unsigned) pStallReasonIndex[i]);
+            TIMEMORY_PRINTF(stderr, "[cupti_pcsampling] %s index: %lu\n",
+                            pStallReasons[i], (long unsigned) pStallReasonIndex[i]);
         // check that there are not new stall reasons that have not been accounted for
         assert(numStallReasons <= cupti::pcsample::stall_reasons_size);
     }

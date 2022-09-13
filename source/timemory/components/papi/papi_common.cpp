@@ -48,8 +48,8 @@ TIMEMORY_PAPI_INLINE void
 papi_common::overflow_handler(int evt_set, void* address, long long overflow_vector,
                               void* context)
 {
-    fprintf(stderr, "[papi_common%i]> Overflow at %p! bit=0x%llx \n", evt_set, address,
-            overflow_vector);
+    TIMEMORY_PRINTF(stderr, "[papi_common%i]> Overflow at %p! bit=0x%llx \n", evt_set,
+                    address, overflow_vector);
     consume_parameters(context);
 }
 

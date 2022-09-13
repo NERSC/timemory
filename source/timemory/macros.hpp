@@ -267,9 +267,9 @@
                 CUresult _status = apiFuncCall;                                          \
                 if(_status != CUDA_SUCCESS)                                              \
                 {                                                                        \
-                    fprintf(stderr,                                                      \
-                            "%s:%d: error: function '%s' failed with error: %d.\n",      \
-                            __FILE__, __LINE__, #apiFuncCall, _status);                  \
+                    TIMEMORY_PRINTF_WARNING(                                             \
+                        stderr, "%s:%d: error: function '%s' failed with error: %d.\n",  \
+                        __FILE__, __LINE__, #apiFuncCall, _status);                      \
                 }                                                                        \
             }
 #    endif
@@ -284,9 +284,9 @@
                 {                                                                        \
                     const char* errstr;                                                  \
                     cuptiGetResultString(_status, &errstr);                              \
-                    fprintf(stderr,                                                      \
-                            "%s:%d: error: function '%s' failed with error: %s.\n",      \
-                            __FILE__, __LINE__, #call, errstr);                          \
+                    TIMEMORY_PRINTF_WARNING(                                             \
+                        stderr, "%s:%d: error: function '%s' failed with error: %s.\n",  \
+                        __FILE__, __LINE__, #call, errstr);                              \
                 }                                                                        \
             }
 #    endif
@@ -354,10 +354,10 @@
                 ::tim::cuda::error_t err = apiFuncCall;                                  \
                 if(err != ::tim::cuda::success_v && (int) err != 0)                      \
                 {                                                                        \
-                    fprintf(stderr,                                                      \
-                            "%s:%d: error: function '%s' failed with error: %s.\n",      \
-                            __FILE__, __LINE__, #apiFuncCall,                            \
-                            ::tim::cuda::get_error_string(err));                         \
+                    TIMEMORY_PRINTF_WARNING(                                             \
+                        stderr, "%s:%d: error: function '%s' failed with error: %s.\n",  \
+                        __FILE__, __LINE__, #apiFuncCall,                                \
+                        ::tim::cuda::get_error_string(err));                             \
                 }                                                                        \
             }
 #    endif
@@ -387,9 +387,10 @@
             {                                                                            \
                 if(err != ::tim::cuda::success_v && (int) err != 0)                      \
                 {                                                                        \
-                    fprintf(stderr, "%s:%d: error check failed with: code %i -- %s.\n",  \
-                            __FILE__, __LINE__, (int) err,                               \
-                            ::tim::cuda::get_error_string(err));                         \
+                    TIMEMORY_PRINTF_WARNING(                                             \
+                        stderr, "%s:%d: error check failed with: code %i -- %s.\n",      \
+                        __FILE__, __LINE__, (int) err,                                   \
+                        ::tim::cuda::get_error_string(err));                             \
                 }                                                                        \
             }
 #    endif
@@ -427,11 +428,12 @@
                 auto err = apiFuncCall;                                                  \
                 if(err != NVML_SUCCESS && (int) err != 0)                                \
                 {                                                                        \
-                    fprintf(stderr,                                                      \
-                            "%s:%d: error check failed with: code %i -- %s.\nFunction "  \
-                            "call: %s\n",                                                \
-                            __FILE__, __LINE__, (int) err, nvmlErrorString(err),         \
-                            #apiFuncCall);                                               \
+                    TIMEMORY_PRINTF_WARNING(                                             \
+                        stderr,                                                          \
+                        "%s:%d: error check failed with: code %i -- %s.\nFunction "      \
+                        "call: %s\n",                                                    \
+                        __FILE__, __LINE__, (int) err, nvmlErrorString(err),             \
+                        #apiFuncCall);                                                   \
                     __VA_ARGS__;                                                         \
                 }                                                                        \
             }
@@ -458,10 +460,10 @@
                 ::tim::hip::error_t err = apiFuncCall;                                   \
                 if(err != ::tim::hip::success_v && (int) err != 0)                       \
                 {                                                                        \
-                    fprintf(stderr,                                                      \
-                            "%s:%d: error: function '%s' failed with error: %s.\n",      \
-                            __FILE__, __LINE__, #apiFuncCall,                            \
-                            ::tim::hip::get_error_string(err));                          \
+                    TIMEMORY_PRINTF_WARNING(                                             \
+                        stderr, "%s:%d: error: function '%s' failed with error: %s.\n",  \
+                        __FILE__, __LINE__, #apiFuncCall,                                \
+                        ::tim::hip::get_error_string(err));                              \
                 }                                                                        \
             }
 #    endif
@@ -491,9 +493,10 @@
             {                                                                            \
                 if(err != ::tim::hip::success_v && (int) err != 0)                       \
                 {                                                                        \
-                    fprintf(stderr, "%s:%d: error check failed with: code %i -- %s.\n",  \
-                            __FILE__, __LINE__, (int) err,                               \
-                            ::tim::hip::get_error_string(err));                          \
+                    TIMEMORY_PRINTF_WARNING(                                             \
+                        stderr, "%s:%d: error check failed with: code %i -- %s.\n",      \
+                        __FILE__, __LINE__, (int) err,                                   \
+                        ::tim::hip::get_error_string(err));                              \
                 }                                                                        \
             }
 #    endif

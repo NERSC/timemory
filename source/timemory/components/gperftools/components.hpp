@@ -84,8 +84,8 @@ struct gperftools_cpu_profiler : public base<gperftools_cpu_profiler, void>
             auto ret = gperftools::cpu::profiler_start(fname);
             if(ret == 0)
             {
-                fprintf(stderr, "[gperftools_cpu_profiler]> Error starting %s...",
-                        fname.c_str());
+                TIMEMORY_PRINTF(stderr, "[gperftools_cpu_profiler] Error starting %s...",
+                                fname.c_str());
             }
         }
     }
@@ -152,8 +152,8 @@ struct gperftools_heap_profiler : public base<gperftools_heap_profiler, void>
             auto ret   = gperftools::heap::profiler_start(fname);
             if(ret > 0)
             {
-                fprintf(stderr, "[gperftools_heap_profiler]> Error starting %s...",
-                        prefix.c_str());
+                TIMEMORY_PRINTF(stderr, "[gperftools_heap_profiler] Error starting %s...",
+                                prefix.c_str());
             }
         }
     }

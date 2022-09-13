@@ -26,6 +26,7 @@
 
 #include "timemory/backends/process.hpp"
 #include "timemory/components/papi/types.hpp"
+#include "timemory/log/color.hpp"
 #include "timemory/utility/argparse.hpp"
 
 #include <csignal>
@@ -152,6 +153,10 @@ main(int argc, char** argv)
                 verbose() = p.get<int>("verbose");
             }
         });
+    parser.add_argument({ "-N", "--no-color" }, "Disable colorized output")
+        .max_count(1)
+        .dtype("bool")
+        .action([](parser_t& p) { tim::log::colorized() = !p.get<bool>("no-color"); });
     parser.add_argument({ "-q", "--quiet" }, "Suppress as much reporting as possible")
         .count(0)
         .action([](parser_t&) {
@@ -983,8 +988,9 @@ parent_process(pid_t pid)
         };
 
         auto fname = get_config().get_output_filename({}, ".json");
-        fprintf(stderr, "%s[%s]> Outputting '%s'...\n", (verbose() < 0) ? "" : "\n",
-                command().c_str(), fname.c_str());
+        fprintf(stderr, "%s%s[%s]> Outputting '%s'...\n%s", ::tim::log::color::source(),
+                (verbose() < 0) ? "" : "\n", command().c_str(), fname.c_str(),
+                ::tim::log::color::end());
         tim::generic_serialization<json_type>(fname, _measurements, "timemory", "timem",
                                               _cmdline);
     }
@@ -993,7 +999,7 @@ parent_process(pid_t pid)
     if(!quiet)
     {
         TIMEMORY_CONDITIONAL_PRINT_HERE(debug(), "%s", "reporting");
-        std::cerr << _oss.str() << std::endl;
+        tim::log::stream(std::cerr, tim::log::color::info()) << _oss.str() << "\n";
     }
     else
     {

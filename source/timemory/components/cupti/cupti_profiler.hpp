@@ -67,9 +67,10 @@
                 NVPA_Status _status = apiFuncCall;                                       \
                 if(_status != NVPA_STATUS_SUCCESS)                                       \
                 {                                                                        \
-                    fprintf(stderr, "%s:%d: error: function %s failed with error %d.\n", \
-                            __FILE__, __LINE__, #apiFuncCall, _status);                  \
-                    exit(-1);                                                            \
+                    TIMEMORY_PRINTF_FATAL(                                               \
+                        stderr, "%s:%d: error: function %s failed with error %d.\n",     \
+                        __FILE__, __LINE__, #apiFuncCall, _status);                      \
+                    exit(EXIT_FAILURE);                                                  \
                 }                                                                        \
             } while(0)
 #    endif
@@ -81,7 +82,7 @@
         {                                                                                \
             if(NVPA_STATUS_SUCCESS != actual)                                            \
             {                                                                            \
-                fprintf(stderr, "FAILED: %s\n", #actual);                                \
+                TIMEMORY_PRINTF_WARNING(stderr, "FAILED: %s\n", #actual);                \
                 return retval;                                                           \
             }                                                                            \
         } while(0)
@@ -537,19 +538,17 @@ cupti_profiler::configure(int device)
     auto& computeCapabilityMinor   = get_persistent_data().computeCapabilityMinor;
     auto& chipName                 = get_persistent_data().chipName;
 
-    // printf("Usage: %s [device_num] [metric_names comma separated]\n", argv[0]);
-
     TIMEMORY_CUDA_DRIVER_API_CALL(cuInit(0));
     TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGetCount(&deviceCount));
 
     if(deviceCount == 0)
     {
-        fprintf(stderr, "There is no device supporting CUDA.\n");
+        TIMEMORY_PRINTF_WARNING(stderr, "There is no device supporting CUDA.\n");
         return;
     }
 
     deviceNum = device;
-    printf("CUDA Device Number: %d\n", deviceNum);
+    TIMEMORY_PRINTF(stderr, "CUDA Device Number: %d\n", deviceNum);
 
     TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGet(&cuDevice, deviceNum));
     TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGetAttribute(
@@ -557,12 +556,13 @@ cupti_profiler::configure(int device)
     TIMEMORY_CUDA_DRIVER_API_CALL(cuDeviceGetAttribute(
         &computeCapabilityMinor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, cuDevice));
 
-    printf("Compute Capability of Device: %d.%d\n", computeCapabilityMajor,
-           computeCapabilityMinor);
+    TIMEMORY_PRINTF(stderr, "Compute Capability of Device: %d.%d\n",
+                    computeCapabilityMajor, computeCapabilityMinor);
 
     if(computeCapabilityMajor < 7)
     {
-        printf("Sample unsupported on Device with compute capability < 7.0\n");
+        TIMEMORY_PRINTF(stderr,
+                        "Sample unsupported on Device with compute capability < 7.0\n");
         return;
     }
 

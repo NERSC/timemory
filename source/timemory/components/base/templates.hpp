@@ -117,7 +117,8 @@ base<Tp, Value>::load(Archive& ar, const unsigned int version)
         } catch(cereal::Exception& e)
         {
             if(settings::debug() || settings::verbose() > -1)
-                fprintf(stderr, "Warning! '%s' threw exception: %s\n", key, e.what());
+                TIMEMORY_PRINTF_WARNING(stderr, "Warning! '%s' threw exception: %s\n",
+                                        key, e.what());
         }
     };
 

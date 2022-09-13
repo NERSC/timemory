@@ -134,7 +134,8 @@ device_count()
     auto err = hipGetDeviceCount(&dc);
     if(err != success_v)
     {
-        fprintf(stderr, "No hip devices found (%i): %s\n", dc, get_error_string(err));
+        TIMEMORY_PRINTF_WARNING(stderr, "No hip devices found (%i): %s\n", dc,
+                                get_error_string(err));
         return 0;
     }
     return dc;
@@ -361,7 +362,7 @@ malloc(size_t n)
     if(!arr)
     {
         unsigned long long sz = n * sizeof(Tp);
-        fprintf(stderr, "hipMalloc unable to allocate %llu bytes\n", sz);
+        TIMEMORY_PRINTF_FATAL(stderr, "hipMalloc unable to allocate %llu bytes\n", sz);
         throw std::bad_alloc();
     }
     return static_cast<Tp*>(arr);
@@ -384,7 +385,8 @@ malloc_host(size_t n)
     if(!arr)
     {
         unsigned long long sz = n * sizeof(Tp);
-        fprintf(stderr, "hipHostMalloc unable to allocate %llu bytes\n", sz);
+        TIMEMORY_PRINTF_FATAL(stderr, "hipHostMalloc unable to allocate %llu bytes\n",
+                              sz);
         throw std::bad_alloc();
     }
     return static_cast<Tp*>(arr);
@@ -513,52 +515,56 @@ tim::hip::device_query()
 
     if(error_id != hipSuccess)
     {
-        printf("hipGetDeviceCount returned error code %d\n--> %s\n",
-               static_cast<int>(error_id), hipGetErrorString(error_id));
+        TIMEMORY_PRINTF_WARNING(stderr,
+                                "hipGetDeviceCount returned error code %d\n--> %s\n",
+                                static_cast<int>(error_id), hipGetErrorString(error_id));
 
         if(deviceCount > 0)
         {
             TIMEMORY_HIP_RUNTIME_API_CALL(hipSetDevice(0));
             hipDeviceProp_t deviceProp;
             TIMEMORY_HIP_RUNTIME_API_CALL(hipGetDeviceProperties(&deviceProp, 0));
-            printf("\nDevice %d: \"%s\"\n", 0, deviceProp.name);
+            TIMEMORY_PRINTF(stderr, "Device %d: \"%s\"\n", 0, deviceProp.name);
 
             // Console log
             TIMEMORY_HIP_RUNTIME_API_CALL(hipDriverGetVersion(&driverVersion));
             TIMEMORY_HIP_RUNTIME_API_CALL(hipRuntimeGetVersion(&runtimeVersion));
-            printf("  HIP Driver Version / Runtime Version          %d.%d / "
-                   "%d.%d\n",
-                   driverVersion / 1000, (driverVersion % 100) / 10,
-                   runtimeVersion / 1000, (runtimeVersion % 100) / 10);
-            printf("  HIP Capability Major/Minor version number:    %d.%d\n",
-                   deviceProp.major, deviceProp.minor);
+            TIMEMORY_PRINTF(stderr,
+                            "  HIP Driver Version / Runtime Version          %d.%d / "
+                            "%d.%d\n",
+                            driverVersion / 1000, (driverVersion % 100) / 10,
+                            runtimeVersion / 1000, (runtimeVersion % 100) / 10);
+            TIMEMORY_PRINTF(stderr,
+                            "  HIP Capability Major/Minor version number:    %d.%d\n",
+                            deviceProp.major, deviceProp.minor);
         }
 
         return;
     }
 
     if(deviceCount == 0)
-        printf("No available HIP device(s) detected\n");
+        TIMEMORY_PRINTF_WARNING(stderr, "No available HIP device(s) detected\n");
     else
-        printf("Detected %d HIP capable devices\n", deviceCount);
+        TIMEMORY_PRINTF(stderr, "Detected %d HIP capable devices\n", deviceCount);
 
     for(int dev = 0; dev < deviceCount; ++dev)
     {
         TIMEMORY_HIP_RUNTIME_API_CALL(hipSetDevice(dev));
         hipDeviceProp_t deviceProp;
         TIMEMORY_HIP_RUNTIME_API_CALL(hipGetDeviceProperties(&deviceProp, dev));
-        printf("\nDevice %d: \"%s\"\n", dev, deviceProp.name);
+        TIMEMORY_PRINTF(stderr, "Device %d: \"%s\"\n", dev, deviceProp.name);
 
         // Console log
         TIMEMORY_HIP_RUNTIME_API_CALL(hipDriverGetVersion(&driverVersion));
         TIMEMORY_HIP_RUNTIME_API_CALL(hipRuntimeGetVersion(&runtimeVersion));
 
-        printf("  HIP Driver Version / Runtime Version          %d.%d / %d.%d\n",
-               driverVersion / 1000, (driverVersion % 100) / 10, runtimeVersion / 1000,
-               (runtimeVersion % 100) / 10);
+        TIMEMORY_PRINTF(stderr,
+                        "  HIP Driver Version / Runtime Version          %d.%d / %d.%d\n",
+                        driverVersion / 1000, (driverVersion % 100) / 10,
+                        runtimeVersion / 1000, (runtimeVersion % 100) / 10);
 
-        printf("  HIP Capability Major/Minor version number:    %d.%d\n",
-               deviceProp.major, deviceProp.minor);
+        TIMEMORY_PRINTF(stderr, "  HIP Capability Major/Minor version number:    %d.%d\n",
+                        deviceProp.major, deviceProp.minor);
 
         char msg[256];
 #    if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -574,73 +580,87 @@ tim::hip::device_query()
                  static_cast<double>(deviceProp.totalGlobalMem / 1048576.0),
                  (unsigned long long) deviceProp.totalGlobalMem);
 #    endif
-        printf("%s", msg);
+        TIMEMORY_PRINTF(stderr, "%s", msg);
 
-        printf("  GPU Max Clock rate:                            %.0f MHz (%0.2f "
-               "GHz)\n",
-               deviceProp.clockRate * 1e-3, deviceProp.clockRate * 1.0e-6);
+        TIMEMORY_PRINTF(
+            stderr,
+            "  GPU Max Clock rate:                            %.0f MHz (%0.2f "
+            "GHz)\n",
+            deviceProp.clockRate * 1e-3, deviceProp.clockRate * 1.0e-6);
 
 #    if HIPRT_VERSION >= 5000
         // This is supported in HIP 5.0 (runtime API device properties)
-        printf("  Memory Clock rate:                             %.0f Mhz\n",
-               deviceProp.memoryClockRate * 1.0e-3);
-        printf("  Memory Bus Width:                              %d-bit\n",
-               deviceProp.memoryBusWidth);
+        TIMEMORY_PRINTF(stderr,
+                        "  Memory Clock rate:                             %.0f Mhz\n",
+                        deviceProp.memoryClockRate * 1.0e-3);
+        TIMEMORY_PRINTF(stderr,
+                        "  Memory Bus Width:                              %d-bit\n",
+                        deviceProp.memoryBusWidth);
 
         if(deviceProp.l2CacheSize)
-            printf("  L2 Cache Size:                                 %d bytes\n",
-                   deviceProp.l2CacheSize);
+            TIMEMORY_PRINTF(stderr,
+                            "  L2 Cache Size:                                 %d bytes\n",
+                            deviceProp.l2CacheSize);
 #    endif
 
-        printf("  Maximum Texture Dimension Size (x,y,z)         1D=(%d), 2D=(%d, "
-               "%d), 3D=(%d, %d, %d)\n",
-               deviceProp.maxTexture1D, deviceProp.maxTexture2D[0],
-               deviceProp.maxTexture2D[1], deviceProp.maxTexture3D[0],
-               deviceProp.maxTexture3D[1], deviceProp.maxTexture3D[2]);
+        TIMEMORY_PRINTF(
+            stderr,
+            "  Maximum Texture Dimension Size (x,y,z)         1D=(%d), 2D=(%d, "
+            "%d), 3D=(%d, %d, %d)\n",
+            deviceProp.maxTexture1D, deviceProp.maxTexture2D[0],
+            deviceProp.maxTexture2D[1], deviceProp.maxTexture3D[0],
+            deviceProp.maxTexture3D[1], deviceProp.maxTexture3D[2]);
 
-        printf("  Total amount of constant memory:               %lu bytes\n",
-               deviceProp.totalConstMem);
-        printf("  Total amount of shared memory per block:       %lu bytes\n",
-               deviceProp.sharedMemPerBlock);
-        printf("  Total number of registers available per block: %d\n",
-               deviceProp.regsPerBlock);
-        printf("  Warp size:                                     %d\n",
-               deviceProp.warpSize);
-        printf("  Multiprocessor count:                          %d\n",
-               deviceProp.multiProcessorCount);
-        printf("  Maximum number of threads per multiprocessor:  %d\n",
-               deviceProp.maxThreadsPerMultiProcessor);
-        printf("  Maximum number of threads per block:           %d\n",
-               deviceProp.maxThreadsPerBlock);
-        printf("  Max dimension size of a thread block (x,y,z): (%d, %d, %d)\n",
-               deviceProp.maxThreadsDim[0], deviceProp.maxThreadsDim[1],
-               deviceProp.maxThreadsDim[2]);
-        printf("  Max dimension size of a grid size    (x,y,z): (%d, %d, %d)\n",
-               deviceProp.maxGridSize[0], deviceProp.maxGridSize[1],
-               deviceProp.maxGridSize[2]);
-        printf("  Maximum memory pitch:                          %lu bytes\n",
-               deviceProp.memPitch);
-        printf("  Texture alignment:                             %lu bytes\n",
-               deviceProp.textureAlignment);
-        printf("  Run time limit on kernels:                     %s\n",
-               deviceProp.kernelExecTimeoutEnabled ? "Yes" : "No");
-        printf("  Integrated GPU sharing Host Memory:            %s\n",
-               deviceProp.integrated ? "Yes" : "No");
-        printf("  Support host page-locked memory mapping:       %s\n",
-               deviceProp.canMapHostMemory ? "Yes" : "No");
-        printf("  Device has ECC support:                        %s\n",
-               deviceProp.ECCEnabled ? "Enabled" : "Disabled");
+        TIMEMORY_PRINTF(stderr,
+                        "  Total amount of constant memory:               %lu bytes\n",
+                        deviceProp.totalConstMem);
+        TIMEMORY_PRINTF(stderr,
+                        "  Total amount of shared memory per block:       %lu bytes\n",
+                        deviceProp.sharedMemPerBlock);
+        TIMEMORY_PRINTF(stderr, "  Total number of registers available per block: %d\n",
+                        deviceProp.regsPerBlock);
+        TIMEMORY_PRINTF(stderr, "  Warp size:                                     %d\n",
+                        deviceProp.warpSize);
+        TIMEMORY_PRINTF(stderr, "  Multiprocessor count:                          %d\n",
+                        deviceProp.multiProcessorCount);
+        TIMEMORY_PRINTF(stderr, "  Maximum number of threads per multiprocessor:  %d\n",
+                        deviceProp.maxThreadsPerMultiProcessor);
+        TIMEMORY_PRINTF(stderr, "  Maximum number of threads per block:           %d\n",
+                        deviceProp.maxThreadsPerBlock);
+        TIMEMORY_PRINTF(stderr,
+                        "  Max dimension size of a thread block (x,y,z): (%d, %d, %d)\n",
+                        deviceProp.maxThreadsDim[0], deviceProp.maxThreadsDim[1],
+                        deviceProp.maxThreadsDim[2]);
+        TIMEMORY_PRINTF(stderr,
+                        "  Max dimension size of a grid size    (x,y,z): (%d, %d, %d)\n",
+                        deviceProp.maxGridSize[0], deviceProp.maxGridSize[1],
+                        deviceProp.maxGridSize[2]);
+        TIMEMORY_PRINTF(stderr,
+                        "  Maximum memory pitch:                          %lu bytes\n",
+                        deviceProp.memPitch);
+        TIMEMORY_PRINTF(stderr,
+                        "  Texture alignment:                             %lu bytes\n",
+                        deviceProp.textureAlignment);
+        TIMEMORY_PRINTF(stderr, "  Run time limit on kernels:                     %s\n",
+                        deviceProp.kernelExecTimeoutEnabled ? "Yes" : "No");
+        TIMEMORY_PRINTF(stderr, "  Integrated GPU sharing Host Memory:            %s\n",
+                        deviceProp.integrated ? "Yes" : "No");
+        TIMEMORY_PRINTF(stderr, "  Support host page-locked memory mapping:       %s\n",
+                        deviceProp.canMapHostMemory ? "Yes" : "No");
+        TIMEMORY_PRINTF(stderr, "  Device has ECC support:                        %s\n",
+                        deviceProp.ECCEnabled ? "Enabled" : "Disabled");
 #    if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
-        printf("  HIP Device Driver Mode (TCC or WDDM):         %s\n",
-               deviceProp.tccDriver ? "TCC (Tesla Compute Cluster Driver)"
-                                    : "WDDM (Windows Display Driver Model)");
+        TIMEMORY_PRINTF(stderr, "  HIP Device Driver Mode (TCC or WDDM):         %s\n",
+                        deviceProp.tccDriver ? "TCC (Tesla Compute Cluster Driver)"
+                                             : "WDDM (Windows Display Driver Model)");
 #    endif
-        printf("  Supports Cooperative Kernel Launch:            %s\n",
-               deviceProp.cooperativeLaunch ? "Yes" : "No");
-        printf("  Supports MultiDevice Co-op Kernel Launch:      %s\n",
-               deviceProp.cooperativeMultiDeviceLaunch ? "Yes" : "No");
-        printf("  Device PCI Domain ID / Bus ID / location ID:   %d / %d / %d\n",
-               deviceProp.pciDomainID, deviceProp.pciBusID, deviceProp.pciDeviceID);
+        TIMEMORY_PRINTF(stderr, "  Supports Cooperative Kernel Launch:            %s\n",
+                        deviceProp.cooperativeLaunch ? "Yes" : "No");
+        TIMEMORY_PRINTF(stderr, "  Supports MultiDevice Co-op Kernel Launch:      %s\n",
+                        deviceProp.cooperativeMultiDeviceLaunch ? "Yes" : "No");
+        TIMEMORY_PRINTF(
+            stderr, "  Device PCI Domain ID / Bus ID / location ID:   %d / %d / %d\n",
+            deviceProp.pciDomainID, deviceProp.pciBusID, deviceProp.pciDeviceID);
 
         const char* sComputeMode[] = {
             "Default (multiple host threads can use ::hipSetDevice() with "
@@ -655,11 +675,11 @@ tim::hip::device_query()
             "Unknown",
             nullptr
         };
-        printf("  Compute Mode:\n");
-        printf("     < %s >\n", sComputeMode[deviceProp.computeMode]);
+        TIMEMORY_PRINTF(stderr, "  Compute Mode:\n");
+        TIMEMORY_PRINTF(stderr, "     < %s >\n", sComputeMode[deviceProp.computeMode]);
     }
 
-    printf("\n\n");
+    TIMEMORY_PRINTF(stderr, "\n\n");
 // HIP_CHECK_LAST_ERROR();
 #endif
 }

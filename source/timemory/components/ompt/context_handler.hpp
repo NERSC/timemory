@@ -52,8 +52,8 @@ context_handler<ApiT>::cleanup(size_t _idx, type_list<Tp...>)
             {
                 if(itr.second)
                 {
-                    fprintf(stderr, "[timemory][ompt] stopping %s on thread %li\n",
-                            itr.second->key().c_str(), _idx);
+                    TIMEMORY_PRINTF(stderr, "[ompt] stopping %s on thread %li\n",
+                                    itr.second->key().c_str(), _idx);
                     itr.second->stop();
                     delete itr.second;
                     itr.second = nullptr;
@@ -213,8 +213,8 @@ context_handler<ApiT>::operator()(ompt_mutex_t kind, ompt_wait_id_t wait_id,
         case mode::end_callback: endpoint = ompt_scope_end; break;
         default:
         {
-            fprintf(stderr,
-                    "[timemory][ompt] ignoring mutex callback with unknown endpoint\n");
+            TIMEMORY_PRINTF(stderr,
+                            "[ompt] ignoring mutex callback with unknown endpoint\n");
             return;
         }
     };

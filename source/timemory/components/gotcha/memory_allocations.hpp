@@ -174,8 +174,9 @@ public:
         {
             if(settings::verbose() > 1 || settings::debug())
             {
-                printf("[%s]> free of unknown pointer size: %p\n",
-                       this_type::get_label().c_str(), ptr);
+                TIMEMORY_PRINTF_WARNING(stderr,
+                                        "[%s]> free of unknown pointer size: %p\n",
+                                        this_type::get_label().c_str(), ptr);
             }
         }
     }

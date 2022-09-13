@@ -39,6 +39,7 @@
 #include "timemory/defines.h"
 #include "timemory/manager.hpp"
 #include "timemory/operations/types/decode.hpp"
+#include "timemory/operations/types/file_output_message.hpp"
 #include "timemory/operations/types/storage_initializer.hpp"
 #include "timemory/settings.hpp"
 
@@ -142,8 +143,9 @@ perfetto_trace::get_finalizer()
             TIMEMORY_JOIN('_', _label, _category), "proto");
         // output to a unique filename per rank if DMP is initialized
         if(settings::verbose() >= 0)
-            fprintf(stderr, "[%s][%s]|%i> Outputting '%s'...\n", TIMEMORY_PROJECT_NAME,
-                    _label.c_str(), (int) _rank, _fname.c_str());
+            operation::file_output_message<perfetto_trace>{}(_fname,
+                                                             std::string{ _label });
+
         manager::instance()->add_file_output("binary", _label, _fname);
 
         // Write the result into a file.

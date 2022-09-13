@@ -216,8 +216,9 @@ struct cupti_counters : public base<cupti_counters, cupti::profiler::results_t>
         }
         else
         {
-            fprintf(stderr, "Warning! mis-matched size in cupti_event::%s @ %s:%i\n",
-                    TIMEMORY_ERROR_FUNCTION_MACRO, __FILE__, __LINE__);
+            TIMEMORY_PRINTF_WARNING(
+                stderr, "Warning! mis-matched size in cupti_event::%s @ %s:%i\n",
+                TIMEMORY_ERROR_FUNCTION_MACRO, __FILE__, __LINE__);
         }
 
         return tmp;
@@ -606,7 +607,9 @@ private:
         if(_dev >= 0)
         {
             if(settings::debug())
-                printf("Creating CUPTI hardware profiler for device %i...\n", _device);
+                TIMEMORY_PRINTF(stderr,
+                                "Creating CUPTI hardware profiler for device %i...\n",
+                                _device);
 
             auto& _evt = std::get<1>(_dev_init);
             auto& _met = std::get<2>(_dev_init);
@@ -625,12 +628,13 @@ private:
             {
                 static int _pass = 0;
                 if(_pass++ > 0)
-                    fprintf(stderr, "[cupti_counters]> Warning! No events or metrics!\n");
+                    TIMEMORY_PRINTF(stderr,
+                                    "[cupti_counters]> Warning! No events or metrics!\n");
             }
         }
         else
         {
-            fprintf(stderr, "[cupti_counters]> Warning! No devices available!\n");
+            TIMEMORY_PRINTF(stderr, "[cupti_counters]> Warning! No devices available!\n");
         }
 
         if(!_used_devs.empty())
@@ -681,8 +685,9 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
     if(devid < 0 || devid >= cuda::device_count())
     {
         int ndev = cuda::device_count();
-        fprintf(stderr, "[cupti_counters]> Invalid device id: %i. # devices: %i...\n",
-                devid, ndev);
+        TIMEMORY_PRINTF(stderr,
+                        "[cupti_counters]> Invalid device id: %i. # devices: %i...\n",
+                        devid, ndev);
         return tuple_type(-1, strvec_t(), strvec_t());
     }
 
@@ -758,9 +763,10 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
         }
         else
         {
-            fprintf(stderr,
-                    "[cupti_counters]> Removing unavailable event '%s' on device %i...\n",
-                    itr.c_str(), devid);
+            TIMEMORY_PRINTF(
+                stderr,
+                "[cupti_counters]> Removing unavailable event '%s' on device %i...\n",
+                itr.c_str(), devid);
         }
     }
 
@@ -774,10 +780,11 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
         }
         else
         {
-            fprintf(stderr,
-                    "[cupti_counters]> Removing unavailable metric '%s' on device "
-                    "%i...\n",
-                    itr.c_str(), devid);
+            TIMEMORY_PRINTF(
+                stderr,
+                "[cupti_counters]> Removing unavailable metric '%s' on device "
+                "%i...\n",
+                itr.c_str(), devid);
         }
     }
 

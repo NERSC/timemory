@@ -132,10 +132,11 @@ struct static_properties<void, false>
                 if(_debug)
                 {
                     auto _doption = std::string{ "\\b(" } + _opts + std::string{ ")\\b" };
-                    fprintf(stderr,
-                            "[component::static_properties::matches] '%s' matches (%s) "
-                            "[regex: '%s']\n",
-                            _ckey, _opts.c_str(), _doption.c_str());
+                    TIMEMORY_PRINTF(
+                        stderr,
+                        "[component::static_properties::matches] '%s' matches (%s) "
+                        "[regex: '%s']\n",
+                        _ckey, _opts.c_str(), _doption.c_str());
                     fflush(stderr);
                 }
                 return true;

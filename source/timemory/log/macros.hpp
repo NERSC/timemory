@@ -121,14 +121,16 @@ timemory_print_here(const char* _pid_tid, const char* _file, int _line, const ch
 }
 
 inline void
-timemory_printf(FILE* _file, const char _fmt[])
+timemory_printf(const char* _color, FILE* _file, const char* _fmt)
 {
+    if(!_fmt)
+        return;
     if(_file == stdout || _file == stderr)
     {
 #if defined(TIMEMORY_PROJECT_NAME)
-        fprintf(_file, "%s[%s] ", ::tim::log::color::info(), TIMEMORY_PROJECT_NAME);
+        fprintf(_file, "%s[%s] ", _color, TIMEMORY_PROJECT_NAME);
 #else
-        fprintf(_file, "%s", ::tim::log::color::info());
+        fprintf(_file, "%s", _color);
 #endif
     }
     fprintf(_file, "%s", _fmt);
@@ -138,21 +140,23 @@ timemory_printf(FILE* _file, const char _fmt[])
 
 template <typename Arg, typename... Args>
 inline void
-timemory_printf(FILE* _file, const char _fmt[], Arg arg, Args... args)
+timemory_printf(const char* _color, FILE* _file, const char* _fmt, Arg arg, Args... args)
 {
+    if(!_fmt)
+        return;
     if(_file == stdout || _file == stderr)
     {
 #if defined(TIMEMORY_PROJECT_NAME)
         if(std::string_view{ _fmt }.find("[" TIMEMORY_PROJECT_NAME "]") != 0)
         {
-            fprintf(_file, "%s[%s]", ::tim::log::color::info(), TIMEMORY_PROJECT_NAME);
+            fprintf(_file, "%s[%s]", _color, TIMEMORY_PROJECT_NAME);
             if(strlen(_fmt) > 0 && _fmt[0] != '[')
                 fprintf(_file, " ");
         }
         else
-            fprintf(_file, "%s", ::tim::log::color::info());
+            fprintf(_file, "%s", _color);
 #else
-        fprintf(_file, "%s", ::tim::log::color::info());
+        fprintf(_file, "%s", _color);
 #endif
     }
     fprintf(_file, _fmt, timemory_proxy_value(arg, 0), timemory_proxy_value(args, 0)...);
@@ -160,8 +164,39 @@ timemory_printf(FILE* _file, const char _fmt[], Arg arg, Args... args)
         fprintf(_file, "%s", ::tim::log::color::end());
 }
 
+template <typename... Args>
+inline void
+timemory_printf(FILE* _file, const char* _fmt, Args... args)
+{
+    return timemory_printf(::tim::log::color::info(), _file, _fmt, args...);
+}
+
 #if !defined(TIMEMORY_PRINTF)
-#    define TIMEMORY_PRINTF(...) timemory_printf(__VA_ARGS__)
+#    define TIMEMORY_PRINTF(...) timemory_printf(::tim::log::color::info(), __VA_ARGS__)
+#endif
+
+#if !defined(TIMEMORY_PRINTF_NOCOLOR)
+#    define TIMEMORY_PRINTF_NOCOLOR(...) timemory_printf("", __VA_ARGS__)
+#endif
+
+#if !defined(TIMEMORY_PRINTF_INFO)
+#    define TIMEMORY_PRINTF_INFO(...)                                                    \
+        timemory_printf(::tim::log::color::info(), __VA_ARGS__)
+#endif
+
+#if !defined(TIMEMORY_PRINTF_WARNING)
+#    define TIMEMORY_PRINTF_WARNING(...)                                                 \
+        timemory_printf(::tim::log::color::warning(), __VA_ARGS__)
+#endif
+
+#if !defined(TIMEMORY_PRINTF_FATAL)
+#    define TIMEMORY_PRINTF_FATAL(...)                                                   \
+        timemory_printf(::tim::log::color::fatal(), __VA_ARGS__)
+#endif
+
+#if !defined(TIMEMORY_PRINTF_SOURCE)
+#    define TIMEMORY_PRINTF_SOURCE(...)                                                  \
+        timemory_printf(::tim::log::color::source(), __VA_ARGS__)
 #endif
 
 #if !defined(TIMEMORY_PRINT_HERE)

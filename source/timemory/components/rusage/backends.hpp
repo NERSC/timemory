@@ -117,9 +117,9 @@ check_rusage_call(int ret, const char* _func)
 {
 #if defined(DEBUG)
     if(ret != 0)
-        fprintf(stderr,
-                "[WARN]> rusage call in '%s' returned a non-zero error code: %i\n", _func,
-                ret);
+        TIMEMORY_PRINTF_WARNING(
+            stderr, "Warning! rusage call in '%s' returned a non-zero error code: %i\n",
+            _func, ret);
 #else
     (void) ret;
     (void) _func;
@@ -633,8 +633,9 @@ tim::get_page_rss()
     if(task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t) &info,
                  &infoCount) != KERN_SUCCESS)
     {
-        fprintf(stderr, "Warning! %s@'%s':%i :: task_info(...) != KERN_SUCCESS\n",
-                __FUNCTION__, __FILE__, __LINE__);
+        TIMEMORY_PRINTF_WARNING(stderr,
+                                "Warning! %s@'%s':%i :: task_info(...) != KERN_SUCCESS\n",
+                                __FUNCTION__, __FILE__, __LINE__);
         return static_cast<int64_t>(0);
     }
     // Darwin reports in bytes
@@ -695,8 +696,9 @@ tim::get_virt_mem()
     if(task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t) &info,
                  &infoCount) != KERN_SUCCESS)
     {
-        fprintf(stderr, "Warning! %s@'%s':%i :: task_info(...) != KERN_SUCCESS\n",
-                __FUNCTION__, __FILE__, __LINE__);
+        TIMEMORY_PRINTF_WARNING(stderr,
+                                "Warning! %s@'%s':%i :: task_info(...) != KERN_SUCCESS\n",
+                                __FUNCTION__, __FILE__, __LINE__);
         return static_cast<int64_t>(0);
     }
     // Darwin reports in bytes
@@ -706,8 +708,8 @@ tim::get_virt_mem()
 
 #        if defined(TIMEM_DEBUG)
     if(get_env("TIMEM_DEBUG", false))
-        printf("[%s@%s:%i]> using pid %li\n", __func__, __FILE__, __LINE__,
-               (long int) get_rusage_pid());
+        TIMEMORY_PRINTF(stderr, "[%s@%s:%i] using pid %li\n", __func__, __FILE__,
+                        __LINE__, (long int) get_rusage_pid());
 #        endif
 
     std::string fstatm = [&]() {

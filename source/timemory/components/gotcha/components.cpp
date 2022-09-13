@@ -416,7 +416,7 @@ gotcha<Nt, BundleT, DiffT>::start()
         static std::atomic<int64_t> _tcount(0);
         static thread_local int64_t _tid = _tcount++;
         std::stringstream           ss;
-        ss << "[T" << _tid << "]> n = " << _n << ", t = " << _t << "...\n";
+        ss << "[T" << _tid << "] n = " << _n << ", t = " << _t << "...\n";
         std::cout << ss.str() << std::flush;
     }
 #endif
@@ -459,7 +459,7 @@ gotcha<Nt, BundleT, DiffT>::stop()
         static std::atomic<int64_t> _tcount(0);
         static thread_local int64_t _tid = _tcount++;
         std::stringstream           ss;
-        ss << "[T" << _tid << "]> n = " << _n << ", t = " << _t << "...\n";
+        ss << "[T" << _tid << "] n = " << _n << ", t = " << _t << "...\n";
         std::cout << ss.str() << std::flush;
     }
 #endif
@@ -536,8 +536,9 @@ gotcha<Nt, BundleT, DiffT>::is_permitted(const std::string& _func)
             {
                 if(settings::debug())
                 {
-                    printf("[gotcha]> Skipping gotcha binding for %s...\n",
-                           _func.c_str());
+                    TIMEMORY_PRINTF(stderr,
+                                    "[gotcha] Skipping gotcha binding for %s...\n",
+                                    _func.c_str());
                 }
                 return false;
             }
@@ -552,9 +553,10 @@ gotcha<Nt, BundleT, DiffT>::is_permitted(const std::string& _func)
     {
         if(settings::debug())
         {
-            printf("[gotcha]> GOTCHA binding for function '%s' is in reject "
-                   "list...\n",
-                   _func.c_str());
+            TIMEMORY_PRINTF(stderr,
+                            "[gotcha] GOTCHA binding for function '%s' is in reject "
+                            "list...\n",
+                            _func.c_str());
         }
         return false;
     }
@@ -567,9 +569,11 @@ gotcha<Nt, BundleT, DiffT>::is_permitted(const std::string& _func)
         {
             if(settings::debug())
             {
-                printf("[gotcha]> GOTCHA binding for function '%s' is not in permit "
-                       "list...\n",
-                       _func.c_str());
+                TIMEMORY_PRINTF(
+                    stderr,
+                    "[gotcha] GOTCHA binding for function '%s' is not in permit "
+                    "list...\n",
+                    _func.c_str());
             }
             return false;
         }
@@ -599,7 +603,7 @@ gotcha<Nt, BundleT, DiffT>::check_error(error_t _ret, const std::string& _prefix
 #if defined(TIMEMORY_USE_GOTCHA)
         auto&             _data = get_data()[N];
         std::stringstream msg;
-        msg << "[gotcha::" << __FUNCTION__ << "]> " << _prefix << " :: "
+        msg << "[gotcha::" << __FUNCTION__ << "] " << _prefix << " :: "
             << "wrapped: " << _data.wrap_id << ", label: " << _data.tool_id;
         /*
         if((void*) _data.binding != nullptr)
@@ -723,12 +727,12 @@ gotcha<Nt, BundleT, DiffT>::wrap(Args... _args)
                 {
                     _recursive = true;
                     auto _tid  = threading::get_id();
-                    fprintf(stderr,
-                            "[T%i][%s]> %s is either not ready (ready=%s) or is globally "
-                            "suppressed (suppressed=%s)\n",
-                            (int) _tid, __FUNCTION__, _data.tool_id.c_str(),
-                            (_data.ready) ? "true" : "false",
-                            (_suppress) ? "true" : "false");
+                    TIMEMORY_PRINTF(
+                        stderr,
+                        "[T%i][%s] %s is either not ready (ready=%s) or is globally "
+                        "suppressed (suppressed=%s)\n",
+                        (int) _tid, __FUNCTION__, _data.tool_id.c_str(),
+                        (_data.ready) ? "true" : "false", (_suppress) ? "true" : "false");
                     fflush(stderr);
                     _recursive = false;
                 }
@@ -791,12 +795,12 @@ gotcha<Nt, BundleT, DiffT>::wrap(Args... _args)
                 {
                     _recursive = true;
                     auto _tid  = threading::get_id();
-                    fprintf(stderr,
-                            "[T%i][%s]> %s is either not ready (ready=%s) or is globally "
-                            "suppressed (suppressed=%s)\n",
-                            (int) _tid, __FUNCTION__, _data.tool_id.c_str(),
-                            (_data.ready) ? "true" : "false",
-                            (_suppress) ? "true" : "false");
+                    TIMEMORY_PRINTF(
+                        stderr,
+                        "[T%i][%s] %s is either not ready (ready=%s) or is globally "
+                        "suppressed (suppressed=%s)\n",
+                        (int) _tid, __FUNCTION__, _data.tool_id.c_str(),
+                        (_data.ready) ? "true" : "false", (_suppress) ? "true" : "false");
                     fflush(stderr);
                     _recursive = false;
                 }

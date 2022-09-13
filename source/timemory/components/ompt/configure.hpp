@@ -29,6 +29,7 @@
 #include "timemory/components/ompt/macros.hpp"
 #include "timemory/components/ompt/ompt_wrapper.hpp"
 #include "timemory/components/ompt/tool.hpp"
+#include "timemory/log/macros.hpp"
 
 #if !defined(TIMEMORY_OMPT_HEADER_MODE) ||                                               \
     (defined(TIMEMORY_OMPT_HEADER_MODE) && TIMEMORY_OMPT_HEADER_MODE == 0)
@@ -56,7 +57,7 @@ configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
     //
 #    define TIMEMORY_OMPT_LOOKUP(TYPE, NAME)                                             \
         if(settings::verbose() > 1 || settings::debug())                                 \
-            fprintf(stderr, "[timemory][ompt] finding %s...\n", #NAME);                  \
+            TIMEMORY_PRINTF(stderr, "[ompt] finding %s...\n", #NAME);                    \
         static TYPE OMPT_##NAME = (TYPE) lookup(#NAME);                                  \
         consume_parameters(OMPT_##NAME)
     //
@@ -124,40 +125,40 @@ configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
         switch(ret)
         {
             case ompt_set_error:
-                fprintf(stderr,
-                        "[timemory]> WARNING: OMPT Callback for event '%s' count not "
-                        "be registered: '%s'\n",
-                        name, "ompt_set_error");
+                TIMEMORY_PRINTF_WARNING(stderr,
+                                        "WARNING: OMPT Callback for event '%s' count not "
+                                        "be registered: '%s'\n",
+                                        name, "ompt_set_error");
                 break;
             case ompt_set_never:
-                fprintf(stderr,
-                        "[timemory]> WARNING: OMPT Callback for event '%s' could not "
-                        "be registered: '%s'\n",
-                        name, "ompt_set_never");
+                TIMEMORY_PRINTF_WARNING(stderr,
+                                        "WARNING: OMPT Callback for event '%s' could not "
+                                        "be registered: '%s'\n",
+                                        name, "ompt_set_never");
                 break;
             case ompt_set_impossible:
-                fprintf(stderr,
-                        "[timemory]> WARNING: OMPT Callback for event '%s' could not "
-                        "be registered: '%s'\n",
-                        name, "ompt_set_impossible");
+                TIMEMORY_PRINTF_WARNING(stderr,
+                                        "WARNING: OMPT Callback for event '%s' could not "
+                                        "be registered: '%s'\n",
+                                        name, "ompt_set_impossible");
                 break;
             case ompt_set_sometimes:
-                fprintf(stderr,
-                        "[timemory]> OMPT Callback for event '%s' registered with "
-                        "return value: '%s'\n",
-                        name, "ompt_set_sometimes");
+                TIMEMORY_PRINTF(stderr,
+                                "OMPT Callback for event '%s' registered with "
+                                "return value: '%s'\n",
+                                name, "ompt_set_sometimes");
                 break;
             case ompt_set_sometimes_paired:
-                fprintf(stderr,
-                        "[timemory]> OMPT Callback for event '%s' registered with "
-                        "return value: '%s'\n",
-                        name, "ompt_set_sometimes_paired");
+                TIMEMORY_PRINTF(stderr,
+                                "OMPT Callback for event '%s' registered with "
+                                "return value: '%s'\n",
+                                name, "ompt_set_sometimes_paired");
                 break;
             case ompt_set_always:
-                fprintf(stderr,
-                        "[timemory]> OMPT Callback for event '%s' registered with "
-                        "return value: '%s'\n",
-                        name, "ompt_set_always");
+                TIMEMORY_PRINTF(stderr,
+                                "OMPT Callback for event '%s' registered with "
+                                "return value: '%s'\n",
+                                name, "ompt_set_always");
                 break;
         }
         return ret;
@@ -388,7 +389,7 @@ configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
                                     TIMEMORY_OMPT_CBCAST(cancel_cb_t::callback));
     */
     if(settings::verbose() > 1 || settings::debug())
-        fprintf(stderr, "\n");
+        TIMEMORY_PRINTF(stderr, "\n");
 #endif
     (void) lookup;
     (void) _v;
