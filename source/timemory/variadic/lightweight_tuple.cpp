@@ -41,6 +41,23 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
+lightweight_tuple<Types...>::lightweight_tuple()
+{
+    bundle_type::init(type_list_type{}, *this, m_data, get_initializer());
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
+template <typename FuncT, enable_if_t<std::is_invocable<FuncT>::value>>
+lightweight_tuple<Types...>::lightweight_tuple(FuncT&& _func)
+{
+    bundle_type::init(type_list_type{}, *this, m_data, std::move(_func));
+}
+
+//--------------------------------------------------------------------------------------//
+//
+template <typename... Types>
 template <typename... T>
 lightweight_tuple<Types...>::lightweight_tuple(const string_t&     _key,
                                                quirk::config<T...> _config,

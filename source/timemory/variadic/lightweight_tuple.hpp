@@ -118,7 +118,10 @@ public:
     using quirk_config = tim::variadic::impl::quirk_config<T, type_list<Types...>, U...>;
 
 public:
-    lightweight_tuple() = default;
+    lightweight_tuple();
+
+    template <typename FuncT, enable_if_t<std::is_invocable<FuncT>::value> = 0>
+    lightweight_tuple(FuncT&&);
 
     template <typename... T>
     explicit lightweight_tuple(const string_t& key, quirk::config<T...> = {},
@@ -146,11 +149,11 @@ public:
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
-    lightweight_tuple(const lightweight_tuple&) = default;
-    lightweight_tuple(lightweight_tuple&&)      = default;
+    lightweight_tuple(const lightweight_tuple&)     = default;
+    lightweight_tuple(lightweight_tuple&&) noexcept = default;
 
     lightweight_tuple& operator=(const lightweight_tuple& rhs) = default;
-    lightweight_tuple& operator=(lightweight_tuple&&) = default;
+    lightweight_tuple& operator=(lightweight_tuple&&) noexcept = default;
 
     lightweight_tuple clone(bool store, scope::config _scope = scope::get_default());
 
@@ -598,7 +601,7 @@ public:
         std::string _s = ss_data.str();
         if(_s.empty())
             return get_this_type();
-        while(_s.find_last_of(", ") == _s.length() - 1)
+        while(!_s.empty() && _s.find_last_of(", ") == _s.length() - 1)
             _s = _s.substr(0, _s.length() - 1);
         if(_s.empty())
             return get_this_type();
