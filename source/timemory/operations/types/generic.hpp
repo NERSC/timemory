@@ -65,24 +65,32 @@ private:
         using U = std::decay_t<std::remove_pointer_t<Up>>;
         static_assert(std::is_same<U, type>::value, "Error! Up != type");
 
-        // this is commented out because generic_operator does work with non-component
-        // types
-        // static_assert(
-        //     concepts::is_component<U>::value,
-        //     "Error! Applying generic_operator on a type that is not a component");
-
-        constexpr bool supports_runtime_checks = trait::runtime_enabled<Tp>::value &&
-                                                 trait::runtime_enabled<Op>::value &&
-                                                 trait::runtime_enabled<Tag>::value;
-
-        // if runtime checks are enabled and type or tag is not enabled, return false
-        if(supports_runtime_checks &&
-           (!trait::runtime_enabled<Tp>::get() || !trait::runtime_enabled<Tag>::get()))
-            return false;
-
-        // if supports_runtime_checks if false, compiler should optimize away this entire
-        // function call because it will be known at compile time that this function will
-        // always returns true
+        if constexpr(trait::runtime_enabled<Tp>::value &&
+                     trait::runtime_enabled<Op>::value &&
+                     trait::runtime_enabled<Tag>::value)
+        {
+            return (trait::runtime_enabled<Tp>::get() &&
+                    trait::runtime_enabled<Op>::get() &&
+                    trait::runtime_enabled<Tag>::get());
+        }
+        else if constexpr(trait::runtime_enabled<Tp>::value &&
+                          trait::runtime_enabled<Op>::value)
+        {
+            return (trait::runtime_enabled<Tp>::get() &&
+                    trait::runtime_enabled<Op>::get());
+        }
+        else if constexpr(trait::runtime_enabled<Op>::value &&
+                          trait::runtime_enabled<Tag>::value)
+        {
+            return (trait::runtime_enabled<Op>::get() &&
+                    trait::runtime_enabled<Tag>::get());
+        }
+        else if constexpr(trait::runtime_enabled<Tp>::value &&
+                          trait::runtime_enabled<Tag>::value)
+        {
+            return (trait::runtime_enabled<Tp>::get() &&
+                    trait::runtime_enabled<Tag>::get());
+        }
         return true;
     }
 
