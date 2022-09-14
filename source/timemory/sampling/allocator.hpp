@@ -27,6 +27,7 @@
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/defines.h"
+#include "timemory/log/logger.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/sampling/signals.hpp"
 #include "timemory/storage/ring_buffer.hpp"
@@ -139,6 +140,7 @@ private:
     std::set<int>            m_block_signals_pending   = { SIGALRM, SIGVTALRM, SIGPROF };
     std::set<int>            m_block_signals_completed = {};
     std::exception_ptr       m_thread_exception        = {};
+    std::function<void()>    m_exit                    = []() {};
     std::thread              m_thread;  // construct thread after data to prevent UB
 };
 
@@ -146,13 +148,17 @@ template <typename Tp>
 allocator<Tp>::allocator(Tp* _obj)
 : m_thread{ &execute, this, _obj }
 {
-    m_ready.get_future().wait();
+    TIMEMORY_SEMAPHORE_CHECK(sem_init(&m_sem, 0, 0));
+    m_alive.store(true);
+    m_ready.get_future().wait_for(std::chrono::milliseconds{ 100 });
 }
 
 template <typename Tp>
 allocator<Tp>::~allocator()
 {
     join();
+    if(sem_destroy(&m_sem) != 0)
+        TIMEMORY_PRINTF(stderr, "failed to destroy semaphore in sampling allocator");
 }
 
 template <typename Tp>
@@ -171,12 +177,17 @@ allocator<Tp>::restart(Tp* _obj)
 {
     if(!_obj)
         return;
-    _obj->m_exit();
+    m_start.set_value();
+    m_exit();
     join();
-    m_ready = std::promise<void>{};
-    m_alive.store(false);
-    m_thread = std::thread{ &execute, this, _obj };
-    m_ready.get_future().wait();
+    if(!m_alive)
+    {
+        m_start = std::promise<void>{};
+        m_ready = std::promise<void>{};
+        m_alive.store(true);
+        m_thread = std::thread{ &execute, this, _obj };
+        m_ready.get_future().wait_for(std::chrono::milliseconds{ 100 });
+    }
 }
 
 template <typename Tp>
@@ -284,7 +295,11 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
     auto          _local_buffer      = buffer_vec_t{};
     auto          _pending           = std::atomic<int64_t>{ 0 };
     auto          _wait              = std::atomic<bool>{ false };
-    auto          _swap_buffer       = [&](buffer_vec_t& _new_buffer) {
+    semaphore_t*  _sem               = &_alloc->m_sem;
+
+    _local_buffer.reserve(_local_buffer_size);
+
+    auto _swap_buffer = [&](buffer_vec_t& _new_buffer) {
         if(_local_buffer.empty() || _pending.load() == 0)
             return;
         _wait.store(true);
@@ -307,11 +322,13 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
             TIMEMORY_SEMAPHORE_CHECK(sem_post(_sem));
         }
     };
+    auto _exit = [&]() {
+        _completed = true;
+        TIMEMORY_SEMAPHORE_CHECK(sem_post(_sem));
+    };
 
-    TIMEMORY_SEMAPHORE_CHECK(sem_init(&_alloc->m_sem, 0, 0));
-    _local_buffer.reserve(_local_buffer_size);
-    _alloc->m_alive.store(true);
-    semaphore_t* _sem = &_alloc->m_sem;
+    _alloc->m_exit = _exit;
+
     try
     {
         _obj->set_notify([&]() { _notify(_sem); });
@@ -326,16 +343,12 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
             _notify(_sem);
         });
 
-        _obj->set_exit([&]() {
-            _completed = true;
-            TIMEMORY_SEMAPHORE_CHECK(sem_post(_sem));
-        });
+        _obj->set_exit(_exit);
 
         _alloc->m_ready.set_value();
 
         // wait for start post
-        // TIMEMORY_SEMAPHORE_CHECK(sem_wait(_sem));
-        _alloc->m_start.get_future().wait();
+        _alloc->m_start.get_future().wait_for(std::chrono::milliseconds{ 100 });
         // block the pending signals
         _alloc->block_pending_signals();
 
@@ -373,10 +386,11 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
 
         if(_alloc->m_verbose >= 1)
         {
-            std::cerr << "[" << TIMEMORY_PROJECT_NAME << "][pid=" << process::get_id()
-                      << "][tid=" << _alloc->m_tid << "] Sampler allocator performed "
-                      << _swap_count << " swaps and has " << _alloc->m_data.size()
-                      << " entries\n";
+            log::stream(std::cerr, log::color::info())
+                << "[" << TIMEMORY_PROJECT_NAME << "][pid=" << process::get_id()
+                << "][tid=" << _alloc->m_tid << "] Sampler allocator performed "
+                << _swap_count << " swaps and has " << _alloc->m_data.size()
+                << " entries\n";
         }
     }
     _sem = nullptr;
@@ -385,9 +399,7 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
     _obj->set_notify([]() {});
     _obj->set_move([](buffer_type&&) {});
     _obj->set_exit([]() {});
-
-    // destroy the semaphore since it was initialized in this routine
-    TIMEMORY_SEMAPHORE_CHECK(sem_destroy(&_alloc->m_sem));
+    _alloc->m_exit = []() {};
 
     _alloc->m_alive.store(false);
 }
