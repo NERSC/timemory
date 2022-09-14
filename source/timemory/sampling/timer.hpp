@@ -30,10 +30,13 @@
 #include "timemory/macros/os.hpp"
 #include "timemory/units.hpp"
 
+#include <cmath>
 #include <csignal>
 #include <cstdint>
 #include <cstring>
 #include <ctime>
+#include <iomanip>
+#include <limits>
 #include <sstream>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -412,12 +415,25 @@ timer::start()
 
     m_is_active = (_ret == 0);
 
-    TIMEMORY_REQUIRE(get_delay(units::sec) == m_wait)
-        << "Wait time is not finite :: " << *this;
-    TIMEMORY_REQUIRE(get_frequency(units::sec) == m_freq)
-        << "Interval time is not finite :: " << *this;
-    TIMEMORY_REQUIRE(get_period(units::sec) == 1.0 / m_freq)
-        << "Period is not finite :: " << *this;
+    const auto _epsilon      = std::numeric_limits<float>::epsilon();
+    auto       _compute_norm = [](double _lhs, double _rhs) -> double {
+        return (std::isfinite(_lhs) && std::isfinite(_rhs))
+                   ? std::abs((_lhs / _rhs) - 1.0)
+                   : 1.0;
+    };
+
+    TIMEMORY_REQUIRE(_compute_norm(get_delay(units::sec), m_wait) < _epsilon)
+        << "Wait time is not finite :: computed delay " << get_delay(units::sec)
+        << " vs. " << *this << "[norm: " << _compute_norm(get_delay(units::sec), m_wait)
+        << ")";
+    TIMEMORY_REQUIRE(_compute_norm(get_frequency(units::sec), m_freq) < _epsilon)
+        << "Interval time is not finite :: computed frequency "
+        << get_frequency(units::sec) << " vs. " << *this
+        << "[norm: " << _compute_norm(get_frequency(units::sec), m_freq) << ")";
+    TIMEMORY_REQUIRE(_compute_norm(get_period(units::sec), 1.0 / m_freq) < _epsilon)
+        << "Period is not finite :: computed period " << get_period(units::sec) << " vs. "
+        << *this << "[norm: " << _compute_norm(get_period(units::sec), 1.0 / m_freq)
+        << ")";
 
     return true;
 }
@@ -490,7 +506,9 @@ timer::as_string() const
     _os << "tid=" << m_tim_tid << ", sys_tid=" << m_sys_tid << ", init=" << m_initialized
         << ", is_active=" << m_is_active << ", signal=" << m_signal
         << ", clock_id=" << m_clock_id << ", notify_id=" << m_notify_id
-        << ", freq=" << m_freq << " sec, wait=" << m_wait << " sec";
+        << ", freq=" << std::fixed << std::setprecision(3) << m_freq
+        << " interrupts/sec, period=" << std::scientific << std::setprecision(3)
+        << (1.0 / m_freq) << " sec, wait=" << std::setprecision(3) << m_wait << " sec";
     return _os.str();
 }
 }  // namespace sampling
