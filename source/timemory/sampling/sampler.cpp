@@ -25,6 +25,7 @@
 #ifndef TIMEMORY_SAMPLING_SAMPLER_CPP_
 #define TIMEMORY_SAMPLING_SAMPLER_CPP_
 
+#include "timemory/mpl/type_traits.hpp"
 #include "timemory/utility/types.hpp"
 
 #if !defined(TIMEMORY_SAMPLING_SAMPLER_HPP_)
@@ -364,6 +365,9 @@ template <template <typename...> class CompT, size_t N, typename... Types>
 void
 sampler<CompT<Types...>, N>::execute(int signum)
 {
+    if(!trait::runtime_enabled<this_type>::get())
+        return;
+
     for(auto& itr : get_samplers(threading::get_id()))
     {
         if(!itr)
@@ -388,13 +392,8 @@ template <template <typename...> class CompT, size_t N, typename... Types>
 void
 sampler<CompT<Types...>, N>::execute(int signum, siginfo_t* _info, void* _data)
 {
-    static thread_local sig_atomic_t _sig_lock = 0;
-    IF_CONSTEXPR(trait::prevent_reentry<this_type>::value)
-    {
-        if(_sig_lock > 0)
-            return;
-        _sig_lock = 1;
-    }
+    if(!trait::runtime_enabled<this_type>::get())
+        return;
 
     for(auto& itr : get_samplers(threading::get_id()))
     {
