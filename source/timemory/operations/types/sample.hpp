@@ -68,7 +68,7 @@ struct sample
 private:
     //  satisfies mpl condition and accepts arguments
     template <typename Up, typename... Args>
-    TIMEMORY_INLINE static auto sfinae(Up& obj, int, int, Args&&... args)
+    static TIMEMORY_INLINE auto sfinae(Up& obj, int, int, Args&&... args)
         -> decltype(obj.sample(std::forward<Args>(args)...))
     {
         return obj.sample(std::forward<Args>(args)...);
@@ -76,7 +76,7 @@ private:
 
     //  satisfies mpl condition but does not accept arguments
     template <typename Up, typename... Args>
-    TIMEMORY_INLINE static auto sfinae(Up& obj, int, long, Args&&...)
+    static TIMEMORY_INLINE auto sfinae(Up& obj, int, long, Args&&...)
         -> decltype(obj.sample())
     {
         return obj.sample();
@@ -84,7 +84,7 @@ private:
 
     //  no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
-    TIMEMORY_INLINE static null_type sfinae(Up&, long, long, Args&&...)
+    static TIMEMORY_INLINE null_type sfinae(Up&, long, long, Args&&...)
     {
         return null_type{};
     }

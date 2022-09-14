@@ -61,7 +61,7 @@ struct audit
     using type          = Tp;
     using gotcha_data_t = component::gotcha_data;
 
-    TIMEMORY_DELETED_OBJECT(audit)
+    TIMEMORY_DEFAULT_OBJECT(audit)
 
     template <typename... Args>
     audit(type& obj, Args&&... args)

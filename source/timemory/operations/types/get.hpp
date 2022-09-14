@@ -54,32 +54,47 @@ struct get
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(get)
+    TIMEMORY_DEFAULT_OBJECT(get)
 
-    //----------------------------------------------------------------------------------//
-    //
     get(const type& obj, void*& ptr, size_t nhash) { get_sfinae(obj, 0, 0, ptr, nhash); }
+
+    auto operator()(const type& obj, void*& ptr, size_t nhash) const
+    {
+        return get_sfinae(obj, 0, 0, ptr, nhash);
+    }
 
 private:
     template <typename U = type>
-    auto get_sfinae(const U& obj, int, int, void*& ptr, size_t nhash)
-        -> decltype((void) obj.get(ptr, nhash), void())
+    static auto get_sfinae(const U& obj, int, int, void*& ptr, size_t nhash)
+        -> decltype(obj.get(ptr, nhash))
     {
+        using return_type = decltype(obj.get(ptr, nhash));
+
         if(!ptr)
-            obj.get(ptr, nhash);
+            return obj.get(ptr, nhash);
+
+        if constexpr(!std::is_void<return_type>::value)
+            return return_type{};
     }
 
     template <typename U = type, typename base_type = typename U::base_type>
-    auto get_sfinae(const U& obj, int, long, void*& ptr, size_t nhash)
-        -> decltype((void) static_cast<const base_type&>(obj).get(ptr, nhash), void())
+    static auto get_sfinae(const U& obj, int, long, void*& ptr, size_t nhash)
+        -> decltype(static_cast<const base_type&>(obj).get(ptr, nhash))
     {
+        using return_type = decltype(static_cast<const base_type&>(obj).get(ptr, nhash));
+
         if(!ptr)
             static_cast<const base_type&>(obj).get(ptr, nhash);
+
+        if constexpr(!std::is_void<return_type>::value)
+            return return_type{};
     }
 
     template <typename U = type>
-    void get_sfinae(const U&, long, long, void*&, size_t)
-    {}
+    static type* get_sfinae(const U&, long, long, void*&, size_t)
+    {
+        return nullptr;
+    }
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -126,10 +141,10 @@ private:
     //
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<has_data<Up>::value, char> = 0>
-    auto sfinae(const Up& obj, int, int, Dp& dst, Args&&... args)
-        -> decltype((void) obj.get(std::forward<Args>(args)...), void())
+    static auto sfinae(const Up& obj, int, int, Dp& dst, Args&&... args)
+        -> decltype(obj.get(std::forward<Args>(args)...))
     {
-        dst = obj.get(std::forward<Args>(args)...);
+        return (dst = obj.get(std::forward<Args>(args)...));
     }
 
     //----------------------------------------------------------------------------------//
@@ -137,10 +152,10 @@ private:
     //
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<has_data<Up>::value, char> = 0>
-    auto sfinae(const Up& obj, int, long, Dp& dst, Args&&...)
-        -> decltype((void) obj.get(), void())
+    static auto sfinae(const Up& obj, int, long, Dp& dst, Args&&...)
+        -> decltype(obj.get())
     {
-        dst = obj.get();
+        return (dst = obj.get());
     }
 
     //----------------------------------------------------------------------------------//
@@ -148,7 +163,7 @@ private:
     //
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<has_data<Up>::value, char> = 0>
-    void sfinae(const Up&, long, long, Dp&, Args&&...)
+    static auto sfinae(const Up&, long, long, Dp&, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
@@ -156,7 +171,7 @@ private:
     //
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<!has_data<Up>::value, char> = 0>
-    void sfinae(const Up&, long, long, Dp&, Args&&...)
+    static auto sfinae(const Up&, long, long, Dp&, Args&&...)
     {}
 };
 //
@@ -205,10 +220,10 @@ private:
     //
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<has_data<Up>::value, char> = 0>
-    auto sfinae(const Up& obj, int, int, Dp& dst, Args&&... args)
-        -> decltype((void) obj.get(std::forward<Args>(args)...), void())
+    static auto sfinae(const Up& obj, int, int, Dp& dst, Args&&... args)
+        -> decltype(obj.get(std::forward<Args>(args)...))
     {
-        dst = data_type(type::get_label(), obj.get(std::forward<Args>(args)...));
+        return (dst = data_type(type::get_label(), obj.get(std::forward<Args>(args)...)));
     }
 
     //----------------------------------------------------------------------------------//
@@ -216,10 +231,10 @@ private:
     //
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<has_data<Up>::value, char> = 0>
-    auto sfinae(const Up& obj, int, long, Dp& dst, Args&&...)
-        -> decltype((void) obj.get(), void())
+    static auto sfinae(const Up& obj, int, long, Dp& dst, Args&&...)
+        -> decltype(obj.get())
     {
-        dst = data_type(type::get_label(), obj.get());
+        return (dst = data_type(type::get_label(), obj.get()));
     }
 
     //----------------------------------------------------------------------------------//
@@ -227,7 +242,7 @@ private:
     //
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<has_data<Up>::value, char> = 0>
-    void sfinae(const Up&, long, long, Dp&, Args&&...)
+    static auto sfinae(const Up&, long, long, Dp&, Args&&...)
     {}
 
     //----------------------------------------------------------------------------------//
@@ -235,7 +250,7 @@ private:
     //
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<!has_data<Up>::value, char> = 0>
-    void sfinae(const Up&, long, long, Dp&, Args&&...)
+    static auto sfinae(const Up&, long, long, Dp&, Args&&...)
     {}
 };
 //

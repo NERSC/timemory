@@ -129,7 +129,7 @@ struct priority_stop
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(priority_stop)
+    TIMEMORY_DEFAULT_OBJECT(priority_stop)
 
     template <typename... Args>
     TIMEMORY_HOT explicit priority_stop(type& obj, Args&&... args);
@@ -137,14 +137,14 @@ struct priority_stop
 private:
     //  satisfies mpl condition
     template <typename Up, typename... Args>
-    TIMEMORY_HOT auto sfinae(Up& obj, true_type&&, Args&&... args)
+    static TIMEMORY_HOT auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        stop<Tp> _tmp(obj, std::forward<Args>(args)...);
+        return stop<Tp>{}(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
     template <typename Up, typename... Args>
-    TIMEMORY_INLINE void sfinae(Up&, false_type&&, Args&&...)
+    static TIMEMORY_INLINE void sfinae(Up&, false_type&&, Args&&...)
     {}
 };
 //
@@ -159,7 +159,7 @@ struct standard_stop
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(standard_stop)
+    TIMEMORY_DEFAULT_OBJECT(standard_stop)
 
     template <typename... Args>
     TIMEMORY_HOT explicit standard_stop(type& obj, Args&&... args);
@@ -167,14 +167,14 @@ struct standard_stop
 private:
     //  satisfies mpl condition
     template <typename Up, typename... Args>
-    TIMEMORY_HOT auto sfinae(Up& obj, true_type&&, Args&&... args)
+    static TIMEMORY_HOT auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        stop<Tp> _tmp(obj, std::forward<Args>(args)...);
+        return stop<Tp>{}(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
     template <typename Up, typename... Args>
-    TIMEMORY_INLINE void sfinae(Up&, false_type&&, Args&&...)
+    static TIMEMORY_INLINE void sfinae(Up&, false_type&&, Args&&...)
     {}
 };
 //
@@ -189,7 +189,7 @@ struct delayed_stop
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(delayed_stop)
+    TIMEMORY_DEFAULT_OBJECT(delayed_stop)
 
     template <typename... Args>
     TIMEMORY_HOT explicit delayed_stop(type& obj, Args&&... args);
@@ -197,14 +197,14 @@ struct delayed_stop
 private:
     //  satisfies mpl condition
     template <typename Up, typename... Args>
-    TIMEMORY_HOT auto sfinae(Up& obj, true_type&&, Args&&... args)
+    static TIMEMORY_HOT auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        stop<Tp> _tmp(obj, std::forward<Args>(args)...);
+        return stop<Tp>{}(obj, std::forward<Args>(args)...);
     }
 
     //  does not satisfy mpl condition
     template <typename Up, typename... Args>
-    TIMEMORY_INLINE void sfinae(Up&, false_type&&, Args&&...)
+    static TIMEMORY_INLINE void sfinae(Up&, false_type&&, Args&&...)
     {}
 };
 //
