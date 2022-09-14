@@ -617,8 +617,11 @@ public:
             {
                 auto _hlen = (tot_w / 2) - 4;  // half-length
                 auto _beg  = _banner.substr(0, _hlen);
-                auto _end  = _banner.substr(_banner.length() - _hlen);
-                _banner    = _beg + "..." + _end;
+                auto _end =
+                    _banner.substr((static_cast<int64_t>(_banner.length()) > _hlen)
+                                       ? _banner.length() - _hlen
+                                       : _banner.length());
+                _banner = _beg + "..." + _end;
             }
             return _banner;
         };

@@ -408,7 +408,7 @@ demangle_hash_identifier(std::string inp, char bdelim, char edelim)
     while(_beg != std::string::npos)
     {
         size_t _end = inp.find_first_of(edelim, _beg);
-        if(_end == std::string::npos)
+        if(_end == std::string::npos || _end <= _beg)
             break;
         auto _sz = _end - _beg - 1;
         inp      = inp.replace(_beg + 1, _sz, demangle(inp.substr(_beg + 1, _sz)));

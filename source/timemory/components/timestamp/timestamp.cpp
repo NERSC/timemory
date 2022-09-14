@@ -159,7 +159,7 @@ stream_entry::construct<timestamp_value_t>(const timestamp_value_t& val)
             m_value = m_value.substr(0, settings::max_width() - 3);
             m_value += "...";
         }
-        else
+        else if(settings::max_width() >= 0)
         {
             m_value = m_value.substr(0, settings::max_width());
         }

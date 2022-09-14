@@ -148,7 +148,8 @@ delimit(
         {
             // starting at the position of the new string, get the characters
             // between this position and the next delimiter
-            _tmp = line.substr(_beginp, _delimp - _beginp);
+            if(_beginp < line.length())
+                _tmp = line.substr(_beginp, _delimp - _beginp);
         } catch(std::exception& e)
         {
             // print the exception but don't fail, unless maybe it should?

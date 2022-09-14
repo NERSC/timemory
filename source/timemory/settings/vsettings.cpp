@@ -107,7 +107,7 @@ vsettings::get_display(std::ios::fmtflags fmt, int _w, int _p)
         std::string _str;
         for(auto&& itr : _val)
             _str += std::string{ ", " } + _as_str(itr);
-        if(_str.empty())
+        if(_str.length() < 2)
             return _str;
         return _str.substr(2);
     };

@@ -239,7 +239,8 @@ get<Type, true>::operator()(result_type& ret)
                     ss << bss.str().substr(2);
                 }
                 std::string _msg = "Intervals: ";
-                _msg += ss.str().substr(2);
+                if(ss.str().length() > 2)
+                    _msg += ss.str().substr(2);
                 TIMEMORY_PRINT_HERE("[%s][pid=%i][tid=%i]> %s. range = { %i, %i }",
                                     demangle<get<Type, true>>().c_str(),
                                     (int) process::get_id(), (int) threading::get_id(),

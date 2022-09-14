@@ -439,7 +439,8 @@ auto tsettings<Tp, Vp>::get_action(enable_if_t<is_string_type<Up>(), long>)
             std::stringstream ss;
             for(auto& itr : _vec)
                 ss << ", " << itr;
-            set(ss.str().substr(2));
+            if(ss.str().length() > 2)
+                set(ss.str().substr(2));
         }
     };
 }

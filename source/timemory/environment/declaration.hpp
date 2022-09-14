@@ -218,7 +218,8 @@ get_env_choice(const std::string& env_id, Tp _default, std::set<Tp> _choices, bo
         std::ostringstream _opts{};
         for(const auto& itr : _choices)
             _opts << ", \"" << itr << "\"";
-        _msg << _opts.str().substr(2);
+        if(_opts.str().length() >= 2)
+            _msg << _opts.str().substr(2);
         throw std::runtime_error(_msg.str());
     }
 

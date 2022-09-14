@@ -64,13 +64,21 @@ try_demangle()
         auto _tmp = ::tim::demangle(typeid(type_list<Tp>).name());
         auto _key = std::string{ "type_list" };
         auto _idx = _tmp.find(_key);
-        _idx      = _tmp.find('<', _idx);
-        _tmp      = _tmp.substr(_idx + 1);
-        _idx      = _tmp.find_last_of('>');
-        _tmp      = _tmp.substr(0, _idx);
+        if(_idx == std::string::npos)
+            return _tmp;
+        _idx = _tmp.find('<', _idx);
+        if(_idx == std::string::npos)
+            return _tmp;
+        _tmp = _tmp.substr(_idx + 1);
+        _idx = _tmp.find_last_of('>');
+        if(_idx == std::string::npos)
+            return _tmp;
+        _tmp = _tmp.substr(0, _idx);
         // strip trailing whitespaces
-        while((_idx = _tmp.find_last_of(' ')) == _tmp.length() - 1)
+        while(!_tmp.empty() && (_idx = _tmp.find_last_of(' ')) == _tmp.length() - 1)
+        {
             _tmp = _tmp.substr(0, _idx);
+        }
         return _tmp;
     }();
     return _val;

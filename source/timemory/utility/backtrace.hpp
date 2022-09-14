@@ -311,8 +311,9 @@ print_native_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
     if(_use_lock && !_lk.owns_lock())
         _lk.lock();
     os << log::warning;
-    os << _indent.substr(0, _indent.length() / 2) << "[" << TIMEMORY_PROJECT_NAME
-       << "] Backtrace";
+    if(_indent.length() > 2)
+        os << _indent.substr(0, _indent.length() / 2);
+    os << "[" << TIMEMORY_PROJECT_NAME << "] Backtrace";
     if(!_info.empty())
         os << " " << _info;
     os << " [tid=" << std::this_thread::get_id() << "]:\n" << std::flush;
@@ -341,8 +342,9 @@ print_demangled_native_backtrace(std::ostream& os = std::cerr, std::string _pref
     if(_use_lock && !_lk.owns_lock())
         _lk.lock();
     os << log::warning;
-    os << _indent.substr(0, _indent.length() / 2) << "[" << TIMEMORY_PROJECT_NAME
-       << "] Backtrace";
+    if(_indent.length() > 2)
+        os << _indent.substr(0, _indent.length() / 2);
+    os << "[" << TIMEMORY_PROJECT_NAME << "] Backtrace";
     if(!_info.empty())
         os << " " << _info;
     os << " [tid=" << std::this_thread::get_id() << "]:\n" << std::flush;
@@ -370,8 +372,9 @@ print_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix = "",
     if(_use_lock && !_lk.owns_lock())
         _lk.lock();
     os << log::warning;
-    os << _indent.substr(0, _indent.length() / 2) << "[" << TIMEMORY_PROJECT_NAME
-       << "] Backtrace";
+    if(_indent.length() > 2)
+        os << _indent.substr(0, _indent.length() / 2);
+    os << "[" << TIMEMORY_PROJECT_NAME << "] Backtrace";
     if(!_info.empty())
         os << " " << _info;
     os << " [tid=" << std::this_thread::get_id() << "]:\n" << std::flush;
@@ -399,8 +402,9 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix 
     if(_use_lock && !_lk.owns_lock())
         _lk.lock();
     os << log::warning;
-    os << _indent.substr(0, _indent.length() / 2) << "[" << TIMEMORY_PROJECT_NAME
-       << "] Backtrace";
+    if(_indent.length() > 2)
+        os << _indent.substr(0, _indent.length() / 2);
+    os << "[" << TIMEMORY_PROJECT_NAME << "] Backtrace";
     if(!_info.empty())
         os << " " << _info;
     os << " [tid=" << std::this_thread::get_id() << "]:\n" << std::flush;

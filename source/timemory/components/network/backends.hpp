@@ -25,11 +25,15 @@
 
 #pragma once
 
+#include "timemory/backends/process.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/settings/settings.hpp"
 #include "timemory/tpls/cereal/types.hpp"
+#include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
+#include "timemory/variadic/macros.hpp"
 
 #include <iostream>
 #include <string>

@@ -524,7 +524,7 @@ gotcha<Nt, BundleT, DiffT>::is_permitted(const std::string& _func)
         auto tofortran = [](std::string _fort) {
             for(auto& itr : _fort)
                 itr = tolower(itr);
-            if(_fort[_fort.length() - 1] != '_')
+            if(!_fort.empty() && _fort[_fort.length() - 1] != '_')
                 _fort += "_";
             return _fort;
         };

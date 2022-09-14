@@ -49,7 +49,8 @@ dirname(std::string _fname)
     while(_fname.find('\\') != std::string::npos)
         _fname.replace(_fname.find('\\'), 1, "/");
 
-    return _fname.substr(0, _fname.find_last_of('/'));
+    auto _pos = _fname.find_last_of('/');
+    return (_pos != std::string::npos) ? _fname.substr(0, _pos) : _fname;
 #elif defined(TIMEMORY_WINDOWS)
     while(_fname.find('/') != std::string::npos)
         _fname.replace(_fname.find('/'), 1, "\\");

@@ -1122,7 +1122,7 @@ bundle<Tag, BundleT, TupleT>::print(std::ostream& os, bool _endl) const
     std::string _s = ss_data.str();
     if(_s.empty())
         return get_this_type();
-    while(_s.find_last_of(", ") == _s.length() - 1)
+    while(!_s.empty() && _s.find_last_of(", ") == _s.length() - 1)
         _s = _s.substr(0, _s.length() - 1);
     if(_s.empty())
         return get_this_type();

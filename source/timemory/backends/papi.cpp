@@ -221,7 +221,7 @@ generate_component_info(bool _with_qualifiers, bool _force)
 
                     for(auto iitr : { ' ', '.', ',' })
                     {
-                        while(_descr.at(_descr.length() - 1) == iitr)
+                        while(!_descr.empty() && _descr.at(_descr.length() - 1) == iitr)
                             _descr = _descr.substr(0, _descr.length() - 1);
                     }
 

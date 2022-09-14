@@ -171,7 +171,7 @@ network_stats::get_interfaces()
             std::stringstream _ss;
             for(const auto& itr : _instance)
                 _ss << ", " << itr;
-            _value = _last = _ss.str().substr(2);
+            _value = _last = (_ss.str().length() > 2) ? _ss.str().substr(2) : _ss.str();
             _settings->set(TIMEMORY_SETTINGS_KEY("NETWORK_INTERFACE"), _value, true);
         }
     }
@@ -222,7 +222,7 @@ network_stats::get_display() const
     std::stringstream ss;
     for(size_t i = 0; i < data_size; ++i)
         ss << ", " << _get_display(_val.get_data()[i], _labels[i], _disp[i]);
-    return ss.str().substr(2);
+    return (ss.str().length() > 2) ? ss.str().substr(2) : ss.str();
 }
 //
 inline void
