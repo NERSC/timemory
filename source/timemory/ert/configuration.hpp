@@ -39,6 +39,7 @@
 #include "timemory/ert/kernels.hpp"
 #include "timemory/ert/types.hpp"
 #include "timemory/settings/declaration.hpp"
+#include "timemory/utility/delimit.hpp"
 
 #include <cstdint>
 #include <functional>
