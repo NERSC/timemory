@@ -221,7 +221,7 @@ private:
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<has_data<Up>::value, char> = 0>
     static auto sfinae(const Up& obj, int, int, Dp& dst, Args&&... args)
-        -> decltype(obj.get(std::forward<Args>(args)...))
+        -> decltype(data_type(type::get_label(), obj.get(std::forward<Args>(args)...)))
     {
         return (dst = data_type(type::get_label(), obj.get(std::forward<Args>(args)...)));
     }
@@ -232,7 +232,7 @@ private:
     template <typename Up, typename Dp, typename... Args,
               enable_if_t<has_data<Up>::value, char> = 0>
     static auto sfinae(const Up& obj, int, long, Dp& dst, Args&&...)
-        -> decltype(obj.get())
+        -> decltype(data_type(type::get_label(), obj.get()))
     {
         return (dst = data_type(type::get_label(), obj.get()));
     }

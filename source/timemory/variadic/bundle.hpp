@@ -26,6 +26,7 @@
 #pragma once
 
 #include "timemory/general/source_location.hpp"
+#include "timemory/hash/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types.hpp"
@@ -932,7 +933,19 @@ template <typename U>
 decltype(auto)
 bundle<Tag, BundleT, TupleT>::get()
 {
-    return tim::variadic::impl::get<U, Tag>(m_data);
+    U* _val = nullptr;
+    if constexpr(is_one_of<U, reference_type>::value)
+        _val = tim::variadic::impl::get<U, Tag>(m_data);
+
+    if(!_val)
+    {
+        void* _ptr = nullptr;
+        tim::variadic::impl::get<Tag>(m_data, _ptr, typeid_hash<U>());
+        if(_ptr)
+            _val = static_cast<U*>(_ptr);
+    }
+
+    return _val;
 }
 
 //----------------------------------------------------------------------------------//

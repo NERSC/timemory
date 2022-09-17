@@ -357,39 +357,50 @@ get(DataT&& m_data)
     using type      = remove_optional_t<T>;
     using data_type = decay_t<DataT>;
 
+    type* _val = nullptr;
     if constexpr(is_one_of<type, data_type>::value)
     {
-        return &(std::get<index_of<type, data_type>::value>(std::forward<DataT>(m_data)));
+        _val = &(std::get<index_of<type, data_type>::value>(std::forward<DataT>(m_data)));
     }
     else if constexpr(is_one_of<type*, data_type>::value)
     {
-        return std::get<index_of<type*, data_type>::value>(std::forward<DataT>(m_data));
+        _val = std::get<index_of<type*, data_type>::value>(std::forward<DataT>(m_data));
     }
     else if constexpr(is_one_of<std::unique_ptr<type>, data_type>::value)
     {
-        return std::get<index_of<std::unique_ptr<type>, data_type>::value>(
+        _val = std::get<index_of<std::unique_ptr<type>, data_type>::value>(
                    std::forward<DataT>(m_data))
-            .get();
+                   .get();
     }
     else if constexpr(is_one_of<std::shared_ptr<type>, data_type>::value)
     {
-        return std::get<index_of<std::shared_ptr<type>, data_type>::value>(
+        _val = std::get<index_of<std::shared_ptr<type>, data_type>::value>(
                    std::forward<DataT>(m_data))
-            .get();
+                   .get();
     }
     else if constexpr(is_one_of<std::optional<type>, data_type>::value)
     {
         auto& _v = std::get<index_of<std::optional<type>, data_type>::value>(
             std::forward<DataT>(m_data));
-        T* _ret = nullptr;
         if(_v)
-            _ret = &*_v;
-        return _ret;
+            _val = &*_v;
+    }
+    else if(concepts::is_wrapper<DataT>::value)
+    {
+        void* _ptr = nullptr;
+        std::forward<DataT>(m_data).get(_val, typeid_hash<type>());
+        if(_ptr)
+            _val = static_cast<type*>(_ptr);
     }
     else
     {
-        static_assert(!std::is_empty<type>::value, "Error! get not handled");
+        void* _ptr = nullptr;
+        get(std::forward<DataT>(m_data), _ptr, typeid_hash<type>());
+        if(_ptr)
+            _val = static_cast<type*>(_ptr);
     }
+
+    return _val;
 }
 
 //----------------------------------------------------------------------------------//
