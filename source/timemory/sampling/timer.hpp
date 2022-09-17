@@ -415,8 +415,8 @@ timer::start()
 
     m_is_active = (_ret == 0);
 
-    const auto _epsilon      = std::numeric_limits<float>::epsilon();
-    auto       _compute_norm = [](double _lhs, double _rhs) -> double {
+    const double _epsilon = static_cast<double>(std::numeric_limits<float>::epsilon());
+    auto         _compute_norm = [](double _lhs, double _rhs) -> double {
         return (std::isfinite(_lhs) && std::isfinite(_rhs))
                    ? std::abs((_lhs / _rhs) - 1.0)
                    : 1.0;

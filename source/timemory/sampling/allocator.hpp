@@ -316,10 +316,10 @@ allocator<Tp>::execute(allocator* _alloc, Tp* _obj)
             }
         }
     };
-    auto _notify = [&](semaphore_t* _sem) {
-        if(_alloc && _sem)
+    auto _notify = [&](semaphore_t* _sem_v) {
+        if(_alloc && _sem_v)
         {
-            TIMEMORY_SEMAPHORE_CHECK(sem_post(_sem));
+            TIMEMORY_SEMAPHORE_CHECK(sem_post(_sem_v));
         }
     };
     auto _exit = [&]() {
