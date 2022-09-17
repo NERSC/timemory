@@ -157,7 +157,14 @@ private:
     template <typename Up, typename... Args>
     static TIMEMORY_INLINE auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        return start<Tp>{}(obj, std::forward<Args>(args)...);
+        if constexpr(std::is_default_constructible<start<Tp>>::value)
+        {
+            return start<Tp>{}(obj, std::forward<Args>(args)...);
+        }
+        else
+        {
+            return start<Tp>{ obj, std::forward<Args>(args)... };
+        }
     }
 
     //  does not satisfy mpl condition
@@ -187,7 +194,14 @@ private:
     template <typename Up, typename... Args>
     static TIMEMORY_INLINE auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        return start<Tp>{}(obj, std::forward<Args>(args)...);
+        if constexpr(std::is_default_constructible<start<Tp>>::value)
+        {
+            return start<Tp>{}(obj, std::forward<Args>(args)...);
+        }
+        else
+        {
+            return start<Tp>{ obj, std::forward<Args>(args)... };
+        }
     }
 
     //  does not satisfy mpl condition
@@ -217,7 +231,14 @@ private:
     template <typename Up, typename... Args>
     static TIMEMORY_INLINE auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        return start<Tp>{}(obj, std::forward<Args>(args)...);
+        if constexpr(std::is_default_constructible<start<Tp>>::value)
+        {
+            return start<Tp>{}(obj, std::forward<Args>(args)...);
+        }
+        else
+        {
+            return start<Tp>{ obj, std::forward<Args>(args)... };
+        }
     }
 
     //  does not satisfy mpl condition

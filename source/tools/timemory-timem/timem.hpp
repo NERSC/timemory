@@ -330,23 +330,35 @@ CUSTOM_BASE_PRINTER_SPECIALIZATION(component::network_stats, "")
 //
 #if defined(TIMEMORY_USE_PAPI)
 //
-template <>
-struct start<component::papi_array_t>
+template <size_t N>
+struct start<component::papi_array<N>>
 {
-    using type = papi_array_t;
+    using type = papi_array<N>;
+
+    TIMEMORY_DEFAULT_OBJECT(start)
 
     template <typename... Args>
     explicit start(type&, Args&&...)
     {}
+
+    template <typename... Args>
+    auto operator()(type&, Args&&...) const
+    {}
 };
 //
-template <>
-struct stop<component::papi_array_t>
+template <size_t N>
+struct stop<component::papi_array<N>>
 {
-    using type = component::papi_array_t;
+    using type = component::papi_array<N>;
+
+    TIMEMORY_DEFAULT_OBJECT(stop)
 
     template <typename... Args>
     explicit stop(type&, Args&&...)
+    {}
+
+    template <typename... Args>
+    auto operator()(type&, Args&&...) const
     {}
 };
 //
@@ -357,8 +369,14 @@ struct stop<component::page_rss>
 {
     using type = component::page_rss;
 
+    TIMEMORY_DEFAULT_OBJECT(stop)
+
     template <typename... Args>
     explicit stop(type&, Args&&...)
+    {}
+
+    template <typename... Args>
+    auto operator()(type&, Args&&...) const
     {}
 };
 //
@@ -367,8 +385,14 @@ struct stop<component::virtual_memory>
 {
     using type = component::virtual_memory;
 
+    TIMEMORY_DEFAULT_OBJECT(stop)
+
     template <typename... Args>
     explicit stop(type&, Args&&...)
+    {}
+
+    template <typename... Args>
+    auto operator()(type&, Args&&...) const
     {}
 };
 //
@@ -377,8 +401,14 @@ struct start<component::network_stats>
 {
     using type = network_stats;
 
+    TIMEMORY_DEFAULT_OBJECT(start)
+
     template <typename... Args>
     explicit start(type&, Args&&...)
+    {}
+
+    template <typename... Args>
+    auto operator()(type&, Args&&...) const
     {}
 };
 //
@@ -387,8 +417,14 @@ struct stop<component::network_stats>
 {
     using type = component::network_stats;
 
+    TIMEMORY_DEFAULT_OBJECT(stop)
+
     template <typename... Args>
     explicit stop(type&, Args&&...)
+    {}
+
+    template <typename... Args>
+    auto operator()(type&, Args&&...) const
     {}
 };
 //

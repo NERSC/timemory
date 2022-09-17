@@ -29,6 +29,8 @@
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
 
+#include <type_traits>
+
 namespace tim
 {
 namespace operation
@@ -139,7 +141,14 @@ private:
     template <typename Up, typename... Args>
     static TIMEMORY_HOT auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        return stop<Tp>{}(obj, std::forward<Args>(args)...);
+        if constexpr(std::is_default_constructible<stop<Tp>>::value)
+        {
+            return stop<Tp>{}(obj, std::forward<Args>(args)...);
+        }
+        else
+        {
+            return stop<Tp>{ obj, std::forward<Args>(args)... };
+        }
     }
 
     //  does not satisfy mpl condition
@@ -169,7 +178,14 @@ private:
     template <typename Up, typename... Args>
     static TIMEMORY_HOT auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        return stop<Tp>{}(obj, std::forward<Args>(args)...);
+        if constexpr(std::is_default_constructible<stop<Tp>>::value)
+        {
+            return stop<Tp>{}(obj, std::forward<Args>(args)...);
+        }
+        else
+        {
+            return stop<Tp>{ obj, std::forward<Args>(args)... };
+        }
     }
 
     //  does not satisfy mpl condition
@@ -199,7 +215,14 @@ private:
     template <typename Up, typename... Args>
     static TIMEMORY_HOT auto sfinae(Up& obj, true_type&&, Args&&... args)
     {
-        return stop<Tp>{}(obj, std::forward<Args>(args)...);
+        if constexpr(std::is_default_constructible<stop<Tp>>::value)
+        {
+            return stop<Tp>{}(obj, std::forward<Args>(args)...);
+        }
+        else
+        {
+            return stop<Tp>{ obj, std::forward<Args>(args)... };
+        }
     }
 
     //  does not satisfy mpl condition
