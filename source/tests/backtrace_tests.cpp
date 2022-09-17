@@ -29,6 +29,7 @@
 TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/utility.hpp"
+#include "timemory/utility/backtrace.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -474,6 +475,98 @@ TEST_F(backtrace_tests, print_demangled_unw_backtrace)
     std::cerr << ss.str();
     auto btvec = tim::delimit(ss.str(), "\n");
     EXPECT_GE(btvec.size(), 3) << ss.str();
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t DepthN>
+TIMEMORY_NOINLINE auto
+unw_foo_common()
+{
+    return tim::get_unw_backtrace_raw<DepthN, 0>();
+}
+
+template <size_t DepthN>
+TIMEMORY_NOINLINE auto
+unw_bar_common()
+{
+    return unw_foo_common<DepthN>();
+}
+
+template <size_t DepthN>
+TIMEMORY_NOINLINE auto
+unw_spam_common()
+{
+    return unw_bar_common<DepthN>();
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(backtrace_tests, unwind_common_type)
+{
+    namespace unwind = tim::unwind;
+    namespace log    = tim::log;
+
+    static constexpr size_t N = 3;
+    unwind::stack<N - 1>    _lhs{};
+    unwind::stack<N>        _rhs{};
+
+    std::thread{ [&_lhs]() { _lhs = unw_spam_common<N>().shift(); } }.join();
+    _rhs = unw_spam_common<N>();
+
+    auto _as_string_v = [](auto itr) {
+        std::stringstream _ss{};
+        log::stream(_ss, log::color::source())
+            << "    " << std::setw(32) << std::left << tim::demangle(itr.name)
+            << " (error: " << itr.error << ", offset: 0x" << std::hex << std::setw(8)
+            << std::setfill('0') << std::right << itr.offset << ")\n";
+        return _ss.str();
+    };
+
+    auto _as_string = [&_as_string_v](auto _data) {
+        std::stringstream _ss{};
+        for(auto itr : _data.get())
+            _ss << _as_string_v(itr);
+        return _ss.str();
+    };
+
+    auto _compare_data = [&_as_string_v](auto _lhs_v, auto _rhs_v) {
+        EXPECT_EQ(_lhs_v.name, _rhs_v.name) << "lhs:\n"
+                                            << _as_string_v(_lhs_v) << "rhs:\n"
+                                            << _as_string_v(_rhs_v);
+        EXPECT_EQ(_lhs_v.error, _rhs_v.error) << "lhs:\n"
+                                              << _as_string_v(_lhs_v) << "rhs:\n"
+                                              << _as_string_v(_rhs_v);
+        EXPECT_EQ(_lhs_v.offset, _rhs_v.offset) << "lhs:\n"
+                                                << _as_string_v(_lhs_v) << "rhs:\n"
+                                                << _as_string_v(_rhs_v);
+    };
+
+    {
+        ASSERT_EQ(_lhs.get().size(), 2) << _as_string(_lhs);
+        ASSERT_EQ(_rhs.get().size(), 3) << _as_string(_rhs);
+
+        auto _lhs_data = _lhs.get();
+        auto _rhs_data = _rhs.get();
+
+        _compare_data(_lhs_data.at(0), _rhs_data.at(1));
+        _compare_data(_lhs_data.at(1), _rhs_data.at(2));
+    }
+
+    auto _common = unwind::get_common_stack(_lhs, _rhs);
+    auto _lhs_c  = std::get<0>(_common);
+    auto _rhs_c  = std::get<1>(_common);
+
+    {
+        ASSERT_EQ(_lhs_c.get().size(), 2) << _as_string(_lhs_c);
+        ASSERT_EQ(_rhs_c.get().size(), 2) << _as_string(_rhs_c);
+
+        auto _lhs_data = _lhs_c.get();
+        auto _rhs_data = _rhs_c.get();
+
+        _compare_data(_lhs_data.at(0), _rhs_data.at(0));
+        _compare_data(_lhs_data.at(1), _rhs_data.at(1));
+    }
 }
 
 #endif
