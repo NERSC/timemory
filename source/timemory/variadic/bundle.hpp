@@ -632,27 +632,14 @@ public:
     template <typename U>
     auto get_component(
         enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
-                        is_one_of<remove_pointer_decay_t<U>, data_type>::value,
-                    int> = 0);
-
-    template <typename U>
-    auto get_component(
-        enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
-                        is_one_of<remove_pointer_decay_t<U>*, data_type>::value,
+                        is_one_of<remove_pointer_decay_t<U>, reference_type>::value,
                     int> = 0);
 
     /// returns a reference from a stack component instead of a pointer
     template <typename U>
     auto& get_reference(
         enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
-                        is_one_of<remove_pointer_decay_t<U>, data_type>::value,
-                    int> = 0);
-
-    /// returns a reference from a heap component instead of a pointer
-    template <typename U>
-    auto& get_reference(
-        enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
-                        is_one_of<remove_pointer_decay_t<U>*, data_type>::value,
+                        is_one_of<remove_pointer_decay_t<U>, reference_type>::value,
                     int> = 0);
 
     /// create an optional type that is in variadic list AND is available AND
@@ -753,6 +740,7 @@ public:
                         demangle<T>().c_str());
             }
         }
+
         if constexpr(is_one_of<std::optional<T>, data_type>::value)
         {
             std::optional<T>& _obj =
@@ -1009,19 +997,7 @@ template <typename Tag, typename BundleT, typename TupleT>
 template <typename U>
 auto bundle<Tag, BundleT, TupleT>::get_component(
     enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
-                    is_one_of<remove_pointer_decay_t<U>, data_type>::value,
-                int>)
-{
-    return get<remove_pointer_decay_t<U>>();
-}
-
-//----------------------------------------------------------------------------------//
-//
-template <typename Tag, typename BundleT, typename TupleT>
-template <typename U>
-auto bundle<Tag, BundleT, TupleT>::get_component(
-    enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
-                    is_one_of<remove_pointer_decay_t<U>*, data_type>::value,
+                    is_one_of<remove_pointer_decay_t<U>, reference_type>::value,
                 int>)
 {
     return get<remove_pointer_decay_t<U>>();
@@ -1033,23 +1009,18 @@ template <typename Tag, typename BundleT, typename TupleT>
 template <typename U>
 auto& bundle<Tag, BundleT, TupleT>::get_reference(
     enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
-                    is_one_of<remove_pointer_decay_t<U>, data_type>::value,
+                    is_one_of<remove_pointer_decay_t<U>, reference_type>::value,
                 int>)
 {
-    return std::get<index_of<remove_pointer_decay_t<U>, data_type>::value>(m_data);
+    using Up = remove_pointer_decay_t<U>;
+    if constexpr(is_one_of<std::optional<Up>, data_type>::value)
+        return std::get<index_of<std::optional<Up>, data_type>::value>(m_data);
+    else if constexpr(is_one_of<Up*, data_type>::value)
+        return std::get<index_of<Up*, data_type>::value>(m_data);
+    else
+        return std::get<index_of<Up, data_type>::value>(m_data);
 }
 
-//----------------------------------------------------------------------------------//
-//
-template <typename Tag, typename BundleT, typename TupleT>
-template <typename U>
-auto& bundle<Tag, BundleT, TupleT>::get_reference(
-    enable_if_t<trait::is_available<remove_pointer_decay_t<U>>::value &&
-                    is_one_of<remove_pointer_decay_t<U>*, data_type>::value,
-                int>)
-{
-    return std::get<index_of<remove_pointer_decay_t<U>*, data_type>::value>(m_data);
-}
 //
 //----------------------------------------------------------------------------------//
 //
@@ -1080,38 +1051,6 @@ bundle<Tag, BundleT, TupleT>::rekey(uint64_t _hash)
     m_hash = _hash;
     set_prefix(_hash);
 }
-//
-//----------------------------------------------------------------------------------//
-//
-/*
-template <typename Tag, typename BundleT, typename TupleT
-          >
-class bundle<Tag, BundleT, TransformT<>, std::tuple<Types...>>
-: public bundle<Tag, BundleT, TupleT>
-{
-    TIMEMORY_DEFAULT_OBJECT(bundle)
-
-    template <typename... Args>
-    bundle(Args&&... args)
-    : bundle<Tag, BundleT, TupleT>{ std::forward<Args>(args)... }
-    {}
-};
-//
-//----------------------------------------------------------------------------------//
-//
-template <typename Tag, typename BundleT, typename TupleT
-          >
-class bundle<Tag, BundleT, TransformT<>, type_list<Types...>>
-: public bundle<Tag, BundleT, TupleT>
-{
-    TIMEMORY_DEFAULT_OBJECT(bundle)
-
-    template <typename... Args>
-    bundle(Args&&... args)
-    : bundle<Tag, BundleT, TupleT>{ std::forward<Args>(args)... }
-    {}
-};
-*/
 }  // namespace tim
 
 #include "timemory/variadic/bundle.cpp"

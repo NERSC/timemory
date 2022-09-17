@@ -56,7 +56,7 @@
 //--------------------------------------------------------------------------------------//
 //
 #if !defined(SFINAE_WARNING)
-#    if defined(DEBUG)
+#    if defined(DEBUG) || !defined(NDEBUG)
 #        define SFINAE_WARNING(TYPE)                                                     \
             if(::tim::trait::is_available<TYPE>::value)                                  \
             {                                                                            \

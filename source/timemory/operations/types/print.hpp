@@ -258,6 +258,22 @@ struct print
     print(const type*, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
           bool, const string_t& = "")
     {}
+
+    //----------------------------------------------------------------------------------//
+    // print nothing if component is not available -- optional
+    //
+    template <typename Up = Tp, enable_if_t<!is_enabled<Up>::value, char> = 0>
+    print(const std::optional<type>&, std::ostream&, bool = false)
+    {}
+
+    template <typename Up = Tp, enable_if_t<!is_enabled<Up>::value, char> = 0>
+    print(std::size_t, std::size_t, const std::optional<type>&, std::ostream&, bool)
+    {}
+
+    template <typename Up = Tp, enable_if_t<!is_enabled<Up>::value, char> = 0>
+    print(const std::optional<type>&, std::ostream&, const string_t&, int64_t, int64_t,
+          const widths_t&, bool, const string_t& = "")
+    {}
 };
 //
 //--------------------------------------------------------------------------------------//

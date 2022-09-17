@@ -24,11 +24,12 @@
 
 #pragma once
 
+#include "timemory/macros/attributes.hpp"
 #include "timemory/mpl/quirks.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
-#include "timemory/utility/demangle.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <type_traits>
 
@@ -70,11 +71,21 @@ struct start
     TIMEMORY_HOT auto operator()(type& obj, Args&&... args) const
     {
         using RetT = decltype(do_sfinae(obj, 0, 0, std::forward<Args>(args)...));
-        if(!is_running<Tp, false>{}(obj))
+        if constexpr(std::is_default_constructible<RetT>::value)
         {
-            return do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
+            if(!is_running<Tp, false>{}(obj))
+            {
+                return do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
+            }
+            return get_return<RetT>();
         }
-        return get_return<RetT>();
+        else
+        {
+            if(!is_running<Tp, false>{}(obj))
+            {
+                do_sfinae(obj, 0, 0, std::forward<Args>(args)...);
+            }
+        }
     }
 
     template <typename... Args>
@@ -129,10 +140,6 @@ private:
     void do_sfinae(Up&, long, long, Args&&...) const
     {
         SFINAE_WARNING(type);
-        TIMEMORY_DEBUG_PRINT_HERE("No support for arguments: start(%s)",
-                                  tim::mpl::apply<std::string>::join(
-                                      ", ", try_demangle<Up>(), demangle<Args>()...)
-                                      .c_str());
     }
 };
 //

@@ -155,8 +155,8 @@ private:
         return Op{ *obj, std::forward<Args>(args)... };
     }
 
-    template <typename Up, typename... Args,
-              enable_if_t<std::is_default_constructible<Tp>::value> = 0>
+    template <typename Up, typename... Args, typename OpT = Op,
+              enable_if_t<std::is_default_constructible<OpT>::value> = 0>
     TIMEMORY_INLINE auto pointer_sfinae(Up obj, int, int, long, Args&&... args)
         -> decltype(std::declval<Op>()(*obj, std::forward<Args>(args)...))
     {
@@ -183,8 +183,8 @@ private:
         return Op{ *obj, *rhs, std::forward<Args>(args)... };
     }
 
-    template <typename Up, typename... Args,
-              enable_if_t<std::is_default_constructible<Tp>::value> = 0>
+    template <typename Up, typename... Args, typename OpT = Op,
+              enable_if_t<std::is_default_constructible<OpT>::value> = 0>
     TIMEMORY_INLINE auto pointer_sfinae(Up obj, Up rhs, int, int, long, Args&&... args)
         -> decltype(std::declval<Op>()(*obj, *rhs, std::forward<Args>(args)...))
     {
@@ -261,8 +261,8 @@ private:
         return Op{ obj, std::forward<Args>(args)... };
     }
 
-    template <typename Up, typename... Args,
-              enable_if_t<std::is_default_constructible<Tp>::value> = 0>
+    template <typename Up, typename... Args, typename OpT = Op,
+              enable_if_t<std::is_default_constructible<OpT>::value> = 0>
     TIMEMORY_INLINE auto sfinae(Up& obj, int, int, long, Args&&... args)
         -> decltype(std::declval<Op>()(obj, std::forward<Args>(args)...))
     {
@@ -298,8 +298,8 @@ private:
         return Op{ obj, rhs, std::forward<Args>(args)... };
     }
 
-    template <typename Up, typename... Args,
-              enable_if_t<std::is_default_constructible<Tp>::value> = 0>
+    template <typename Up, typename... Args, typename OpT = Op,
+              enable_if_t<std::is_default_constructible<OpT>::value> = 0>
     TIMEMORY_INLINE auto sfinae(Up& obj, Up& rhs, int, int, long, Args&&... args)
         -> decltype(std::declval<Op>()(obj, rhs, std::forward<Args>(args)...))
     {

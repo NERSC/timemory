@@ -757,7 +757,7 @@ struct cmath_reentry : public base<cmath_reentry, void>
 
 using cmath_reentry_t = gotcha<4, std::tuple<>, cmath_reentry>;
 
-TIMEMORY_DEFINE_CONCRETE_TRAIT(static_data_gotcha, cmath_reentry_t, false_type)
+TIMEMORY_DEFINE_CONCRETE_TRAIT(static_data, cmath_reentry_t, false_type)
 TIMEMORY_DEFINE_CONCRETE_TRAIT(prevent_reentry, cmath_reentry_t, false_type)
 
 TEST_F(gotcha_tests, unprotected_replacement)

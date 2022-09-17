@@ -1177,6 +1177,14 @@ struct union_index_of<T, TupleT<Types...>>
     {
         return index_of<T*, TupleT<Types...>>::value;
     }
+
+    template <typename U = T>
+    static constexpr auto value(
+        long long,
+        enable_if_t<is_one_of<std::optional<U>, TupleT<Types...>>::value, int> = 0)
+    {
+        return index_of<std::optional<T>, TupleT<Types...>>::value;
+    }
 };
 
 template <typename T, template <typename...> class TupleT, typename... Types>
@@ -1194,6 +1202,39 @@ struct union_index_of<T*, TupleT<Types...>>
         int, enable_if_t<is_one_of<U*, TupleT<Types...>>::value, int> = 0)
     {
         return index_of<T*, TupleT<Types...>>::value;
+    }
+
+    template <typename U = T>
+    static constexpr auto value(
+        long long,
+        enable_if_t<is_one_of<std::optional<U>, TupleT<Types...>>::value, int> = 0)
+    {
+        return index_of<std::optional<T>, TupleT<Types...>>::value;
+    }
+};
+
+template <typename T, template <typename...> class TupleT, typename... Types>
+struct union_index_of<std::optional<T>, TupleT<Types...>>
+{
+    template <typename U = T>
+    static constexpr auto value(
+        long, enable_if_t<is_one_of<U, TupleT<Types...>>::value, int> = 0)
+    {
+        return index_of<T, TupleT<Types...>>::value;
+    }
+
+    template <typename U = T>
+    static constexpr auto value(
+        long long, enable_if_t<is_one_of<U*, TupleT<Types...>>::value, int> = 0)
+    {
+        return index_of<T*, TupleT<Types...>>::value;
+    }
+
+    template <typename U = T>
+    static constexpr auto value(
+        int, enable_if_t<is_one_of<std::optional<U>, TupleT<Types...>>::value, int> = 0)
+    {
+        return index_of<std::optional<T>, TupleT<Types...>>::value;
     }
 };
 

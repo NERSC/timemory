@@ -24,10 +24,12 @@
 
 #pragma once
 
+#include "timemory/macros/attributes.hpp"
 #include "timemory/mpl/quirks.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <type_traits>
 
@@ -65,11 +67,21 @@ struct stop
     TIMEMORY_HOT auto operator()(type& obj, Args&&... args) const
     {
         using RetT = decltype(sfinae(obj, 0, 0, std::forward<Args>(args)...));
-        if(is_running<Tp, true>{}(obj))
+        if constexpr(std::is_default_constructible<RetT>::value)
         {
-            return sfinae(obj, 0, 0, std::forward<Args>(args)...);
+            if(is_running<Tp, true>{}(obj))
+            {
+                return sfinae(obj, 0, 0, std::forward<Args>(args)...);
+            }
+            return get_return<RetT>();
         }
-        return get_return<RetT>();
+        else
+        {
+            if(is_running<Tp, true>{}(obj))
+            {
+                sfinae(obj, 0, 0, std::forward<Args>(args)...);
+            }
+        }
     }
 
     template <typename... Args>
