@@ -216,7 +216,7 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const base_type& obj)
     {
-        obj.print(os);
+        static_cast<const Type&>(obj).print(os);
         return os;
     }
 
