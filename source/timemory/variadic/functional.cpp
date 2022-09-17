@@ -55,8 +55,8 @@ invoke(TupleT<Tp...>& _obj, Args&&... _args)
 {
     using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
-        operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
-                                    OpT<std::remove_pointer_t<decay_t<Tp>>>, Tag>(
+        operation::generic_operator<remove_optional_t<decay_t<Tp>>,
+                                    OpT<remove_optional_t<decay_t<Tp>>>, Tag>(
             std::get<index_of<decay_t<Tp>, data_type>::value>(_obj),
             std::forward<Args>(_args)...));
 }
@@ -70,8 +70,8 @@ invoke(TupleT<Tp...>& _obj, Args&&... _args)
 {
     using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
-        operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
-                                    OpT<std::remove_pointer_t<decay_t<Tp>>, Tag>, Tag>(
+        operation::generic_operator<remove_optional_t<decay_t<Tp>>,
+                                    OpT<remove_optional_t<decay_t<Tp>>, Tag>, Tag>(
             std::get<index_of<decay_t<Tp>, data_type>::value>(_obj),
             std::forward<Args>(_args)...));
 }
@@ -85,8 +85,8 @@ invoke(TupleT<Tp&...>&& _obj, Args&&... _args)
 {
     using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
-        operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
-                                    OpT<std::remove_pointer_t<decay_t<Tp>>>, Tag>(
+        operation::generic_operator<remove_optional_t<decay_t<Tp>>,
+                                    OpT<remove_optional_t<decay_t<Tp>>>, Tag>(
             std::get<index_of<decay_t<Tp>, data_type>::value>(_obj),
             std::forward<Args>(_args)...));
 }
@@ -100,8 +100,8 @@ invoke(TupleT<Tp&...>&& _obj, Args&&... _args)
 {
     using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
-        operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
-                                    OpT<std::remove_pointer_t<decay_t<Tp>>, Tag>, Tag>(
+        operation::generic_operator<remove_optional_t<decay_t<Tp>>,
+                                    OpT<remove_optional_t<decay_t<Tp>>, Tag>, Tag>(
             std::get<index_of<decay_t<Tp>, data_type>::value>(_obj),
             std::forward<Args>(_args)...));
 }
@@ -116,8 +116,8 @@ invoke_data(TupleT<Tp...>& _obj, ValueT<Vp...>& _val, Args&&... _args)
 {
     using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
-        operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
-                                    OpT<std::remove_pointer_t<decay_t<Tp>>>, Tag>(
+        operation::generic_operator<remove_optional_t<decay_t<Tp>>,
+                                    OpT<remove_optional_t<decay_t<Tp>>>, Tag>(
             std::get<index_of<decay_t<Tp>, data_type>::value>(_obj),
             std::get<index_of<decay_t<Tp>, data_type>::value>(_val),
             std::forward<Args>(_args)...));
@@ -133,8 +133,8 @@ invoke_data(TupleT<Tp&...>&& _obj, ValueT<Vp...>& _val, Args&&... _args)
 {
     using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
-        operation::generic_operator<std::remove_pointer_t<decay_t<Tp>>,
-                                    OpT<std::remove_pointer_t<decay_t<Tp>>>, Tag>(
+        operation::generic_operator<remove_optional_t<decay_t<Tp>>,
+                                    OpT<remove_optional_t<decay_t<Tp>>>, Tag>(
             std::get<index_of<decay_t<Tp>, data_type>::value>(_obj),
             std::get<index_of<decay_t<Tp>, data_type>::value>(_val),
             std::forward<Args>(_args)...));
@@ -149,7 +149,7 @@ construct(TupleT<Tp...>& _obj, Args&&... _args)
     using data_type = std::tuple<decay_t<Tp>...>;
     TIMEMORY_FOLD_EXPRESSION(
         std::get<index_of<decay_t<Tp>, data_type>::value>(_obj) =
-            operation::construct<Tp>::get(std::forward<Args>(_args)...));
+            operation::construct<Tp>{}(std::forward<Args>(_args)...));
 }
 //
 }  // namespace invoke_impl
@@ -1011,7 +1011,7 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 auto
 get(TupleT<Tp...>& obj, Args&&... args)
 {
-    using data_type         = TupleT<std::remove_pointer_t<Tp>...>;
+    using data_type         = TupleT<remove_optional_t<Tp>...>;
     using data_collect_type = mpl::get_data_type_t<data_type>;
     using data_value_type   = mpl::get_data_value_t<data_type>;
 
@@ -1034,7 +1034,7 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 auto
 get(TupleT<Tp&...>&& obj, Args&&... args)
 {
-    using data_type         = TupleT<std::remove_pointer_t<Tp>...>;
+    using data_type         = TupleT<remove_optional_t<Tp>...>;
     using data_collect_type = mpl::get_data_type_t<data_type>;
     using data_value_type   = mpl::get_data_value_t<data_type>;
 
@@ -1076,7 +1076,7 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 auto
 get_labeled(TupleT<Tp...>& obj, Args&&... args)
 {
-    using data_type         = TupleT<std::remove_pointer_t<Tp>...>;
+    using data_type         = TupleT<remove_optional_t<Tp>...>;
     using data_collect_type = mpl::get_data_type_t<data_type>;
     using data_label_type   = mpl::get_data_label_t<data_type>;
 
@@ -1099,7 +1099,7 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 auto
 get_labeled(TupleT<Tp&...>&& obj, Args&&... args)
 {
-    using data_type         = TupleT<std::remove_pointer_t<Tp>...>;
+    using data_type         = TupleT<remove_optional_t<Tp>...>;
     using data_collect_type = mpl::get_data_type_t<data_type>;
     using data_label_type   = mpl::get_data_label_t<data_type>;
 

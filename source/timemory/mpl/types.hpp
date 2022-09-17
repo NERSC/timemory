@@ -51,8 +51,33 @@
 #    include <variant>
 #endif
 
+#include <optional>
+
 namespace tim
 {
+template <typename Tp>
+struct is_optional
+: std::conditional_t<std::is_pointer<Tp>::value, std::true_type, std::false_type>
+{};
+//
+template <typename Tp>
+struct is_optional<std::optional<Tp>> : std::true_type
+{};
+//
+template <typename Tp>
+struct remove_optional
+{
+    using type = std::remove_pointer_t<Tp>;
+};
+//
+template <typename Tp>
+struct remove_optional<std::optional<Tp>>
+{
+    using type = Tp;
+};
+//
+template <typename Tp>
+using remove_optional_t = typename remove_optional<Tp>::type;
 //
 //--------------------------------------------------------------------------------------//
 //

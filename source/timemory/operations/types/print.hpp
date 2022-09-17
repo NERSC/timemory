@@ -78,6 +78,14 @@ struct print
     }
 
     template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
+    TIMEMORY_COLD print(const std::optional<type>& _obj, std::ostream& _os,
+                        bool _endline = false)
+    {
+        if(_obj)
+            print{ *_obj, _os, _endline };
+    }
+
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
     TIMEMORY_COLD print(std::size_t N, std::size_t Ntot, const type& _obj,
                         std::ostream& _os, bool _endline)
     {
@@ -98,6 +106,14 @@ struct print
             ss << '\n';
         }
         _os << ss.str();
+    }
+
+    template <typename Up = Tp, enable_if_t<is_enabled<Up>::value, char> = 0>
+    TIMEMORY_COLD print(std::size_t N, std::size_t Ntot, const std::optional<type>& _obj,
+                        std::ostream& _os, bool _endline)
+    {
+        if(_obj)
+            print{ N, Ntot, *_obj, _os, _endline };
     }
 
     template <typename Vp, typename Statp, typename Up = Tp,
@@ -163,6 +179,16 @@ struct print
             if(trait::report<type>::self())
                 utility::write_entry(_os, "% SELF", _empty_data);
         }
+    }
+
+    template <typename Vp, typename Statp, typename Up = Tp,
+              enable_if_t<is_enabled<Up>::value, char> = 0>
+    TIMEMORY_COLD print(const std::optional<type>& _obj, utility::stream& _os,
+                        const string_t& _prefix, int64_t _laps, int64_t _depth,
+                        const Vp& _self, const Statp& _stats)
+    {
+        if(_obj)
+            print{ *_obj, _os, _prefix, _laps, _depth, _self, _stats };
     }
 
     //----------------------------------------------------------------------------------//
@@ -236,5 +262,17 @@ struct print
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename Tp>
+struct print<std::optional<Tp>>
+{
+    using type = Tp;
+
+    template <typename... Args>
+    print(const std::optional<type>& obj, Args&&... args)
+    {
+        if(obj)
+            print<Tp>{ *obj, std::forward<Args>(args)... };
+    }
+};
 }  // namespace operation
 }  // namespace tim

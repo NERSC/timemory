@@ -34,8 +34,10 @@
 
 #include <cstddef>
 #include <functional>
+#include <optional>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 
 namespace tim
@@ -101,6 +103,21 @@ struct heap_wrapper_types
                                     std::tuple<>>;
 };
 
+template <typename T>
+struct optional_identity
+{
+    using type = T;
+};
+
+template <typename T>
+struct optional_identity<T*>
+{
+    using type = std::conditional_t<trait::is_available<T>::value, std::optional<T>, T*>;
+};
+
+template <typename T>
+using optional_identity_t = typename optional_identity<T>::type;
+
 template <typename... T>
 struct stack_wrapper_types
 {
@@ -136,7 +153,7 @@ struct stack_wrapper_types
     using data_type =
         conditional_t<trait::is_available<ApiT>::value,
                       convert_t<mpl::non_placeholder_t<mpl::non_quirk_t<
-                                    type_list_t<std::remove_pointer_t<T>...>>>,
+                                    type_list_t<optional_identity_t<T>...>>>,
                                 std::tuple<>>,
                       std::tuple<>>;
 };
@@ -173,11 +190,12 @@ struct mixed_wrapper_types
 
     /// the valid types to instantiate in a tuple
     template <typename ApiT = TIMEMORY_API>
-    using data_type = conditional_t<
-        trait::is_available<ApiT>::value,
-        convert_t<mpl::non_placeholder_t<mpl::non_quirk_t<type_list_t<T...>>>,
-                  std::tuple<>>,
-        std::tuple<>>;
+    using data_type =
+        conditional_t<trait::is_available<ApiT>::value,
+                      convert_t<mpl::non_placeholder_t<mpl::non_quirk_t<
+                                    type_list_t<optional_identity_t<T>...>>>,
+                                std::tuple<>>,
+                      std::tuple<>>;
 };
 //
 template <typename... T>
@@ -323,83 +341,55 @@ get(const TupleT<Types...>& m_data, void*& ptr, size_t _hash)
     //        std::get<index_of<Types, data_type>::value>(m_data), ptr, _hash });
 
     using get_type = std::tuple<operation::generic_operator<
-        decay_t<remove_pointer_t<Types>>,
-        operation::get<decay_t<remove_pointer_t<Types>>>, ApiT>...>;
+        decay_t<remove_optional_t<Types>>,
+        operation::get<decay_t<remove_optional_t<Types>>>, ApiT>...>;
     mpl::apply<void>::access<get_type>(m_data, ptr, _hash);
 }
 
 //----------------------------------------------------------------------------------//
 //  exact type available
 //
-template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
+template <typename U, typename ApiT = TIMEMORY_API, typename DataT,
           typename T = decay_t<U>>
 decltype(auto)
-get(data_type&& m_data,
-    enable_if_t<is_one_of<T, decay_t<data_type>>::value && !std::is_pointer<T>::value,
-                int> = 0)
+get(DataT&& m_data)
 {
-    return &(std::get<index_of<T, decay_t<data_type>>::value>(
-        std::forward<data_type>(m_data)));
-}
+    using type      = remove_optional_t<T>;
+    using data_type = decay_t<DataT>;
 
-//----------------------------------------------------------------------------------//
-//  exact type available (pointer query)
-//
-template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
-          typename T = decay_t<U>>
-decltype(auto)
-get(data_type&& m_data,
-    enable_if_t<is_one_of<T, decay_t<data_type>>::value && std::is_pointer<T>::value,
-                long> = 0)
-{
-    return std::get<index_of<T, decay_t<data_type>>::value>(
-        std::forward<data_type>(m_data));
-}
-
-//
-//----------------------------------------------------------------------------------//
-//  type available with add_pointer
-//
-template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
-          typename T = decay_t<U>>
-decltype(auto)
-get(data_type&& m_data, enable_if_t<is_one_of<T*, decay_t<data_type>>::value &&
-                                        !is_one_of<T, decay_t<data_type>>::value,
-                                    long> = 0)
-{
-    return std::get<index_of<T*, decay_t<data_type>>::value>(m_data);
-}
-
-//
-//----------------------------------------------------------------------------------//
-//  type available with remove_pointer
-//
-template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
-          typename T = decay_t<U>, typename R = remove_pointer_t<T>>
-decltype(auto)
-get(data_type&& m_data, enable_if_t<!is_one_of<T, decay_t<data_type>>::value &&
-                                        !is_one_of<T*, decay_t<data_type>>::value &&
-                                        is_one_of<R, decay_t<data_type>>::value,
-                                    int> = 0)
-{
-    return &std::get<index_of<R, decay_t<data_type>>::value>(m_data);
-}
-
-//
-//----------------------------------------------------------------------------------//
-///  type is not explicitly listed so redirect to opaque search
-///
-template <typename U, typename ApiT = TIMEMORY_API, typename data_type,
-          typename T = decay_t<U>, typename R = remove_pointer_t<T>>
-decltype(auto)
-get(data_type&& m_data, enable_if_t<!is_one_of<T, decay_t<data_type>>::value &&
-                                        !is_one_of<T*, decay_t<data_type>>::value &&
-                                        !is_one_of<R, decay_t<data_type>>::value,
-                                    int> = 0)
-{
-    void* ptr = nullptr;
-    get(std::forward<data_type>(m_data), ptr, typeid_hash<T>());
-    return static_cast<T*>(ptr);
+    if constexpr(is_one_of<type, data_type>::value)
+    {
+        return &(std::get<index_of<type, data_type>::value>(std::forward<DataT>(m_data)));
+    }
+    else if constexpr(is_one_of<type*, data_type>::value)
+    {
+        return std::get<index_of<type*, data_type>::value>(std::forward<DataT>(m_data));
+    }
+    else if constexpr(is_one_of<std::unique_ptr<type>, data_type>::value)
+    {
+        return std::get<index_of<std::unique_ptr<type>, data_type>::value>(
+                   std::forward<DataT>(m_data))
+            .get();
+    }
+    else if constexpr(is_one_of<std::shared_ptr<type>, data_type>::value)
+    {
+        return std::get<index_of<std::shared_ptr<type>, data_type>::value>(
+                   std::forward<DataT>(m_data))
+            .get();
+    }
+    else if constexpr(is_one_of<std::optional<type>, data_type>::value)
+    {
+        auto& _v = std::get<index_of<std::optional<type>, data_type>::value>(
+            std::forward<DataT>(m_data));
+        T* _ret = nullptr;
+        if(_v)
+            _ret = &*_v;
+        return _ret;
+    }
+    else
+    {
+        static_assert(!std::is_empty<type>::value, "Error! get not handled");
+    }
 }
 
 //----------------------------------------------------------------------------------//
@@ -426,6 +416,16 @@ get_component(
     return get<T>(std::forward<data_type>(m_data));
 }
 
+template <typename U, typename data_type, typename T = remove_optional_t<decay_t<U>>>
+auto
+get_component(data_type&& m_data,
+              enable_if_t<trait::is_available<T>::value &&
+                              is_one_of<std::optional<T>, decay_t<data_type>>::value,
+                          int> = 0)
+{
+    return get<std::optional<T>>(std::forward<data_type>(m_data));
+}
+
 /// returns a reference from a stack component instead of a pointer
 template <typename U, typename data_type, typename T = std::remove_pointer_t<decay_t<U>>>
 auto&
@@ -446,6 +446,17 @@ get_reference(
                 int> = 0)
 {
     return std::get<index_of<T*, decay_t<data_type>>::value>(m_data);
+}
+
+/// returns a reference from a heap component instead of a pointer
+template <typename U, typename data_type, typename T = remove_optional_t<decay_t<U>>>
+auto&
+get_reference(data_type& m_data,
+              enable_if_t<trait::is_available<T>::value &&
+                              is_one_of<std::optional<T>, decay_t<data_type>>::value,
+                          int> = 0)
+{
+    return std::get<index_of<std::optional<T>, decay_t<data_type>>::value>(m_data);
 }
 
 }  // namespace impl

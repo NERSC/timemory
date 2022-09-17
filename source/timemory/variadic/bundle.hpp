@@ -43,6 +43,7 @@
 #include <ios>
 #include <iostream>
 #include <string>
+#include <type_traits>
 
 namespace tim
 {
@@ -291,8 +292,10 @@ public:
     template <typename U>
     static constexpr bool can_stack_init()
     {
-        using T = remove_pointer_decay_t<U>;
-        return trait::is_available<T>::value && is_one_of<T, data_type>::value;
+        using T = remove_optional_t<remove_pointer_decay_t<U>>;
+        return trait::is_available<T>::value &&
+               (is_one_of<T, data_type>::value ||
+                is_one_of<std::optional<T>, data_type>::value);
     }
 
     /// Query at compile-time whether initialization can occur on the heap
@@ -668,12 +671,12 @@ public:
             }
             if(!bundle_type::init_buffer())
             {
-                _obj = new T(std::forward<Args>(_args)...);
+                _obj = new T{ std::forward<Args>(_args)... };
             }
             else
             {
-                T in(std::forward<Args>(_args)...);
-                _obj = m_buffer->write(&in).second;
+                auto _val = T{ std::forward<Args>(_args)... };
+                _obj      = m_buffer->write(&_val).second;
             }
             set_prefix(_obj, internal_tag{});
             set_scope(_obj, internal_tag{});
@@ -750,10 +753,24 @@ public:
                         demangle<T>().c_str());
             }
         }
-        T& _obj = std::get<index_of<T, data_type>::value>(m_data);
-        operation::construct<T>{ _obj, std::forward<Args>(_args)... };
-        set_prefix(&_obj, internal_tag{});
-        set_scope(&_obj, internal_tag{});
+        if constexpr(is_one_of<std::optional<T>, data_type>::value)
+        {
+            std::optional<T>& _obj =
+                std::get<index_of<std::optional<T>, data_type>::value>(m_data);
+            if constexpr(std::is_constructible<T, Args...>::value)
+                _obj = T{ std::forward<Args>(_args)... };
+            else if constexpr(std::is_default_constructible<T>::value)
+                _obj = T{};
+            set_prefix(&*_obj, internal_tag{});
+            set_scope(&*_obj, internal_tag{});
+        }
+        else
+        {
+            T& _obj = std::get<index_of<T, data_type>::value>(m_data);
+            operation::construct<T>{ _obj, std::forward<Args>(_args)... };
+            set_prefix(&_obj, internal_tag{});
+            set_scope(&_obj, internal_tag{});
+        }
         return true;
     }
 
@@ -765,7 +782,7 @@ public:
         using bundle_t = decay_t<decltype(
             std::get<0>(std::declval<typename bundle_type::user_bundle_types>()))>;
         static_assert(trait::is_user_bundle<bundle_t>::value, "Error! Not a user_bundle");
-        this->init<bundle_t>();
+        this->init<remove_optional_t<bundle_t>>();
         auto* _bundle = this->get<bundle_t>();
         if(_bundle)
         {
@@ -778,9 +795,10 @@ public:
 
     /// do nothing if type not available, not one of the variadic types, and there
     /// is no user bundle available
-    template <typename U, typename T = remove_pointer_decay_t<U>, typename... Args>
+    template <typename U, typename T = remove_optional_t<decay_t<U>>, typename... Args>
     enable_if_t<!trait::is_available<T>::value ||
                     !(is_one_of<T*, data_type>::value || is_one_of<T, data_type>::value ||
+                      is_one_of<std::optional<T>, data_type>::value ||
                       bundle_type::has_user_bundle_v),
                 bool>
     init(Args&&...)

@@ -275,11 +275,11 @@ protected:
                 enable_if_t<std::tuple_size<U>::value == 0, int> = 0)
     {}
 
-    ~base_bundle()                  = default;
-    base_bundle(const base_bundle&) = default;
-    base_bundle(base_bundle&&)      = default;
+    ~base_bundle()                      = default;
+    base_bundle(const base_bundle&)     = default;
+    base_bundle(base_bundle&&) noexcept = default;
     base_bundle& operator=(const base_bundle&) = default;
-    base_bundle& operator=(base_bundle&&) = default;
+    base_bundle& operator=(base_bundle&&) noexcept = default;
 
 public:
     void rekey(const string_t& _key)
@@ -310,14 +310,11 @@ protected:
     {
         if(m_buffer.get() == nullptr)
         {
-            static auto _size = []() {
-                size_t _v = 0;
-                TIMEMORY_FOLD_EXPRESSION(_v += mpl::dynamic_buffer_size<Types>{}());
-                return _v;
-            }();
+            size_t _size = 0;
+            TIMEMORY_FOLD_EXPRESSION(_size += mpl::dynamic_buffer_size<Types>{}());
             if(_size > 0)
                 m_buffer = std::make_shared<base::ring_buffer>(_size, false);
-            return m_buffer != nullptr;
+            return (m_buffer != nullptr);
         }
         return m_buffer->is_full();
     }

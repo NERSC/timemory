@@ -26,6 +26,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -61,7 +63,10 @@
             typename std::remove_cv<Tp>::type>::type;                                    \
         static constexpr bool value =                                                    \
             is_##CONCEPT::template have<typename std::remove_cv<Tp>::type>::value;       \
-    };
+    };                                                                                   \
+    template <typename Tp>                                                               \
+    struct is_##CONCEPT<std::optional<Tp>> : is_##CONCEPT<Tp>                            \
+    {};
 // constexpr operator bool() const noexcept { return value; }
 
 //--------------------------------------------------------------------------------------//
@@ -625,6 +630,48 @@ struct is_unqualified_same
     constexpr      operator bool() const { return value; }
     constexpr auto operator()() const { return value; }
 };
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Tp>
+struct is_dynamic_alloc : std::false_type
+{};
+
+template <typename Tp>
+struct is_dynamic_alloc<Tp*> : std::true_type
+{};
+
+template <typename Tp>
+struct is_dynamic_alloc<std::shared_ptr<Tp>> : std::true_type
+{};
+
+template <typename Tp, typename... DeleterT>
+struct is_dynamic_alloc<std::unique_ptr<Tp, DeleterT...>> : std::true_type
+{};
+
+template <typename Tp>
+struct is_dynamic_alloc<std::optional<Tp>> : std::false_type
+{};
+
+template <typename Tp>
+struct is_dynamic_alloc<const Tp> : is_dynamic_alloc<Tp>
+{};
+
+template <typename Tp>
+struct is_dynamic_alloc<Tp&> : is_dynamic_alloc<Tp>
+{};
+
+template <typename Tp>
+struct is_dynamic_alloc<Tp&&> : is_dynamic_alloc<Tp>
+{};
+
+template <typename Tp>
+struct is_dynamic_alloc<volatile Tp> : is_dynamic_alloc<Tp>
+{};
+
+template <typename Tp>
+struct is_dynamic_alloc<const volatile Tp> : is_dynamic_alloc<Tp>
+{};
 
 //--------------------------------------------------------------------------------------//
 

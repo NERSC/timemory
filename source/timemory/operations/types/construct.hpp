@@ -34,6 +34,8 @@
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
 
+#include <utility>
+
 namespace tim
 {
 namespace operation
@@ -63,38 +65,31 @@ struct construct
 
     template <typename... Args,
               enable_if_t<std::is_constructible<Tp, Args...>::value, int> = 0>
-    static auto get(Args&&... args)
+    auto operator()(Args&&... args) const
     {
-        return Tp(std::forward<Args>(args)...);
+        return Tp{ std::forward<Args>(args)... };
     }
 
     template <typename... Args, enable_if_t<!std::is_constructible<Tp, Args...>::value &&
                                                 std::is_default_constructible<Tp>::value,
                                             int> = 0>
-    static auto get(Args&&...)
+    auto operator()(Args&&...) const
     {
         return Tp{};
     }
 
-    template <typename Arg, typename... Args>
-    decltype(auto) operator()(Arg&& arg, Args&&... args) const
+    template <typename... Args>
+    static auto get(Args&&... _args)
     {
-        if constexpr(concepts::is_unqualified_same<Arg, type>::value)
-        {
-            return sfinae(std::forward<Arg>(arg), 0, std::forward<Args>(args)...);
-        }
-        else if constexpr(std::is_default_constructible<Tp>::value)
-        {
-            return sfinae(Tp{}, 0, std::forward<Args>(args)...);
-        }
+        return construct{}(std::forward<Args>(_args)...);
     }
 
 private:
     // resolution #1 (best)
     // construction is possible with given arguments
     template <typename Up, typename... Args>
-    static auto sfinae(Up&& obj, int, Args&&... args)
-        -> decltype(Up{ std::forward<Args>(args)... })
+    static auto sfinae(Up& obj, int, Args&&... args)
+        -> decltype(Up{ std::forward<Args>(args)... }, std::declval<Up&>())
     {
         return (obj = Up{ std::forward<Args>(args)... });
     }
@@ -102,10 +97,8 @@ private:
     // resolution #2
     // construction is not possible with given arguments
     template <typename Up, typename... Args>
-    static decltype(auto) sfinae(Up&& _v, long, Args&&...)
-    {
-        return std::forward<Up>(_v);
-    }
+    static void sfinae(Up&, long, Args&&...)
+    {}
 };
 //
 template <typename Tp>
@@ -114,9 +107,15 @@ struct construct<Tp*>
     using base_type = construct<Tp>;
 
     template <typename... Args>
-    static Tp* get(Args&&...)
+    Tp* operator()(Args&&...) const
     {
         return nullptr;
+    }
+
+    template <typename... Args>
+    static decltype(auto) get(Args&&... args)
+    {
+        return construct{}(std::forward<Args>(args)...);
     }
 };
 //
@@ -126,9 +125,15 @@ struct construct<std::shared_ptr<Tp>>
     using base_type = construct<Tp>;
 
     template <typename... Args>
-    static auto get(Args&&...)
+    std::shared_ptr<Tp> operator()(Args&&...) const
     {
-        return std::shared_ptr<Tp>(nullptr);
+        return std::shared_ptr<Tp>{ nullptr };
+    }
+
+    template <typename... Args>
+    static decltype(auto) get(Args&&... args)
+    {
+        return construct{}(std::forward<Args>(args)...);
     }
 };
 //
@@ -138,9 +143,33 @@ struct construct<std::unique_ptr<Tp, Deleter...>>
     using base_type = construct<Tp>;
 
     template <typename... Args>
-    static auto get(Args&&...)
+    std::unique_ptr<Tp, Deleter...> operator()(Args&&...) const
     {
-        return std::unique_ptr<Tp, Deleter...>(nullptr);
+        return std::unique_ptr<Tp, Deleter...>{ nullptr };
+    }
+
+    template <typename... Args>
+    static decltype(auto) get(Args&&... args)
+    {
+        return construct{}(std::forward<Args>(args)...);
+    }
+};
+//
+template <typename Tp>
+struct construct<std::optional<Tp>>
+{
+    using base_type = construct<Tp>;
+
+    template <typename... Args>
+    std::optional<Tp> operator()(Args&&...) const
+    {
+        return std::optional<Tp>{};
+    }
+
+    template <typename... Args>
+    static decltype(auto) get(Args&&... args)
+    {
+        return construct{}(std::forward<Args>(args)...);
     }
 };
 //
