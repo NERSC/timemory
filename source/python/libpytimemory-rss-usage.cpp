@@ -29,6 +29,7 @@
 #include "libpytimemory-components.hpp"
 #include "timemory/components/rusage/components.hpp"
 #include "timemory/components/rusage/extern.hpp"
+#include "timemory/operations/definition.hpp"
 #include "timemory/operations/types/get.hpp"
 #include "timemory/runtime/initialize.hpp"
 #include "timemory/runtime/properties.hpp"
