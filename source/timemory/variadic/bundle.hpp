@@ -902,7 +902,7 @@ bundle<Tag, BundleT, TupleT>::fixed_count()
 {
     return (size() -
             mpl::get_tuple_size<
-                typename mpl::get_true_types<std::is_pointer, data_type>::type>::value);
+                typename mpl::get_true_types<tim::is_optional, data_type>::type>::value);
 }
 
 //----------------------------------------------------------------------------------//
@@ -912,7 +912,7 @@ constexpr uint64_t
 bundle<Tag, BundleT, TupleT>::optional_count()
 {
     return mpl::get_tuple_size<
-        typename mpl::get_true_types<std::is_pointer, data_type>::type>::value;
+        typename mpl::get_true_types<tim::is_optional, data_type>::type>::value;
 }
 
 //----------------------------------------------------------------------------------//

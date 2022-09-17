@@ -302,7 +302,7 @@ fixed_count(long)
 {
     return (tim::mpl::get_tuple_size<Tp>::value -
             tim::mpl::get_tuple_size<
-                typename tim::mpl::get_true_types<std::is_pointer, Tp>::type>::value);
+                typename tim::mpl::get_true_types<tim::is_optional, Tp>::type>::value);
 }
 
 template <typename Tp>
@@ -317,7 +317,7 @@ constexpr auto
 optional_count(long)
 {
     return (tim::mpl::get_tuple_size<
-            typename tim::mpl::get_true_types<std::is_pointer, Tp>::type>::value);
+            typename tim::mpl::get_true_types<tim::is_optional, Tp>::type>::value);
 }
 
 //--------------------------------------------------------------------------------------//
