@@ -24,8 +24,7 @@
 
 #pragma once
 
-#include "timemory/environment/declaration.hpp"
-#include "timemory/storage/ring_buffer.hpp"
+#include "timemory/utility/locking.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -47,32 +46,33 @@ template <typename AllocT>
 struct shared_stateful_allocator
 {
     using this_type = shared_stateful_allocator<AllocT>;
+    using pointer   = std::shared_ptr<AllocT>;
 
     // call this function to get an allocator
     static auto request()
     {
         auto_lock_t _lk{ type_mutex<this_type>() };
-        return instance().request_impl();
+        return data()->request_impl();
     }
 
     // call this function when the allocator should be
     // evaluated for freeing up it's memory
-    static auto release(std::shared_ptr<AllocT>& _v)
+    static auto release(pointer& _v)
     {
         auto_lock_t _lk{ type_mutex<this_type>() };
-        return instance().release_impl(_v);
+        return data()->release_impl(_v);
     }
 
 private:
-    using alloctor_array_t = std::vector<std::shared_ptr<AllocT>>;
+    using alloctor_array_t = std::vector<pointer>;
 
-    std::shared_ptr<AllocT> request_impl()
+    pointer request_impl()
     {
         m_data.emplace_back(std::make_shared<AllocT>());
         return m_data.back();
     }
 
-    int64_t release_impl(std::shared_ptr<AllocT>& _v)
+    int64_t release_impl(pointer& _v)
     {
         if(m_data.empty())
             return 0;
@@ -88,15 +88,15 @@ private:
         // only instances are held by m_data and _v
         if(_count == 2)
             itr->reset();
-        return _count - 2;
+        return (_count < 2) ? 0 : _count - 2;
     }
 
     alloctor_array_t m_data = {};
 
-    static this_type& instance()
+    static this_type* data()
     {
-        static auto _instance = this_type{};
-        return _instance;
+        static auto* _v = new this_type{};
+        return _v;
     }
 };
 
