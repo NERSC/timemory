@@ -193,6 +193,17 @@ serialization<Tp, true>::operator()(ArchiveT& ar, const distrib_type& data) cons
 }
 
 template <typename Tp>
+template <
+    typename ArchiveT,
+    enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value, int>>
+void
+serialization<Tp, true>::operator()(ArchiveT& ar, const distrib_type& _dist,
+                                    const basic_tree_map_type& _tree) const
+{
+    impl(ar, _dist, _tree);
+}
+
+template <typename Tp>
 void
 serialization<Tp, true>::operator()(cereal::JSONInputArchive& ar,
                                     basic_tree_vector_type&   data) const

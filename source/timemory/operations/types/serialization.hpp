@@ -473,6 +473,12 @@ public:
                           int> = 0>
     TIMEMORY_COLD void operator()(ArchiveT& ar, const distrib_type& data) const;
 
+    template <typename ArchiveT,
+              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
+                          int> = 0>
+    TIMEMORY_COLD void operator()(ArchiveT& ar, const distrib_type& _dist,
+                                  const basic_tree_map_type& _tree) const;
+
 public:
     // JSONInputArchive overloads -- get instantiated in extern template
     TIMEMORY_COLD void operator()(cereal::JSONInputArchive& ar,
