@@ -76,7 +76,7 @@ private:
 extern "C" void
 timemory_register_ex_custom_dynamic_instr()
 {
-    PRINT_HERE("%s", "Registering the custom dynamic instrumentation");
+    TIMEMORY_PRINT_HERE("%s", "Registering the custom dynamic instrumentation");
 
     // insert monotonic clock component into structure
     // used by timemory-run in --mode=trace
@@ -104,7 +104,7 @@ timemory_register_ex_custom_dynamic_instr()
 extern "C" void
 timemory_deregister_ex_custom_dynamic_instr()
 {
-    PRINT_HERE("%s", "Deregistering the custom dynamic instrumentation");
+    TIMEMORY_PRINT_HERE("%s", "Deregistering the custom dynamic instrumentation");
 }
 //
 //--------------------------------------------------------------------------------------//
