@@ -32,7 +32,7 @@
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/types.hpp"
-#include "timemory/operations/types/construct.hpp"
+#include "timemory/operations/definition.hpp"
 #include "timemory/types.hpp"
 #include "timemory/variadic/component_tuple.hpp"
 #include "timemory/variadic/types.hpp"
