@@ -179,7 +179,7 @@ get_unw_backtrace_raw(unw_frame_regnum_t _reg = UNW_REG_IP)
         unw_get_reg(&_stack.cursor, _reg, &_addr);
         if(_reg == UNW_REG_IP && _addr == 0)
             break;
-        _stack.at(_idx) = { _addr };
+        _stack.at(_idx) = { _addr, &_stack.cursor };
     }
     return _stack;
 }
@@ -217,13 +217,11 @@ get_unw_backtrace()
         auto _context = _raw.context;
         if(!_raw.at(i))
             continue;
-        auto             _addr    = _raw.at(i)->address();
         unw_word_t       _off     = {};  // offset
         constexpr size_t NameSize = (WFuncOffset) ? 496 : 512;
         char             _name[NameSize];
         _name[0] = '\0';
-        if(unw_get_proc_name_by_ip(unw_local_addr_space, _addr, _name, sizeof(_name),
-                                   &_off, &_context) == 0)
+        if(_raw.at(i)->get_name(_context, _name, sizeof(_name), &_off) == 0)
         {
             IF_CONSTEXPR(WFuncOffset)
             {
@@ -468,7 +466,7 @@ print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string _prefix 
 template <size_t Depth, int64_t Offset = 2>
 static inline std::ostream&
 print_native_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {},
-                       std::string = {})
+                       std::string = {}, bool = false)
 {
     log::stream(os, log::color::warning())
         << "[timemory]> Backtrace not supported on this platform\n";
@@ -478,7 +476,7 @@ print_native_backtrace(std::ostream& os = std::cerr, std::string = {}, std::stri
 template <size_t Depth, int64_t Offset = 3>
 static inline std::ostream&
 print_demangled_native_backtrace(std::ostream& os = std::cerr, std::string = {},
-                                 std::string = {}, std::string = {})
+                                 std::string = {}, std::string = {}, bool = false)
 {
     log::stream(os, log::color::warning())
         << "[timemory]> Backtrace not supported on this platform\n";
@@ -488,7 +486,7 @@ print_demangled_native_backtrace(std::ostream& os = std::cerr, std::string = {},
 template <size_t Depth, int64_t Offset = 2>
 static inline std::ostream&
 print_unw_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string = {},
-                    std::string = {})
+                    std::string = {}, bool = false)
 {
     log::stream(os, log::color::warning())
         << "[timemory]> libunwind backtrace not supported on this platform\n";
@@ -498,7 +496,7 @@ print_unw_backtrace(std::ostream& os = std::cerr, std::string = {}, std::string 
 template <size_t Depth, int64_t Offset = 3>
 static inline std::ostream&
 print_demangled_unw_backtrace(std::ostream& os = std::cerr, std::string = {},
-                              std::string = {}, std::string = {})
+                              std::string = {}, std::string = {}, bool = false)
 {
     log::stream(os, log::color::warning())
         << "[timemory]> libunwind backtrace not supported on this platform\n";

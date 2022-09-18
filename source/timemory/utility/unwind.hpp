@@ -35,6 +35,11 @@
 
 #if defined(TIMEMORY_USE_LIBUNWIND)
 #    include <libunwind.h>
+#    if defined(unw_get_proc_name_by_ip)
+#        define TIMEMORY_LIBUNWIND_HAS_PROC_NAME_BY_IP 1
+#    else
+#        define TIMEMORY_LIBUNWIND_HAS_PROC_NAME_BY_IP 0
+#    endif
 #endif
 
 #include <array>
@@ -56,13 +61,17 @@ struct entry
 {
     using error_handler_func_t = std::function<void(int, std::string&)>;
 
-    unw_word_t register_addr = {};  // instruction/stack pointer
-
     TIMEMORY_DEFAULT_OBJECT(entry)
 
-    entry(unw_word_t _addr)
-    : register_addr{ _addr }
-    {}
+    entry(unw_word_t _addr, unw_cursor_t*);
+    explicit entry(unw_word_t _addr);
+
+#    if TIMEMORY_LIBUNWIND_HAS_PROC_NAME_BY_IP == 1
+    unw_word_t register_addr = {};  // instruction/stack pointer
+#    else
+    unw_word_t   register_addr = {};  // instruction/stack pointer
+    unw_cursor_t cursor        = {};  // copy of cursor is required
+#    endif
 
     unw_word_t address() const { return register_addr; }
 
@@ -422,12 +431,33 @@ stack<N>::operator==(stack<RhsN> _rhs) const
     }
 }
 //
+inline entry::entry(unw_word_t _addr)
+: register_addr{ _addr }
+{}
+//
+#    if TIMEMORY_LIBUNWIND_HAS_PROC_NAME_BY_IP == 1
+inline entry::entry(unw_word_t _addr, unw_cursor_t*)
+: register_addr{ _addr }
+{}
+#    else
+inline entry::entry(unw_word_t _addr, unw_cursor_t* _cursor)
+: register_addr{ _addr }
+, cursor{ *_cursor }
+{}
+#    endif
+//
 inline int
 entry::get_name(unw_context_t _context, char* _buffer, size_t _size,
                 unw_word_t* _off) const
 {
+#    if TIMEMORY_LIBUNWIND_HAS_PROC_NAME_BY_IP == 1
     return unw_get_proc_name_by_ip(unw_local_addr_space, register_addr, _buffer, _size,
                                    _off, &_context);
+#    else
+    (void) _context;
+    auto* _cursor = &const_cast<unw_cursor_t&>(cursor);
+    return unw_get_proc_name(_cursor, _buffer, _size, _off);
+#    endif
 }
 //
 template <size_t DefaultBufferSize>
