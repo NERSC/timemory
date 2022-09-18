@@ -390,18 +390,18 @@ public:
                              get_env<bool>(TIMEMORY_SETTINGS_PREFIX "USE_OUTPUT_SUFFIX",
                                            false))
 #if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_UPCXX)
-    TIMEMORY_STATIC_ACCESSOR(int32_t, default_process_suffix, dmp::rank())
+    TIMEMORY_STATIC_ACCESSOR(process::id_t, default_process_suffix, dmp::rank())
 #else
-    TIMEMORY_STATIC_ACCESSOR(int32_t, default_process_suffix, process::get_id())
+    TIMEMORY_STATIC_ACCESSOR(process::id_t, default_process_suffix, process::get_id())
 #endif
 
     struct compose_filename_config
     {
-        bool        use_suffix    = false;
-        int32_t     suffix        = process::get_id();
-        bool        make_dir      = false;
-        std::string explicit_path = {};
-        std::string subdirectory  = {};
+        bool          use_suffix    = false;
+        process::id_t suffix        = process::get_id();
+        bool          make_dir      = false;
+        std::string   explicit_path = {};
+        std::string   subdirectory  = {};
     };
 
     static strvector_t get_global_environment();

@@ -82,8 +82,10 @@ struct ctest_notes_deleter : public std::default_delete<std::set<std::string>>
         if(!data->empty())
             ss << "LIST(REMOVE_DUPLICATES CTEST_NOTES_FILES)\n";
 
-        auto fname = settings::compose_output_filename("CTestNotes", "txt", false, -1,
-                                                       false, settings::output_prefix());
+        auto _cfg          = settings::compose_filename_config{};
+        _cfg.use_suffix    = false;
+        _cfg.explicit_path = settings::output_prefix();
+        auto fname         = settings::compose_output_filename("CTestNotes", "txt", _cfg);
         std::ofstream ofs{};
         if(filepath::open(ofs, fname, std::ios::out | std::ios::app))
         {
