@@ -430,52 +430,71 @@ public:
                                   const basic_tree_map_type&        _tree) const;
 
 public:
-    // PrettyJSONOutputArchive overloads -- do not get instantiated in extern template
-    template <typename ArchiveT,
-              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
-                          int> = 0>
+    // non-MinimalJSONOutputArchive overloads -- do not get instantiated in extern
+    // template
+    template <
+        typename ArchiveT,
+        enable_if_t<concepts::is_output_archive<ArchiveT>::value &&
+                        !std::is_same<ArchiveT, cereal::MinimalJSONOutputArchive>::value,
+                    int> = 0>
     TIMEMORY_COLD serialization(const Tp& obj, ArchiveT& ar, const unsigned int version);
 
-    template <typename ArchiveT,
-              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
-                          int> = 0>
+    template <
+        typename ArchiveT,
+        enable_if_t<concepts::is_output_archive<ArchiveT>::value &&
+                        !std::is_same<ArchiveT, cereal::MinimalJSONOutputArchive>::value,
+                    int> = 0>
     TIMEMORY_COLD void operator()(const Tp& obj, ArchiveT& ar,
                                   const unsigned int version) const;
 
-    template <typename ArchiveT,
-              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
-                          int> = 0>
+    template <
+        typename ArchiveT,
+        enable_if_t<concepts::is_output_archive<ArchiveT>::value &&
+                        !std::is_same<ArchiveT, cereal::MinimalJSONOutputArchive>::value,
+                    int> = 0>
     TIMEMORY_COLD void operator()(ArchiveT& ar, metadata) const;
 
-    template <typename ArchiveT,
-              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
-                          int> = 0>
+    template <
+        typename ArchiveT,
+        enable_if_t<concepts::is_output_archive<ArchiveT>::value &&
+                        !std::is_same<ArchiveT, cereal::MinimalJSONOutputArchive>::value,
+                    int> = 0>
     TIMEMORY_COLD void operator()(ArchiveT& ar, const basic_tree_vector_type& data) const;
 
-    template <typename ArchiveT,
-              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
-                          int> = 0>
+    template <
+        typename ArchiveT,
+        enable_if_t<concepts::is_output_archive<ArchiveT>::value &&
+                        !std::is_same<ArchiveT, cereal::MinimalJSONOutputArchive>::value,
+                    int> = 0>
     TIMEMORY_COLD void operator()(ArchiveT&                                  ar,
                                   const std::vector<basic_tree_vector_type>& data) const;
 
-    template <typename ArchiveT,
-              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
-                          int> = 0>
+    template <
+        typename ArchiveT,
+        enable_if_t<concepts::is_output_archive<ArchiveT>::value &&
+                        !std::is_same<ArchiveT, cereal::MinimalJSONOutputArchive>::value,
+                    int> = 0>
     TIMEMORY_COLD void operator()(ArchiveT& ar, const basic_tree_map_type& data) const;
 
-    template <typename ArchiveT,
-              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
-                          int> = 0>
+    template <
+        typename ArchiveT,
+        enable_if_t<concepts::is_output_archive<ArchiveT>::value &&
+                        !std::is_same<ArchiveT, cereal::MinimalJSONOutputArchive>::value,
+                    int> = 0>
     TIMEMORY_COLD void operator()(ArchiveT& ar, const result_type& data) const;
 
-    template <typename ArchiveT,
-              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
-                          int> = 0>
+    template <
+        typename ArchiveT,
+        enable_if_t<concepts::is_output_archive<ArchiveT>::value &&
+                        !std::is_same<ArchiveT, cereal::MinimalJSONOutputArchive>::value,
+                    int> = 0>
     TIMEMORY_COLD void operator()(ArchiveT& ar, const distrib_type& data) const;
 
-    template <typename ArchiveT,
-              enable_if_t<std::is_same<ArchiveT, cereal::PrettyJSONOutputArchive>::value,
-                          int> = 0>
+    template <
+        typename ArchiveT,
+        enable_if_t<concepts::is_output_archive<ArchiveT>::value &&
+                        !std::is_same<ArchiveT, cereal::MinimalJSONOutputArchive>::value,
+                    int> = 0>
     TIMEMORY_COLD void operator()(ArchiveT& ar, const distrib_type& _dist,
                                   const basic_tree_map_type& _tree) const;
 
