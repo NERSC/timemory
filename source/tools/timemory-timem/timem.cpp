@@ -583,8 +583,10 @@ main(int argc, char** argv)
             buffer_thread() =
                 std::make_unique<std::thread>(&store_history, get_measure());
         }
+#if defined(TIMEMORY_USE_PAPI)
         if(use_papi())
             papi_array_t::configure();
+#endif
     }
 
     auto failed_fork = [&]() {
