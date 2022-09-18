@@ -26,6 +26,7 @@
 #define TIMEMORY_INPUT_ARCHIVE ::tim::cereal::XMLInputArchive
 #define TIMEMORY_OUTPUT_ARCHIVE ::tim::cereal::XMLOutputArchive
 
+#include "timemory/mpl/types.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/utility/testing.hpp"
@@ -49,6 +50,8 @@ using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 using auto_tuple_t =
     tim::auto_tuple_t<wall_clock, system_clock, thread_cpu_clock, thread_cpu_util,
                       process_cpu_clock, process_cpu_util, papi_tuple_t, tau_marker>;
+
+using comp_tuple_t = tim::convert_t<auto_tuple_t, tim::component_tuple<>>;
 
 using measurement_t =
     tim::component_tuple_t<peak_rss, page_rss, virtual_memory, num_major_page_faults,
@@ -229,7 +232,8 @@ test_2_timing()
 {
     print_info(__FUNCTION__);
 
-    auto_tuple_t runtime(TIMEMORY_JOIN("_", __func__, "runtime"), tim::scope::tree{});
+    comp_tuple_t         runtime(TIMEMORY_JOIN("_", __func__, "runtime"),
+                         tim::scope::config{ tim::scope::tree{} });
     std::atomic<int64_t> ret;
     {
         TIMEMORY_MARKER(auto_tuple_t, "");
@@ -243,8 +247,8 @@ test_2_timing()
         runtime.start();
         {
             for(int i = 0; i < 7; ++i)
-                threads.push_back(std::thread(run_fib, 35));
-            threads.push_back(std::thread(run_fib, 43));
+                threads.emplace_back(run_fib, 35);
+            threads.emplace_back(run_fib, 43);
 
             run_fib(40);
 
