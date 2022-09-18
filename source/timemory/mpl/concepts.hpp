@@ -415,11 +415,9 @@ template <>
 struct is_string_type<const char*> : true_type
 {};
 
-#if __cplusplus >= 201703L  // C++17
 template <>
 struct is_string_type<std::string_view> : true_type
 {};
-#endif
 
 template <typename Tp>
 struct is_string_type<const Tp> : is_string_type<std::decay_t<Tp>>
@@ -459,6 +457,36 @@ static_assert(!is_string_type<int[4]>::value, "Issue with is_string_type");
 static_assert(!is_string_type<const int[4]>::value, "Issue with is_string_type");
 static_assert(!is_string_type<volatile int[4]>::value, "Issue with is_string_type");
 #endif
+
+//--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_tuple
+/// \brief concept that specifies that a type is a C++ tuple
+///
+TIMEMORY_IMPL_IS_CONCEPT(tuple)
+
+template <typename... Tp>
+struct is_tuple<std::tuple<Tp...>> : true_type
+{};
+
+template <typename Tp>
+struct is_tuple<const Tp> : is_tuple<Tp>
+{};
+
+template <typename Tp>
+struct is_tuple<volatile Tp> : is_tuple<Tp>
+{};
+
+template <typename Tp>
+struct is_tuple<const volatile Tp> : is_tuple<Tp>
+{};
+
+template <typename Tp>
+struct is_tuple<Tp&> : is_tuple<Tp>
+{};
+
+template <typename Tp>
+struct is_tuple<Tp*> : is_tuple<Tp>
+{};
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_vector

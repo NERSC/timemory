@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/mpl/available.hpp"
+#include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
@@ -354,8 +355,9 @@ template <typename U, typename ApiT = TIMEMORY_API, typename DataT,
 decltype(auto)
 get(DataT&& m_data)
 {
-    using type      = remove_optional_t<T>;
-    using data_type = decay_t<DataT>;
+    using type             = remove_optional_t<T>;
+    using data_type        = decay_t<DataT>;
+    using unqual_data_type = concepts::unqualified_type_t<data_type>;
 
     type* _val = nullptr;
     if constexpr(is_one_of<type, data_type>::value)
@@ -385,7 +387,14 @@ get(DataT&& m_data)
         if(_v)
             _val = &*_v;
     }
-    else if(concepts::is_wrapper<DataT>::value)
+    else if constexpr(concepts::is_tuple<unqual_data_type>::value)
+    {
+        void* _ptr = nullptr;
+        get(std::forward<DataT>(m_data), _ptr, typeid_hash<type>());
+        if(_ptr)
+            _val = static_cast<type*>(_ptr);
+    }
+    else if constexpr(concepts::is_wrapper<unqual_data_type>::value)
     {
         void* _ptr = nullptr;
         std::forward<DataT>(m_data).get(_val, typeid_hash<type>());
@@ -394,10 +403,7 @@ get(DataT&& m_data)
     }
     else
     {
-        void* _ptr = nullptr;
-        get(std::forward<DataT>(m_data), _ptr, typeid_hash<type>());
-        if(_ptr)
-            _val = static_cast<type*>(_ptr);
+        static_assert(std::is_empty<DataT>::value, "Error! unsupported data type");
     }
 
     return _val;
