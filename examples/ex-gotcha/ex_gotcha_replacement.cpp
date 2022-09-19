@@ -72,7 +72,7 @@ struct exp_replace : public base<exp_replace, void>
         return static_cast<double>(expf(static_cast<float>(val)));
     }
 
-    void message(double val)
+    static void message(double val)
     {
 #if defined(VERBOSE)
         static bool _verbose = (tim::settings::verbose() > 1 || tim::settings::debug());
@@ -111,9 +111,8 @@ static_assert(!exp_time_t::replaces, "exp_time_t replaces exp!");
 
 namespace
 {
-auto gotcha_debug_lvl =
-    (tim::set_env("GOTCHA_DEBUG", "1", 0), tim::get_env<int>("GOTCHA_DEBUG", 0));
-}
+auto gotcha_debug_lvl = tim::get_env<int>("GOTCHA_DEBUG", 0);
+}  // namespace
 
 //======================================================================================//
 
@@ -151,8 +150,16 @@ init_gotcha(bool use_intercept, bool use_timers)
     };
 
     exp_bundle_t::get_initializer() = [=](exp_bundle_t& obj) {
-        if(use_timers) obj.initialize<exp_time_t>();
-        if(use_intercept) obj.initialize<exp_repl_t>();
+        if(use_timers)
+        {
+            puts("initializing timers for exp...");
+            obj.initialize<wall_clock, exp_time_t>();
+        }
+        if(use_intercept)
+        {
+            puts("initializing intercepts for exp...");
+            obj.initialize<wall_clock, exp_repl_t>();
+        }
     };
 
     return true;
@@ -173,8 +180,7 @@ sum_exp(const std::vector<double>& data)
         ret += exp(itr + (0.1 * std::generate_canonical<double, 10>(rng)));
         ++cnt;
     }
-    printf("Iterations: %lu, intercepts: %lu\n", (unsigned long) cnt,
-           (unsigned long) get_intercepts());
+    printf("Iterations: %lu, intercepts: %lu\n", cnt, get_intercepts());
     return ret;
 }
 
@@ -189,6 +195,7 @@ main(int argc, char** argv)
     if(!init_gotcha(use_intercept, use_timers))
         throw std::runtime_error("Error! initialization failed!");
 
+    tim::settings::file_output() = false;
     tim::timemory_init(argc, argv);
 
     uint64_t n = 1000;
@@ -224,7 +231,7 @@ main(int argc, char** argv)
         (use_intercept && get_intercepts() != 2 * n) ? EXIT_FAILURE : EXIT_SUCCESS;
     auto rc_timers = (use_timers && sz == 0) ? EXIT_FAILURE : EXIT_SUCCESS;
 
-    puts("returning...");
+    printf("[%s] exit code: %i\n", argv[0], rc_intercept + rc_timers);
     return rc_intercept + rc_timers;
 }
 
