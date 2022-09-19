@@ -513,15 +513,9 @@ TEST_F(stl_overload_tests, variant)
 
 //--------------------------------------------------------------------------------------//
 
-class statistics_tests : public ::testing::Test
-{
-protected:
-    TIMEMORY_TEST_DEFAULT_SUITE_BODY
-};
-
 namespace comp = tim::component;
 
-TEST_F(statistics_tests, update_statistics)
+TEST_F(stl_overload_tests, update_statistics)
 {
     using bundle_t = tim::lightweight_tuple<comp::wall_clock, comp::data_tracker_integer>;
     bundle_t _bundle{ details::get_test_name() };

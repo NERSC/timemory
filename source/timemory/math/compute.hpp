@@ -71,75 +71,75 @@ struct compute
     }
 
     template <typename V>
-    static TIMEMORY_INLINE decltype(auto) min(const type& _l, const V& _r)
+    static TIMEMORY_INLINE decltype(auto) min(const type& _l, V&& _r)
     {
-        return this_type::min(_l, _r, 0);
+        return this_type::min(_l, std::forward<V>(_r), 0);
     }
 
     template <typename V>
-    static TIMEMORY_INLINE decltype(auto) max(const type& _l, const V& _r)
+    static TIMEMORY_INLINE decltype(auto) max(const type& _l, V&& _r)
     {
-        return this_type::max(_l, _r, 0);
+        return this_type::max(_l, std::forward<V>(_r), 0);
     }
 
     template <typename V>
-    static TIMEMORY_INLINE decltype(auto) percent_diff(const type& _l, const V& _r)
+    static TIMEMORY_INLINE decltype(auto) percent_diff(const type& _l, V&& _r)
     {
-        return this_type::percent_diff(_l, _r, 0);
+        return this_type::percent_diff(_l, std::forward<V>(_r), 0);
     }
 
     // reference
     template <typename V>
-    static TIMEMORY_INLINE decltype(auto) plus(type& _l, const V& _r)
+    static TIMEMORY_INLINE decltype(auto) plus(type& _l, V&& _r)
     {
-        return this_type::plus(_l, _r, 0);
+        return this_type::plus(_l, std::forward<V>(_r), 0);
     }
 
     template <typename V>
-    static TIMEMORY_INLINE decltype(auto) minus(type& _l, const V& _r)
+    static TIMEMORY_INLINE decltype(auto) minus(type& _l, V&& _r)
     {
-        return this_type::minus(_l, _r, 0);
+        return this_type::minus(_l, std::forward<V>(_r), 0);
     }
 
     template <typename V>
-    static TIMEMORY_INLINE decltype(auto) multiply(type& _l, const V& _r)
+    static TIMEMORY_INLINE decltype(auto) multiply(type& _l, V&& _r)
     {
-        return this_type::multiply(_l, _r, 0);
+        return this_type::multiply(_l, std::forward<V>(_r), 0);
     }
 
     template <typename V>
-    static TIMEMORY_INLINE decltype(auto) divide(type& _l, const V& _r)
+    static TIMEMORY_INLINE decltype(auto) divide(type& _l, V&& _r)
     {
-        return this_type::divide(_l, _r, 0);
+        return this_type::divide(_l, std::forward<V>(_r), 0);
     }
 
     // const ref
     template <typename V>
-    static TIMEMORY_INLINE auto plus(const type& _l, const V& _r)
+    static TIMEMORY_INLINE auto plus(const type& _l, V&& _r)
     {
         type _t{ _l };
-        return this_type::plus(_t, _r, 0);
+        return this_type::plus(_t, std::forward<V>(_r), 0);
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto minus(const type& _l, const V& _r)
+    static TIMEMORY_INLINE auto minus(const type& _l, V&& _r)
     {
         type _t{ _l };
-        return this_type::minus(_t, _r, 0);
+        return this_type::minus(_t, std::forward<V>(_r), 0);
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto multiply(const type& _l, const V& _r)
+    static TIMEMORY_INLINE auto multiply(const type& _l, V&& _r)
     {
         type _t{ _l };
-        return this_type::multiply(_t, _r, 0);
+        return this_type::multiply(_t, std::forward<V>(_r), 0);
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto divide(const type& _l, const V& _r)
+    static TIMEMORY_INLINE auto divide(const type& _l, V&& _r)
     {
         type _t{ _l };
-        return this_type::divide(_t, _r, 0);
+        return this_type::divide(_t, std::forward<V>(_r), 0);
     }
 
 private:
@@ -147,138 +147,148 @@ private:
     // tim::math overload available
     //
     template <typename V>
-    static TIMEMORY_INLINE auto abs(const V& _v, int) -> decltype(::tim::math::abs(_v))
+    static TIMEMORY_INLINE auto abs(V&& _v, int)
+        -> decltype(::tim::math::abs(std::forward<V>(_v)))
     {
-        return ::tim::math::abs(_v);
+        return ::tim::math::abs(std::forward<V>(_v));
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto sqr(const V& _v, int) -> decltype(::tim::math::sqr(_v))
+    static TIMEMORY_INLINE auto sqr(V&& _v, int)
+        -> decltype(::tim::math::sqr(std::forward<V>(_v)))
     {
-        return ::tim::math::sqr(_v);
+        return ::tim::math::sqr(std::forward<V>(_v));
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto sqrt(const V& _v, int) -> decltype(::tim::math::sqrt(_v))
+    static TIMEMORY_INLINE auto sqrt(V&& _v, int)
+        -> decltype(::tim::math::sqrt(std::forward<V>(_v)))
     {
-        return ::tim::math::sqrt(_v);
+        return ::tim::math::sqrt(std::forward<V>(_v));
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto min(const type& _l, const V& _r, int)
-        -> decltype(::tim::math::min(_l, _r, get_index_sequence<type>::value),
-                    ::tim::math::min(_l, _r))
+    static TIMEMORY_INLINE auto min(const type& _l, V&& _r, int)
+        -> decltype(::tim::math::min(_l, std::forward<V>(_r),
+                                     get_index_sequence<type>::value),
+                    ::tim::math::min(_l, std::forward<V>(_r)))
     {
-        return ::tim::math::min(_l, _r);
+        return ::tim::math::min(_l, std::forward<V>(_r));
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto max(const type& _l, const V& _r, int)
-        -> decltype(::tim::math::max(_l, _r, get_index_sequence<type>::value),
-                    ::tim::math::max(_l, _r))
+    static TIMEMORY_INLINE auto max(const type& _l, V&& _r, int)
+        -> decltype(::tim::math::max(_l, std::forward<V>(_r),
+                                     get_index_sequence<type>::value),
+                    ::tim::math::max(_l, std::forward<V>(_r)))
     {
-        return ::tim::math::max(_l, _r);
+        return ::tim::math::max(_l, std::forward<V>(_r));
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto percent_diff(const type& _l, const V& _r, int)
-        -> decltype(::tim::math::percent_diff(_l, _r, get_index_sequence<type>::value, 0),
-                    ::tim::math::percent_diff(_l, _r))
+    static TIMEMORY_INLINE auto percent_diff(const type& _l, V&& _r, int)
+        -> decltype(::tim::math::percent_diff(_l, std::forward<V>(_r),
+                                              get_index_sequence<type>::value, 0),
+                    ::tim::math::percent_diff(_l, std::forward<V>(_r)))
     {
-        return ::tim::math::percent_diff(_l, _r);
+        return ::tim::math::percent_diff(_l, std::forward<V>(_r));
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto plus(type& _l, const V& _r, int)
-        -> decltype(::tim::math::plus(_l, _r, get_index_sequence<type>::value, 0),
+    static TIMEMORY_INLINE auto plus(type& _l, V&& _r, int)
+        -> decltype(::tim::math::plus(_l, std::forward<V>(_r),
+                                      get_index_sequence<type>::value, 0),
                     std::declval<type&>())
     {
-        return ::tim::math::plus(_l, _r);
+        return ::tim::math::plus(_l, std::forward<V>(_r));
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto minus(type& _l, const V& _r, int)
-        -> decltype(::tim::math::minus(_l, _r, get_index_sequence<type>::value, 0),
+    static TIMEMORY_INLINE auto minus(type& _l, V&& _r, int)
+        -> decltype(::tim::math::minus(_l, std::forward<V>(_r),
+                                       get_index_sequence<type>::value, 0),
                     std::declval<type&>())
     {
-        return ::tim::math::minus(_l, _r);
+        return ::tim::math::minus(_l, std::forward<V>(_r));
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto multiply(type& _l, const V& _r, int)
-        -> decltype(::tim::math::multiply(_l, _r, get_index_sequence<type>::value, 0),
+    static TIMEMORY_INLINE auto multiply(type& _l, V&& _r, int)
+        -> decltype(::tim::math::multiply(_l, std::forward<V>(_r),
+                                          get_index_sequence<type>::value, 0),
                     std::declval<type&>())
     {
-        return ::tim::math::multiply(_l, _r);
+        return ::tim::math::multiply(_l, std::forward<V>(_r));
     }
 
     template <typename V, typename U = void>
-    static TIMEMORY_INLINE auto divide(type& _l, const V& _r, int)
-        -> decltype(::tim::math::divide(_l, _r, get_index_sequence<type>::value, 0),
+    static TIMEMORY_INLINE auto divide(type& _l, V&& _r, int)
+        -> decltype(::tim::math::divide(_l, std::forward<V>(_r),
+                                        get_index_sequence<type>::value, 0),
                     std::declval<type&>())
     {
-        return ::tim::math::divide(_l, _r);
+        return ::tim::math::divide(_l, std::forward<V>(_r));
     }
 
     //----------------------------------------------------------------------------------//
     // no tim::math overload available
     //
     template <typename V>
-    static TIMEMORY_INLINE auto abs(const V& _v, long)
+    static TIMEMORY_INLINE auto abs(V&& _v, long)
     {
         return _v;
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto sqr(const V& _v, long)
+    static TIMEMORY_INLINE auto sqr(V&& _v, long)
     {
         return _v;
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto sqrt(const V& _v, long)
+    static TIMEMORY_INLINE auto sqrt(V&& _v, long)
     {
         return _v;
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto min(const type& _l, const V&, long)
+    static TIMEMORY_INLINE auto min(const type& _l, V&&, long)
     {
         return _l;
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto max(const type& _l, const V&, long)
+    static TIMEMORY_INLINE auto max(const type& _l, V&&, long)
     {
         return _l;
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto percent_diff(const type& _l, const V&, long)
+    static TIMEMORY_INLINE auto percent_diff(const type& _l, V&&, long)
     {
         return _l;
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto& plus(type& _l, const V&, long)
+    static TIMEMORY_INLINE auto& plus(type& _l, V&&, long)
     {
         return _l;
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto& minus(type& _l, const V&, long)
+    static TIMEMORY_INLINE auto& minus(type& _l, V&&, long)
     {
         return _l;
     }
 
     template <typename V>
-    static TIMEMORY_INLINE auto& multiply(type& _l, const V&, long)
+    static TIMEMORY_INLINE auto& multiply(type& _l, V&&, long)
     {
         return _l;
     }
 
     template <typename V, typename U = void>
-    static TIMEMORY_INLINE auto& divide(type& _l, const V&, long)
+    static TIMEMORY_INLINE auto& divide(type& _l, V&&, long)
     {
         return _l;
     }

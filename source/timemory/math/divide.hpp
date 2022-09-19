@@ -86,7 +86,7 @@ divide(Tp& _lhs, const Up& _rhs, type_list<>, long)
 template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
           enable_if_t<std::is_arithmetic<Up>::value> = 0>
 auto
-divide(Tp& _lhs, const Up& _rhs, type_list<>, long)
+divide(Tp& _lhs, Up _rhs, type_list<>, long)
     -> decltype(std::begin(_lhs), std::declval<Tp&>())
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
@@ -122,7 +122,7 @@ template <typename Tp, typename Up, typename Kp = typename Tp::key_type,
           typename Mp                                = typename Tp::mapped_type,
           enable_if_t<std::is_arithmetic<Up>::value> = 0>
 auto
-divide(Tp& _lhs, const Up& _rhs, type_list<>, int)
+divide(Tp& _lhs, Up _rhs, type_list<>, int)
     -> decltype(std::begin(_lhs), std::declval<Tp&>())
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
@@ -155,7 +155,7 @@ divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
 template <typename Tp, typename Up, size_t... Idx,
           enable_if_t<std::is_arithmetic<Up>::value> = 0>
 auto
-divide(Tp& _lhs, const Up& _rhs, index_sequence<Idx...>, long)
+divide(Tp& _lhs, Up _rhs, index_sequence<Idx...>, long)
     -> decltype(std::get<0>(_lhs), std::declval<Tp&>())
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
