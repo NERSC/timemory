@@ -433,6 +433,10 @@ struct is_available<T*> : is_available<std::remove_pointer_t<T>>
 {};
 
 template <typename T>
+struct is_available<std::optional<T>> : is_available<T>
+{};
+
+template <typename T>
 using is_available_t = typename is_available<T>::type;
 //
 }  // namespace trait
@@ -1245,8 +1249,9 @@ template <template <typename...> class LhsT, typename... Lhs,
           template <typename...> class RhsT, typename... Rhs>
 struct union_index_sequence<LhsT<Lhs...>, RhsT<Rhs...>>
 {
-    using type =
-        index_sequence<union_index_of<decay_t<Lhs>, RhsT<decay_t<Rhs>...>>::value(0)...>;
+    using type = index_sequence<union_index_of<
+        std::remove_cv_t<std::remove_reference_t<decay_t<Lhs>>>,
+        RhsT<std::remove_cv_t<std::remove_reference_t<decay_t<Rhs>>>...>>::value(0)...>;
 };
 
 template <typename... T>

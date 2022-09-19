@@ -317,7 +317,7 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 void
 start(TupleT<Tp...>& obj, Args&&... args)
 {
-    using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
+    using data_type        = std::tuple<remove_optional_t<decay_t<Tp>>...>;
     using priority_types_t = mpl::filter_false_t<mpl::negative_start_priority, data_type>;
     using priority_tuple_t = mpl::sort<trait::start_priority, priority_types_t>;
     using delayed_types_t  = mpl::filter_false_t<mpl::positive_start_priority, data_type>;
@@ -348,7 +348,7 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 void
 start(TupleT<Tp&...>&& obj, Args&&... args)
 {
-    using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
+    using data_type        = std::tuple<remove_optional_t<decay_t<Tp>>...>;
     using priority_types_t = mpl::filter_false_t<mpl::negative_start_priority, data_type>;
     using priority_tuple_t = mpl::sort<trait::start_priority, priority_types_t>;
     using delayed_types_t  = mpl::filter_false_t<mpl::positive_start_priority, data_type>;
@@ -387,7 +387,7 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 void
 stop(TupleT<Tp...>& obj, Args&&... args)
 {
-    using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
+    using data_type        = std::tuple<remove_optional_t<decay_t<Tp>>...>;
     using priority_types_t = mpl::filter_false_t<mpl::negative_stop_priority, data_type>;
     using priority_tuple_t = mpl::sort<trait::stop_priority, priority_types_t>;
     using delayed_types_t  = mpl::filter_false_t<mpl::positive_stop_priority, data_type>;
@@ -419,7 +419,7 @@ template <typename ApiT, template <typename...> class TupleT, typename... Tp,
 void
 stop(TupleT<Tp&...>&& obj, Args&&... args)
 {
-    using data_type        = std::tuple<remove_pointer_t<decay_t<Tp>>...>;
+    using data_type        = std::tuple<remove_optional_t<decay_t<Tp>>...>;
     using priority_types_t = mpl::filter_false_t<mpl::negative_stop_priority, data_type>;
     using priority_tuple_t = mpl::sort<trait::stop_priority, priority_types_t>;
     using delayed_types_t  = mpl::filter_false_t<mpl::positive_stop_priority, data_type>;

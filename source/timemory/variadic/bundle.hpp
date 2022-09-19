@@ -750,6 +750,9 @@ public:
                 _obj = T{ std::forward<Args>(_args)... };
             else if constexpr(std::is_default_constructible<T>::value)
                 _obj = T{};
+            else
+                static_assert(std::is_empty<T>::value,
+                              "Error! unsupported initialization");
             set_prefix(&*_obj, internal_tag{});
             set_scope(&*_obj, internal_tag{});
         }

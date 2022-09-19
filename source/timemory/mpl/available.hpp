@@ -169,7 +169,7 @@ using filter_false = typename filter_if_false<Predicate, Sequence>::type;
 //
 /// \struct tim::impl::filter_if_false_after_decay
 /// \brief Removes types if predicate evaluates to false. Applies
-/// decay_t<remove_pointer_t<T>> before evaluating predicate
+/// decay_t<remove_optional_t<T>> before evaluating predicate
 //
 //======================================================================================//
 
@@ -182,7 +182,7 @@ template <template <typename> class Predicate, typename... Ts>
 struct filter_if_false_after_decay<Predicate, std::tuple<Ts...>>
 {
     using type =
-        tuple_concat_t<conditional_t<Predicate<decay_t<remove_pointer_t<Ts>>>::value,
+        tuple_concat_t<conditional_t<Predicate<decay_t<remove_optional_t<Ts>>>::value,
                                      std::tuple<Ts>, std::tuple<>>...>;
 };
 
@@ -192,7 +192,7 @@ template <template <typename> class Predicate, typename... Ts>
 struct filter_if_false_after_decay<Predicate, type_list<Ts...>>
 {
     using type = convert_t<
-        tuple_concat_t<conditional_t<Predicate<decay_t<remove_pointer_t<Ts>>>::value,
+        tuple_concat_t<conditional_t<Predicate<decay_t<remove_optional_t<Ts>>>::value,
                                      std::tuple<Ts>, std::tuple<>>...>,
         type_list<>>;
 };
