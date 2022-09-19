@@ -120,6 +120,12 @@ get_depth(frame_object_t* frame)
 }
 //
 py::function
+tracer_ignore_function(py::object, const char*, py::object)
+{
+    return py::cpp_function{ &tracer_ignore_function };
+}
+//
+py::function
 tracer_function(py::object pframe, const char* swhat, py::object arg)
 {
     //
@@ -159,13 +165,13 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
 
     if(!tim::settings::enabled() || pframe.is_none() || pframe.ptr() == nullptr ||
        _disable)
-        return py::none{};
+        return py::cpp_function{ &tracer_ignore_function };
 
     if(user_trace_bundle::bundle_size() == 0)
     {
         if(_config.verbose > 1)
             TIMEMORY_PRINT_HERE("%s", "Tracer bundle is empty");
-        return py::none{};
+        return py::cpp_function{ &tracer_ignore_function };
     }
 
     int what = (strcmp(swhat, "line") == 0)
@@ -179,7 +185,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     {
         if(_config.verbose > 2)
             TIMEMORY_PRINT_HERE("%s :: %s", "Ignoring what != {LINE,CALL,RETURN}", swhat);
-        return py::none{};
+        return py::cpp_function{ &tracer_function };
     }
 
     //
@@ -203,7 +209,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
         if(_config.verbose > 1)
             TIMEMORY_PRINT_HERE("skipping %i > %i", (int) _sdepth,
                                 (int) _config.max_stack_depth);
-        return py::none{};
+        return py::cpp_function{ &tracer_ignore_function };
     }
 
     // get the function name
@@ -326,7 +332,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     {
         if(_config.verbose > 1)
             TIMEMORY_PRINT_HERE("Skipping non-included function: %s", _func.c_str());
-        return py::none{};
+        return py::cpp_function{ (_iscall) ? &tracer_ignore_function : &tracer_function };
     }
 
     if(_find_matching(_skip_funcs, _func))
@@ -345,7 +351,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
             threading.attr("settrace")(py::none{});
             _disable = false;
         }
-        return py::none{};
+        return py::cpp_function{ (_iscall) ? &tracer_ignore_function : &tracer_function };
     }
 
     auto _full = _get_filename();
@@ -356,21 +362,21 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
     {
         if(_config.verbose > 2)
             TIMEMORY_PRINT_HERE("Skipping internal function: %s", _func.c_str());
-        return py::none{};
+        return py::cpp_function{ &tracer_ignore_function };
     }
 
     if(!_only_files.empty() && !_find_matching(_only_files, _full))
     {
         if(_config.verbose > 2)
             TIMEMORY_PRINT_HERE("Skipping non-included file: %s", _full.c_str());
-        return py::none{};
+        return py::cpp_function{ &tracer_function };
     }
 
     if(_find_matching(_skip_files, _full))
     {
         if(_config.verbose > 2)
             TIMEMORY_PRINT_HERE("Skipping non-included file: %s", _full.c_str());
-        return py::none{};
+        return py::cpp_function{ &tracer_function };
     }
 
     strvec_t* _plines = nullptr;
@@ -386,7 +392,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
                 "in this file will not be traced:\n%s",
                 _full.c_str(), e.what());
         _file_lskip.insert(_full);
-        return py::none{};
+        return py::cpp_function{ (_iscall) ? &tracer_ignore_function : &tracer_function };
     }
 
     if(!_plines)
@@ -394,7 +400,7 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
         if(_config.verbose > 3)
             TIMEMORY_PRINT_HERE("No source code lines for '%s'. Returning",
                                 _full.c_str());
-        return py::none{};
+        return py::cpp_function{ &tracer_function };
     }
 
     auto& _flines = *_plines;

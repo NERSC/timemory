@@ -195,7 +195,7 @@ class Profiler:
             self._original_function = sys.getprofile()
 
         if settings.debug or self.debug:
-            sys.stderr.write("Tracer configured...\n")
+            sys.stderr.write("Profiler configured...\n")
 
     # ---------------------------------------------------------------------------------- #
     #

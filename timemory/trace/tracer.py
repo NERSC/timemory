@@ -167,7 +167,7 @@ class Tracer:
         # configure
         if settings.debug or self.debug:
             sys.stderr.write(
-                "configuring Profiler with components (type: {}): {}\n".format(
+                "configuring Tracer with components (type: {}): {}\n".format(
                     type(components).__name__, components
                 )
             )
@@ -179,7 +179,8 @@ class Tracer:
         # store original
         if settings.debug or self.debug:
             sys.stderr.write("setting trace function...\n")
-        self._original_function = sys.gettrace()
+        if sys.gettrace() != _tracer_function:
+            self._original_function = sys.gettrace()
 
         if settings.debug or self.debug:
             sys.stderr.write("Tracer configured...\n")
@@ -187,7 +188,7 @@ class Tracer:
     # ---------------------------------------------------------------------------------- #
     #
     def update(self):
-        """Updates whether the profiler is already running based on whether the tracer
+        """Updates whether the tracer is already running based on whether the tracer
         is not already running, is enabled, and the function is not already set
         """
 
