@@ -42,13 +42,10 @@ struct variant_assign_if_diff_index : std::true_type
 struct variant_ignore_if_diff_index : std::false_type
 {};
 
-template <typename VarT, typename FuncT, typename ArgT,
-          typename AssignT     = variant_assign_if_diff_index,
-          typename AssignFuncT = void(VarT&, const VarT&)>
+template <typename VarT, typename FuncT, typename ArgT, typename AssignT,
+          typename AssignFuncT>
 inline decltype(auto)
-variant_apply(
-    VarT& _var, FuncT&& _func, ArgT&& _arg, AssignT = {},
-    AssignFuncT _assign = [](VarT& _out, const VarT& _inp) { _out = _inp; })
+variant_apply(VarT& _var, FuncT&& _func, ArgT&& _arg, AssignT, AssignFuncT _assign)
 {
     if constexpr(concepts::is_unqualified_same<decltype(_var), decltype(_arg)>::value)
     {
@@ -72,6 +69,22 @@ variant_apply(
     }
     return _var;
     (void) _assign;
+}
+
+template <typename VarT, typename FuncT, typename ArgT, typename AssignT>
+inline decltype(auto)
+variant_apply(VarT& _var, FuncT&& _func, ArgT&& _arg, AssignT _assign)
+{
+    return variant_apply(_var, std::forward<FuncT>(_func), std::forward<ArgT>(_arg),
+                         _assign, [](VarT& _out, const VarT& _inp) { _out = _inp; });
+}
+
+template <typename VarT, typename FuncT, typename ArgT>
+inline decltype(auto)
+variant_apply(VarT& _var, FuncT&& _func, ArgT&& _arg)
+{
+    return variant_apply(_var, std::forward<FuncT>(_func), std::forward<ArgT>(_arg),
+                         variant_assign_if_diff_index{});
 }
 
 template <typename VarT, typename FuncT>
