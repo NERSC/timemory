@@ -42,7 +42,6 @@ except ImportError:
     pass
 
 import os
-import sys
 import time
 import json
 import random
@@ -119,14 +118,10 @@ class TimemoryFlatTests(unittest.TestCase):
     def setUp(self):
         tim.settings.flat_profile = True
         config.include_internal = True
-        # self.assertTrue(sys.getprofile() is None)
-        # self.assertTrue(sys.gettrace() is None)
 
     def tearDown(self):
         tim.settings.flat_profile = False
         config.include_internal = False
-        # self.assertTrue(sys.getprofile() is None)
-        # self.assertTrue(sys.gettrace() is None)
 
     # Tear down class: finalize
     @classmethod

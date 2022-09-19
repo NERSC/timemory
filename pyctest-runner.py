@@ -689,10 +689,12 @@ def run_pyctest():
 
     # how to build the code
     #
-    pyct.BUILD_COMMAND = "{} --build {} --target all --parallel {}".format(
-        ctest_cmake_cmd,
-        pyct.BINARY_DIRECTORY,
-        args.cpu_count,
+    pyct.BUILD_COMMAND = (
+        "{} --build {} --target all --parallel {} --verbose".format(
+            ctest_cmake_cmd,
+            pyct.BINARY_DIRECTORY,
+            args.cpu_count,
+        )
     )
 
     # Windows build command extras

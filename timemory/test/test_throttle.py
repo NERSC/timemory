@@ -208,10 +208,6 @@ class TimemoryThrottleTests(unittest.TestCase):
 
         # _run function
         def _run(name, idx):
-            import sys
-
-            # self.assertTrue(sys.getprofile() is None)
-            # self.assertTrue(sys.gettrace() is None)
 
             _name = "{}_{}".format(name, idx)
             _hash = tim.add_hash_id(_name)
