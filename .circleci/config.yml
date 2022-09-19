@@ -170,7 +170,7 @@ jobs:
             -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install &&
             cmake --build build-timemory/Linux --target all --parallel 2 &&
             pushd build-timemory/Linux &&
-            ctest --output-on-failure &&
+            ctest --output-on-failure -E dynamic_instrument &&
             popd
       - run:
           name: install
