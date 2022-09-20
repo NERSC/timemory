@@ -230,7 +230,7 @@ sampler<CompT<Types...>, N>::sample(Args&&... _args)
         IF_CONSTEXPR(trait::backtrace_use_libunwind<this_type>::value)
         {
             m_last->template invoke<operation::set_data>(
-                get_unw_backtrace_raw<_depth, _offset>());
+                get_unw_stack<_depth, _offset>());
             m_last->template invoke<operation::set_data>(
                 get_unw_backtrace<_depth, _offset>());
             m_last->sample(get_unw_backtrace<_depth, _offset>(),

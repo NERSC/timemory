@@ -102,9 +102,10 @@ get_native_backtrace()
 }
 //
 #    if defined(TIMEMORY_USE_LIBUNWIND)
+//
 template <size_t Depth, int64_t Offset = 1, bool WSignalFrame = false>
 TIMEMORY_NOINLINE inline auto
-get_unw_backtrace_raw(unw_frame_regnum_t _reg = UNW_REG_IP)
+get_unw_stack(unw_frame_regnum_t _reg = UNW_REG_IP)
 {
     static_assert(Depth > 0, "Error !(Depth > 0)");
     static_assert(Offset >= 0, "Error !(Offset >= 0)");
@@ -115,9 +116,7 @@ get_unw_backtrace_raw(unw_frame_regnum_t _reg = UNW_REG_IP)
     // Initialize cursor to current frame for local unwinding.
     unw_getcontext(&_stack.context);
     if(unw_init_local(&_stack.cursor, &_stack.context) < 0)
-    {
         return _stack;
-    }
 
     int     unw_ret = 0;
     int64_t tot_idx = 0;
@@ -176,7 +175,8 @@ get_unw_backtrace_raw(unw_frame_regnum_t _reg = UNW_REG_IP)
             break;
         _idx -= Offset;             // index in stack
         auto _addr = unw_word_t{};  // instruction pointer
-        unw_get_reg(&_stack.cursor, _reg, &_addr);
+        if(unw_get_reg(&_stack.cursor, _reg, &_addr) < 0)
+            continue;
         if(_reg == UNW_REG_IP && _addr == 0)
             break;
         _stack.at(_idx) = { _addr, &_stack.cursor };
@@ -187,7 +187,7 @@ get_unw_backtrace_raw(unw_frame_regnum_t _reg = UNW_REG_IP)
 #    else
 //
 template <size_t Depth, int64_t Offset = 1, bool WSignalFrame = false, typename Tp = int>
-TIMEMORY_NOINLINE inline auto get_unw_backtrace_raw(Tp = {})
+TIMEMORY_NOINLINE inline auto get_unw_stack(Tp = {})
 {
     unwind::stack<Depth> _stack = {};
     throw std::runtime_error("[timemory]> libunwind not available");
@@ -205,7 +205,7 @@ get_unw_backtrace()
     static_assert(Offset >= 0, "Error !(Offset >= 0)");
 
     // raw backtrace
-    auto _raw = get_unw_backtrace_raw<Depth, Offset, WSignalFrame>(UNW_REG_IP);
+    auto _raw = get_unw_stack<Depth, Offset, WSignalFrame>(UNW_REG_IP);
 
     // destination
     std::array<char[512], Depth> btrace{};

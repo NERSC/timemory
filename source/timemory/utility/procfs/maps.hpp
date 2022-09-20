@@ -35,6 +35,7 @@
 #include <array>
 #include <cstddef>
 #include <fstream>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -55,6 +56,13 @@ struct maps
     std::string         device        = {};
     size_t              inode         = {};
     std::string         pathname      = {};
+
+    bool is_empty() const
+    {
+        // sum will be zero if default initialized
+        return ((start_address + end_address + offset + inode + device.length() +
+                 pathname.length()) == 0);
+    }
 
     template <typename ArchiveT>
     void serialize(ArchiveT& ar, const unsigned)
@@ -116,6 +124,45 @@ read_maps(pid_t _pid = process::get_target_id())
         }
     }
     return _data;
+}
+
+inline auto&
+get_maps(pid_t _pid, bool _update = false)
+{
+    static auto                  _data  = std::unordered_map<pid_t, std::vector<maps>>{};
+    static auto                  _mutex = std::mutex{};
+    std::scoped_lock<std::mutex> _lk{ _mutex };
+
+    auto itr = _data.find(_pid);
+    if(itr == _data.end())
+        _data.emplace(_pid, read_maps(_pid));
+    else if(_update)
+        _data.at(_pid) = read_maps(_pid);
+
+    return _data.at(_pid);
+}
+
+inline auto
+find_map(uint64_t _addr, pid_t _pid = process::get_target_id())
+{
+    auto _search_map = [_addr, _pid]() {
+        // make sure it is copied
+        auto _v = get_maps(_pid);
+        for(const auto& itr : _v)
+        {
+            if(_addr >= itr.start_address && _addr <= itr.end_address)
+                return itr;
+        }
+        return maps{};
+    };
+
+    auto _v = _search_map();
+
+    // if not found, update
+    if(_v.is_empty())
+        get_maps(_pid, true);
+
+    return _search_map();
 }
 }  // namespace procfs
 }  // namespace tim

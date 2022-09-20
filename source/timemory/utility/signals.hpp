@@ -79,11 +79,10 @@ inline namespace signals
 // 15    SIGTERM      terminate process    software termination signal
 // 16    SIGURG       discard signal       urgent condition present on socket
 // 18    SIGTSTP      stop process         stop signal generated from keyboard
-// 24    SIGXCPU      terminate process    cpu time limit exceeded (see
-// setrlimit(2)) 25    SIGXFSZ      terminate process    file size limit
-// exceeded (see setrlimit(2)) 26    SIGVTALRM    terminate process    virtual
-// time alarm (see setitimer(2)) 27    SIGPROF      terminate process profiling
-// timer alarm (see setitimer(2))
+// 24    SIGXCPU      terminate process    cpu time limit exceeded
+// 25    SIGXFSZ      terminate process    file size limit exceeded
+// 26    SIGVTALRM    terminate process    virtual time alarm
+// 27    SIGPROF      terminate process    profiling timer alarm
 //
 //--------------------------------------------------------------------------------------//
 //

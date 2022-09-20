@@ -483,7 +483,7 @@ template <size_t DepthN>
 TIMEMORY_NOINLINE auto
 unw_foo_common()
 {
-    return tim::get_unw_backtrace_raw<DepthN, 0>();
+    return tim::get_unw_stack<DepthN, 0>();
 }
 
 template <size_t DepthN>
@@ -542,6 +542,9 @@ TEST_F(backtrace_tests, unwind_common_type)
                                                 << _as_string_v(_rhs_v);
     };
 
+    EXPECT_EQ(_lhs.size(), 2) << _as_string(_lhs);
+    EXPECT_EQ(_rhs.size(), 3) << _as_string(_rhs);
+
     {
         ASSERT_EQ(_lhs.get().size(), 2) << _as_string(_lhs);
         ASSERT_EQ(_rhs.get().size(), 3) << _as_string(_rhs);
@@ -566,6 +569,45 @@ TEST_F(backtrace_tests, unwind_common_type)
 
         _compare_data(_lhs_data.at(0), _rhs_data.at(0));
         _compare_data(_lhs_data.at(1), _rhs_data.at(1));
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(backtrace_tests, unwind_proc_info)
+{
+    static constexpr size_t N = 3;
+    namespace unwind          = tim::unwind;
+    namespace log             = tim::log;
+
+    unwind::stack<N> _unw{};
+    _unw = unw_spam_common<N>();
+
+    auto _as_string_v = [&](const auto& itr) {
+        auto _as_hex_v = [](auto _v) {
+            std::stringstream _ss{};
+            _ss << "0x" << std::hex << std::setw(8) << std::setfill('0') << std::right
+                << _v;
+            return _ss.str();
+        };
+        std::stringstream _ss{};
+
+        log::stream(_ss, log::color::source())
+            << "    " << std::setw(32) << std::left << tim::demangle(itr.name) << " ["
+            << itr.location << "], symbol: " << tim::demangle(itr.info.symbol.name)
+            << " (error: " << itr.error
+            << ", start: " << _as_hex_v(itr.address - itr.offset)
+            << ", address: " << _as_hex_v(itr.address)
+            << ", offset: " << _as_hex_v(itr.offset)
+            << ", saddr: " << _as_hex_v(itr.info.symbol.address())
+            << ", faddr: " << _as_hex_v(itr.info.location.address())
+            << ", addr2line: " << _as_hex_v(itr.line_address) << ")\n";
+        return _ss.str();
+    };
+
+    for(auto& itr : _unw.get())
+    {
+        std::cout << _as_string_v(itr);
     }
 }
 

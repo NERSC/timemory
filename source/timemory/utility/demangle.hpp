@@ -30,6 +30,7 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 
+#include <cstring>
 #include <string>
 #include <typeinfo>
 
@@ -40,6 +41,14 @@ demangle(const char* _mangled_name, int* _status = nullptr);
 
 std::string
 demangle(const std::string& _str, int* _status = nullptr);
+
+inline std::string
+demangle(std::string_view _str, int* _status = nullptr)
+{
+    return (_str.length() == strnlen(_str.data(), _str.length()))
+               ? demangle(_str.data(), _status)
+               : demangle(std::string{ _str }, _status);
+}
 
 //--------------------------------------------------------------------------------------//
 

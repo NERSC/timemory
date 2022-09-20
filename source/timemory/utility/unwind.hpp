@@ -34,6 +34,9 @@
 #include "timemory/utility/types.hpp"
 
 #if defined(TIMEMORY_USE_LIBUNWIND)
+#    include "timemory/utility/dlinfo.hpp"
+#    include "timemory/utility/procfs/maps.hpp"
+
 #    include <libunwind.h>
 #    if defined(unw_get_proc_name_by_ip)
 #        define TIMEMORY_LIBUNWIND_HAS_PROC_NAME_BY_IP 1
@@ -54,8 +57,6 @@ namespace unwind
 //--------------------------------------------------------------------------------------//
 //
 #if defined(TIMEMORY_USE_LIBUNWIND)
-//
-//--------------------------------------------------------------------------------------//
 //
 struct entry
 {
@@ -118,11 +119,13 @@ private:
 //
 struct processed_entry
 {
-    int         error    = 0;
-    unw_word_t  address  = 0;
-    unw_word_t  offset   = 0;
-    std::string name     = {};  // function name
-    std::string location = {};  // file location
+    int         error        = 0;
+    unw_word_t  address      = 0;
+    unw_word_t  offset       = 0;
+    unw_word_t  line_address = 0;   // line address in file
+    std::string name         = {};  // function name
+    std::string location     = {};  // file location
+    dlinfo      info         = {};  // dynamic library info
 
     bool operator==(const processed_entry& _v) const;
     bool operator<(const processed_entry& _v) const;
@@ -135,8 +138,9 @@ struct processed_entry
     void serialize(ArchiveT& ar, const unsigned)
     {
         ar(cereal::make_nvp("error", error), cereal::make_nvp("address", address),
-           cereal::make_nvp("offset", offset), cereal::make_nvp("name", name),
-           cereal::make_nvp("location", location));
+           cereal::make_nvp("offset", offset),
+           cereal::make_nvp("line_address", line_address), cereal::make_nvp("name", name),
+           cereal::make_nvp("location", location), cereal::make_nvp("dlinfo", info));
     }
 };
 //
@@ -378,6 +382,19 @@ stack<N>::get(bool _include_with_error)
             _v.address = itr->address();
             _v.name    = itr->template get_name<DefaultBufferSize, Shrink>(
                 context, &_v.offset, &_v.error);
+            _v.info     = dlinfo::construct(_v.address - _v.offset);
+            _v.location = std::string{ _v.info.location.name };
+            if(_v.info)
+            {
+                _v.line_address =
+                    (_v.info.symbol.address() - _v.info.location.address()) + _v.offset;
+            }
+            else
+            {
+                auto _map = procfs::find_map(_v.address);
+                if(!_map.is_empty())
+                    _v.line_address = (_v.address - _map.start_address) + _map.offset;
+            }
             if(_v.error == 0 || _include_with_error)
             {
                 _data.emplace_back(_v);
