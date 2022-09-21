@@ -262,10 +262,11 @@ get_common_stack(stack<LhsN> _lhs_v, stack<RhsN> _rhs_v)
             _rhs = &_lhs_v;
         }
 
-        auto _copy = [MinN](const auto* _stack, size_t _beg) {
-            auto   _v   = stack<MinN>{};
-            size_t _idx = _beg;
-            for(size_t i = 0; i < MinN; ++i, ++_idx)
+        auto _copy = [](const auto* _stack, size_t _beg) {
+            constexpr size_t N    = (LhsN < RhsN) ? LhsN : RhsN;
+            auto             _v   = stack<N>{};
+            size_t           _idx = _beg;
+            for(size_t i = 0; i < N; ++i, ++_idx)
             {
                 if(_idx < _stack->call_stack.size())
                     _v.call_stack.at(i) = _stack->call_stack.at(_idx);
