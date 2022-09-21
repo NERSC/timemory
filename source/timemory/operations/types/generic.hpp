@@ -372,8 +372,9 @@ struct generic_deleter
 private:
     template <typename Up>
     static auto sfinae(Up& _obj, int,
-                       std::enable_if_t<!std::is_pointer<Up>::value, int> = 0)
-        -> decltype(_obj.reset(), void())
+                       std::enable_if_t<!std::is_pointer<Up>::value &&
+                                            concepts::is_dynamic_alloc<Up>::value,
+                                        int> = 0) -> decltype(_obj.reset(), void())
     {
         _obj.reset();
     }

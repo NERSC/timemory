@@ -49,30 +49,37 @@ struct reset
 {
     using type = Tp;
 
-    TIMEMORY_DELETED_OBJECT(reset)
+    TIMEMORY_DEFAULT_OBJECT(reset)
 
-    template <typename... Args>
-    explicit reset(type& obj, Args&&... args);
+    reset(type& obj);
+
+    template <typename Arg, typename... Args>
+    reset(type& obj, Arg&& arg, Args&&... args);
+
+    auto operator()(type& obj) const;
+
+    template <typename Arg, typename... Args>
+    auto operator()(type& obj, Arg&& arg, Args&&... args) const;
 
 private:
     //  satisfies mpl condition and accepts arguments
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, int, Args&&... args)
-        -> decltype(obj.reset(std::forward<Args>(args)...), void())
+    static auto sfinae(Up& obj, int, int, Args&&... args)
+        -> decltype(obj.reset(std::forward<Args>(args)...))
     {
-        obj.reset(std::forward<Args>(args)...);
+        return obj.reset(std::forward<Args>(args)...);
     }
 
     //  satisfies mpl condition but does not accept arguments
     template <typename Up, typename... Args>
-    auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.reset(), void())
+    static auto sfinae(Up& obj, int, long, Args&&...) -> decltype(obj.reset())
     {
-        obj.reset();
+        return obj.reset();
     }
 
     //  no member function or does not satisfy mpl condition
     template <typename Up, typename... Args>
-    void sfinae(Up&, long, long, Args&&...)
+    static void sfinae(Up&, long, long, Args&&...)
     {
         SFINAE_WARNING(type);
     }
@@ -81,10 +88,31 @@ private:
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp>
-template <typename... Args>
-reset<Tp>::reset(Tp& obj, Args&&... args)
+template <typename Arg, typename... Args>
+reset<Tp>::reset(Tp& obj, Arg&& arg, Args&&... args)
 {
-    sfinae(obj, 0, 0, std::forward<Args>(args)...);
+    (*this)(obj, std::forward<Arg>(arg), std::forward<Args>(args)...);
+}
+//
+template <typename Tp>
+reset<Tp>::reset(Tp& obj)
+{
+    (*this)(obj);
+}
+//
+template <typename Tp>
+template <typename Arg, typename... Args>
+auto
+reset<Tp>::operator()(Tp& obj, Arg&& arg, Args&&... args) const
+{
+    return sfinae(obj, 0, 0, std::forward<Arg>(arg), std::forward<Args>(args)...);
+}
+//
+template <typename Tp>
+auto
+reset<Tp>::operator()(Tp& obj) const
+{
+    return sfinae(obj, 0, 0);
 }
 //
 //--------------------------------------------------------------------------------------//
