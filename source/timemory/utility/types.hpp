@@ -213,7 +213,7 @@ using type_list_element_t = typename type_list_element<Idx, Tp>::type;
 /// \fn tim::consume_parameters
 /// \brief use this function to get rid of "unused parameter" warnings
 template <typename... ArgsT>
-TIMEMORY_ALWAYS_INLINE void
+TIMEMORY_INLINE void
 consume_parameters(ArgsT&&...) TIMEMORY_HIDDEN TIMEMORY_NEVER_INSTRUMENT;
 //
 template <typename... ArgsT>
@@ -566,20 +566,20 @@ struct config : public data_type
 //
 //--------------------------------------------------------------------------------------//
 // clang-format off
-static TIMEMORY_INLINE config
-get_default() TIMEMORY_HOT;
+TIMEMORY_INLINE config
+get_default();
 TIMEMORY_INLINE        config
-operator+(config _lhs, tree) TIMEMORY_HOT;
+operator+(config _lhs, tree);
 TIMEMORY_INLINE        config
-operator+(config _lhs, flat) TIMEMORY_HOT;
+operator+(config _lhs, flat);
 TIMEMORY_INLINE        config
-operator+(config _lhs, timeline) TIMEMORY_HOT;
+operator+(config _lhs, timeline);
 TIMEMORY_INLINE        config
-operator+(config _lhs, config _rhs) TIMEMORY_HOT;
+operator+(config _lhs, config _rhs);
 // clang-format on
 //--------------------------------------------------------------------------------------//
 //
-static TIMEMORY_INLINE auto
+auto
 get_default() -> config
 {
     return config{ get_default_bitset() };
@@ -587,7 +587,7 @@ get_default() -> config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_INLINE auto
+auto
 operator+(config _lhs, tree) -> config
 {
     _lhs.set(tree::value, true);
@@ -596,7 +596,7 @@ operator+(config _lhs, tree) -> config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_INLINE auto
+auto
 operator+(config _lhs, flat) -> config
 {
     _lhs.set(flat::value, true);
@@ -605,7 +605,7 @@ operator+(config _lhs, flat) -> config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_INLINE auto
+auto
 operator+(config _lhs, timeline) -> config
 {
     _lhs.set(timeline::value, true);
@@ -614,7 +614,7 @@ operator+(config _lhs, timeline) -> config
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_INLINE auto
+auto
 operator+(config _lhs, config _rhs) -> config
 {
     return config{ either(_lhs, _rhs, make_index_sequence<scope_count>{}) };
