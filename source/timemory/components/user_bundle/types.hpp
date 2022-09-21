@@ -215,10 +215,14 @@ struct reset<component::user_bundle<Idx, Type>>
 {
     using type = component::user_bundle<Idx, Type>;
 
-    TIMEMORY_DELETED_OBJECT(reset)
+    TIMEMORY_DEFAULT_OBJECT(reset)
 
     template <typename... Args>
     explicit reset(type&, Args&&...)
+    {}
+
+    template <typename... Args>
+    constexpr auto operator()(type&, Args&&...) const
     {}
 };
 }  // namespace operation

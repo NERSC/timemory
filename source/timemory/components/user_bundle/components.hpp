@@ -246,15 +246,14 @@ public:
                              _prefix }
     {}
 
-    user_bundle(const char* _prefix, opaque_array_t _bundle_vec, typeid_vec_t _typeids,
-                scope::config _scope = scope::get_default())
-    : internal::user_bundle{ _scope, std::move(_typeids), std::move(_bundle_vec),
-                             _prefix }
+    user_bundle(const char* _prefix, const opaque_array_t& _bundle_vec,
+                const typeid_vec_t& _typeids, scope::config _scope = scope::get_default())
+    : internal::user_bundle{ _scope, _typeids, _bundle_vec, _prefix }
     {}
 
-    user_bundle(const char* _prefix, opaque_array_t _bundle_vec, typeid_set_t _typeids,
-                scope::config _scope = scope::get_default())
-    : internal::user_bundle{ _scope, typeid_vec_t{}, std::move(_bundle_vec), _prefix }
+    user_bundle(const char* _prefix, const opaque_array_t& _bundle_vec,
+                const typeid_set_t& _typeids, scope::config _scope = scope::get_default())
+    : internal::user_bundle{ _scope, typeid_vec_t{}, _bundle_vec, _prefix }
     {
         m_typeids.reserve(_typeids.size());
         for(const auto& itr : _typeids)

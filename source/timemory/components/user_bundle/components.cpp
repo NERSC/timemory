@@ -194,8 +194,8 @@ user_bundle::operator=(const user_bundle& rhs)
 
 TIMEMORY_USER_BUNDLE_INLINE
 user_bundle::user_bundle(user_bundle&& rhs) noexcept
-: m_scope{ std::move(rhs.m_scope) }
-, m_prefix{ std::move(rhs.m_prefix) }
+: m_scope{ rhs.m_scope }
+, m_prefix{ rhs.m_prefix }
 , m_typeids{ std::move(rhs.m_typeids) }
 , m_bundle{ std::move(rhs.m_bundle) }
 {
@@ -207,8 +207,8 @@ user_bundle::operator=(user_bundle&& rhs) noexcept
 {
     if(this != &rhs)
     {
-        m_scope   = std::move(rhs.m_scope);
-        m_prefix  = std::move(rhs.m_prefix);
+        m_scope   = rhs.m_scope;
+        m_prefix  = rhs.m_prefix;
         m_typeids = std::move(rhs.m_typeids);
         m_bundle  = std::move(rhs.m_bundle);
         rhs.m_bundle.clear();

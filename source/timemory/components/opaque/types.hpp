@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/macros/language.hpp"
+#include "timemory/utility/types.hpp"
 
 #include <cstdint>
 #include <functional>
