@@ -27,6 +27,7 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/papi/backends.hpp"
 #include "timemory/components/papi/papi_common.hpp"
+#include "timemory/components/papi/papi_config.hpp"
 #include "timemory/components/papi/types.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/types.hpp"
@@ -65,7 +66,7 @@ template <int... EventTypes>
 struct papi_tuple
 : public base<papi_tuple<EventTypes...>, std::array<long long, sizeof...(EventTypes)>>
 , private policy::instance_tracker<papi_tuple<EventTypes...>>
-, private papi_common
+, private papi_common<papi_tuple<EventTypes...>>
 {
     using size_type    = std::size_t;
     using value_type   = std::array<long long, sizeof...(EventTypes)>;
@@ -74,7 +75,7 @@ struct papi_tuple
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
     using tracker_type = policy::instance_tracker<papi_tuple<EventTypes...>>;
-    using common_type  = this_type;
+    using common_type  = papi_common<this_type>;
 
     static constexpr size_type num_events      = sizeof...(EventTypes);
     static constexpr size_type event_count_max = num_events;
@@ -89,34 +90,30 @@ struct papi_tuple
     friend struct operation::set_stopped<this_type>;
 
 public:
-    //----------------------------------------------------------------------------------//
+    static void configure(papi_config* _cfg = common_type::get_config())
+    {
+        if(_cfg && trait::runtime_enabled<this_type>::get())
+            _cfg->initialize();
+    }
+    static void initialize(papi_config* _cfg = common_type::get_config())
+    {
+        configure(_cfg);
+    }
+    static void shutdown(papi_config* _cfg = common_type::get_config())
+    {
+        if(_cfg)
+            _cfg->finalize();
+    }
 
-    static void configure()
-    {
-        if(!is_configured<common_type>())
-        {
-            papi_common::get_initializer<common_type>() = []() {
-                return std::vector<int>{ EventTypes... };
-            };
-            papi_common::get_events<common_type>() = std::vector<int>{ EventTypes... };
-            papi_common::initialize<common_type>();
-        }
-    }
-    static void thread_init() { this_type::configure(); }
-    static void thread_finalize()
-    {
-        papi_common::finalize<common_type>();
-        papi_common::finalize_papi();
-    }
-    static void initialize() { configure(); }
-    static void finalize() { papi_common::finalize<common_type>(); }
+    static void thread_init() { configure(); }
+    static void thread_finalize() { shutdown(); }
 
     //----------------------------------------------------------------------------------//
 
     static value_type record()
     {
-        if(is_configured<common_type>())
-            tim::papi::read(event_set<common_type>(), get_read_values().data());
+        // if(is_configured<common_type>())
+        //    tim::papi::read(event_set<common_type>(), get_read_values().data());
         return get_read_values();
     }
 
@@ -160,8 +157,6 @@ public:
     {
         if(tracker_type::get_thread_started() == 0)
             configure();
-        if(events.empty())
-            events = get_events<common_type>();
 
         tracker_type::start();
         value = record();
@@ -172,11 +167,8 @@ public:
     //
     void start()
     {
-        if(tracker_type::get_thread_started() == 0 || events.size() == 0)
-        {
+        if(tracker_type::get_thread_started() == 0)
             configure();
-            events = get_events<common_type>();
-        }
 
         tracker_type::start();
         value = record();
@@ -224,10 +216,7 @@ public:
     static const short width     = 12;
 
     // leave these empty
-    static std::string label()
-    {
-        return "papi" + std::to_string(event_set<common_type>());
-    }
+    static std::string label() { return "papi_tuple"; }
     static std::string description() { return ""; }
     static std::string display_unit() { return ""; }
     static int64_t     unit() { return 1; }
@@ -311,45 +300,37 @@ public:
     //----------------------------------------------------------------------------------//
     // array of descriptions
     //
-    static array_t<std::string> label_array()
+    std::vector<std::string> label_array()
     {
-        array_t<std::string> arr;
-        for(size_type i = 0; i < num_events; ++i)
-            arr[i] = papi::get_event_info(get_events<common_type>().at(i)).short_descr;
-        return arr;
+        const auto& _cfg = common_type::get_config();
+        return (_cfg) ? _cfg->labels : std::vector<std::string>{};
     }
 
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    static array_t<std::string> description_array()
+    std::vector<std::string> description_array()
     {
-        array_t<std::string> arr;
-        for(size_type i = 0; i < num_events; ++i)
-            arr[i] = papi::get_event_info(get_events<common_type>().at(i)).long_descr;
-        return arr;
+        const auto& _cfg = common_type::get_config();
+        return (_cfg) ? _cfg->descriptions : std::vector<std::string>{};
     }
 
     //----------------------------------------------------------------------------------//
     // array of unit
     //
-    static array_t<std::string> display_unit_array()
+    std::vector<std::string> display_unit_array()
     {
-        array_t<std::string> arr;
-        for(size_type i = 0; i < num_events; ++i)
-            arr[i] = papi::get_event_info(get_events<common_type>().at(i)).units;
-        return arr;
+        const auto& _cfg = common_type::get_config();
+        return (_cfg) ? _cfg->display_units : std::vector<std::string>{};
     }
 
     //----------------------------------------------------------------------------------//
     // array of unit values
     //
-    static array_t<int64_t> unit_array()
+    std::vector<int64_t> unit_array()
     {
-        array_t<int64_t> arr;
-        for(size_type i = 0; i < num_events; ++i)
-            arr[i] = 1;
-        return arr;
+        const auto& _cfg = common_type::get_config();
+        return (_cfg) ? _cfg->units : std::vector<int64_t>{};
     }
 };
 }  // namespace component

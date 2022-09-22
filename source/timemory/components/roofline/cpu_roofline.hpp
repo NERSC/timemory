@@ -277,7 +277,7 @@ struct cpu_roofline
             auto _events    = get_events();
             is_configured() = true;
             for(auto&& itr : _events)
-                papi_vector::add_event(itr);
+                papi_config::add_global_event(itr);
             papi_vector::configure();
         }
     }

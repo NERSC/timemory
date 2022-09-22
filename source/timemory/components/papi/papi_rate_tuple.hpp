@@ -27,6 +27,7 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/papi/backends.hpp"
 #include "timemory/components/papi/papi_common.hpp"
+#include "timemory/components/papi/papi_config.hpp"
 #include "timemory/components/papi/types.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/types.hpp"
@@ -74,7 +75,7 @@ template <typename RateT, int... EventTypes>
 struct papi_rate_tuple
 : public base<papi_rate_tuple<RateT, EventTypes...>,
               std::pair<papi_tuple<EventTypes...>, RateT>>
-, private papi_common
+, private papi_common<papi_tuple<EventTypes...>>
 {
     static_assert(concepts::is_component<RateT>::value,
                   "Error! rate_type must be a component");
@@ -88,7 +89,7 @@ struct papi_rate_tuple
     using this_type    = papi_rate_tuple<RateT, EventTypes...>;
     using base_type    = base<this_type, value_type>;
     using storage_type = typename base_type::storage_type;
-    using common_type  = tuple_type;
+    using common_type  = papi_common<tuple_type>;
 
     template <typename Tp>
     using array_t = std::array<Tp, num_events>;

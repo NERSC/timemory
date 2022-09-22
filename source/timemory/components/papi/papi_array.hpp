@@ -28,6 +28,7 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/papi/backends.hpp"
 #include "timemory/components/papi/papi_common.hpp"
+#include "timemory/components/papi/papi_config.hpp"
 #include "timemory/components/papi/types.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/type_traits.hpp"
@@ -48,8 +49,7 @@ namespace component
 template <size_t MaxNumEvents>
 struct papi_array
 : public base<papi_array<MaxNumEvents>, std::array<long long, MaxNumEvents>>
-, private policy::instance_tracker<papi_array<MaxNumEvents>>
-, private papi_common
+, private papi_common<void>
 {
     using size_type         = size_t;
     using event_list        = std::vector<int>;
@@ -58,9 +58,8 @@ struct papi_array
     using this_type         = papi_array<MaxNumEvents>;
     using base_type         = base<this_type, value_type>;
     using storage_type      = typename base_type::storage_type;
-    using tracker_type      = policy::instance_tracker<this_type>;
     using get_initializer_t = std::function<event_list()>;
-    using common_type       = void;
+    using common_type       = papi_common<void>;
 
     static constexpr size_t event_count_max = MaxNumEvents;
     static const short      precision       = 3;
@@ -77,23 +76,27 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    static auto& get_initializer() { return papi_common::get_initializer<common_type>(); }
-    static void  configure()
+    static void configure(papi_config* _cfg = common_type::get_config())
     {
-        if(trait::runtime_enabled<this_type>::get() && !is_configured<common_type>())
-            papi_common::initialize<common_type>();
+        if(_cfg && trait::runtime_enabled<this_type>::get())
+            _cfg->initialize();
     }
-    static void initialize() { configure(); }
-    static void thread_finalize()
+    static void initialize(papi_config* _cfg = common_type::get_config())
     {
-        papi_common::finalize<common_type>();
-        papi_common::finalize_papi();
+        configure(_cfg);
     }
-    static void finalize() { papi_common::finalize<common_type>(); }
+    static void shutdown(papi_config* _cfg = common_type::get_config())
+    {
+        if(_cfg)
+            _cfg->finalize();
+    }
+
+    static void thread_init() { configure(); }
+    static void thread_finalize() { shutdown(); }
 
     //----------------------------------------------------------------------------------//
 
-    papi_array();
+    papi_array()                      = default;
     ~papi_array()                     = default;
     papi_array(const papi_array&)     = default;
     papi_array(papi_array&&) noexcept = default;
@@ -102,19 +105,29 @@ struct papi_array
 
     using base_type::load;
 
+    size_t      size() const { return (m_config) ? m_config->size : 0; }
+    const auto* get_config() const { return m_config; }
+
     //----------------------------------------------------------------------------------//
 
-    size_t size() { return events.size(); }
-
-    //----------------------------------------------------------------------------------//
-
-    static value_type record()
+    static value_type record(int _event_set)
     {
         value_type read_value{};
         read_value.fill(0);
-        if(is_configured<common_type>())
-            papi::read(event_set<common_type>(), read_value.data());
+        if(_event_set != PAPI_NULL)
+            papi::read(_event_set, read_value.data());
         return read_value;
+    }
+
+    static value_type record(papi_config* _cfg)
+    {
+        return record((_cfg) ? _cfg->event_set : PAPI_NULL);
+    }
+
+    static value_type record()
+    {
+        const auto& _cfg = common_type::get_config();
+        return record((_cfg) ? _cfg->event_set : PAPI_NULL);
     }
 
     //----------------------------------------------------------------------------------//
@@ -122,12 +135,12 @@ struct papi_array
     template <typename Tp = double>
     std::vector<Tp> get() const
     {
-        std::vector<Tp> values;
-        auto&           _data = load();
+        auto  values = std::vector<Tp>{};
+        auto& _data  = load();
         values.reserve(_data.size());
         for(auto& itr : _data)
             values.emplace_back(itr);
-        values.resize(events.size());
+        values.resize(size());
         return values;
     }
 
@@ -136,13 +149,10 @@ struct papi_array
     //
     void sample()
     {
-        if(tracker_type::get_thread_started() == 0)
-            configure();
-        if(events.empty())
-            events = get_events<common_type>();
+        if(!m_config)
+            return;
 
-        tracker_type::start();
-        value = record();
+        value = record(m_config);
     }
 
     //----------------------------------------------------------------------------------//
@@ -150,32 +160,33 @@ struct papi_array
     //
     void start()
     {
-        if(tracker_type::get_thread_started() == 0 || events.size() == 0)
-            configure();
+        if(!m_config)
+            return;
 
-        events = get_events<common_type>();
-        tracker_type::start();
-        value = record();
+        m_config->start();
+        value = record(m_config);
     }
 
     //----------------------------------------------------------------------------------//
 
     void stop()
     {
-        tracker_type::stop();
+        if(!m_config)
+            return;
+
         using namespace tim::component::operators;
-        value = (record() - value);
+        value = (record(m_config) - value);
         accum += value;
+
+        m_config->stop();
     }
 
     //----------------------------------------------------------------------------------//
 
     this_type& operator+=(const this_type& rhs)
     {
-        for(size_type i = 0; i < events.size(); ++i)
-            accum[i] += rhs.accum[i];
-        for(size_type i = 0; i < events.size(); ++i)
-            value[i] += rhs.value[i];
+        value += rhs.value;
+        accum += rhs.accum;
         return *this;
     }
 
@@ -183,10 +194,8 @@ struct papi_array
 
     this_type& operator-=(const this_type& rhs)
     {
-        for(size_type i = 0; i < events.size(); ++i)
-            accum[i] -= rhs.accum[i];
-        for(size_type i = 0; i < events.size(); ++i)
-            value[i] -= rhs.value[i];
+        value -= rhs.value;
+        accum -= rhs.accum;
         return *this;
     }
 
@@ -194,9 +203,9 @@ struct papi_array
 
     this_type& operator/=(size_t _val)
     {
-        for(size_type i = 0; i < events.size(); ++i)
+        for(size_type i = 0; i < size(); ++i)
             accum[i] /= _val;
-        for(size_type i = 0; i < events.size(); ++i)
+        for(size_type i = 0; i < size(); ++i)
             value[i] /= _val;
         return *this;
     }
@@ -209,7 +218,7 @@ protected:
     using base_type::set_started;
     using base_type::set_stopped;
     using base_type::value;
-    using papi_common::events;
+    papi_config* m_config = common_type::get_config();
 
     friend struct base<this_type, value_type>;
     friend class impl::storage<this_type,
@@ -224,8 +233,9 @@ public:
 
     static std::string label()
     {
-        auto _event_set = event_set<common_type>();
-        if(_event_set > 0)
+        const auto& _cfg       = common_type::get_config();
+        auto        _event_set = (_cfg) ? _cfg->event_set : PAPI_NULL;
+        if(_event_set != PAPI_NULL)
             return "papi_array" + std::to_string(_event_set);
         return "papi_array";
     }
@@ -241,7 +251,7 @@ public:
     void load(Archive& ar, const unsigned int)
     {
         ar(cereal::make_nvp("laps", laps), cereal::make_nvp("value", value),
-           cereal::make_nvp("accum", accum), cereal::make_nvp("events", events));
+           cereal::make_nvp("accum", accum));
     }
 
     //----------------------------------------------------------------------------------//
@@ -250,12 +260,10 @@ public:
     template <typename Archive>
     void save(Archive& ar, const unsigned int) const
     {
-        array_t<double> _disp;
-        for(size_type i = 0; i < events.size(); ++i)
-            _disp[i] = get_display(i);
-        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("repr_data", _disp),
+        auto _data = get<double>();
+        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("repr_data", _data),
            cereal::make_nvp("value", value), cereal::make_nvp("accum", accum),
-           cereal::make_nvp("display", _disp), cereal::make_nvp("events", events));
+           cereal::make_nvp("display", _data));
     }
 
     //----------------------------------------------------------------------------------//
@@ -263,43 +271,8 @@ public:
     //
     std::vector<std::string> label_array() const
     {
-        std::vector<std::string> arr = events;
-        for(size_type i = 0; i < events.size(); ++i)
-        {
-            papi::event_info_t _info = papi::get_event_info(events.at(i));
-            if(!_info.modified_short_descr)
-                arr.at(i) = _info.short_descr;
-            if(arr.at(i).empty())
-                arr.at(i) = _info.symbol;
-            if(arr.at(i).empty())
-                arr.at(i) = events.at(i);
-        }
-
-        for(auto& itr : arr)
-        {
-            size_t n = std::string::npos;
-            while((n = itr.find("L/S")) != std::string::npos)
-                itr.replace(n, 3, "Loads_Stores");
-        }
-
-        for(auto& itr : arr)
-        {
-            size_t n = std::string::npos;
-            while((n = itr.find('/')) != std::string::npos)
-                itr.replace(n, 1, "_per_");
-        }
-
-        for(auto& itr : arr)
-        {
-            size_t n = std::string::npos;
-            while((n = itr.find(' ')) != std::string::npos)
-                itr.replace(n, 1, "_");
-
-            while((n = itr.find("__")) != std::string::npos)
-                itr.replace(n, 2, "_");
-        }
-
-        return arr;
+        const auto& _cfg = get_config();
+        return (_cfg) ? _cfg->labels : std::vector<std::string>{};
     }
 
     //----------------------------------------------------------------------------------//
@@ -307,10 +280,8 @@ public:
     //
     std::vector<std::string> description_array() const
     {
-        std::vector<std::string> arr(events.size());
-        for(size_type i = 0; i < events.size(); ++i)
-            arr[i] = papi::get_event_info(events[i]).long_descr;
-        return arr;
+        const auto& _cfg = get_config();
+        return (_cfg) ? _cfg->descriptions : std::vector<std::string>{};
     }
 
     //----------------------------------------------------------------------------------//
@@ -318,10 +289,8 @@ public:
     //
     std::vector<std::string> display_unit_array() const
     {
-        std::vector<std::string> arr(events.size());
-        for(size_type i = 0; i < events.size(); ++i)
-            arr[i] = papi::get_event_info(events[i]).units;
-        return arr;
+        const auto& _cfg = get_config();
+        return (_cfg) ? _cfg->display_units : std::vector<std::string>{};
     }
 
     //----------------------------------------------------------------------------------//
@@ -329,17 +298,16 @@ public:
     //
     std::vector<int64_t> unit_array() const
     {
-        std::vector<int64_t> arr(events.size());
-        for(size_type i = 0; i < events.size(); ++i)
-            arr[i] = 1;
-        return arr;
+        const auto& _cfg = get_config();
+        return (_cfg) ? _cfg->units : std::vector<int64_t>{};
     }
 
     //----------------------------------------------------------------------------------//
 
     string_t get_display() const
     {
-        if(events.size() == 0)
+        auto events = m_config->event_names;
+        if(events.empty())
             return "";
         auto val          = load();
         auto _get_display = [&](std::ostream& os, size_type idx) {
@@ -378,7 +346,7 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        if(obj.events.size() == 0)
+        if(obj.size() == 0)
             return os;
         // output the metrics
         auto _value = obj.get_display();
@@ -404,12 +372,5 @@ public:
         return os;
     }
 };
-
-template <size_t MaxNumEvents>
-papi_array<MaxNumEvents>::papi_array()
-{
-    if(trait::runtime_enabled<this_type>::get())
-        events = get_events<common_type>();
-}
 }  // namespace component
 }  // namespace tim

@@ -28,6 +28,7 @@
 #include "timemory/components/papi/backends.hpp"
 #include "timemory/components/papi/macros.hpp"
 #include "timemory/components/papi/papi_common.hpp"
+#include "timemory/components/papi/papi_config.hpp"
 #include "timemory/components/papi/types.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/mpl/types.hpp"
@@ -55,8 +56,7 @@ namespace component
 //
 struct papi_vector
 : public base<papi_vector, std::vector<long long>>
-, private policy::instance_tracker<papi_vector>
-, private papi_common
+, private papi_common<void>
 {
     template <typename... T>
     friend struct cpu_roofline;
@@ -72,21 +72,23 @@ struct papi_vector
     using base_type         = base<this_type, value_type>;
     using storage_type      = typename base_type::storage_type;
     using get_initializer_t = std::function<event_list()>;
-    using tracker_type      = policy::instance_tracker<this_type>;
-    using common_type       = void;
+    using common_type       = papi_common<void>;
 
     static constexpr short precision = 3;
     static constexpr short width     = 8;
 
-    static auto& get_initializer() { return papi_common::get_initializer<common_type>(); }
-    static void  configure();
-    static void  initialize();
-    static void  thread_finalize();
-    static void  finalize();
+    static void configure(papi_config* = common_type::get_config());
+    static void initialize(papi_config* _cfg = common_type::get_config());
+    static void shutdown(papi_config* = common_type::get_config());
+
+    static void thread_init();
+    static void thread_finalize();
+
     static std::string label();
     static std::string description();
 
     papi_vector();
+    papi_vector(papi_config*);
     ~papi_vector()                      = default;
     papi_vector(const papi_vector&)     = default;
     papi_vector(papi_vector&&) noexcept = default;
@@ -95,7 +97,7 @@ struct papi_vector
     papi_vector& operator+=(const papi_vector& rhs);
     papi_vector& operator-=(const papi_vector& rhs);
 
-    size_t                   size();
+    size_t                   size() const;
     value_type               record();
     void                     sample();
     void                     start();
@@ -114,31 +116,27 @@ struct papi_vector
     void load(Archive& ar, const unsigned int)
     {
         ar(cereal::make_nvp("laps", laps), cereal::make_nvp("value", value),
-           cereal::make_nvp("accum", accum), cereal::make_nvp("events", events));
+           cereal::make_nvp("accum", accum));
     }
 
     template <typename Archive>
     void save(Archive& ar, const unsigned int) const
     {
-        auto                sz = events.size();
-        std::vector<double> _disp(sz, 0.0);
-        for(size_type i = 0; i < sz; ++i)
-        {
-            _disp[i] = get_display(i);
-        }
-        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("repr_data", _disp),
+        auto _data = get<double>();
+        ar(cereal::make_nvp("laps", laps), cereal::make_nvp("repr_data", _data),
            cereal::make_nvp("value", value), cereal::make_nvp("accum", accum),
-           cereal::make_nvp("display", _disp), cereal::make_nvp("events", events));
+           cereal::make_nvp("display", _data));
     }
 
     template <typename Tp = double>
     std::vector<Tp> get() const
     {
-        std::vector<Tp> values;
-        const auto&     _data = load();
+        auto        values = std::vector<Tp>{};
+        const auto& _data  = load();
+        values.reserve(_data.size());
         for(const auto& itr : _data)
-            values.push_back(itr);
-        values.resize(events.size());
+            values.emplace_back(itr);
+        values.resize(size(), Tp{ 0 });
         return values;
     }
 
@@ -148,9 +146,9 @@ struct papi_vector
     }
 
 protected:
-    // data types
-    using papi_common::events;
-    using tracker_type::m_thr;
+    using common_type::m_thr;
+    papi_config* m_config           = common_type::get_config();
+    bool         m_config_is_common = true;
 };
 
 }  // namespace component

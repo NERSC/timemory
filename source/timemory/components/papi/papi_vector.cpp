@@ -47,57 +47,67 @@ namespace component
 
 TIMEMORY_PAPI_INLINE
 void
-papi_vector::configure()
+papi_vector::configure(papi_config* _cfg)
 {
-    if(!is_configured<common_type>())
-        papi_common::initialize<common_type>();
+    _cfg->initialize();
+}
+
+TIMEMORY_PAPI_INLINE
+void
+papi_vector::initialize(papi_config* _cfg)
+{
+    configure(_cfg);
+}
+
+TIMEMORY_PAPI_INLINE
+void
+papi_vector::shutdown(papi_config* _cfg)
+{
+    _cfg->finalize();
 }
 
 //----------------------------------------------------------------------------------//
 
 TIMEMORY_PAPI_INLINE
 void
-papi_vector::initialize()
+papi_vector::thread_init()
 {
-    configure();
+    configure(common_type::get_config());
 }
-
-//----------------------------------------------------------------------------------//
 
 TIMEMORY_PAPI_INLINE
 void
 papi_vector::thread_finalize()
 {
-    papi_common::finalize<common_type>();
-    papi_common::finalize_papi();
-}
-
-//----------------------------------------------------------------------------------//
-
-TIMEMORY_PAPI_INLINE
-void
-papi_vector::finalize()
-{
-    papi_common::finalize<common_type>();
+    shutdown(common_type::get_config());
 }
 
 //----------------------------------------------------------------------------------//
 
 TIMEMORY_PAPI_INLINE
 papi_vector::papi_vector()
+: m_config{ common_type::get_config() }
 {
-    events = get_events<common_type>();
-    value.resize(events.size(), 0);
-    accum.resize(events.size(), 0);
+    value.resize(size(), 0);
+    accum.resize(size(), 0);
+}
+
+TIMEMORY_PAPI_INLINE
+papi_vector::papi_vector(papi_config* _cfg)
+: m_config{ _cfg }
+, m_config_is_common{ _cfg == common_type::get_config() }
+{
+    value.resize(size(), 0);
+    accum.resize(size(), 0);
 }
 
 //----------------------------------------------------------------------------------//
 
 TIMEMORY_PAPI_INLINE
 size_t
-papi_vector::size()
+papi_vector::size() const
 {
-    return events.size();
+    return (m_config) ? m_config->size : 0;
 }
 
 //----------------------------------------------------------------------------------//
@@ -106,9 +116,9 @@ TIMEMORY_PAPI_INLINE
 papi_vector::value_type
 papi_vector::record()
 {
-    value_type read_value(events.size(), 0);
-    if(is_configured<common_type>())
-        papi::read(event_set<common_type>(), read_value.data());
+    value_type read_value(size(), 0);
+    if(m_config && m_config->is_running)
+        papi::read(m_config->event_set, read_value.data());
     return read_value;
 }
 
@@ -119,12 +129,8 @@ TIMEMORY_PAPI_INLINE
 void
 papi_vector::sample()
 {
-    if(tracker_type::get_thread_started() == 0)
-        configure();
-    if(events.empty())
-        events = get_events<common_type>();
-
-    tracker_type::start();
+    if(!m_config)
+        return;
     value = record();
 }
 
@@ -135,15 +141,12 @@ TIMEMORY_PAPI_INLINE
 void
 papi_vector::start()
 {
-    if(tracker_type::get_thread_started() == 0 || events.empty())
-    {
-        configure();
-    }
+    if(!m_config)
+        return;
 
-    events = get_events<common_type>();
-    value.resize(events.size(), 0);
-    accum.resize(events.size(), 0);
-    tracker_type::start();
+    m_config->start();
+    value.resize(size(), 0);
+    accum.resize(size(), 0);
     value = record();
 }
 
@@ -153,10 +156,13 @@ TIMEMORY_PAPI_INLINE
 void
 papi_vector::stop()
 {
+    if(!m_config)
+        return;
+
     using namespace tim::component::operators;
-    tracker_type::stop();
     value = (record() - value);
     accum += value;
+    m_config->stop();
 }
 
 //----------------------------------------------------------------------------------//
@@ -165,7 +171,6 @@ TIMEMORY_PAPI_INLINE
 papi_vector&
 papi_vector::operator+=(const papi_vector& rhs)
 {
-    using namespace tim::component::operators;
     value += rhs.value;
     accum += rhs.accum;
     return *this;
@@ -177,7 +182,6 @@ TIMEMORY_PAPI_INLINE
 papi_vector&
 papi_vector::operator-=(const papi_vector& rhs)
 {
-    using namespace tim::component::operators;
     value -= rhs.value;
     accum -= rhs.accum;
     return *this;
@@ -189,10 +193,9 @@ TIMEMORY_PAPI_INLINE
 std::string
 papi_vector::label()
 {
-    auto _event_set = event_set<common_type>();
-    if(_event_set > 0)
-        return "papi_vector" + std::to_string(_event_set);
-    return "papi_vector";
+    const auto& _cfg       = common_type::get_config();
+    auto        _event_set = (_cfg) ? _cfg->event_set : PAPI_NULL;
+    return "papi_vector" + std::to_string(_event_set);
 }
 
 //----------------------------------------------------------------------------------//
@@ -208,9 +211,9 @@ papi_vector::description()
 
 TIMEMORY_PAPI_INLINE
 papi_vector::entry_type
-papi_vector::get_display(int evt_type) const
+papi_vector::get_display(int _idx) const
 {
-    return accum.at(evt_type);
+    return (_idx < static_cast<int>(accum.size())) ? accum.at(_idx) : entry_type{ 0 };
 }
 
 //----------------------------------------------------------------------------------//
@@ -220,43 +223,7 @@ TIMEMORY_PAPI_INLINE
 std::vector<std::string>
 papi_vector::label_array() const
 {
-    std::vector<std::string> arr = events;
-    for(size_type i = 0; i < events.size(); ++i)
-    {
-        papi::event_info_t _info = papi::get_event_info(events.at(i));
-        if(!_info.modified_short_descr)
-            arr.at(i) = _info.short_descr;
-        if(arr.at(i).empty())
-            arr.at(i) = _info.symbol;
-        if(arr.at(i).empty())
-            arr.at(i) = events.at(i);
-    }
-
-    for(auto& itr : arr)
-    {
-        size_t n = std::string::npos;
-        while((n = itr.find("L/S")) != std::string::npos)
-            itr.replace(n, 3, "Loads_Stores");
-    }
-
-    for(auto& itr : arr)
-    {
-        size_t n = std::string::npos;
-        while((n = itr.find('/')) != std::string::npos)
-            itr.replace(n, 1, "_per_");
-    }
-
-    for(auto& itr : arr)
-    {
-        size_t n = std::string::npos;
-        while((n = itr.find(' ')) != std::string::npos)
-            itr.replace(n, 1, "_");
-
-        while((n = itr.find("__")) != std::string::npos)
-            itr.replace(n, 2, "_");
-    }
-
-    return arr;
+    return (m_config) ? m_config->labels : std::vector<std::string>{};
 }
 
 //----------------------------------------------------------------------------------//
@@ -266,10 +233,7 @@ TIMEMORY_PAPI_INLINE
 std::vector<std::string>
 papi_vector::description_array() const
 {
-    std::vector<std::string> arr(events.size(), "");
-    for(size_type i = 0; i < events.size(); ++i)
-        arr[i] = papi::get_event_info(events[i]).long_descr;
-    return arr;
+    return (m_config) ? m_config->descriptions : std::vector<std::string>{};
 }
 
 //----------------------------------------------------------------------------------//
@@ -279,10 +243,7 @@ TIMEMORY_PAPI_INLINE
 std::vector<std::string>
 papi_vector::display_unit_array() const
 {
-    std::vector<std::string> arr(events.size(), "");
-    for(size_type i = 0; i < events.size(); ++i)
-        arr[i] = papi::get_event_info(events[i]).units;
-    return arr;
+    return (m_config) ? m_config->display_units : std::vector<std::string>{};
 }
 
 //----------------------------------------------------------------------------------//
@@ -292,10 +253,7 @@ TIMEMORY_PAPI_INLINE
 std::vector<int64_t>
 papi_vector::unit_array() const
 {
-    std::vector<int64_t> arr(events.size(), 0);
-    for(size_type i = 0; i < events.size(); ++i)
-        arr[i] = 1;
-    return arr;
+    return (m_config) ? m_config->units : std::vector<int64_t>{};
 }
 
 //----------------------------------------------------------------------------------//
@@ -304,6 +262,7 @@ TIMEMORY_PAPI_INLINE
 std::string
 papi_vector::get_display() const
 {
+    auto events = m_config->event_names;
     if(events.empty())
         return "";
     auto val          = load();
@@ -332,9 +291,16 @@ papi_vector::get_display() const
     std::stringstream ss;
     for(size_type i = 0; i < events.size(); ++i)
     {
-        _get_display(ss, i);
-        if(i + 1 < events.size())
-            ss << ", ";
+        try
+        {
+            _get_display(ss, i);
+            if(i + 1 < events.size())
+                ss << ", ";
+        } catch(std::exception& _e)
+        {
+            TIMEMORY_PRINTF_WARNING(stderr, "[papi_vector][%s] %s\n", __FUNCTION__,
+                                    _e.what());
+        }
     }
     return ss.str();
 }
@@ -345,7 +311,7 @@ TIMEMORY_PAPI_INLINE
 std::ostream&
 papi_vector::write(std::ostream& os) const
 {
-    if(events.empty())
+    if(size() == 0)
         return os;
     // output the metrics
     auto _value = get_display();

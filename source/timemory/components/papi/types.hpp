@@ -40,6 +40,19 @@
 #    define TIMEMORY_PAPI_ARRAY_SIZE 8
 #endif
 
+namespace tim
+{
+namespace component
+{
+struct papi_config;
+
+template <typename Tp>
+struct papi_config_factory;
+
+template <typename Tp>
+struct papi_common;
+}  // namespace component
+}  // namespace tim
 //
 TIMEMORY_DECLARE_COMPONENT(papi_vector)
 TIMEMORY_DECLARE_TEMPLATE_COMPONENT(papi_tuple, int... EventTypes)
@@ -125,6 +138,15 @@ namespace trait
 template <typename RateT, int... EventTypes>
 struct array_serialization<component::papi_rate_tuple<RateT, EventTypes...>> : true_type
 {};
+
+template <typename Tp>
+struct runtime_enabled<component::papi_common<Tp>>
+: runtime_enabled<component::papi_config>
+{
+    static constexpr bool value = runtime_enabled<component::papi_config>::value;
+    using runtime_enabled<component::papi_config>::get;
+    using runtime_enabled<component::papi_config>::set;
+};
 }  // namespace trait
 }  // namespace tim
 //

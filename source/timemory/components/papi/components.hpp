@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/components/papi/papi_array.hpp"
+#include "timemory/components/papi/papi_config.hpp"
 #include "timemory/components/papi/papi_rate_tuple.hpp"
 #include "timemory/components/papi/papi_tuple.hpp"
 #include "timemory/components/papi/papi_vector.hpp"
