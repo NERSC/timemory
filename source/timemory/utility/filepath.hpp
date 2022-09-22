@@ -36,6 +36,7 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 
+#include <cstdio>
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -248,6 +249,35 @@ open(std::ifstream& _ofs, std::string _fpath, Args&&... _args)
 
     _ofs.open(osrepr(_fpath), std::forward<Args>(_args)...);
     return (_ofs && _ofs.is_open() && _ofs.good());
+}
+
+//
+template <typename... Args>
+inline auto*
+fopen(std::string _fpath, const char* _mode)
+{
+    auto _path = canonical(_fpath);
+    auto _base = canonical(_fpath);
+    auto _pos  = _path.find_last_of('/');
+    if(_pos != std::string::npos)
+    {
+        _path = _path.substr(0, _pos);
+        _base = _base.substr(_pos + 1);
+    }
+    else
+    {
+        _path  = {};
+        _fpath = std::string{ "./" } + _base;
+    }
+
+    if(!_path.empty())
+    {
+        auto ret = makedir(osrepr(_path));
+        if(ret != 0)
+            _fpath = std::string{ "./" } + _base;
+    }
+
+    return ::fopen(osrepr(_fpath).c_str(), _mode);
 }
 
 //--------------------------------------------------------------------------------------//
