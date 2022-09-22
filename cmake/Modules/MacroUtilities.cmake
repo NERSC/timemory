@@ -1088,12 +1088,21 @@ function(TIMEMORY_BUILD_INTERMEDIATE_LIBRARY)
     timemory_check_required(COMP_FOLDER)
 
     if(NOT COMP_VISIBILITY)
-        set(COMP_VISIBILITY default)
+        if(TIMEMORY_BUILD_HIDDEN_VISIBILITY)
+            set(COMP_VISIBILITY hidden)
+        else()
+            set(COMP_VISIBILITY default)
+        endif()
     endif()
 
-    set(VIS_OPTS "default" "hidden")
+    set(VIS_OPTS "default" "hidden" "protected" "internal")
     if(NOT "${COMP_VISIBILITY}" IN_LIST VIS_OPTS)
         message(FATAL_ERROR "${COMP_TARGET} available visibility options: ${VIS_OPTS}")
+    endif()
+
+    if(TIMEMORY_USE_VISIBILITY)
+        set(CMAKE_C_VISIBILITY_PRESET "${COMP_VISIBILITY}")
+        set(CMAKE_CXX_VISIBILITY_PRESET "${COMP_VISIBILITY}")
     endif()
 
     string(TOUPPER "${COMP_NAME}" UPP_COMP)
@@ -1208,9 +1217,8 @@ function(TIMEMORY_BUILD_INTERMEDIATE_LIBRARY)
                    timemory-dmp ${DEPENDS} ${COMP_PUBLIC_LINK})
 
         target_link_libraries(
-            ${TARGET_NAME}
-            PRIVATE timemory-compile-options timemory-develop-options
-                    timemory-${COMP_VISIBILITY}-visibility ${COMP_PRIVATE_LINK})
+            ${TARGET_NAME} PRIVATE timemory-compile-options timemory-develop-options
+                                   ${COMP_PRIVATE_LINK})
 
         timemory_target_compile_definitions(
             ${TARGET_NAME} PRIVATE TIMEMORY_SOURCE TIMEMORY_${COMP_CATEGORY}_SOURCE
