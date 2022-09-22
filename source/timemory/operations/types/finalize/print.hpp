@@ -472,7 +472,9 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& _dist,
             oa->setNextName("timemory");
             oa->startNode();
             if(json_output() && tree_output() && !_dist.empty() && !_tree.empty())
+            {
                 operation::serialization<Tp>{}(*oa, _dist, _tree);
+            }
             else
             {
                 if(json_output() && !_dist.empty())
@@ -484,8 +486,9 @@ print<Tp, true>::print_json(const std::string& outfname, result_type& _dist,
         }
         else
         {
-            fprintf(stderr, "[storage<%s>::%s @ %i]|%i> Error opening '%s'...\n",
-                    label.c_str(), __FUNCTION__, __LINE__, node_rank, outfname.c_str());
+            TIMEMORY_PRINTF_WARNING(
+                stderr, "[storage<%s>::%s @ %i]|%i> Error opening '%s'...\n",
+                label.c_str(), __FUNCTION__, __LINE__, node_rank, outfname.c_str());
             return;
         }
         if(ofs)
