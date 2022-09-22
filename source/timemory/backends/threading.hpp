@@ -48,6 +48,7 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <vector>
 
 #if defined(TIMEMORY_LINUX)
 #    include <pthread.h>
@@ -79,38 +80,27 @@ using native_handle_t = std::thread::native_handle_type;
 //
 namespace internal
 {
+struct thread_id_manager;
 //
 std::pair<int64_t, scope::destructor>
-get_id(std::atomic<int64_t>&, std::atomic<int64_t>&, bool = false);
+get_id(thread_id_manager*, bool = false);
 //
-inline std::vector<int64_t>&
-get_available_ids()
+struct thread_id_manager
 {
-    static auto _v = []() {
-        auto _tmp = std::vector<int64_t>{};
-        _tmp.reserve(TIMEMORY_MAX_THREADS);
-        return _tmp;
-    }();
-    return _v;
-}
+    explicit thread_id_manager(int64_t _max_threads = TIMEMORY_MAX_THREADS);
+
+    int64_t              max_threads;
+    std::atomic<int64_t> global_counter;
+    std::atomic<int64_t> offset_counter;
+    std::vector<int64_t> available = {};
+    std::vector<int64_t> offset    = {};
+    std::set<int64_t>    reserved  = { 0 };
+};
 //
-/// add thread ids to this set to avoid them being recycled
-/// when the thread is destroyed
-inline std::set<int64_t>&
-get_reserved_ids()
+inline auto&
+get_manager()
 {
-    static auto _v = std::set<int64_t>{ 0 };
-    return _v;
-}
-//
-inline std::vector<int64_t>&
-get_available_offset_ids()
-{
-    static auto _v = []() {
-        auto _tmp = std::vector<int64_t>{};
-        _tmp.reserve(TIMEMORY_MAX_THREADS);
-        return _tmp;
-    }();
+    static auto _v = new thread_id_manager{};
     return _v;
 }
 //
@@ -174,10 +164,7 @@ offset_this_id()
 inline int64_t
 get_id()
 {
-    static std::atomic<int64_t> _global_counter{ 0 };
-    static std::atomic<int64_t> _offset_counter{ TIMEMORY_MAX_THREADS };
-    static thread_local auto    _this_id =
-        internal::get_id(_global_counter, _offset_counter);
+    static thread_local auto _this_id = internal::get_id(internal::get_manager());
     return _this_id.first;
 }
 //

@@ -76,9 +76,18 @@ namespace threading
 namespace internal
 {
 TIMEMORY_BACKENDS_INLINE
+thread_id_manager::thread_id_manager(int64_t _max_threads)
+: max_threads{ _max_threads }
+, global_counter{ 0 }
+, offset_counter{ _max_threads }
+{
+    available.reserve(max_threads);
+    offset.reserve(max_threads);
+}
+
+TIMEMORY_BACKENDS_INLINE
 std::pair<int64_t, scope::destructor>
-get_id(std::atomic<int64_t>& _global_counter, std::atomic<int64_t>& _offset_counter,
-       bool _debug)
+get_id(thread_id_manager* _manager, bool _debug)
 {
     static bool debug_threading_get_id =
         get_env<bool>(TIMEMORY_SETTINGS_PREFIX "DEBUG_THREADING_GET_ID", false);
@@ -87,15 +96,22 @@ get_id(std::atomic<int64_t>& _global_counter, std::atomic<int64_t>& _offset_coun
         _debug = debug_threading_get_id;
 
     int64_t _id = -1;
-    if(internal::offset_this_id().is_offset && _global_counter == 0)
-        internal::offset_this_id() = { true, false };
-    auto& _offset = internal::offset_this_id();
+    if(!_manager)
+        return std::make_pair(_id, scope::destructor{ []() {} });
+
+    auto& _global_counter = _manager->global_counter;
+    auto& _offset_counter = _manager->offset_counter;
+    auto& _offset         = internal::offset_this_id();
+
+    if(_offset.is_offset && _global_counter == 0)
+        _offset = { true, false };
+
     if(_offset.is_offset)
     {
         if(recycle_ids())
         {
             auto_lock_t _lk{ type_mutex<internal::recycle_ids>(1) };
-            auto&       _avail = internal::get_available_offset_ids();
+            auto&       _avail = _manager->offset;
             if(!_avail.empty())
             {
                 // always grab from front
@@ -105,17 +121,15 @@ get_id(std::atomic<int64_t>& _global_counter, std::atomic<int64_t>& _offset_coun
                 _avail.pop_back();
             }
         }
-        if(_id < 0)
-            _id = --_offset_counter;
     }
     else if(recycle_ids() && _global_counter >= _offset_counter)
     {
         auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
-        auto&       _avail = internal::get_available_ids();
+        auto&       _avail = _manager->available;
         if(!_avail.empty())
         {
             // always grab from front
-            _id = _avail.at(0);
+            _id = _avail.front();
             for(size_t i = 1; i < _avail.size(); ++i)
                 _avail[i - 1] = _avail[i];
             _avail.pop_back();
@@ -123,7 +137,7 @@ get_id(std::atomic<int64_t>& _global_counter, std::atomic<int64_t>& _offset_coun
     }
 
     if(_id < 0)
-        _id = _global_counter++;
+        _id = (_offset.is_offset) ? --_offset_counter : _global_counter++;
 
     if(_debug)
     {
@@ -138,16 +152,19 @@ get_id(std::atomic<int64_t>& _global_counter, std::atomic<int64_t>& _offset_coun
     _offset.is_mutable = false;
 
     auto&& _dtor = [_id, _offset]() {
+        auto* _manager_v = get_manager();
+        if(!_manager_v)
+            return;
         if(_offset.is_offset)
         {
             auto_lock_t _lk{ type_mutex<internal::recycle_ids>(1) };
-            internal::get_available_offset_ids().emplace_back(_id);
+            _manager_v->offset.emplace_back(_id);
         }
         else
         {
             auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
-            if(internal::get_reserved_ids().count(_id) == 0)
-                internal::get_available_ids().emplace_back(_id);
+            if(_manager_v->reserved.count(_id) == 0)
+                _manager_v->available.emplace_back(_id);
         }
     };
 
@@ -162,9 +179,12 @@ add_reserved_id(int64_t _v)
 // clang-format on
 {
     auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
-    if(_v > 0)
-        internal::get_reserved_ids().emplace(_v);
-    return internal::get_reserved_ids();
+    auto        _manager = internal::get_manager();
+    if(!_manager)
+        return std::set<int64_t>{};
+    else if(_v > 0)
+        _manager->reserved.emplace(_v);
+    return _manager->reserved;
 }
 
 // clang-format off
@@ -174,9 +194,12 @@ erase_reserved_id(int64_t _v)
 // clang-format on
 {
     auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
+    auto        _manager = internal::get_manager();
+    if(!_manager)
+        return std::set<int64_t>{};
     if(_v > 0)
-        internal::get_reserved_ids().erase(_v);
-    return internal::get_reserved_ids();
+        _manager->reserved.erase(_v);
+    return _manager->reserved;
 }
 
 // clang-format off
