@@ -229,7 +229,7 @@ signal_settings::str(bool report_disabled)
     std::stringstream ss;
     auto              spacer = []() { return "    "; };
 
-#if defined(SIGNAL_AVAILABLE)
+#if defined(TIMEMORY_SIGNAL_AVAILABLE)
 
     ss << std::endl
        << spacer() << "Signal detection activated. Signal exception settings:\n"

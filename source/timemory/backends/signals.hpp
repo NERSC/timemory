@@ -22,24 +22,17 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file backends/signals.hpp
- * \headerfile backends/signals.hpp "timemory/backends/signals.hpp"
- * Defines backend for the signals
- *
- */
-
 #pragma once
 
-#if defined(TIMEMORY_UNIX)
-#    include <cxxabi.h>
-#    include <execinfo.h>  // for StackBacktrace()
-#endif
+#include "timemory/macros/os.hpp"
+
+#include <csignal>
 
 #if defined(TIMEMORY_LINUX)
 #    include <features.h>
+#elif defined(TIMEMORY_MACOS)
+#    include <signal.h>
 #endif
-
-#include <csignal>
 
 //======================================================================================//
 //
@@ -176,8 +169,8 @@
 
 // compatible compiler
 #if defined(__GNUC__) || defined(__clang__) || defined(_INTEL_COMPILER)
-#    if !defined(SIGNAL_COMPAT_COMPILER)
-#        define SIGNAL_COMPAT_COMPILER
+#    if !defined(TIMEMORY_SIGNAL_COMPAT_COMPILER)
+#        define TIMEMORY_SIGNAL_COMPAT_COMPILER
 #    endif
 #endif
 
@@ -188,24 +181,17 @@
 
 // compatible operating system
 #if defined(__linux__) || defined(__MACH__)
-#    if !defined(SIGNAL_COMPAT_OS)
-#        define SIGNAL_COMPAT_OS
+#    if !defined(TIMEMORY_SIGNAL_COMPAT_OS)
+#        define TIMEMORY_SIGNAL_COMPAT_OS
 #    endif
 #endif
 
-#if defined(SIGNAL_COMPAT_COMPILER) && defined(SIGNAL_COMPAT_OS) &&                      \
+#if defined(TIMEMORY_SIGNAL_COMPAT_COMPILER) && defined(TIMEMORY_SIGNAL_COMPAT_OS) &&    \
     !(defined(TIMEMORY_USE_GPERFTOOLS) || defined(TIMEMORY_USE_GPERFTOOLS_PROFILER) ||   \
       defined(TIMEMORY_USE_GPERFTOOLS_TCMALLOC))
-#    if !defined(SIGNAL_AVAILABLE)
-#        define SIGNAL_AVAILABLE
+#    if !defined(TIMEMORY_SIGNAL_AVAILABLE)
+#        define TIMEMORY_SIGNAL_AVAILABLE
 #    endif
-#endif
-
-#if defined(__linux__)
-#    include <csignal>
-#    include <features.h>
-#elif defined(__MACH__) /* MacOSX */
-#    include <signal.h>
 #endif
 
 //======================================================================================//
