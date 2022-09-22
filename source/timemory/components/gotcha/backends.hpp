@@ -214,6 +214,7 @@ struct gotcha_data
     bool          filled       = false;        /// structure is populated
     bool          is_active    = false;        /// is currently wrapping
     bool          is_finalized = false;        /// no more wrapping is allowed
+    int           verbose      = 0;            /// warning verbosity
     int           priority     = 0;            /// current priority
     size_t        index        = 0;            /// index in gotcha wrapper
     binding_t     binding      = binding_t{};  /// hold the binder set

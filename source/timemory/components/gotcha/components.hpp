@@ -43,6 +43,7 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/variadic/types.hpp"
 
@@ -281,7 +282,11 @@ struct gotcha
     static void global_finalize();
     static void thread_init();
 
+    static gotcha_data* at(size_t);
+
 public:
+    TIMEMORY_DEFAULT_OBJECT(gotcha)
+
     void start();
     void stop();
 
@@ -328,6 +333,7 @@ private:
         TIMEMORY_DELETE_COPY_MOVE_OBJECT(persistent_data)
 
         bool                  m_is_configured = false;
+        int                   m_verbose       = -1;
         std::atomic<int64_t>  m_started{ 0 };
         array_t<gotcha_data>  m_data;
         std::mutex            m_mutex;

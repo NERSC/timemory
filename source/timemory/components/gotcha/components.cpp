@@ -25,6 +25,7 @@
 #ifndef TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_CPP_
 #define TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_CPP_
 
+#include "timemory/defines.h"
 #if !defined(TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_HPP_)
 #    include "timemory/components/gotcha/components.hpp"
 #endif
@@ -189,6 +190,9 @@ gotcha<Nt, BundleT, DiffT>::construct(const std::string& _func, int _priority,
 
         // ensure the hash to string pairing is stored
         storage_type::instance()->add_hash_id(_label);
+
+        if(_data.verbose == 0)
+            _data.verbose = (settings::debug()) ? 16 : settings::verbose();
 
         _data.filled   = true;
         _data.priority = _priority;
@@ -401,6 +405,15 @@ gotcha<Nt, BundleT, DiffT>::thread_init()
 //----------------------------------------------------------------------------------//
 
 template <size_t Nt, typename BundleT, typename DiffT>
+gotcha_data*
+gotcha<Nt, BundleT, DiffT>::at(size_t _idx)
+{
+    return (_idx < get_data().size()) ? &get_data().at(_idx) : nullptr;
+}
+
+//----------------------------------------------------------------------------------//
+
+template <size_t Nt, typename BundleT, typename DiffT>
 void
 gotcha<Nt, BundleT, DiffT>::start()
 {
@@ -409,17 +422,6 @@ gotcha<Nt, BundleT, DiffT>::start()
 
     auto _n = get_started()++;
     auto _t = get_thread_started()++;
-
-#if defined(DEBUG)
-    if(settings::debug())
-    {
-        static std::atomic<int64_t> _tcount(0);
-        static thread_local int64_t _tid = _tcount++;
-        std::stringstream           ss;
-        ss << "[T" << _tid << "] n = " << _n << ", t = " << _t << "...\n";
-        std::cout << ss.str() << std::flush;
-    }
-#endif
 
     // this ensures that if started from multiple threads, all threads synchronize
     // before
@@ -452,17 +454,6 @@ gotcha<Nt, BundleT, DiffT>::stop()
 {
     auto _n = --get_started();
     auto _t = --get_thread_started();
-
-#if defined(DEBUG)
-    if(settings::debug())
-    {
-        static std::atomic<int64_t> _tcount(0);
-        static thread_local int64_t _tid = _tcount++;
-        std::stringstream           ss;
-        ss << "[T" << _tid << "] n = " << _n << ", t = " << _t << "...\n";
-        std::cout << ss.str() << std::flush;
-    }
-#endif
 
     if(_t == 0)
     {
@@ -589,31 +580,22 @@ template <size_t N>
 void
 gotcha<Nt, BundleT, DiffT>::check_error(error_t _ret, const std::string& _prefix)
 {
-    if(_ret != GOTCHA_SUCCESS && (settings::verbose() > -1 || settings::debug()))
+    auto& _data = get_data()[N];
+    if(_ret != GOTCHA_SUCCESS && _data.verbose >= 0)
     {
-        auto&             _data = get_data()[N];
         std::stringstream msg;
-        msg << _prefix << " at index '" << N << "' for function '" << _data.wrap_id
-            << "' returned error code " << static_cast<int>(_ret) << ": "
-            << backend::gotcha::get_error(_ret) << "\n";
-        std::cerr << msg.str();
+        msg << "[" << TIMEMORY_PROJECT_NAME << "][gotcha] " << _prefix << " at index '"
+            << N << "' for function '" << _data.wrap_id << "' returned error code "
+            << static_cast<int>(_ret) << ": " << backend::gotcha::get_error(_ret) << "\n";
+        log::stream(std::cerr, log::color::warning()) << msg.str();
     }
-    else if(settings::verbose() > 1 || settings::debug())
+    else if(_data.verbose >= 2)
     {
 #if defined(TIMEMORY_USE_GOTCHA)
-        auto&             _data = get_data()[N];
         std::stringstream msg;
-        msg << "[gotcha::" << __FUNCTION__ << "] " << _prefix << " :: "
-            << "wrapped: " << _data.wrap_id << ", label: " << _data.tool_id;
-        /*
-        if((void*) _data.binding != nullptr)
-        {
-            msg << ", wrapped pointer: " << _data.binding.wrapper_pointer
-                << ", function_handle: " << _data.binding.function_handle
-                << ", name: " << _data.binding.name;
-        }
-        */
-        std::cout << msg.str() << std::endl;
+        msg << "[" << TIMEMORY_PROJECT_NAME << "][gotcha] " << _prefix << " :: "
+            << "wrapped: " << _data.wrap_id << ", label: " << _data.tool_id << "\n";
+        log::stream(std::cerr, log::color::info()) << msg.str();
 #endif
     }
 }
