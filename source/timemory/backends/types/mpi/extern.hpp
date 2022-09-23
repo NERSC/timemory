@@ -103,9 +103,6 @@ extern "C"
             PMPI_Comm_create_keyval(_copy, _fini, &comm_key, nullptr);
             PMPI_Comm_set_attr(MPI_COMM_SELF, comm_key, nullptr);
         }
-
-        static auto* _manager = tim::timemory_manager_master_instance();
-        tim::consume_parameters(_manager);
     }
 
     //----------------------------------------------------------------------------------//

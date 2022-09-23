@@ -166,23 +166,12 @@ TIMEMORY_MANAGER_INLINE
 manager::~manager()
 {
     auto _remain = --f_manager_instance_count();
-    bool _last   = (get_shared_ptr_pair<this_type, TIMEMORY_API>().second == nullptr ||
+    bool _last   = ((get_shared_ptr_pair<this_type, TIMEMORY_API>() &&
+                   this == get_shared_ptr_pair<this_type, TIMEMORY_API>()->first.get()) ||
                   _remain == 0 || m_instance_count == 0);
 
     if(_last)
-    {
         f_thread_counter().store(0, std::memory_order_relaxed);
-    }
-
-#    if !defined(TIMEMORY_DISABLE_BANNER)
-    if(_last && m_settings && m_settings->get_banner())
-    {
-        printf("#---------------------- tim::manager destroyed "
-               "[rank=%i][pid=%i] "
-               "----------------------#\n",
-               m_rank, process::get_id());
-    }
-#    endif
 }
 //
 //----------------------------------------------------------------------------------//
@@ -341,7 +330,7 @@ manager::finalize()
     if(m_instance_count == 0 && m_rank == 0)
     {
         operation::finalize::ctest_notes<manager>::get_notes().reset();
-        internal_write_metadata("manager::finalize");
+        internal_write_metadata();
     }
 
     m_is_finalized = true;
@@ -455,7 +444,7 @@ TIMEMORY_MANAGER_INLINE std::ostream&
 //----------------------------------------------------------------------------------//
 //
 TIMEMORY_MANAGER_INLINE void
-manager::write_metadata(const std::string& _output_dir, const char* context)
+manager::write_metadata(const std::string& _output_dir, const char* context, int32_t _id)
 {
     if(m_rank != 0)
     {
@@ -474,6 +463,9 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
 
     auto _cfg          = tim::settings::compose_filename_config{};
     _cfg.explicit_path = _output_dir;
+    _cfg.use_suffix = true;
+    if(_id >= 0)
+        _cfg.suffix = _id;
 
     auto fname = settings::compose_output_filename("metadata", "json", _cfg);
     auto hname = settings::compose_output_filename("functions", "json", _cfg);
@@ -513,10 +505,10 @@ manager::write_metadata(const std::string& _output_dir, const char* context)
         auto _fom = operation::file_output_message<manager>{};
         if((f_verbose() >= 0 || _banner || f_debug()) && !_hashes.empty())
             _fom(std::vector<std::string>{ fname, hname },
-                 std::vector<std::string>{ context, "metadata" });
+                 std::vector<std::string>{ "metadata" });
         else if((f_verbose() >= 0 || _banner || f_debug()) && _hashes.empty())
             _fom(std::vector<std::string>{ fname },
-                 std::vector<std::string>{ context, "metadata" });
+                 std::vector<std::string>{ "metadata" });
 
         std::ofstream ofs{};
         if(filepath::open(ofs, fname))
@@ -821,9 +813,9 @@ TIMEMORY_MANAGER_INLINE manager::persistent_data&
 TIMEMORY_MANAGER_INLINE manager::pointer_t
                         manager::instance()
 {
-    static thread_local auto _inst =
-        get_shared_ptr_pair_instance<manager, TIMEMORY_API>();
-    return _inst;
+    return get_shared_ptr_pair<manager, TIMEMORY_API>()
+               ? get_shared_ptr_pair<manager, TIMEMORY_API>()->second
+               : pointer_t{};
 }
 //
 //----------------------------------------------------------------------------------//
@@ -833,9 +825,9 @@ TIMEMORY_MANAGER_INLINE manager::pointer_t
 TIMEMORY_MANAGER_INLINE manager::pointer_t
                         manager::master_instance()
 {
-    static auto _pinst = get_shared_ptr_pair_main_instance<manager, TIMEMORY_API>();
-    manager::f_manager_persistent_data().master_instance = _pinst;
-    return _pinst;
+    return get_shared_ptr_pair<manager, TIMEMORY_API>()
+               ? get_shared_ptr_pair<manager, TIMEMORY_API>()->first
+               : pointer_t{};
 }
 //
 //----------------------------------------------------------------------------------//
@@ -853,9 +845,9 @@ manager::get_is_main_thread()
 TIMEMORY_MANAGER_INLINE manager*
                         timemory_manager_master_instance()
 {
-    static auto _pinst = tim::get_shared_ptr_pair<manager, TIMEMORY_API>();
-    manager::set_persistent_master(_pinst.first);
-    return _pinst.first.get();
+    auto& _pinst = tim::get_shared_ptr_pair<manager, TIMEMORY_API>();
+    manager::set_persistent_master(_pinst->first);
+    return (_pinst) ? _pinst->first.get() : nullptr;
 }
 //
 //----------------------------------------------------------------------------------//
@@ -864,7 +856,7 @@ TIMEMORY_MANAGER_INLINE void
 timemory_library_constructor()
 {
     static auto _preloaded = []() {
-        auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true);
+        auto library_ctor = tim::get_env<bool>("TIMEMORY_LIBRARY_CTOR", true, false);
         if(!library_ctor)
             return true;
 
@@ -883,72 +875,22 @@ timemory_library_constructor()
     if(_preloaded)
         return;
 
-    auto _settings = tim::settings::shared_instance();
-    auto _debug    = (_settings) ? _settings->get_debug() : false;
-    auto _verbose  = (_settings) ? _settings->get_verbose() : 0;
-
-    static thread_local bool _once = false;
-    if(_once)
-        return;
-    _once = true;
-
-    auto* _inst = timemory_manager_master_instance();
-    if(_settings)
+    static std::atomic<int32_t> _once{ 0 };
+    if(_once++ == 0)
     {
+        auto _settings                 = tim::settings::shared_instance();
         auto _strict_v                 = _settings->get_strict_config();
         _settings->get_strict_config() = false;
         _settings->init_config();
         _settings->get_strict_config() = _strict_v;
-        static auto _dir               = _settings->get_output_path();
-        static auto _prefix            = _settings->get_output_prefix();
-        static auto _time_output       = _settings->get_time_output();
-        static auto _time_format       = _settings->get_time_format();
-        tim::consume_parameters(_dir, _prefix, _time_output, _time_format);
     }
+    (void) timemory_manager_master_instance();
+    (void) manager::master_instance();
+    (void) manager::instance();
 
-    if(_debug || _verbose > 3)
-        printf("[%s]> initializing manager...\n", __FUNCTION__);
-
-    auto _master = manager::master_instance();
-    auto _worker = manager::instance();
-
-    if(!_master && _inst)
-        _master.reset(_inst);
-    else if(!_master)
-        _master = manager::master_instance();
-
-    if(_worker == _master)
-    {
-        // this will create a recursive-dynamic-library load situation
-        // since the timemory-config library depends on the manager library
-        // std::atexit(tim::timemory_finalize);
-    }
-    else
-    {
-        printf("[%s]> manager :: master != worker : %p vs. %p. TLS behavior is "
-               "abnormal. "
-               "Report any issues to https://github.com/NERSC/timemory/issues\n",
-               __FUNCTION__, (void*) _master.get(), (void*) _worker.get());
-        if(!signal_settings::is_active())
-        {
-            auto default_signals = signal_settings::get_default();
-            for(const auto& itr : default_signals)
-                signal_settings::enable(itr);
-            // should return default and any modifications from environment
-            auto enabled_signals = signal_settings::get_enabled();
-            enable_signal_detection(enabled_signals);
-            auto _exit_action = [=](int nsig) {
-                if(_master)
-                {
-                    std::cout << "Finalizing after signal: " << nsig << " :: "
-                              << signal_settings::str(static_cast<sys_signal>(nsig))
-                              << std::endl;
-                    _master->finalize();
-                }
-            };
-            signal_settings::set_exit_action(_exit_action);
-        }
-    }
+    if(tim::get_shared_ptr_pair<manager, TIMEMORY_API>())
+        manager::set_persistent_master(
+            tim::get_shared_ptr_pair<manager, TIMEMORY_API>()->first);
 }
 //
 //--------------------------------------------------------------------------------------//

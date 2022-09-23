@@ -116,11 +116,12 @@ template <typename Up, typename UnitT, enable_if_t<std::is_arithmetic<UnitT>::va
 typename base_units<Tp, ValueT>::value_type
 base_units<Tp, ValueT>::get_unit()
 {
-    static bool _updated  = false;
-    static auto _settings = settings::shared_instance();
+    static bool _updated = false;
 
     if(_updated)
         return Tp::unit();
+
+    auto* _settings = settings::instance();
     if(!_settings)
         return Tp::unit();
     if(_settings->get_initialized())

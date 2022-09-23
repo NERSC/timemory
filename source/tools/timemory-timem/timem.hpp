@@ -445,6 +445,7 @@ template <>
 inline std::string
 papi_array_t::get_display() const
 {
+    auto events = common_type::get_config()->event_names;
     if(events.empty())
         return "";
     auto val          = load();

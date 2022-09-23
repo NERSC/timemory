@@ -51,7 +51,7 @@ namespace tim
 //
 template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>,
           typename PairT = std::pair<PtrT, PtrT>>
-PairT&
+std::unique_ptr<PairT>&
 get_shared_ptr_pair() TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//

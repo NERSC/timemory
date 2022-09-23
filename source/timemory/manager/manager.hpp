@@ -87,7 +87,7 @@ public:
     using finalizer_pmap_t   = std::map<int32_t, finalizer_list_t>;
     using synchronize_list_t = uomap_t<string_t, uomap_t<int64_t, std::function<void()>>>;
     using finalizer_void_t   = std::multimap<void*, finalizer_func_t>;
-    using settings_ptr_t     = std::shared_ptr<settings>;
+    using settings_ptr_t     = settings*;
     using filemap_t          = std::map<string_t, std::map<string_t, std::set<string_t>>>;
     using metadata_func_t    = std::vector<std::function<void(void*)>>;
     using metadata_info_t    = std::multimap<string_t, string_t>;
@@ -140,7 +140,7 @@ public:
     /// Set to 0 for yes if other output, -1 for never, or 1 for yes
     void set_write_metadata(short v) { m_write_metadata = v; }
     /// Print metadata to filename
-    void write_metadata(const std::string&, const char* = "");
+    void write_metadata(const std::string&, const char* = "", int32_t _suffix = -1);
     /// Write metadata to ostream
     std::ostream& write_metadata(std::ostream&);
     /// Updates settings, rank, output prefix, etc.
@@ -345,7 +345,7 @@ private:
     finalizer_void_t   m_pointer_fini       = {};
     synchronize_list_t m_synchronize        = {};
     filemap_t          m_output_files       = {};
-    settings_ptr_t     m_settings           = settings::shared_instance();
+    settings_ptr_t     m_settings           = settings::instance();
 
 private:
     struct persistent_data
@@ -355,7 +355,6 @@ private:
         {
             // make sure the manager is deleted before the settings
             master_instance.reset();
-            config.reset();
         }
 
         persistent_data(const persistent_data&) = delete;
@@ -399,22 +398,6 @@ public:
     {
         tim::manager::f_manager_persistent_data().master_instance = std::move(_pinst);
     }
-
-    /// Updates the settings instance use by the manager instance
-    static void update_settings(const settings& _settings)
-    {
-        f_settings() = std::make_shared<settings>(_settings);
-    }
-
-#if !defined(DOXYGEN_SHOULD_SKIP_THIS)
-    /// swaps out the actual settings instance
-    static settings&& swap_settings(settings _settings)
-    {
-        settings&& _tmp = std::move(*(f_settings()));
-        *(f_settings()) = std::move(_settings);
-        return std::move(_tmp);
-    }
-#endif
 };
 //
 //----------------------------------------------------------------------------------//

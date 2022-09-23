@@ -59,7 +59,7 @@ TIMEMORY_CONFIG_LINKAGE(void)
 timemory_init(int argc, char** argv, const std::string& _prefix,
               const std::string& _suffix)
 {
-    static auto _settings = settings::shared_instance();
+    auto _settings = settings::shared_instance();
     if(_settings)
     {
         settings::store_command_line(argc, argv);
@@ -148,11 +148,10 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
         }
     }
 
-    static auto _manager = manager::instance();
-
     if(_settings)
         _settings->set_initialized(true);
 
+    auto _manager = manager::instance();
     if(_manager)
     {
         _manager->update_metadata_prefix();
@@ -300,8 +299,8 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
         parser = new parser_t{ (*argv)[0] };
 
     // if settings instance was not provided
-    bool        _cleanup_settings = _settings == nullptr;
-    static auto _shared_settings  = tim::settings::shared_instance();
+    bool _cleanup_settings = (_settings == nullptr);
+    auto _shared_settings  = tim::settings::shared_instance();
     if(_cleanup_settings && !_shared_settings)
         return;
     if(_cleanup_settings)

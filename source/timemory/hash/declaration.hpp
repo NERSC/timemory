@@ -38,14 +38,15 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tp, typename Tag, typename PtrT, typename PairT>
-PairT&
+std::unique_ptr<PairT>&
 get_shared_ptr_pair()
 {
-    static auto                 _master = std::make_shared<Tp>();
     static std::atomic<int64_t> _count{ 0 };
-    static thread_local auto    _inst =
-        PairT{ _master, PtrT{ (_count++ == 0) ? nullptr : new Tp{} } };
-    return _inst;
+    static auto                 _main = std::make_shared<Tp>();
+    static thread_local auto    _n    = _count++;
+    static thread_local auto    _local =
+        std::make_unique<PairT>(_main, (_n == 0) ? _main : std::make_shared<Tp>());
+    return _local;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -54,9 +55,8 @@ template <typename Tp, typename Tag, typename PtrT, typename PairT>
 PtrT
 get_shared_ptr_pair_instance()
 {
-    static thread_local auto& _pinst = get_shared_ptr_pair<Tp, Tag>();
-    static thread_local auto& _inst  = _pinst.second ? _pinst.second : _pinst.first;
-    return _inst;
+    static thread_local auto& _v = get_shared_ptr_pair<Tp, Tag>();
+    return (_v) ? _v->second : PtrT{};
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -65,9 +65,8 @@ template <typename Tp, typename Tag, typename PtrT, typename PairT>
 PtrT
 get_shared_ptr_pair_main_instance()
 {
-    static auto& _pinst = get_shared_ptr_pair<Tp, Tag>();
-    static auto  _inst  = _pinst.first;
-    return _inst;
+    return get_shared_ptr_pair<Tp, Tag>() ? get_shared_ptr_pair<Tp, Tag>()->first
+                                          : PtrT{};
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -76,8 +75,8 @@ template <typename Tp, typename Tag, typename PtrT>
 PtrT
 get_shared_ptr_lone_instance()
 {
-    static auto _instance = std::make_shared<Tp>();
-    return _instance;
+    static auto _v = std::make_shared<Tp>();
+    return _v;
 }
 //
 //--------------------------------------------------------------------------------------//
