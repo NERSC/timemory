@@ -71,6 +71,8 @@ timemory_add_interface_library(timemory-allinea-map "Enables Allinea-MAP support
 timemory_add_interface_library(timemory-craypat "Enables CrayPAT support")
 timemory_add_interface_library(timemory-libunwind "Enables libunwind support")
 timemory_add_interface_library(timemory-perfetto "Enables perfetto support")
+timemory_add_interface_library(timemory-bfd
+                               "Enables Linux Binary File Descriptor (BFD) support")
 
 timemory_add_interface_library(timemory-coverage "Enables code-coverage flags")
 timemory_add_interface_library(
@@ -155,7 +157,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-craypat
     timemory-allinea-map
     timemory-libunwind
-    timemory-perfetto)
+    timemory-perfetto
+    timemory-bfd)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -179,6 +182,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-plotting
     timemory-libunwind
     timemory-perfetto
+    timemory-bfd
     ${_DMP_LIBRARIES})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -202,6 +206,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-plotting
     timemory-libunwind
     timemory-perfetto
+    timemory-bfd
     ${_DMP_LIBRARIES})
 
 set(_GPERF_IN_LIBRARY OFF)
@@ -1952,6 +1957,21 @@ if(TIMEMORY_USE_CRAYPAT AND CrayPAT_FOUND)
 else()
     set(TIMEMORY_USE_CRAYPAT OFF)
     timemory_inform_empty_interface(timemory-craypat "CrayPAT")
+endif()
+
+# ----------------------------------------------------------------------------------------#
+#
+# BFD
+#
+# ----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_USE_BFD)
+    include(ConfigBinutils)
+    target_link_libraries(timemory-bfd INTERFACE $<BUILD_INTERFACE:binutils::binutils>)
+    timemory_target_compile_definitions(timemory-bfd INTERFACE TIMEMORY_USE_BFD)
+else()
+    set(TIMEMORY_USE_BFD OFF)
+    timemory_inform_empty_interface(timemory-bfd "Binary File Descriptor (BFD)")
 endif()
 
 # ----------------------------------------------------------------------------------------#

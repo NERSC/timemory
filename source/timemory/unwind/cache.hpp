@@ -24,4 +24,39 @@
 
 #pragma once
 
-#include "timemory/unwind.hpp"
+#include "timemory/defines.h"
+#include "timemory/unwind/bfd.hpp"
+#include "timemory/unwind/entry.hpp"
+#include "timemory/unwind/processed_entry.hpp"
+#include "timemory/unwind/types.hpp"
+
+#include <memory>
+#include <string>
+#include <unordered_map>
+
+namespace std
+{
+template <>
+struct hash<tim::unwind::entry>
+{
+    size_t operator()(tim::unwind::entry _v) const
+    {
+        return std::hash<unw_word_t>{}(_v.address());
+    }
+};
+}  // namespace std
+
+namespace tim
+{
+namespace unwind
+{
+struct cache
+{
+    using entry_map_t = std::unordered_map<entry, processed_entry>;
+    using file_map_t  = std::unordered_map<std::string, std::shared_ptr<bfd_file>>;
+
+    entry_map_t entries = {};
+    file_map_t  files   = {};
+};
+}  // namespace unwind
+}  // namespace tim

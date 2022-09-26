@@ -487,6 +487,7 @@ define_default_option(_GOTCHA ${_NON_APPLE_UNIX})
 define_default_option(_PERFETTO ${_NON_APPLE_UNIX})
 define_default_option(_NCCL ${_USE_CUDA})
 define_default_option(_LIKWID_NVMON ${_LIKWID} ${_NON_APPLE_UNIX} ${_CUDA})
+define_default_option(_BFD ${_NON_APPLE_UNIX})
 
 # timemory options
 timemory_add_option(TIMEMORY_USE_VISIBILITY "Enable visibility attributes" ON
@@ -544,6 +545,9 @@ timemory_add_option(TIMEMORY_USE_XML "Enable XML serialization support" ${_USE_X
                     CMAKE_DEFINE)
 timemory_add_option(TIMEMORY_USE_LIBUNWIND "Enable libunwind" ${_USE_LIBUNWIND}
                     CMAKE_DEFINE)
+timemory_add_option(
+    TIMEMORY_USE_BFD "Enable BFD support for mapping instruction pointers to LOC" ${_BFD}
+    CMAKE_DEFINE)
 timemory_add_option(TIMEMORY_BUILD_ERT "Build ERT library" ON)
 if(CMAKE_CXX_COMPILER_IS_CLANG OR TIMEMORY_BUILD_DOCS)
     timemory_add_option(TIMEMORY_USE_XRAY "Enable XRay instrumentation" OFF CMAKE_DEFINE)

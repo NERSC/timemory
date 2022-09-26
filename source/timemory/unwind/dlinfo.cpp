@@ -22,6 +22,48 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+#include "timemory/unwind/dlinfo.hpp"
 
-#include "timemory/unwind.hpp"
+#include "timemory/macros/os.hpp"
+
+#if defined(TIMEMORY_UNIX)
+#    include <dlfcn.h>
+#endif
+
+namespace tim
+{
+namespace unwind
+{
+#if defined(TIMEMORY_UNIX)
+
+dlinfo::dlinfo(Dl_info _info)
+: location{ _info.dli_fname ? _info.dli_fname : "", _info.dli_fbase }
+, symbol{ _info.dli_sname ? _info.dli_sname : "", _info.dli_saddr }
+{}
+
+dlinfo
+dlinfo::construct(unw_word_t _addr)
+{
+    Dl_info _info{};
+    dladdr(reinterpret_cast<void*>(_addr), &_info);
+    return dlinfo{ _info };
+}
+
+dlinfo
+dlinfo::construct(unw_word_t _addr, unw_word_t _offset)
+{
+    Dl_info _info{};
+    dladdr(reinterpret_cast<void*>(_addr + _offset), &_info);
+    return dlinfo{ _info };
+}
+
+#else
+
+dlinfo dlinfo::construct(unw_word_t) { return dlinfo{}; }
+
+dlinfo dlinfo::construct(unw_word_t, unw_word_t) { return dlinfo{}; }
+
+#endif
+
+}  // namespace unwind
+}  // namespace tim

@@ -29,6 +29,7 @@
 #include "timemory/macros/language.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+#include "timemory/unwind/types.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 
@@ -36,9 +37,12 @@
 #    include <libunwind.h>
 #endif
 
+#if defined(TIMEMORY_UNIX)
+#    include <dlfcn.h>
+#endif
+
 #include <array>
 #include <cstdint>
-#include <dlfcn.h>
 #include <string>
 #include <string_view>
 
@@ -74,7 +78,9 @@ struct dlinfo
 
     TIMEMORY_DEFAULT_OBJECT(dlinfo)
 
+#if defined(TIMEMORY_UNIX)
     dlinfo(Dl_info);
+#endif
 
     data location = {};
     data symbol   = {};
@@ -84,28 +90,7 @@ struct dlinfo
     template <typename ArchiveT>
     void serialize(ArchiveT& ar, const unsigned);
 };
-//
-inline dlinfo::dlinfo(Dl_info _info)
-: location{ _info.dli_fname ? _info.dli_fname : "", _info.dli_fbase }
-, symbol{ _info.dli_sname ? _info.dli_sname : "", _info.dli_saddr }
-{}
-//
-inline dlinfo
-dlinfo::construct(unw_word_t _addr)
-{
-    Dl_info _info{};
-    dladdr(reinterpret_cast<void*>(_addr), &_info);
-    return dlinfo{ _info };
-}
-//
-inline dlinfo
-dlinfo::construct(unw_word_t _addr, unw_word_t _offset)
-{
-    Dl_info _info{};
-    dladdr(reinterpret_cast<void*>(_addr + _offset), &_info);
-    return dlinfo{ _info };
-}
-//
+
 template <typename ArchiveT>
 void
 dlinfo::serialize(ArchiveT& ar, const unsigned)

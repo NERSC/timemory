@@ -24,4 +24,36 @@
 
 #pragma once
 
-#include "timemory/unwind.hpp"
+#include "timemory/defines.h"
+#include "timemory/unwind/types.hpp"
+
+#if defined(TIMEMORY_USE_LIBUNWIND)
+
+#    include "timemory/unwind/addr2line.hpp"
+#    include "timemory/unwind/bfd.hpp"
+#    include "timemory/unwind/cache.hpp"
+#    include "timemory/unwind/common.hpp"
+#    include "timemory/unwind/dlinfo.hpp"
+#    include "timemory/unwind/entry.hpp"
+#    include "timemory/unwind/processed_entry.hpp"
+#    include "timemory/unwind/stack.hpp"
+#    include "timemory/unwind/types.hpp"
+
+#else
+
+namespace tim
+{
+namespace unwind
+{
+struct entry
+{
+    static size_t address() { return 0; }
+};
+
+template <size_t N>
+struct stack
+{};
+}  // namespace unwind
+}  // namespace tim
+
+#endif

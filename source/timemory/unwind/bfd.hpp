@@ -24,4 +24,57 @@
 
 #pragma once
 
-#include "timemory/unwind.hpp"
+#include "timemory/defines.h"
+#include "timemory/log/macros.hpp"
+#include "timemory/unwind/types.hpp"
+
+#include <string>
+#include <utility>
+
+namespace tim
+{
+namespace unwind
+{
+int
+bfd_error(const char* string);
+
+#if defined(TIMEMORY_USE_BFD)
+
+struct bfd_file
+{
+    explicit bfd_file(std::string);
+    ~bfd_file();
+
+    static void* open(const std::string&);
+
+    int  read_symtab();
+    bool is_good() const { return (data != nullptr) && !name.empty(); }
+
+    operator bool() const { return is_good(); }
+
+    std::string name = {};
+    void*       data = nullptr;
+    void**      syms = nullptr;
+};
+
+#else
+
+struct bfd_file
+{
+    explicit bfd_file(std::string) {}
+    ~bfd_file() = default;
+
+    static void* open(const std::string&) { return nullptr; }
+    static int   read_symtab() { return -1; }
+    static bool  is_good() { return false; }
+
+    operator bool() const { return false; }
+
+    std::string_view name = {};
+    void*            data = nullptr;
+    void**           syms = nullptr;
+};
+
+#endif
+}  // namespace unwind
+}  // namespace tim

@@ -24,4 +24,50 @@
 
 #pragma once
 
-#include "timemory/unwind.hpp"
+#include "timemory/defines.h"
+#include "timemory/macros/compiler.hpp"
+#include "timemory/macros/language.hpp"
+#include "timemory/macros/os.hpp"
+
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
+
+#if defined(TIMEMORY_USE_LIBUNWIND)
+#    include <libunwind.h>
+#    if defined(unw_get_proc_name_by_ip)
+#        define TIMEMORY_LIBUNWIND_HAS_PROC_NAME_BY_IP 1
+#    else
+#        define TIMEMORY_LIBUNWIND_HAS_PROC_NAME_BY_IP 0
+#    endif
+#endif
+
+namespace tim
+{
+namespace unwind
+{
+struct entry;
+struct processed_entry;
+struct bfd_file;
+struct addr2line_info;
+struct cache;
+struct dlinfo;
+
+template <size_t N>
+struct stack;
+
+template <size_t LhsN, size_t RhsN>
+auto get_common_stack(stack<LhsN>, stack<RhsN>);
+
+addr2line_info
+addr2line(std::shared_ptr<bfd_file>, const std::vector<uint64_t>&);
+
+addr2line_info
+addr2line(std::shared_ptr<bfd_file>, unsigned long);
+
+addr2line_info
+addr2line(const std::string&, unsigned long);
+}  // namespace unwind
+}  // namespace tim

@@ -22,6 +22,46 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#pragma once
+#include "timemory/unwind/processed_entry.hpp"
 
-#include "timemory/unwind.hpp"
+#include "timemory/utility/filepath.hpp"
+#include "timemory/utility/procfs/maps.hpp"
+
+namespace tim
+{
+namespace unwind
+{
+void
+processed_entry::construct(processed_entry& _v, file_map_t* _files)
+{
+    _v.info = dlinfo::construct(_v.address - _v.offset);
+
+    auto _map = procfs::find_map(_v.address);
+    if(!_map.is_empty() && !_map.pathname.empty())
+    {
+        _v.location     = _map.pathname;
+        _v.line_address = (_v.address - _map.start_address) + _map.offset;
+    }
+
+    if(_v.info && (_map.is_empty() || _v.location.empty()))
+    {
+        _v.location = std::string{ _v.info.location.name };
+        _v.line_address =
+            (_v.info.symbol.address() - _v.info.location.address()) + _v.offset;
+    }
+
+    if(_files != nullptr && !_v.location.empty() && filepath::exists(_v.location))
+    {
+        auto _get_file = [&_files](const auto& _v) {
+            if(_files->find(_v) == _files->end())
+                _files->emplace(_v, std::make_shared<bfd_file>(_v));
+            return _files->at(_v);
+        };
+
+        auto _bfd = _get_file(_v.location);
+        if(_bfd && *_bfd)
+            _v.lineinfo = addr2line(_bfd, { _v.line_address, _v.address });
+    }
+}
+}  // namespace unwind
+}  // namespace tim
