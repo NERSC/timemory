@@ -292,6 +292,25 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
     sprintf(prefix, "[PID=%i][TID=%i]", (int) process::get_id(),
             (int) threading::get_id());
 
+    {
+        size_t ntot = 0;
+        auto   bt   = timemory_get_backtrace<64>();
+        for(const auto& itr : bt)
+        {
+            if(strlen(itr) == 0)
+                continue;
+            ++ntot;
+        }
+
+        message << "\nBacktrace:\n";
+        for(size_t i = 0; i < bt.size(); ++i)
+        {
+            if(strlen(bt.at(i)) == 0)
+                continue;
+            message << prefix << "[" << i << '/' << ntot << "]> " << bt.at(i) << "\n";
+        }
+    }
+
 #    if defined(TIMEMORY_USE_LIBUNWIND)
     {
         size_t ntot = 0;
@@ -303,7 +322,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
             ++ntot;
         }
 
-        message << "\nBacktrace:\n";
+        message << "\nBacktrace (demangled):\n";
         for(size_t i = 0; i < bt.size(); ++i)
         {
             if(bt.at(i).empty())
@@ -323,7 +342,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
             ++ntot;
         }
 
-        message << "\nBacktrace:\n";
+        message << "\nBacktrace (demangled):\n";
         for(size_t i = 0; i < bt.size(); ++i)
         {
             if(bt.at(i).empty())

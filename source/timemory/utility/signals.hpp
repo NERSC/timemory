@@ -225,7 +225,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message);
 
 #else  // Not a supported architecture
 
-bool enable_signal_detection(signal_settings::signal_set_t) { return false; }
+inline bool enable_signal_detection(signal_settings::signal_set_t) { return false; }
 
 template <typename Tp,
           enable_if_t<!std::is_enum<Tp>::value && std::is_integral<Tp>::value>>
