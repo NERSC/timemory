@@ -49,6 +49,25 @@
 #include <cstdint>
 #include <string>
 
+#if defined(TIMEMORY_USE_LIBUNWIND)
+namespace tim
+{
+namespace unwind
+{
+struct entry;
+}
+}  // namespace tim
+
+namespace std
+{
+template <>
+struct hash<tim::unwind::entry>
+{
+    size_t operator()(tim::unwind::entry) const;
+};
+}  // namespace std
+#endif
+
 namespace tim
 {
 namespace unwind
@@ -100,6 +119,13 @@ struct entry
     {
         ar(cereal::make_nvp("address", register_addr));
     }
+
+    bool operator==(entry _rhs) const { return (register_addr == _rhs.register_addr); }
+    bool operator<(entry _rhs) const { return (register_addr < _rhs.register_addr); }
+    bool operator>(entry _rhs) const { return (register_addr > _rhs.register_addr); }
+    bool operator!=(entry _rhs) const { return !(*this == _rhs); }
+    bool operator<=(entry _rhs) const { return (*this < _rhs) || (*this == _rhs); }
+    bool operator>=(entry _rhs) const { return (*this > _rhs) || (*this == _rhs); }
 
 private:
     static std::function<void(int, std::string&)>& error_handler()
@@ -172,6 +198,7 @@ struct stack
     using array_type     = std::array<stl::optional<entry>, N>;
     using iterator       = typename array_type::iterator;
     using const_iterator = typename array_type::const_iterator;
+    using cache_type     = std::unordered_map<entry, processed_entry>;
 
     TIMEMORY_DEFAULT_OBJECT(stack)
 
@@ -210,7 +237,14 @@ struct stack
     array_type         call_stack = {};
 
     template <size_t DefaultBufferSize = 4096, bool Shrink = true>
-    std::vector<processed_entry> get(bool _include_with_error = false);
+    std::vector<processed_entry> get(cache_type* _cache              = nullptr,
+                                     bool        _include_with_error = false) const;
+
+    template <size_t DefaultBufferSize = 4096, bool Shrink = true>
+    std::vector<processed_entry> get(bool _include_with_error) const
+    {
+        return get<DefaultBufferSize, Shrink>(nullptr, _include_with_error);
+    }
 
     template <size_t RhsN>
     bool operator==(stack<RhsN> _rhs) const;
@@ -371,7 +405,7 @@ stack<N>::shift(int64_t _n)
 template <size_t N>
 template <size_t DefaultBufferSize, bool Shrink>
 std::vector<processed_entry>
-stack<N>::get(bool _include_with_error)
+stack<N>::get(cache_type* _cache, bool _include_with_error) const
 {
     std::vector<processed_entry> _data{};
     _data.reserve(size());
@@ -379,6 +413,16 @@ stack<N>::get(bool _include_with_error)
     {
         if(itr)
         {
+            if(_cache)
+            {
+                auto citr = _cache->find(*itr);
+                if(citr != _cache->end())
+                {
+                    if(citr->second.error == 0 || _include_with_error)
+                        _data.emplace_back(citr->second);
+                    continue;
+                }
+            }
             processed_entry _v{};
             _v.address = itr->address();
             _v.name    = itr->template get_name<DefaultBufferSize, Shrink>(
@@ -400,6 +444,8 @@ stack<N>::get(bool _include_with_error)
             {
                 _data.emplace_back(_v);
             }
+            if(_cache)
+                _cache->emplace(*itr, _v);
         }
     }
     return _data;
@@ -579,3 +625,14 @@ struct stack
 //
 }  // namespace unwind
 }  // namespace tim
+
+#if defined(TIMEMORY_USE_LIBUNWIND)
+namespace std
+{
+inline size_t
+hash<tim::unwind::entry>::operator()(tim::unwind::entry _v) const
+{
+    return std::hash<unw_word_t>{}(_v.address());
+}
+}  // namespace std
+#endif

@@ -463,7 +463,7 @@ manager::write_metadata(const std::string& _output_dir, const char* context, int
 
     auto _cfg          = tim::settings::compose_filename_config{};
     _cfg.explicit_path = _output_dir;
-    _cfg.use_suffix = true;
+    _cfg.use_suffix    = true;
     if(_id >= 0)
         _cfg.suffix = _id;
 
