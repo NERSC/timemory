@@ -47,6 +47,19 @@ enum
     QuoteStrings   = 0x1
 };
 
+struct triplet_config
+{
+    std::string_view delimiter = {};
+    std::string_view prefix    = {};
+    std::string_view suffix    = {};
+};
+
+struct array_config : triplet_config
+{};
+
+struct pair_config : triplet_config
+{};
+
 struct config
 {
     using format_flags_t = std::ios_base::fmtflags;
@@ -67,6 +80,24 @@ struct config
     // converting constructor
     config(const char* const _delim)
     : delimiter{ _delim }
+    {}
+
+    config(triplet_config _cfg)
+    : delimiter{ _cfg.delimiter }
+    , prefix{ _cfg.prefix }
+    , suffix{ _cfg.suffix }
+    {}
+
+    config(array_config _cfg)
+    : array_delimiter{ _cfg.delimiter }
+    , array_prefix{ _cfg.prefix }
+    , array_suffix{ _cfg.suffix }
+    {}
+
+    config(pair_config _cfg)
+    : pair_delimiter{ _cfg.delimiter }
+    , pair_prefix{ _cfg.prefix }
+    , pair_suffix{ _cfg.suffix }
     {}
 
     format_flags_t   flags           = std::ios_base::boolalpha;
@@ -314,15 +345,21 @@ join(DelimT&& _delim, Args&&... _args)
 {
     using delim_type = impl::basic_identity_t<DelimT>;
 
-    auto _cfg = config{};
-    if constexpr(std::is_same<delim_type, char>::value)
+    if constexpr(std::is_constructible<config, delim_type>::value)
     {
+        auto _cfg = config{ std::forward<DelimT>(_delim) };
+        return join<TraitT>(_cfg, std::forward<Args>(_args)...);
+    }
+    else if constexpr(std::is_same<delim_type, char>::value)
+    {
+        auto       _cfg        = config{};
         const char _delim_c[2] = { _delim, '\0' };
         _cfg.delimiter         = _delim_c;
         return join<TraitT>(_cfg, std::forward<Args>(_args)...);
     }
     else
     {
+        auto _cfg      = config{};
         _cfg.delimiter = std::string_view{ _delim };
         return join<TraitT>(_cfg, std::forward<Args>(_args)...);
     }
