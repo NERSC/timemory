@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-20.04
     continue-on-error: false
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - CC: clang-9
