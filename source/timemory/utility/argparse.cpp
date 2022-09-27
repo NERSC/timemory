@@ -410,8 +410,9 @@ TIMEMORY_UTILITY_INLINE argument_parser::known_args_t
         std::cerr << std::endl;
     }
 
-    if(_cmdc > 0 && verbose_level > 0)
-        std::cerr << "[command]>  " << cmd_string(_cmdc, _cmdv) << "\n\n";
+    if(_cmdc > 0 && verbose_level >= 2)
+        log::stream(std::cerr, log::color::info())
+            << "[command]>  " << cmd_string(_cmdc, _cmdv) << "\n\n";
 
     return known_args_t{ parse(_args, verbose_level), _cmdc, _cmdv };
 }
@@ -428,7 +429,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
         if(_cmd.length() > 0)
         {
             _cmd = _cmd.substr(1);
-            if(verbose_level >= 1)
+            if(verbose_level >= 2)
                 log::stream(std::cerr, log::color::info())
                     << "[argparse::parse]> parsing '" << _cmd << "'...\n";
         }
