@@ -28,14 +28,70 @@
 #    define TIMEMORY_LOG_COLORS_AVAILABLE 1
 #endif
 
+#include "timemory/macros/attributes.hpp"
+
+#include <cstdlib>
+#include <cstring>
+#include <string>
+
 namespace tim
 {
 namespace log
 {
+bool&
+colorized() TIMEMORY_ATTRIBUTE(visibility("default"));
+
 inline bool&
 colorized()
 {
-    static bool _v = true;
+    static bool _v = []() {
+        auto        _val      = true;
+        const char* _env_cstr = nullptr;
+#if defined(TIMEMORY_LOG_COLORS_ENV)
+        _env_cstr = std::getenv(TIMEMORY_LOG_COLORS_ENV);
+#elif defined(TIMEMORY_PROJECT_NAME)
+        auto _env_name = std::string{ TIMEMORY_PROJECT_NAME } + "_COLORIZED_LOG";
+        for(auto& itr : _env_name)
+            itr = toupper(itr);
+        _env_cstr = std::getenv(_env_name.c_str());
+#else
+        _env_cstr = std::getenv("TIMEMORY_COLORIZED_LOG");
+#endif
+
+        if(!_env_cstr)
+            _env_cstr = std::getenv("COLORIZED_LOG");
+
+        if(_env_cstr)
+        {
+            auto _env = std::string{ _env_cstr };
+
+            // check if numeric
+            if(_env.find_first_not_of("0123456789") == std::string::npos)
+            {
+                if(_env.length() > 1 || _env[0] != '0')
+                    return true;
+                return false;
+            }
+
+            for(auto& itr : _env)
+                itr = tolower(itr);
+
+            // check for matches to acceptable forms of false
+            for(const auto& itr : { "off", "false", "no", "n", "f" })
+            {
+                if(_env == itr)
+                    return false;
+            }
+
+            // check for matches to acceptable forms of true
+            for(const auto& itr : { "on", "true", "yes", "y", "t" })
+            {
+                if(_env == itr)
+                    return true;
+            }
+        }
+        return _val;
+    }();
     return _v;
 }
 
