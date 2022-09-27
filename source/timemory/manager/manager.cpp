@@ -140,12 +140,6 @@ manager::manager()
             add_metadata(_cache_lvl.str(), _cache_size);
         }
 
-#    if !defined(TIMEMORY_DISABLE_BANNER)
-        if(m_settings->get_banner())
-            printf("#------------------------- tim::manager initialized "
-                   "[pid=%i] -------------------------#\n",
-                   process::get_id());
-#    endif
         auto_lock_t _lk{ type_mutex<manager>() };
         // set to zero to we can track if user added metadata
         f_manager_persistent_data().metadata_count = 0;
@@ -156,7 +150,8 @@ manager::manager()
     if(settings::cpu_affinity())
         threading::affinity::set();
 
-    if(m_settings && m_settings->get_initialized())
+    auto _settings = m_settings.lock();
+    if(_settings && _settings->get_initialized())
         initialize();
 }
 //

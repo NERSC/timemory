@@ -87,7 +87,7 @@ public:
     using finalizer_pmap_t   = std::map<int32_t, finalizer_list_t>;
     using synchronize_list_t = uomap_t<string_t, uomap_t<int64_t, std::function<void()>>>;
     using finalizer_void_t   = std::multimap<void*, finalizer_func_t>;
-    using settings_ptr_t     = settings*;
+    using settings_ptr_t     = std::weak_ptr<settings>;
     using filemap_t          = std::map<string_t, std::map<string_t, std::set<string_t>>>;
     using metadata_func_t    = std::vector<std::function<void(void*)>>;
     using metadata_info_t    = std::multimap<string_t, string_t>;
@@ -345,7 +345,7 @@ private:
     finalizer_void_t   m_pointer_fini       = {};
     synchronize_list_t m_synchronize        = {};
     filemap_t          m_output_files       = {};
-    settings_ptr_t     m_settings           = settings::instance();
+    settings_ptr_t     m_settings           = settings::shared_instance();
 
 private:
     struct persistent_data
@@ -366,8 +366,6 @@ private:
         std::atomic<int32_t>      thread_count{ 0 };
         bool                      use_exit_hook = true;
         pointer_t                 master_instance;
-        bool&                     debug          = settings::debug();
-        int&                      verbose        = settings::verbose();
         int64_t                   metadata_count = 0;
         metadata_func_t           func_metadata  = {};
         metadata_info_t           info_metadata  = {};
@@ -388,9 +386,9 @@ private:
     }
     /// suppresses the exit hook during termination
     static bool& f_use_exit_hook() { return f_manager_persistent_data().use_exit_hook; }
-    static auto& f_debug() { return f_manager_persistent_data().debug; }
-    static auto& f_verbose() { return f_manager_persistent_data().verbose; }
     static auto  f_settings() { return f_manager_persistent_data().config; }
+    static auto  f_debug() { return f_settings() ? false : f_settings()->get_debug(); }
+    static auto  f_verbose() { return f_settings() ? 0 : f_settings()->get_verbose(); }
 
 public:
     /// This function stores the primary manager instance for the application
