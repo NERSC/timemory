@@ -2316,6 +2316,20 @@ settings::init_config(bool _search_default)
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_SETTINGS_INLINE
+void
+settings::handle_exception(std::string_view _env_var, std::string_view _func,
+                           std::string_view _type, std::string_view _msg)
+{
+    TIMEMORY_PRINTF_FATAL(stderr, "[%s] Error! %s& settings::%s() failed: %s\n",
+                          _env_var.data(), _type.data(), _func.data(), _msg.data());
+    timemory_print_demangled_backtrace<8>(
+        std::cerr, std::string{},
+        TIMEMORY_JOIN("", _type, "& settings::", _func, "() :: ", _msg));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 TIMEMORY_SETTINGS_MEMBER_DEF(string_t, config_file, TIMEMORY_SETTINGS_KEY("CONFIG_FILE"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, suppress_parsing,
                              TIMEMORY_SETTINGS_KEY("SUPPRESS_PARSING"))

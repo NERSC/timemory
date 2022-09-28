@@ -76,7 +76,8 @@
         TYPE& get_##FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default");     \
         TYPE                                         get_##FUNC()                        \
             const TIMEMORY_NEVER_INSTRUMENT          TIMEMORY_VISIBILITY("default");     \
-        static TYPE& FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default");
+        static TYPE&                                 FUNC()                              \
+            TIMEMORY_NEVER_INSTRUMENT TIMEMORY_HOT   TIMEMORY_VISIBILITY("default");
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -89,7 +90,8 @@
         TYPE& get_##FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default");     \
         TYPE                                         get_##FUNC()                        \
             const TIMEMORY_NEVER_INSTRUMENT          TIMEMORY_VISIBILITY("default");     \
-        static TYPE& FUNC() TIMEMORY_NEVER_INSTRUMENT TIMEMORY_VISIBILITY("default");
+        static TYPE&                                 FUNC()                              \
+            TIMEMORY_NEVER_INSTRUMENT TIMEMORY_HOT   TIMEMORY_VISIBILITY("default");
 #endif
 //
 //--------------------------------------------------------------------------------------//
@@ -115,7 +117,14 @@
                                                                                          \
         TIMEMORY_SETTINGS_INLINE TYPE& settings::FUNC()                                  \
         {                                                                                \
-            return shared_instance()->get_##FUNC();                                      \
+            try                                                                          \
+            {                                                                            \
+                return shared_instance()->get_##FUNC();                                  \
+            } catch(std::exception & _e)                                                 \
+            {                                                                            \
+                handle_exception(ENV_VAR, #FUNC, #TYPE, _e.what());                      \
+                std::rethrow_exception(std::current_exception());                        \
+            }                                                                            \
         }
 #endif
 //
@@ -143,7 +152,14 @@
                                                                                          \
         TIMEMORY_SETTINGS_INLINE TYPE& settings::FUNC()                                  \
         {                                                                                \
-            return shared_instance()->get_##FUNC();                                      \
+            try                                                                          \
+            {                                                                            \
+                return shared_instance()->get_##FUNC();                                  \
+            } catch(std::exception & _e)                                                 \
+            {                                                                            \
+                handle_exception(ENV_VAR, #FUNC, #TYPE, _e.what());                      \
+                std::rethrow_exception(std::current_exception());                        \
+            }                                                                            \
         }
 #endif
 //

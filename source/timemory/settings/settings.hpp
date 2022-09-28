@@ -710,6 +710,9 @@ private:
         static std::map<size_t, std::map<std::type_index, int64_t>> _instance{};
         return _instance;
     }
+
+    static void handle_exception(std::string_view, std::string_view, std::string_view,
+                                 std::string_view);
 };
 //
 //--------------------------------------------------------------------------------------//
