@@ -254,7 +254,7 @@ argument_parser::print_help(const std::string& _extra)
         if(!_autoformat)
         {
             auto desc = ((ss.str().length() > static_cast<size_t>(m_width))
-                             ? std::string{ "%{NEWLINE}%}" }
+                             ? std::string{ "%{NEWLINE}%" }
                              : std::string{}) +
                         a.m_desc;
 
