@@ -261,10 +261,10 @@ TIMEMORY_SETTINGS_INLINE std::vector<std::pair<std::string, std::string>>
     std::string _tag0_string = _tag;  // only the basic prefix
     auto        _options     = std::vector<strpair_t>{};
 
-    auto _replace = [](auto& _v, const strpair_t& itr) {
+    auto _replace = [](auto& _v, const strpair_t& pitr) {
         auto pos = std::string::npos;
-        while((pos = _v.find(itr.first)) != std::string::npos)
-            _v.replace(pos, itr.first.length(), itr.second);
+        while((pos = _v.find(pitr.first)) != std::string::npos)
+            _v.replace(pos, pitr.first.length(), pitr.second);
     };
 
     if(_cmdline.size() > 1 && _cmdline.at(1) == "--")
@@ -353,10 +353,10 @@ TIMEMORY_SETTINGS_INLINE std::string
 {
     using strpair_t = std::pair<std::string, std::string>;
 
-    auto _replace = [](auto& _v, const strpair_t& itr) {
+    auto _replace = [](auto& _v, const strpair_t& pitr) {
         auto pos = std::string::npos;
-        while((pos = _v.find(itr.first)) != std::string::npos)
-            _v.replace(pos, itr.first.length(), itr.second);
+        while((pos = _v.find(pitr.first)) != std::string::npos)
+            _v.replace(pos, pitr.first.length(), pitr.second);
     };
 
     _fpath = filepath::canonical(_fpath);

@@ -41,6 +41,11 @@ namespace timemory
 {
 namespace join
 {
+template <typename... ArgsT>
+inline void
+consume_args(ArgsT&&...)
+{}
+
 enum
 {
     NoQuoteStrings = 0x0,
@@ -317,6 +322,9 @@ join_arg(config _cfg, ArgT&& _v)
         static_assert(std::is_empty<ArgT>::value,
                       "Error! argument type cannot be written to output stream");
     }
+    // suppress any unused but set variable warnings
+    consume_args(_is_string_type, _is_iterable, _has_traits_type, _has_key_type,
+                 _has_value_type, _has_mapped_type);
 }
 }  // namespace impl
 

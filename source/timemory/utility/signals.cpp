@@ -252,15 +252,15 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
     message << _label;
 
     {
-        std::string _name = {};
-        std::string _desc = {};
-        std::tie(_name, std::ignore, _desc) =
+        std::string _lname = {};
+        std::string _ldesc = {};
+        std::tie(_lname, std::ignore, _ldesc) =
             signal_settings::get_info(static_cast<sys_signal>(sig));
-        if(!_name.empty())
+        if(!_lname.empty())
         {
-            message << " (" << _name << ")";
-            if(!_desc.empty())
-                message << " " << _desc;
+            message << " (" << _lname << ")";
+            if(!_ldesc.empty())
+                message << " " << _ldesc;
         }
     }
 
