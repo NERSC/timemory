@@ -45,10 +45,6 @@ callback_connector<Components, ApiT>::is_enabled()
         return false;
     }
 
-    TIMEMORY_DEBUG_PRINT_HERE("[timemory][ompt]> %s :: handle enabled = %s",
-                              demangle<type>().c_str(),
-                              (trait::runtime_enabled<handle_type>::get()) ? "y" : "n");
-
     return (trait::runtime_enabled<handle_type>::get());
 }
 }  // namespace openmp
