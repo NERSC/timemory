@@ -52,10 +52,10 @@ processed_entry::construct(processed_entry& _v, file_map_t* _files)
 
     if(_files != nullptr && !_v.location.empty() && filepath::exists(_v.location))
     {
-        auto _get_file = [&_files](const auto& _v) {
-            if(_files->find(_v) == _files->end())
-                _files->emplace(_v, std::make_shared<bfd_file>(_v));
-            return _files->at(_v);
+        auto _get_file = [&_files](const auto& _val) {
+            if(_files->find(_val) == _files->end())
+                _files->emplace(_val, std::make_shared<bfd_file>(_val));
+            return _files->at(_val);
         };
 
         auto _bfd = _get_file(_v.location);

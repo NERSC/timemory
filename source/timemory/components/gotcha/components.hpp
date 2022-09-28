@@ -432,11 +432,17 @@ private:
         {
             constexpr bool set_data_v =
                 !quirk::has_quirk<quirk::static_data, BundleT>::value;
-            using Type = DiffT;
-            Type& _obj = *_comp.template get<Type>();
-            return gotcha_invoker<Type, Ret, set_data_v>{}(
-                _obj, std::forward<gotcha_data>(_data), _func,
-                std::forward<Args>(_args)...);
+            auto* _obj = _comp.template get<DiffT>();
+            if(_obj)
+            {
+                return gotcha_invoker<DiffT, Ret, set_data_v>{}(
+                    *_obj, std::forward<gotcha_data>(_data), _func,
+                    std::forward<Args>(_args)...);
+            }
+            else
+            {
+                return _func(std::forward<Args>(_args)...);
+            }
         }
         else if constexpr(!backend::gotcha::replaces<DiffT, tuple_type>::value)
         {

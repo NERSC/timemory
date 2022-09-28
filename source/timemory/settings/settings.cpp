@@ -252,7 +252,6 @@ settings::store_command_line(int argc, char** argv)
 TIMEMORY_SETTINGS_INLINE std::vector<std::pair<std::string, std::string>>
                          settings::output_keys(const std::string& _tag)
 {
-    using strpair_t          = std::pair<std::string, std::string>;
     auto        _cmdline     = command_line();
     std::string _arg0_string = {};    // only the first cmdline arg
     std::string _argv_string = {};    // entire argv cmd
@@ -315,8 +314,7 @@ TIMEMORY_SETTINGS_INLINE std::vector<std::pair<std::string, std::string>>
     auto _parent_id  = TIMEMORY_JOIN("", getppid());
 #endif
 
-    using strpairinit_t = std::initializer_list<std::pair<std::string, std::string>>;
-    for(auto&& itr : strpairinit_t{
+    for(auto&& itr : std::initializer_list<strpair_t>{
             { "%arg0%", _arg0_string },
             { "%arg0_hash%", md5::compute_md5(_arg0_string) },
             { "%argv%", _argv_string },
@@ -351,8 +349,6 @@ TIMEMORY_SETTINGS_INLINE std::vector<std::pair<std::string, std::string>>
 TIMEMORY_SETTINGS_INLINE std::string
                          settings::format(std::string _fpath, const std::string& _tag)
 {
-    using strpair_t = std::pair<std::string, std::string>;
-
     auto _replace = [](auto& _v, const strpair_t& pitr) {
         auto pos = std::string::npos;
         while((pos = _v.find(pitr.first)) != std::string::npos)
