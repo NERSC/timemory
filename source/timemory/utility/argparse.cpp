@@ -25,8 +25,10 @@
 #ifndef TIMEMORY_UTILITY_ARGPARSE_CPP_
 #define TIMEMORY_UTILITY_ARGPARSE_CPP_
 
+#include "timemory/log/color.hpp"
 #include "timemory/log/logger.hpp"
 #include "timemory/utility/delimit.hpp"
+#include "timemory/utility/join.hpp"
 
 #include <iostream>
 #include <string>
@@ -214,25 +216,49 @@ argument_parser::print_help(const std::string& _extra)
     }
 
     std::cerr << "\nOptions:" << std::endl;
+    size_t _arguments_idx = 0;
     for(auto& a : m_arguments)
     {
-        std::string name = a.m_names.at(0);
-        for(size_t n = 1; n < a.m_names.size(); ++n)
-            name.append(", " + a.m_names[n]);
-        std::stringstream ss;
-        ss << name;
+        auto      _idx      = ++_arguments_idx;
+        argument* _next_arg = nullptr;
+        if(_idx < m_arguments.size())
+            _next_arg = &m_arguments.at(_idx);
+        bool _next_arg_is_spacer = (_next_arg) ? _next_arg->get_name().empty() : false;
+
+        (void) _next_arg_is_spacer;
+
+        auto   ss     = std::stringstream{};
+        auto   _name  = std::stringstream{};
+        size_t _width = 0;
+        {
+            auto _nprefix = (m_use_color) ? a.m_color : std::string{};
+            auto _nsuffix = (_nprefix.empty()) ? std::string{} : log::color::end();
+            _name << _nprefix << a.m_names.at(0) << _nsuffix;
+            for(size_t n = 1; n < a.m_names.size(); ++n)
+                _name << ", " << _nprefix << a.m_names.at(n) << _nsuffix;
+            ss << _name.str();
+        }
+
+        for(const auto& itr : a.m_names)
+            _width += itr.length() + 2;
+
+        if(_width >= 2 && a.m_names.size() > 1)
+            _width -= 2;
+
         if(!a.m_choices.empty())
         {
-            ss << " [";
-            auto itr = a.m_choices.begin();
-            ss << " " << *itr++;
-            for(; itr != a.m_choices.end(); ++itr)
-                ss << " | " << *itr;
-            ss << " ] ";
+            auto _choices = timemory::join::join(
+                timemory::join::array_config{ " | ", "[ ", " ]" }, a.m_choices);
+            _width += _choices.length();
+            ss << " " << _choices;
         }
+
         std::stringstream prefix;
         prefix << "    " << std::setw(m_width) << std::left << ss.str();
         std::cerr << std::left << prefix.str();
+
+        if(static_cast<int64_t>(_width) >= static_cast<int64_t>(m_width))
+            std::cerr << "\n" << std::setw(m_width + 4) << "";
 
         bool _autoformat = a.m_desc.find("%{NEWLINE}%") == std::string::npos &&
                            a.m_desc.find("%{INDENT}%") == std::string::npos;
@@ -268,9 +294,6 @@ argument_parser::print_help(const std::string& _extra)
         }
         else
         {
-            if(ss.str().length() > static_cast<size_t>(m_width) && ss.str().at(0) != '[')
-                std::cerr << "\n" << std::setw(m_width + 4) << "";
-
             std::string desc = a.m_desc;
 
             if(a.m_required)
@@ -461,7 +484,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
                 if(name.empty())
                     continue;
                 if(m_name_map.find(name) != m_name_map.end())
-                    return arg_result("Duplicate of argument name: " + n);
+                    return construct_error("Duplicate of argument name: " + n);
                 m_name_map[name] = a.m_index;
                 m_arg_map[name]  = &a;
                 if(nleading_dash == 1 && name.length() > 1)
@@ -527,10 +550,6 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
         }
     }
 
-    // return the help
-    if(m_help_enabled && exists("help"))
-        return arg_result("help requested");
-
     err = end_argument();
     if(err)
         return (m_error_func(*this, err), err);
@@ -540,12 +559,13 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     {
         if(a.m_required && !a.m_found)
         {
-            return arg_result("Required argument not found: " + a.m_names.at(0));
+            return construct_error("Required argument not found: " + a.m_names.at(0));
         }
         if(a.m_position >= 0 && argc >= a.m_position && !a.m_found)
         {
-            return arg_result("argument " + a.m_names.at(0) + " expected in position " +
-                              std::to_string(a.m_position));
+            return construct_error("argument " + a.m_names.at(0) +
+                                   " expected in position " +
+                                   std::to_string(a.m_position));
         }
     }
 
@@ -553,7 +573,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     for(auto& a : m_positional_arguments)
     {
         if(a.m_required && !a.m_found)
-            return arg_result("Required argument not found: " + a.m_names.at(0));
+            return construct_error("Required argument not found: " + a.m_names.at(0));
     }
 
     // check all the counts have been satisfied
@@ -583,6 +603,49 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
             itr.second->execute_actions(*this);
     }
 
+    // check all requirements have been satisfied and conflicts have not violated
+    for(auto& itr : m_arguments)
+    {
+        if(itr.m_found)
+        {
+            for(const auto& iitr : itr.m_requires)
+            {
+                if(iitr.find('|') != std::string::npos)
+                {
+                    bool                  _found = false;
+                    std::set<std::string> _opts{};
+                    for(auto&& oitr : delimit(iitr, "|"))
+                    {
+                        _opts.emplace(std::string{ "--" } + oitr);
+                        if(exists(oitr))
+                            _found = true;
+                    }
+                    if(!_found)
+                    {
+                        using namespace timemory::join;
+                        return construct_error(
+                            itr.get_name() +
+                            " requires one of the options: " + join("", _opts));
+                    }
+                }
+                else if(!exists(iitr))
+                {
+                    return construct_error(itr.get_name() + " requires option --" + iitr);
+                }
+            }
+            for(const auto& iitr : itr.m_conflicts)
+            {
+                if(exists(iitr))
+                    return construct_error(itr.get_name() + " conflicts with option --" +
+                                           iitr);
+            }
+        }
+    }
+
+    // return the help
+    if(m_help_enabled && exists("help"))
+        return arg_result("help requested");
+
     return arg_result{};
 }
 
@@ -600,7 +663,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     }
     if(m_current != -1)
     {
-        return arg_result("Current argument left open");
+        return construct_error("Current argument left open");
     }
     size_t      name_end = helpers::find_punct(arg);
     std::string arg_name = arg.substr(0, name_end);
@@ -615,14 +678,14 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
         }
         if(nmf == m_name_map.end())
         {
-            return arg_result("Unrecognized command line option '" + arg_name + "'");
+            return construct_error("Unrecognized command line option '" + arg_name + "'");
         }
         m_current                                             = nmf->second;
         m_arguments[static_cast<size_t>(nmf->second)].m_found = true;
         if(equal_pos == 0 || (equal_pos < 0 && arg_name.length() < arg.length()))
         {
             // malformed argument
-            return arg_result("Malformed argument: " + arg);
+            return construct_error("Malformed argument: " + arg);
         }
         else if(equal_pos > 0)
         {
@@ -733,16 +796,16 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
         argument& a = m_arguments[static_cast<size_t>(m_current)];
         m_current   = -1;
         if(static_cast<int>(a.m_values.size()) < a.m_count)
-            return arg_result("Too few arguments given for " + a.m_names.at(0));
+            return construct_error("Too few arguments given for " + a.m_names.at(0));
         if(a.m_max_count >= 0)
         {
             if(static_cast<int>(a.m_values.size()) > a.m_max_count)
-                return arg_result("Too many arguments given for " + a.m_names.at(0));
+                return construct_error("Too many arguments given for " + a.m_names.at(0));
         }
         else if(a.m_count >= 0)
         {
             if(static_cast<int>(a.m_values.size()) > a.m_count)
-                return arg_result("Too many arguments given for " + a.m_names.at(0));
+                return construct_error("Too many arguments given for " + a.m_names.at(0));
         }
     }
     return arg_result{};

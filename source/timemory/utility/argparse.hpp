@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/mpl/concepts.hpp"
+#include "timemory/utility/join.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/utility/utility.hpp"
@@ -237,21 +238,39 @@ struct is_initializing_container<std::initializer_list<Args...>> : std::true_typ
 //
 // type trait to utilize the implementation type traits as well as decay the type
 template <typename T>
-struct is_container
-{
-    static constexpr bool const value =
-        is_container_impl::is_container<decay_t<T>>::value;
-};
+using is_container = is_container_impl::is_container<decay_t<T>>;
 //
 //--------------------------------------------------------------------------------------//
 //
 // type trait to utilize the implementation type traits as well as decay the type
 template <typename T>
-struct is_initializing_container
+using is_initializing_container =
+    is_container_impl::is_initializing_container<decay_t<T>>;
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename ContainerT, typename Tp>
+auto
+emplace(ContainerT& _target, Tp&& _arg, int)
+    -> decltype(_target.emplace_back(std::forward<Tp>(_arg)))
 {
-    static constexpr bool const value =
-        is_container_impl::is_initializing_container<decay_t<T>>::value;
-};
+    return _target.emplace_back(std::forward<Tp>(_arg));
+}
+
+template <typename ContainerT, typename Tp>
+auto
+emplace(ContainerT& _target, Tp&& _arg, long)
+    -> decltype(_target.emplace(std::forward<Tp>(_arg)))
+{
+    return _target.emplace(std::forward<Tp>(_arg));
+}
+
+template <typename ContainerT, typename Tp>
+auto
+emplace(ContainerT& _target, Tp&& _arg)
+{
+    return emplace(_target, std::forward<Tp>(_arg), 0);
+}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -389,15 +408,21 @@ struct argument_parser
             return *this;
         }
 
-        argument& description(const std::string& description)
+        argument& description(std::string description)
         {
-            m_desc = description;
+            m_desc = std::move(description);
             return *this;
         }
 
-        argument& dtype(const std::string& _dtype)
+        argument& color(std::string _color)
         {
-            m_dtype = _dtype;
+            m_color = std::move(_color);
+            return *this;
+        }
+
+        argument& dtype(std::string _dtype)
+        {
+            m_dtype = std::move(_dtype);
             return *this;
         }
 
@@ -473,29 +498,51 @@ struct argument_parser
             return *this;
         }
 
-        template <typename T>
-        argument& choices(const std::initializer_list<T>& _choices)
+        template <typename Tp>
+        argument& choices(const std::initializer_list<Tp>& _v)
         {
-            for(auto&& itr : _choices)
-            {
-                std::stringstream ss;
-                ss << itr;
-                m_choices.insert(ss.str());
-            }
+            container_append(m_choices, _v);
             return *this;
         }
 
-        template <template <typename...> class ContainerT, typename T, typename... ExtraT,
-                  typename ContT = ContainerT<T, ExtraT...>,
-                  enable_if_t<helpers::is_container<ContT>::value> = 0>
-        argument& choices(const ContainerT<T, ExtraT...>& _choices)
+        template <typename Tp>
+        argument& choices(const Tp& _v)
         {
-            for(auto&& itr : _choices)
-            {
-                std::stringstream ss;
-                ss << itr;
-                m_choices.insert(ss.str());
-            }
+            static_assert(helpers::is_initializing_container<Tp>::value,
+                          "Error! Expected a container or initializer_list");
+            container_append(m_choices, _v);
+            return *this;
+        }
+
+        template <typename Tp>
+        argument& conflicts(const std::initializer_list<Tp>& _v)
+        {
+            container_append(m_conflicts, _v);
+            return *this;
+        }
+
+        template <typename Tp>
+        argument& conflicts(const Tp& _v)
+        {
+            static_assert(helpers::is_initializing_container<Tp>::value,
+                          "Error! Expected a container or initializer_list");
+            container_append(m_conflicts, _v);
+            return *this;
+        }
+
+        template <typename Tp>
+        argument& requires(const std::initializer_list<Tp>& _v)
+        {
+            container_append(m_requires, _v);
+            return *this;
+        }
+
+        template <typename Tp>
+        argument& requires(const Tp& _v)
+        {
+            static_assert(helpers::is_initializing_container<Tp>::value,
+                          "Error! Expected a container or initializer_list");
+            container_append(m_requires, _v);
             return *this;
         }
 
@@ -617,13 +664,24 @@ struct argument_parser
             return os;
         }
 
+        template <typename TargetT, typename Tp>
+        static void container_append(TargetT& _target, const Tp& _val)
+        {
+            for(auto&& itr : _val)
+            {
+                std::stringstream ss;
+                ss << itr;
+                helpers::emplace(_target, ss.str());
+            }
+        }
+
         friend struct argument_parser;
         bool                       m_is_default   = false;
         int                        m_position     = Position::IgnoreArgument;
         int                        m_count        = Count::ANY;
         int                        m_min_count    = Count::ANY;
         int                        m_max_count    = Count::ANY;
-        std::vector<std::string>   m_names        = {};
+        std::string                m_color        = {};
         std::string                m_desc         = {};
         std::string                m_dtype        = {};
         bool                       m_found        = false;
@@ -634,6 +692,9 @@ struct argument_parser
         callback_t                 m_callback     = [](void*&) {};
         callback_t                 m_destroy      = [](void*&) {};
         std::set<std::string>      m_choices      = {};
+        std::set<std::string>      m_conflicts    = {};
+        std::set<std::string>      m_requires     = {};
+        std::vector<std::string>   m_names        = {};
         std::vector<std::string>   m_values       = {};
         std::vector<action_func_t> m_actions      = {};
     };
@@ -965,6 +1026,9 @@ struct argument_parser
         auto itr = m_name_map.find(name);
         if(itr != m_name_map.end())
             return m_arguments[static_cast<size_t>(itr->second)].get<T>();
+
+        construct_error("No argument option found with name: \"", name,
+                        "\" (ignoring leading dashes)");
         return T{};
     }
     //
@@ -997,12 +1061,25 @@ struct argument_parser
     //----------------------------------------------------------------------------------//
     //
     void set_help_width(int _v) { m_width = _v; }
+    int  get_help_width() const { return m_width; }
     //
     //----------------------------------------------------------------------------------//
     //
     void set_description_width(int _v) { m_desc_width = _v; }
+    int  get_description_width() const { return m_desc_width; }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    void set_use_color(bool _v) { m_use_color = _v; }
+    bool get_use_color() const { return m_use_color; }
 
 private:
+    template <typename... Args>
+    arg_result construct_error(Args&&... args)
+    {
+        auto _err = arg_result{ timemory::join::join("", std::forward<Args>(args)...) };
+        return (m_error_func(*this, _err), _err);
+    }
     //
     //----------------------------------------------------------------------------------//
     //
@@ -1091,6 +1168,7 @@ private:
     //
 private:
     bool                       m_help_enabled   = false;
+    bool                       m_use_color      = true;
     int                        m_current        = -1;
     int                        m_width          = 30;
     size_t                     m_desc_width     = 90;
