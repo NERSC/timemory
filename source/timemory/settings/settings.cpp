@@ -58,7 +58,7 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_SETTINGS_INLINE
-std::shared_ptr<settings>
+const std::shared_ptr<settings>&
 settings::shared_instance()
 {
     // do not take reference to ensure push/pop w/o template parameters do not change
@@ -75,7 +75,7 @@ settings::instance()
 {
     // do not take reference to ensure push/pop w/o template parameters do not change
     // the settings
-    static auto _instance = shared_instance();
+    static const auto& _instance = shared_instance();
     return _instance.get();
 }
 //
@@ -207,7 +207,7 @@ settings::get_global_output_prefix(bool _make_dir, std::string _subdir)
     auto _out_prefix =
         get_with_env_fallback<str_t>(TIMEMORY_SETTINGS_KEY("OUTPUT_PREFIX"), "");
     auto _time_format =
-        get_with_env_fallback<str_t>(TIMEMORY_SETTINGS_KEY("TIME_FORMAT"), "%F_%I.%M_%p");
+        get_with_env_fallback<str_t>(TIMEMORY_SETTINGS_KEY("TIME_FORMAT"), "%F_%H.%M");
     auto _time_output =
         get_with_env_fallback<bool>(TIMEMORY_SETTINGS_KEY("TIME_OUTPUT"), false);
 
@@ -298,7 +298,7 @@ TIMEMORY_SETTINGS_INLINE std::vector<std::pair<std::string, std::string>>
 
     auto* _launch_time = get_launch_time(TIMEMORY_API{});
     auto  _time_format = get_with_env_fallback<std::string>(
-        TIMEMORY_SETTINGS_KEY("TIME_FORMAT"), "%F_%I.%M_%p");
+        TIMEMORY_SETTINGS_KEY("TIME_FORMAT"), "%F_%H.%M");
 
     auto _dmp_size      = TIMEMORY_JOIN("", dmp::size());
     auto _dmp_rank      = TIMEMORY_JOIN("", dmp::rank());
@@ -1095,7 +1095,7 @@ settings::initialize_format()
         string_t, time_format, TIMEMORY_SETTINGS_KEY("TIME_FORMAT"),
         "Customize the folder generation when TIME_OUTPUT is enabled (see also: "
         "strftime)",
-        "%F_%I.%M_%p", TIMEMORY_ESC(strset_t{ "native", "io", "format", "filename" }),
+        "%F_%H.%M", TIMEMORY_ESC(strset_t{ "native", "io", "format", "filename" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-time-format" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(

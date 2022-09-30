@@ -224,10 +224,10 @@ struct TIMEMORY_VISIBILITY("default") settings
     template <typename Tag = TIMEMORY_API>
     static std::time_t* get_launch_time(Tag = {});
     template <typename Tag>
-    static TIMEMORY_HOT pointer_t shared_instance();
+    static TIMEMORY_HOT const pointer_t& shared_instance();
     template <typename Tag>
     static TIMEMORY_HOT settings* instance();
-    static TIMEMORY_HOT pointer_t shared_instance();
+    static TIMEMORY_HOT const pointer_t& shared_instance();
     static TIMEMORY_HOT settings* instance();
 
     settings();
@@ -787,7 +787,7 @@ settings::pop()
 //--------------------------------------------------------------------------------------//
 //
 template <typename Tag>
-std::shared_ptr<settings>
+const std::shared_ptr<settings>&
 settings::shared_instance()
 {
     static std::shared_ptr<settings>& _instance = private_shared_instance<Tag>();

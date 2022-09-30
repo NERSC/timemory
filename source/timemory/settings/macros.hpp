@@ -275,8 +275,8 @@
 #        define TIMEMORY_SETTINGS_EXTERN_TEMPLATE(API)                                   \
             namespace tim                                                                \
             {                                                                            \
-            template std::shared_ptr<settings> settings::shared_instance<API>();         \
-            template settings*                 settings::instance<API>();                \
+            template const std::shared_ptr<settings>& settings::shared_instance<API>();  \
+            template settings*                        settings::instance<API>();         \
             template void settings::serialize_settings(cereal::JSONInputArchive&);       \
             template void settings::serialize_settings(                                  \
                 cereal::PrettyJSONOutputArchive&);                                       \
@@ -300,10 +300,11 @@
 #        define TIMEMORY_SETTINGS_EXTERN_TEMPLATE(API)                                   \
             namespace tim                                                                \
             {                                                                            \
-            extern template std::shared_ptr<settings> settings::shared_instance<API>();  \
-            extern template settings*                 settings::instance<API>();         \
-            extern template void                      settings::serialize_settings(      \
-                cereal::JSONInputArchive&);                         \
+            extern template const std::shared_ptr<settings>&                             \
+                                      settings::shared_instance<API>();                  \
+            extern template settings* settings::instance<API>();                         \
+            extern template void      settings::serialize_settings(                      \
+                cereal::JSONInputArchive&);                                         \
             extern template void settings::serialize_settings(                           \
                 cereal::PrettyJSONOutputArchive&);                                       \
             extern template void settings::serialize_settings(                           \
