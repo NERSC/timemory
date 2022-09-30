@@ -202,7 +202,7 @@ struct setting_serialization<tsettings<Tp>, TagT>
 struct TIMEMORY_VISIBILITY("default") settings
 {
     friend void timemory_init(int, char**, const std::string&, const std::string&);
-    friend void timemory_finalize();
+    friend void timemory_finalize(manager*, settings*, bool);
 
     // this is the list of the current and potentially used data types
     using data_type_list_t =

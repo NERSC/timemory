@@ -227,7 +227,8 @@ storage<Type, true>::finalize()
     worker_is_finalizing() = true;
     if(m_is_master)
         master_is_finalizing() = true;
-    manager::instance()->is_finalizing(true);
+    if(manager::instance())
+        manager::instance()->is_finalizing(true);
 
     using fini_t = operation::fini<Type>;
     using ValueT = typename trait::collects_data<Type>::type;

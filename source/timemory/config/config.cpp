@@ -60,6 +60,8 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
               const std::string& _suffix)
 {
     auto _settings = settings::shared_instance();
+    auto _manager  = manager::instance();
+
     if(_settings)
     {
         settings::store_command_line(argc, argv);
@@ -133,14 +135,14 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
                 static bool _protect = false;
                 if(_protect)
                     return;
-                _protect      = true;
-                auto _manager = manager::master_instance();
-                if(_manager)
+                _protect           = true;
+                auto _main_manager = manager::master_instance();
+                if(_main_manager)
                 {
                     std::cout << "Finalizing after signal: " << nsig << " :: "
                               << signal_settings::str(static_cast<sys_signal>(nsig))
                               << std::endl;
-                    _manager->finalize();
+                    _main_manager->finalize();
                 }
                 _protect = false;
             };
@@ -151,11 +153,19 @@ timemory_init(int argc, char** argv, const std::string& _prefix,
     if(_settings)
         _settings->set_initialized(true);
 
-    auto _manager = manager::instance();
     if(_manager)
     {
         _manager->update_metadata_prefix();
         _manager->initialize();
+    }
+
+    if(!get_shared_ptr_pair_callback())
+    {
+        get_shared_ptr_pair_callback() =
+            new shared_ptr_pair_callback_t{ [_manager, _settings](int64_t _n) {
+                if(_n == 0)
+                    timemory_finalize(_manager.get(), _settings.get());
+            } };
     }
 }
 //
@@ -392,10 +402,15 @@ timemory_argparse(std::vector<std::string>& args, argparse::argument_parser* par
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_CONFIG_LINKAGE(void)  // NOLINT
-timemory_finalize()
+timemory_finalize(manager* _manager, settings* _settings, bool _lookup)
 {
-    auto* _settings = settings::instance();
-    auto  _manager  = manager::instance();
+    if(_lookup)
+    {
+        if(!_settings)
+            _settings = settings::instance();
+        if(!_manager)
+            _manager = manager::instance().get();
+    }
 
     if(_settings)
         _settings->set_initialized(false);

@@ -40,6 +40,7 @@
 namespace tim
 {
 //
+class manager;
 struct settings;
 //
 namespace argparse
@@ -94,7 +95,7 @@ timemory_init(std::vector<std::string>&, argparse::argument_parser& parser,
 //
 /// finalization of the specified types
 void
-timemory_finalize();
+timemory_finalize(manager* = nullptr, settings* = nullptr, bool _lookup = true);
 //
 //--------------------------------------------------------------------------------------//
 //

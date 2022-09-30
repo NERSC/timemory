@@ -49,9 +49,14 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 //
+using shared_ptr_pair_callback_t = std::function<void(int64_t)>;
+//
+shared_ptr_pair_callback_t*&
+get_shared_ptr_pair_callback();
+//
 template <typename Tp, typename Tag = TIMEMORY_API, typename PtrT = std::shared_ptr<Tp>,
           typename PairT = std::pair<PtrT, PtrT>>
-std::unique_ptr<PairT>&
+PairT*&
 get_shared_ptr_pair() TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
