@@ -52,22 +52,23 @@ enum
     QuoteStrings   = 0x1
 };
 
+template <size_t Idx>
 struct triplet_config
 {
-    std::string_view delimiter = {};
-    std::string_view prefix    = {};
-    std::string_view suffix    = {};
+    static constexpr auto index() { return Idx; }
+    std::string_view      delimiter = {};
+    std::string_view      prefix    = {};
+    std::string_view      suffix    = {};
 };
 
-struct array_config : triplet_config
-{};
+using generic_config = triplet_config<0>;
+using array_config   = triplet_config<1>;
+using pair_config    = triplet_config<2>;
 
-struct pair_config : triplet_config
-{};
-
-struct config
+struct config : generic_config
 {
     using format_flags_t = std::ios_base::fmtflags;
+    using base_type      = generic_config;
 
     config()                  = default;
     ~config()                 = default;
@@ -79,42 +80,44 @@ struct config
 
     // converting constructor
     config(std::string_view _delim)
-    : delimiter{ _delim }
+    : base_type{ _delim }
     {}
 
     // converting constructor
     config(const char* const _delim)
-    : delimiter{ _delim }
+    : base_type{ _delim }
     {}
 
-    config(triplet_config _cfg)
-    : delimiter{ _cfg.delimiter }
-    , prefix{ _cfg.prefix }
-    , suffix{ _cfg.suffix }
+    config(generic_config _cfg)
+    : base_type{ _cfg }
     {}
 
     config(array_config _cfg)
-    : array_delimiter{ _cfg.delimiter }
-    , array_prefix{ _cfg.prefix }
-    , array_suffix{ _cfg.suffix }
+    : array{ _cfg }
     {}
 
     config(pair_config _cfg)
-    : pair_delimiter{ _cfg.delimiter }
-    , pair_prefix{ _cfg.prefix }
-    , pair_suffix{ _cfg.suffix }
+    : pair{ _cfg }
     {}
 
-    format_flags_t   flags           = std::ios_base::boolalpha;
-    std::string_view delimiter       = {};
-    std::string_view prefix          = {};
-    std::string_view suffix          = {};
-    std::string_view array_delimiter = ", ";
-    std::string_view array_prefix    = "[";
-    std::string_view array_suffix    = "]";
-    std::string_view pair_delimiter  = ", ";
-    std::string_view pair_prefix     = "{";
-    std::string_view pair_suffix     = "}";
+    config(generic_config _generic, array_config _array)
+    : base_type{ _generic }
+    , array{ _array }
+    {}
+
+    config(generic_config _generic, pair_config _pair)
+    : base_type{ _generic }
+    , pair{ _pair }
+    {}
+
+    config(array_config _array, pair_config _pair)
+    : array{ _array }
+    , pair{ _pair }
+    {}
+
+    format_flags_t flags = std::ios_base::boolalpha;
+    array_config   array = { ", ", "[", "]" };
+    pair_config    pair  = { ", ", "{", "}" };
 };
 
 namespace impl
@@ -275,14 +278,14 @@ join_arg(config _cfg, ArgT&& _v)
             std::stringstream _ss{};
             _ss.setf(_cfg.flags);
             for(auto&& itr : std::forward<ArgT>(_v))
-                _ss << _cfg.array_delimiter << _cfg.pair_prefix
-                    << join_arg<TraitT>(_cfg, itr.first) << _cfg.pair_delimiter
-                    << join_arg<TraitT>(_cfg, itr.second) << _cfg.pair_suffix;
+                _ss << _cfg.array.delimiter << _cfg.pair.prefix
+                    << join_arg<TraitT>(_cfg, itr.first) << _cfg.pair.delimiter
+                    << join_arg<TraitT>(_cfg, itr.second) << _cfg.pair.suffix;
             auto   _ret = _ss.str();
-            auto&& _len = _cfg.array_delimiter.length();
+            auto&& _len = _cfg.array.delimiter.length();
             return (_ret.length() > _len)
-                       ? (std::string{ _cfg.array_prefix } + _ret.substr(_len) +
-                          std::string{ _cfg.array_suffix })
+                       ? (std::string{ _cfg.array.prefix } + _ret.substr(_len) +
+                          std::string{ _cfg.array.suffix })
                        : std::string{};
         }
         else if constexpr(_has_value_type)
@@ -290,12 +293,12 @@ join_arg(config _cfg, ArgT&& _v)
             std::stringstream _ss{};
             _ss.setf(_cfg.flags);
             for(auto&& itr : std::forward<ArgT>(_v))
-                _ss << _cfg.array_delimiter << join_arg<TraitT>(_cfg, itr);
+                _ss << _cfg.array.delimiter << join_arg<TraitT>(_cfg, itr);
             auto   _ret = _ss.str();
-            auto&& _len = _cfg.array_delimiter.length();
+            auto&& _len = _cfg.array.delimiter.length();
             return (_ret.length() > _len)
-                       ? (std::string{ _cfg.array_prefix } + _ret.substr(_len) +
-                          std::string{ _cfg.array_suffix })
+                       ? (std::string{ _cfg.array.prefix } + _ret.substr(_len) +
+                          std::string{ _cfg.array.suffix })
                        : std::string{};
         }
     }
@@ -344,6 +347,17 @@ join(config _cfg, Args&&... _args)
     return (_ret.length() > _len) ? (std::string{ _cfg.prefix } + _ret.substr(_len) +
                                      std::string{ _cfg.suffix })
                                   : std::string{};
+}
+
+template <int TraitT = NoQuoteStrings, typename... Args>
+auto
+join(std::array<std::string_view, 3>&& _delims, Args&&... _args)
+{
+    auto _cfg      = config{};
+    _cfg.delimiter = _delims.at(0);
+    _cfg.prefix    = _delims.at(1);
+    _cfg.suffix    = _delims.at(2);
+    return join(_cfg, std::forward<Args>(_args)...);
 }
 
 template <int TraitT = NoQuoteStrings, typename DelimT, typename... Args,
