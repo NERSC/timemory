@@ -271,7 +271,7 @@ if(UNIX)
         LINK_LIBRARIES
             common-test-libs test-debug-flags
             $<IF:$<BOOL:${TIMEMORY_USE_COVERAGE}>,timemory::timemory-core,>
-            timemory::timemory-libunwind)
+            timemory::timemory-libunwind timemory::timemory-unwind)
 endif()
 
 list(APPEND component_bundle_tests_env "TIMEMORY_COLLAPSE_PROCESSES=OFF")
