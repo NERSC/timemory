@@ -38,6 +38,9 @@ namespace unwind
 int
 bfd_error(const char* string);
 
+void
+set_bfd_verbose(int);
+
 #if defined(TIMEMORY_USE_BFD)
 
 struct bfd_file

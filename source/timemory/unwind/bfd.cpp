@@ -24,8 +24,12 @@
 
 #include "timemory/unwind/bfd.hpp"
 
+#include "timemory/backends/process.hpp"
+#include "timemory/backends/threading.hpp"
+#include "timemory/settings/settings.hpp"
 #include "timemory/unwind/addr2line.hpp"
 
+#include <cstdarg>
 #include <mutex>
 
 #if defined(TIMEMORY_USE_BFD)
@@ -33,19 +37,49 @@
 #    include <bfd.h>
 #endif
 
+#ifndef TIMEMORY_BFD_ERROR_MESSAGE_MAX
+#    define TIMEMORY_BFD_ERROR_MESSAGE_MAX 4096
+#endif
+
 namespace tim
 {
 namespace unwind
 {
+namespace
+{
+auto&
+get_bfd_verbose()
+{
+    static int _v = 1;
+    return _v;
+}
+}  // namespace
+
 #if defined(TIMEMORY_USE_BFD)
 
 namespace
 {
 void
+timemory_bfd_error_handler(const char* _format, va_list _arglist)
+{
+    const auto& _instance = settings::shared_instance();
+    if(_instance && _instance->get_verbose() >= get_bfd_verbose())
+    {
+        char _buffer[TIMEMORY_BFD_ERROR_MESSAGE_MAX];
+        vsnprintf(_buffer, TIMEMORY_BFD_ERROR_MESSAGE_MAX, _format, _arglist);
+        TIMEMORY_PRINTF_WARNING(stderr, "[%i][%li] BFD error: %s\n", process::get_id(),
+                                threading::get_id(), _buffer);
+    }
+}
+
+void
 initialize_bfd()
 {
     static std::once_flag _once{};
-    std::call_once(_once, bfd_init);
+    std::call_once(_once, []() {
+        bfd_init();
+        bfd_set_error_handler(timemory_bfd_error_handler);
+    });
 }
 }  // namespace
 
@@ -130,5 +164,10 @@ bfd_error(const char*)
 
 #endif
 
+void
+set_bfd_verbose(int _v)
+{
+    get_bfd_verbose() = _v;
+}
 }  // namespace unwind
 }  // namespace tim
