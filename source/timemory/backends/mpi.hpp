@@ -468,12 +468,8 @@ struct comm_data
 {
     using entry_t = std::array<int32_t, 2>;
 
-    static int32_t rank(comm_t _comm) { return m_data()[_comm][0]; }
-    static int32_t size(comm_t _comm)
-    {
-        m_data().emplace(_comm, entry_t{ 0, 1 });
-        return m_data()[_comm][1];
-    }
+    static int32_t rank(comm_t _comm) { return std::max<int32_t>(m_data()[_comm][0], 0); }
+    static int32_t size(comm_t _comm) { return std::max<int32_t>(m_data()[_comm][1], 1); }
 
     friend void set_rank(int32_t, comm_t);
     friend void set_size(int32_t, comm_t);
@@ -481,7 +477,7 @@ struct comm_data
 private:
     static std::map<comm_t, entry_t>& m_data()
     {
-        static std::map<comm_t, entry_t> _v = {};
+        static std::map<comm_t, entry_t> _v = { { 0, entry_t{ 0, 1 } } };
         return _v;
     }
 };

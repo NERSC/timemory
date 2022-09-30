@@ -229,8 +229,8 @@ protected:
 TEST_F(gotcha_tests, mpi_explicit)
 {
     mpi_gotcha_t::get_initializer() = [=]() {
-        TIMEMORY_PRINT_HERE("%s", details::get_test_name().c_str());
 #if defined(TIMEMORY_USE_MPI)
+        TIMEMORY_PRINT_HERE("%s", details::get_test_name().c_str());
         mpi_gotcha_t::configure<0, int, const void*, void*, int, MPI_Datatype, MPI_Op,
                                 MPI_Comm>("MPI_Allreduce");
 #endif
@@ -280,8 +280,8 @@ TEST_F(gotcha_tests, mpi_explicit)
 TEST_F(gotcha_tests, mpi_macro)
 {
     mpi_gotcha_t::get_initializer() = [=]() {
-        TIMEMORY_PRINT_HERE("%s", details::get_test_name().c_str());
 #if defined(TIMEMORY_USE_MPI)
+        TIMEMORY_PRINT_HERE("%s", details::get_test_name().c_str());
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 0, MPI_Allreduce);
 #endif
     };
@@ -450,6 +450,7 @@ TEST_F(gotcha_tests, malloc_gotcha)
 
     mpi_gotcha_t::get_initializer() = [=]() {
 #if defined(TIMEMORY_USE_MPI)
+        TIMEMORY_PRINT_HERE("%s", details::get_test_name().c_str());
         TIMEMORY_C_GOTCHA(mpi_gotcha_t, 0, MPI_Allreduce);
 #endif
     };
@@ -486,6 +487,9 @@ TEST_F(gotcha_tests, malloc_gotcha)
 
     auto rank = tim::mpi::rank();
     auto size = tim::mpi::size();
+
+    EXPECT_GE(rank, 0);
+    EXPECT_GE(size, 1);
     for(int i = 0; i < size; ++i)
     {
         tim::mpi::barrier();
