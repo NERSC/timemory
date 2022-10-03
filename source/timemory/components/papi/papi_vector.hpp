@@ -64,18 +64,23 @@ struct papi_vector
     template <typename... T>
     friend struct gpu_roofline;
 
-    using size_type         = size_t;
-    using event_list        = std::vector<int>;
-    using value_type        = std::vector<long long>;
-    using entry_type        = typename value_type::value_type;
-    using this_type         = papi_vector;
-    using base_type         = base<this_type, value_type>;
-    using storage_type      = typename base_type::storage_type;
-    using get_initializer_t = std::function<event_list()>;
-    using common_type       = papi_common<void>;
+    using size_type    = size_t;
+    using event_list   = std::vector<int>;
+    using value_type   = std::vector<long long>;
+    using entry_type   = typename value_type::value_type;
+    using this_type    = papi_vector;
+    using base_type    = base<this_type, value_type>;
+    using storage_type = typename base_type::storage_type;
+    using common_type  = papi_common<void>;
 
     static constexpr short precision = 3;
     static constexpr short width     = 8;
+
+    static auto& get_initializer()
+    {
+        static auto _v = common_type::initializer_t{};
+        return _v;
+    }
 
     static void configure(papi_config* = common_type::get_config());
     static void initialize(papi_config* _cfg = common_type::get_config());

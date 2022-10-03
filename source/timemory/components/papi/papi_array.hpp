@@ -51,15 +51,14 @@ struct papi_array
 : public base<papi_array<MaxNumEvents>, std::array<long long, MaxNumEvents>>
 , private papi_common<void>
 {
-    using size_type         = size_t;
-    using event_list        = std::vector<int>;
-    using value_type        = std::array<long long, MaxNumEvents>;
-    using entry_type        = typename value_type::value_type;
-    using this_type         = papi_array<MaxNumEvents>;
-    using base_type         = base<this_type, value_type>;
-    using storage_type      = typename base_type::storage_type;
-    using get_initializer_t = std::function<event_list()>;
-    using common_type       = papi_common<void>;
+    using size_type    = size_t;
+    using event_list   = std::vector<int>;
+    using value_type   = std::array<long long, MaxNumEvents>;
+    using entry_type   = typename value_type::value_type;
+    using this_type    = papi_array<MaxNumEvents>;
+    using base_type    = base<this_type, value_type>;
+    using storage_type = typename base_type::storage_type;
+    using common_type  = papi_common<void>;
 
     static constexpr size_t event_count_max = MaxNumEvents;
     static const short      precision       = 3;
@@ -76,10 +75,20 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
+    static auto& get_initializer()
+    {
+        static auto _v = common_type::initializer_t{};
+        return _v;
+    }
     static void configure(papi_config* _cfg = common_type::get_config())
     {
         if(_cfg && trait::runtime_enabled<this_type>::get())
+        {
+            auto&& _orig      = std::move(_cfg->initializer);
+            _cfg->initializer = get_initializer();
             _cfg->initialize();
+            _cfg->initializer = std::move(_orig);
+        }
     }
     static void initialize(papi_config* _cfg = common_type::get_config())
     {

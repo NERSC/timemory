@@ -186,25 +186,25 @@ public:
         return _val;
     }
 
-    static auto label_array()
+    auto label_array() const
     {
-        auto arr = tuple_type::label_array();
+        auto arr = value.first.label_array();
         for(auto& itr : arr)
             itr += " per " + rate_type::get_display_unit();
         return arr;
     }
 
-    static auto description_array()
+    auto description_array() const
     {
-        auto arr = tuple_type::description_array();
+        auto arr = value.first.description_array();
         for(auto& itr : arr)
             itr += " Rate";
         return arr;
     }
 
-    static auto display_unit_array()
+    auto display_unit_array() const
     {
-        auto arr = tuple_type::label_array();
+        auto arr = value.first.label_array();
         for(auto& itr : arr)
         {
             if(itr.empty())
@@ -214,23 +214,20 @@ public:
         return arr;
     }
 
-    static auto unit_array()
+    auto unit_array() const
     {
-        std::array<double, num_events> arr;
-        auto                           _units = tuple_type::unit_array();
-        for(size_t i = 0; i < _units.size(); ++i)
-            arr.at(i) = _units.at(i);
+        auto _units = value.first.unit_array();
         for(auto& itr : _units)
             itr /= rate_type::unit();
-        return arr;
+        return _units;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
         // output the metrics
         auto _value = obj.get();
-        auto _label = this_type::label_array();
-        auto _disp  = this_type::display_unit_array();
+        auto _label = obj.label_array();
+        auto _disp  = obj.display_unit_array();
         auto _prec  = this_type::get_precision();
         auto _width = this_type::get_width();
         auto _flags = this_type::get_format_flags();

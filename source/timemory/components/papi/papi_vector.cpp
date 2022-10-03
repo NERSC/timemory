@@ -49,7 +49,13 @@ TIMEMORY_PAPI_INLINE
 void
 papi_vector::configure(papi_config* _cfg)
 {
-    _cfg->initialize();
+    if(_cfg && trait::runtime_enabled<this_type>::get())
+    {
+        auto&& _orig      = std::move(_cfg->initializer);
+        _cfg->initializer = get_initializer();
+        _cfg->initialize();
+        _cfg->initializer = std::move(_orig);
+    }
 }
 
 TIMEMORY_PAPI_INLINE

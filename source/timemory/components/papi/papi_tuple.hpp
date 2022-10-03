@@ -300,7 +300,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of descriptions
     //
-    std::vector<std::string> label_array()
+    std::vector<std::string> label_array() const
     {
         const auto& _cfg = common_type::get_config();
         return (_cfg) ? _cfg->labels : std::vector<std::string>{};
@@ -309,7 +309,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    std::vector<std::string> description_array()
+    std::vector<std::string> description_array() const
     {
         const auto& _cfg = common_type::get_config();
         return (_cfg) ? _cfg->descriptions : std::vector<std::string>{};
@@ -318,7 +318,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit
     //
-    std::vector<std::string> display_unit_array()
+    std::vector<std::string> display_unit_array() const
     {
         const auto& _cfg = common_type::get_config();
         return (_cfg) ? _cfg->display_units : std::vector<std::string>{};
@@ -327,7 +327,7 @@ public:
     //----------------------------------------------------------------------------------//
     // array of unit values
     //
-    std::vector<int64_t> unit_array()
+    std::vector<int64_t> unit_array() const
     {
         const auto& _cfg = common_type::get_config();
         return (_cfg) ? _cfg->units : std::vector<int64_t>{};
