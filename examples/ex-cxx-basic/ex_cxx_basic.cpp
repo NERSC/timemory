@@ -112,7 +112,7 @@ main(int argc, char** argv)
     tim::timemory_argparse(&argc, &argv);
 
     // print out the signal handler settings
-    std::cout << tim::signal_settings::str() << std::endl;
+    std::cout << tim::signals::signal_settings::str() << std::endl;
 
     //
     //  Provide some work

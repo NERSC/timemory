@@ -75,8 +75,8 @@ target_link_libraries(
 target_compile_options(timemory-compiler-instrument-compile-options
                        INTERFACE ${timemory_CXX_FLAGS})
 
-add_target_cxx_flag_if_avail(timemory-compiler-instrument-compile-options
-                             "-ftls-model=local-dynamic")
+# add_target_cxx_flag_if_avail(timemory-compiler-instrument-compile-options
+# "-ftls-model=local-dynamic")
 
 set(LIB_TARGET timemory-compiler-instrument-base)
 set(LIB_TYPE STATIC)
@@ -91,7 +91,8 @@ timemory_build_library(
     OUTPUT_DIR ${PROJECT_BINARY_DIR}/compiler
     SOURCES ${CMAKE_CURRENT_LIST_DIR}/compiler-instrument-base.cpp)
 
-target_compile_definitions(${LIB_TARGET} PRIVATE TIMEMORY_COMPILER_INSTRUMENTATION)
+target_compile_definitions(${LIB_TARGET} PRIVATE TIMEMORY_COMPILER_INSTRUMENTATION
+                                                 TIMEMORY_USE_VISIBILITY=0)
 
 target_link_libraries(${LIB_TARGET} PUBLIC timemory::timemory-dmp
                                            timemory::timemory-threading ${LINK_LIBS})

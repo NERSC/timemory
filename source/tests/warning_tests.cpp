@@ -125,14 +125,14 @@ TEST_F(warning_tests, enabled)
     EXPECT_EQ(tim::settings::collapse_processes(), orig_proc);
     EXPECT_EQ(tim::settings::collapse_threads(), orig_thrd);
 
-    tim::signal_settings::check_environment();
-    for(const auto& itr : tim::signal_settings::get_disabled())
-        tim::signal_settings::enable(itr);
-    for(const auto& itr : tim::signal_settings::get_enabled())
-        tim::signal_settings::disable(itr);
-    for(const auto& itr : tim::signal_settings::get_default())
-        tim::signal_settings::enable(itr);
-    std::cout << tim::signal_settings::str(true) << std::endl;
+    tim::signals::signal_settings::check_environment();
+    for(const auto& itr : tim::signals::signal_settings::get_disabled())
+        tim::signals::signal_settings::enable(itr);
+    for(const auto& itr : tim::signals::signal_settings::get_enabled())
+        tim::signals::signal_settings::disable(itr);
+    for(const auto& itr : tim::signals::signal_settings::get_default())
+        tim::signals::signal_settings::enable(itr);
+    std::cout << tim::signals::signal_settings::str(true) << std::endl;
 
     tim::timemory_finalize();
 }

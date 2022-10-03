@@ -23,30 +23,44 @@
 // SOFTWARE.
 //
 
-/** \file utility/bits/signals.hpp
- * \headerfile utility/bits/signals.hpp "timemory/utility/bits/signals.hpp"
- * Provides inline implementation of signal_detection functions
- *
- */
+#ifndef TIMEMORY_SIGNALS_SIGNAL_SETTINGS_CPP_
+#    define TIMEMORY_SIGNALS_SIGNAL_SETTINGS_CPP_
+#endif
 
-#pragma once
+#include "timemory/signals/macros.hpp"
+
+#if !defined(TIMEMORY_SIGNALS_SIGNAL_SETTINGS_HPP_) &&                                   \
+    !defined(TIMEMORY_SIGNALS_HEADER_MODE)
+#    include "timemory/signals/signal_settings.hpp"
+#endif
 
 #include "timemory/environment/declaration.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/utility/declaration.hpp"
 
+#include <cfenv>
+#include <csignal>
 #include <cstdlib>
+#include <cstring>
+#include <functional>
+#include <initializer_list>
 #include <iomanip>
+#include <iostream>
+#include <set>
 #include <sstream>
 #include <string>
+#include <type_traits>
+
+#if defined(TIMEMORY_SIGNAL_AVAILABLE)
+#    include <dlfcn.h>
+#endif
 
 namespace tim
 {
-inline namespace signals
+namespace signals
 {
-//======================================================================================//
-
-inline signal_settings::signals_data::signals_data()
+TIMEMORY_SIGNALS_INLINE
+signal_settings::signals_data::signals_data()
 {
 #if defined(DEBUG)
     signals_default.insert(sys_signal::FPE);
@@ -56,9 +70,8 @@ inline signal_settings::signals_data::signals_data()
 #endif
 }
 
-//======================================================================================//
-
-inline void
+TIMEMORY_SIGNALS_INLINE
+void
 insert_and_remove(const sys_signal&              _type,  // signal type
                   signal_settings::signal_set_t* _ins,   // set to insert into
                   signal_settings::signal_set_t* _rem)   // set to remove from
@@ -72,25 +85,22 @@ insert_and_remove(const sys_signal&              _type,  // signal type
         _rem->erase(itr);
 }
 
-//======================================================================================//
-
-inline void
+TIMEMORY_SIGNALS_INLINE
+void
 signal_settings::enable(const sys_signal& _type)
 {
     insert_and_remove(_type, &f_signals().signals_enabled, &f_signals().signals_disabled);
 }
 
-//======================================================================================//
-
-inline void
+TIMEMORY_SIGNALS_INLINE
+void
 signal_settings::disable(const sys_signal& _type)
 {
     insert_and_remove(_type, &f_signals().signals_disabled, &f_signals().signals_enabled);
 }
 
-//======================================================================================//
-
-inline void
+TIMEMORY_SIGNALS_INLINE
+void
 signal_settings::check_environment()
 {
     using match_t = std::pair<std::string, sys_signal>;
@@ -151,9 +161,8 @@ signal_settings::check_environment()
     }
 }
 
-//======================================================================================//
-
-inline signal_settings::descript_tuple_t
+TIMEMORY_SIGNALS_INLINE
+signal_settings::descript_tuple_t
 signal_settings::get_info(const sys_signal& _type)
 {
     // some of these signals are not handled but added in case they are
@@ -204,7 +213,8 @@ signal_settings::get_info(const sys_signal& _type)
     return descript_tuple_t{ "", _key, "" };
 }
 
-inline std::string
+TIMEMORY_SIGNALS_INLINE
+std::string
 signal_settings::str(const sys_signal& _type)
 {
     std::stringstream ss;
@@ -221,9 +231,8 @@ signal_settings::str(const sys_signal& _type)
     return ss.str();
 }
 
-//======================================================================================//
-
-inline std::string
+TIMEMORY_SIGNALS_INLINE
+std::string
 signal_settings::str(bool report_disabled)
 {
     std::stringstream ss;
@@ -257,81 +266,74 @@ signal_settings::str(bool report_disabled)
     return ss.str();
 }
 
-//======================================================================================//
-
-inline bool
+TIMEMORY_SIGNALS_INLINE
+bool
 signal_settings::is_active()
 {
     return f_signals().signals_active;
 }
 
-//======================================================================================//
+TIMEMORY_SIGNALS_INLINE bool&
+signal_settings::allow()
+{
+    static bool _instance = true;
+    return _instance;
+}
 
-inline bool&
+TIMEMORY_SIGNALS_INLINE
+bool&
 signal_settings::enable_all()
 {
     return f_signals().enable_all;
 }
 
-//======================================================================================//
-
-inline bool&
+TIMEMORY_SIGNALS_INLINE
+bool&
 signal_settings::disable_all()
 {
     return f_signals().disable_all;
 }
 
-//======================================================================================//
-
-inline void
+TIMEMORY_SIGNALS_INLINE
+void
 signal_settings::set_active(bool val)
 {
     f_signals().signals_active = val;
 }
 
-//======================================================================================//
-
-inline void
+TIMEMORY_SIGNALS_INLINE
+void
 signal_settings::set_exit_action(signal_function_t _f)
 {
     f_signals().signals_exit_func = std::move(_f);
 }
 
-//======================================================================================//
-
-inline void
+TIMEMORY_SIGNALS_INLINE
+void
 signal_settings::exit_action(int errcode)
 {
     f_signals().signals_exit_func(errcode);
 }
 
-//======================================================================================//
-
-inline signal_settings::signal_set_t
+TIMEMORY_SIGNALS_INLINE
+signal_settings::signal_set_t
 signal_settings::get_enabled()
 {
     return f_signals().signals_enabled;
 }
 
-//======================================================================================//
-
-inline signal_settings::signal_set_t
+TIMEMORY_SIGNALS_INLINE
+signal_settings::signal_set_t
 signal_settings::get_disabled()
 {
     return f_signals().signals_disabled;
 }
 
-//======================================================================================//
-
-inline signal_settings::signal_set_t
+TIMEMORY_SIGNALS_INLINE
+signal_settings::signal_set_t
 signal_settings::get_default()
 {
     return f_signals().signals_default;
 }
-
-//======================================================================================//
-
 }  // namespace signals
 }  // namespace tim
-
-//======================================================================================//

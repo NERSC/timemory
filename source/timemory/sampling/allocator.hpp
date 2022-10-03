@@ -29,7 +29,7 @@
 #include "timemory/defines.h"
 #include "timemory/log/logger.hpp"
 #include "timemory/macros/os.hpp"
-#include "timemory/sampling/signals.hpp"
+#include "timemory/signals/signal_mask.hpp"
 #include "timemory/storage/ring_buffer.hpp"
 
 #include <atomic>
@@ -226,7 +226,7 @@ allocator<Tp>::block_pending_signals()
         auto& _completed = m_block_signals_completed;
         for(const auto& itr : _pending)
         {
-            sampling::block_signals({ itr }, sigmask_scope::thread);
+            signals::block_signals({ itr }, signals::sigmask_scope::thread);
             _completed.emplace(itr);
         }
         _pending.clear();

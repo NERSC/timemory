@@ -145,9 +145,9 @@ $ ./timem sleep 2
 Timemory provides a facility for catching signals and printing out a backtrace when the signals are raised:
 
 ```cpp
-tim::enable_signal_detection({ SIGHUP, SIGINT, SIGQUIT, SIGABRT });
+tim::signals::enable_signal_detection({ SIGHUP, SIGINT, SIGQUIT, SIGABRT });
 // ...
-tim::disable_signal_detection();
+tim::signals::disable_signal_detection();
 ```
 
 ## Cache Information

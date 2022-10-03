@@ -137,7 +137,7 @@ main(int argc, char** argv)
         .count(0)
         .action([](parser_t&) {
             debug() = true;
-            tim::enable_signal_detection();
+            tim::signals::enable_signal_detection();
         });
     parser.add_argument()
         .names({ "-v", "--verbose" })

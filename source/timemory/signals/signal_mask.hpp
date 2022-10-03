@@ -37,7 +37,7 @@
 
 namespace tim
 {
-namespace sampling
+namespace signals
 {
 enum class sigmask_scope : short
 {
@@ -94,5 +94,5 @@ unblock_signals(const std::set<int>& _signals, sigmask_scope _scope)
 
     return _old;
 }
-}  // namespace sampling
+}  // namespace signals
 }  // namespace tim

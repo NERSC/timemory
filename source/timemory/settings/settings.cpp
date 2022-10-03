@@ -35,11 +35,11 @@
 #include "timemory/settings/types.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
 #include "timemory/utility/argparse.hpp"
-#include "timemory/utility/bits/signals.hpp"
 #include "timemory/utility/declaration.hpp"
 #include "timemory/utility/delimit.hpp"
 #include "timemory/utility/filepath.hpp"
 #include "timemory/utility/md5.hpp"
+#include "timemory/utility/signals.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/variadic/macros.hpp"
 
@@ -1515,18 +1515,18 @@ settings::initialize_miscellaneous()
 
     TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(
         bool, allow_signal_handler, TIMEMORY_SETTINGS_KEY("ALLOW_SIGNAL_HANDLER"),
-        "Allow signal handling to be activated", signal_settings::allow(),
+        "Allow signal handling to be activated", signals::signal_settings::allow(),
         TIMEMORY_ESC(strset_t{ "native", "debugging", "signals" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-allow-signal-handler" }), -1, 1);
 
     TIMEMORY_SETTINGS_REFERENCE_IMPL(
         bool, enable_all_signals, TIMEMORY_SETTINGS_KEY("ENABLE_ALL_SIGNALS"),
-        "Enable catching all signals", signal_settings::enable_all(),
+        "Enable catching all signals", signals::signal_settings::enable_all(),
         TIMEMORY_ESC(strset_t{ "native", "debugging", "signals" }));
 
     TIMEMORY_SETTINGS_REFERENCE_IMPL(
         bool, disable_all_signals, TIMEMORY_SETTINGS_KEY("DISABLE_ALL_SIGNALS"),
-        "Disable catching any signals", signal_settings::disable_all(),
+        "Disable catching any signals", signals::signal_settings::disable_all(),
         TIMEMORY_ESC(strset_t{ "native", "debugging", "signals" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(

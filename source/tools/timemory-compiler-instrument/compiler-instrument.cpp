@@ -51,10 +51,10 @@ extern "C"
 namespace
 {
 // this struct ensures that the thread finalization function is called
-struct HIDDEN_VISIBILITY NEVER_INSTRUMENT thread_exit
+struct HIDDEN_VISIBILITY thread_exit
 {
-    thread_exit() HIDDEN_VISIBILITY NEVER_INSTRUMENT;
-    ~thread_exit() HIDDEN_VISIBILITY NEVER_INSTRUMENT;
+    thread_exit();
+    ~thread_exit();
 };
 //
 thread_exit::thread_exit() { timemory_profile_thread_init(); }

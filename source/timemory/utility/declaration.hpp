@@ -29,18 +29,4 @@
 
 #pragma once
 
-#include "timemory/utility/signals.hpp"
-
-#include <cfenv>
-#include <csignal>
-#include <functional>
-#include <set>
-#include <string>
-#include <tuple>
-
-namespace tim
-{
-//
-//----------------------------------------------------------------------------------//
-//
-}  // namespace tim
+#include "timemory/signals/types.hpp"

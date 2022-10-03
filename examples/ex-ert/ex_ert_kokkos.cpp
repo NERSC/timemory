@@ -559,7 +559,7 @@ main(int argc, char** argv)
 {
     settings::verbose() = 0;
     tim::timemory_init(&argc, &argv);
-    tim::enable_signal_detection();
+    tim::signals::enable_signal_detection();
 
     Kokkos::InitArguments args;
     args.num_threads =

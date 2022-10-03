@@ -230,25 +230,25 @@ PYBIND11_MODULE(libpytimemory, timemory)
         //
         if(_settings->get_enable_signal_handler())
         {
-            auto default_signals = tim::signal_settings::get_default();
+            auto default_signals = tim::signals::signal_settings::get_default();
             for(const auto& itr : default_signals)
-                tim::signal_settings::enable(itr);
+                tim::signals::signal_settings::enable(itr);
             // should return default and any modifications from environment
-            auto enabled_signals = tim::signal_settings::get_enabled();
-            tim::enable_signal_detection(enabled_signals);
+            auto enabled_signals = tim::signals::signal_settings::get_enabled();
+            tim::signals::enable_signal_detection(enabled_signals);
             // executes after the signal has been caught
             auto _exit_action = [=](int nsig) {
                 if(_master_manager)
                 {
                     std::cerr << "Finalizing after signal: " << nsig << " :: "
-                              << tim::signal_settings::str(
-                                     static_cast<tim::sys_signal>(nsig))
+                              << tim::signals::signal_settings::str(
+                                     static_cast<tim::signals::sys_signal>(nsig))
                               << std::endl;
                     _master_manager->finalize();
                 }
             };
             //
-            tim::signal_settings::set_exit_action(_exit_action);
+            tim::signals::signal_settings::set_exit_action(_exit_action);
         }
     }
 

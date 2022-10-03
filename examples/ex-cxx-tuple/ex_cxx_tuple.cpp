@@ -98,7 +98,7 @@ main(int argc, char** argv)
 {
     tim::settings::banner()      = true;
     tim::settings::json_output() = true;
-    tim::enable_signal_detection();
+    tim::signals::enable_signal_detection();
     tim::dmp::initialize(argc, argv);
     tim::timemory_init(argc, argv);
 

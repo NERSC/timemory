@@ -34,7 +34,7 @@
 #include "timemory/runtime/configure.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/trace.hpp"
-#include "timemory/utility/bits/signals.hpp"
+#include "timemory/utility/signals.hpp"
 
 #if !defined(TIMEMORY_WINDOWS)
 

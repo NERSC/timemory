@@ -49,13 +49,23 @@ if(NOT timemory_MAIN_PROJECT AND TIMEMORY_SOURCE_TREE_HEADERS)
 endif()
 
 file(
-    GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/utility/*.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/hash/*.hpp ${CMAKE_CURRENT_SOURCE_DIR}/environment/*.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.hpp ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.hpp)
+    GLOB_RECURSE
+    header_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/utility/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hash/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/environment/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/signals/*.hpp)
 file(
-    GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/utility/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/hash/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/environment/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.cpp)
+    GLOB_RECURSE
+    source_files
+    ${CMAKE_CURRENT_SOURCE_DIR}/utility/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/hash/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/environment/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/signals/*.cpp)
 
 timemory_build_intermediate_library(
     USE_INTERFACE INSTALL_SOURCE
@@ -66,6 +76,9 @@ timemory_build_intermediate_library(
     HEADERS ${header_files}
     SOURCES ${source_files}
     DEPENDS timemory::timemory-libunwind)
+
+# core
+add_subdirectory(signals)
 
 if(TIMEMORY_USE_COVERAGE)
     if(TARGET timemory-core-shared)

@@ -175,7 +175,7 @@ main(int argc, char** argv)
     tim::settings::timing_scientific() = true;
     tim::timemory_init(argc, argv);
     tim::settings::json_output() = true;
-    tim::enable_signal_detection();
+    tim::signals::enable_signal_detection();
 
     int ndevices = tim::gpu::device_count();
     warmup();

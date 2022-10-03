@@ -40,10 +40,10 @@
 #include "timemory/mpl/apply.hpp"
 #include "timemory/operations/types/sample.hpp"
 #include "timemory/sampling/allocator.hpp"
-#include "timemory/sampling/signals.hpp"
 #include "timemory/sampling/timer.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/settings/settings.hpp"
+#include "timemory/signals/signal_mask.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/demangle.hpp"
@@ -489,14 +489,14 @@ sampler<CompT<Types...>, N>::reset(std::vector<timer_pointer_t>&& _timers)
                                         "Resetting %zu signal handlers (index: %zu)",
                                         _timers.size(), m_idx);
         // block signals on thread while resetting
-        sampling::block_signals(_signals, sigmask_scope::thread);
+        signals::block_signals(_signals, signals::sigmask_scope::thread);
 
         // stop the interval timer
         for(auto& itr : _timers)
             itr->stop();
 
         // unblock signals on thread after resetting
-        sampling::unblock_signals(_signals, sigmask_scope::thread);
+        signals::unblock_signals(_signals, signals::sigmask_scope::thread);
     }
 
     TIMEMORY_CONDITIONAL_PRINT_HERE(
@@ -516,7 +516,7 @@ sampler<CompT<Types...>, N>::ignore(std::set<int> _signals)
             _signals.emplace(itr->signal());
     }
 
-    sampling::block_signals(_signals, sigmask_scope::process);
+    signals::block_signals(_signals, signals::sigmask_scope::process);
 }
 //
 //--------------------------------------------------------------------------------------//

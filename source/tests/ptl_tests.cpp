@@ -127,8 +127,8 @@ protected:
         tim::settings::dart_output() = false;
         tim::settings::dart_count()  = 1;
 
-        tim::enable_signal_detection(
-            { tim::sys_signal::SegFault, tim::sys_signal::Illegal });
+        tim::signals::enable_signal_detection(
+            { tim::signals::sys_signal::SegFault, tim::signals::sys_signal::Illegal });
 
         std::cout << "Initializing thread-pool... " << std::flush;
         manager.Initialize(tim::get_env<uint64_t>("NUM_THREADS", 4));
@@ -141,7 +141,8 @@ protected:
     static void TearDownTestSuite()
     {
         metric().stop();
-        tim::enable_signal_detection(tim::signal_settings::get_default());
+        tim::signals::enable_signal_detection(
+            tim::signals::signal_settings::get_default());
         auto& manager = get_manager();
 
         std::cout << "Tweaking settings..." << std::endl;

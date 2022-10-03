@@ -116,7 +116,8 @@ protected:
         timemory_trace_finalize();
         tim::timemory_finalize();
         if(tim::dmp::rank() == 0)
-            tim::enable_signal_detection(tim::signal_settings::get_default());
+            tim::signals::enable_signal_detection(
+                tim::signals::signal_settings::get_default());
         tim::dmp::finalize();
     }
 

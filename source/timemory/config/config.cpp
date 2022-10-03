@@ -59,6 +59,9 @@ TIMEMORY_CONFIG_LINKAGE(void)
 timemory_init(int argc, char** argv, const std::string& _prefix,
               const std::string& _suffix)
 {
+    using signal_settings = signals::signal_settings;
+    using sys_signal      = signals::sys_signal;
+
     auto _settings = settings::shared_instance();
     auto _manager  = manager::instance();
 
@@ -446,7 +449,7 @@ timemory_finalize(manager* _manager, settings* _settings, bool _lookup)
         {
             if(_settings->get_debug())
                 TIMEMORY_PRINT_HERE("%s", "disabling signal detection");
-            disable_signal_detection();
+            signals::disable_signal_detection();
         }
 
         if(_settings->get_debug())

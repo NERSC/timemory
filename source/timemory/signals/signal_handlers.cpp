@@ -23,53 +23,47 @@
 // SOFTWARE.
 //
 
-//======================================================================================//
-// This global method should be used on LINUX or MacOSX platforms with gcc,
-// clang, or intel compilers for activating signal detection and forcing
-// exception being thrown that can be handled when detected.
-//======================================================================================//
-
-#ifndef TIMEMORY_UTILITY_SIGNALS_CPP_
-#    define TIMEMORY_UTILITY_SIGNALS_CPP_
-#    include <cstdio>
+#ifndef TIMEMORY_SIGNALS_SIGNAL_HANDLERS_CPP_
+#define TIMEMORY_SIGNALS_SIGNAL_HANDLERS_CPP_
 #endif
 
-#ifndef TIMEMORY_UTILITY_SIGNALS_HPP_
-#    include "timemory/utility/signals.hpp"
-#    define TIMEMORY_UTILITY_SIGNAL_INLINE
-#else
-#    define TIMEMORY_UTILITY_SIGNAL_INLINE inline
+#ifndef TIMEMORY_SIGNALS_SIGNAL_HANDLERS_HPP_
+#include "timemory/signals/signal_handlers.hpp"
 #endif
 
 #if defined(TIMEMORY_SIGNAL_AVAILABLE)
 
-#    include "timemory/backends/dmp.hpp"
-#    include "timemory/backends/process.hpp"
-#    include "timemory/backends/signals.hpp"
-#    include "timemory/backends/threading.hpp"
-#    include "timemory/defines.h"
-#    include "timemory/log/color.hpp"
-#    include "timemory/log/logger.hpp"
-#    include "timemory/utility/backtrace.hpp"
-#    include "timemory/utility/declaration.hpp"
-#    include "timemory/utility/macros.hpp"
+#include "timemory/backends/dmp.hpp"
+#include "timemory/backends/process.hpp"
+#include "timemory/backends/signals.hpp"
+#include "timemory/backends/threading.hpp"
+#include "timemory/defines.h"
+#include "timemory/log/color.hpp"
+#include "timemory/log/logger.hpp"
+#include "timemory/utility/backtrace.hpp"
+#include "timemory/utility/declaration.hpp"
+#include "timemory/utility/macros.hpp"
 
-#    include <atomic>
-#    include <cfenv>
-#    include <chrono>
-#    include <csignal>
-#    include <cstring>
-#    include <dlfcn.h>
-#    include <initializer_list>
-#    include <iostream>
-#    include <set>
-#    include <type_traits>
+#include <atomic>
+#include <cfenv>
+#include <chrono>
+#include <csignal>
+#include <cstring>
+#include <dlfcn.h>
+#include <initializer_list>
+#include <iostream>
+#include <set>
+#include <type_traits>
 
-namespace
+namespace tim
 {
-TIMEMORY_UTILITY_SIGNAL_INLINE
+namespace signals
+{
+using term_sigaction_t = struct sigaction;
+
+TIMEMORY_SIGNALS_INLINE
 void
-timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */)
+termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */)
 {
     static auto _blocked = std::atomic<int>{ 0 };
     {
@@ -87,14 +81,14 @@ timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context 
         }
     }
 
-    tim::signal_settings::disable(static_cast<tim::sys_signal>(sig));
-    tim::termination_signal_message(sig, sinfo, std::cerr);
-    tim::disable_signal_detection();
+    signal_settings::disable(static_cast<sys_signal>(sig));
+    termination_signal_message(sig, sinfo, std::cerr);
+    disable_signal_detection();
 
-#    if defined(PSIGINFO_AVAILABLE)
+#if defined(PSIGINFO_AVAILABLE)
     if(sinfo)
         psiginfo(sinfo, TIMEMORY_PROJECT_NAME " :: ");
-#    endif
+#endif
 
     auto _v = --_blocked;
     {
@@ -117,18 +111,9 @@ timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context 
         // kill(tim::process::get_id(), sig);
     }
 }
-}  // namespace
 
-//======================================================================================//
-
-namespace tim
-{
-inline namespace signals
-{
-using term_sigaction_t = struct sigaction;
-
-TIMEMORY_UTILITY_SIGNAL_INLINE term_sigaction_t&
-                               tim_signal_termaction()
+TIMEMORY_SIGNALS_INLINE term_sigaction_t&
+                        tim_signal_termaction()
 {
     static term_sigaction_t _v = {};
     return _v;
@@ -136,8 +121,8 @@ TIMEMORY_UTILITY_SIGNAL_INLINE term_sigaction_t&
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_UTILITY_SIGNAL_INLINE term_sigaction_t&
-                               tim_signal_oldaction()
+TIMEMORY_SIGNALS_INLINE term_sigaction_t&
+                        tim_signal_oldaction()
 {
     static term_sigaction_t _v = {};
     return _v;
@@ -145,7 +130,7 @@ TIMEMORY_UTILITY_SIGNAL_INLINE term_sigaction_t&
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_UTILITY_SIGNAL_INLINE
+TIMEMORY_SIGNALS_INLINE
 void
 termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
 {
@@ -311,7 +296,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
         }
     }
 
-#    if defined(TIMEMORY_USE_LIBUNWIND)
+#if defined(TIMEMORY_USE_LIBUNWIND)
     {
         size_t ntot = 0;
         auto   bt   = get_demangled_unw_backtrace<64>();
@@ -330,7 +315,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
             message << prefix << "[" << i << '/' << ntot << "]> " << bt.at(i) << "\n";
         }
     }
-#    endif
+#endif
 
     {
         size_t ntot = 0;
@@ -366,7 +351,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_UTILITY_SIGNAL_INLINE
+TIMEMORY_SIGNALS_INLINE
 bool
 enable_signal_detection(signal_settings::signal_set_t operations)
 {
@@ -405,7 +390,7 @@ enable_signal_detection(signal_settings::signal_set_t operations)
     sigfillset(&tim_signal_termaction().sa_mask);
     for(const auto& itr : _signals)
         sigdelset(&tim_signal_termaction().sa_mask, itr);
-    tim_signal_termaction().sa_sigaction = timemory_termination_signal_handler;
+    tim_signal_termaction().sa_sigaction = termination_signal_handler;
     tim_signal_termaction().sa_flags     = SA_SIGINFO;
     for(const auto& itr : _signals)
     {
@@ -416,9 +401,7 @@ enable_signal_detection(signal_settings::signal_set_t operations)
     return true;
 }
 
-//--------------------------------------------------------------------------------------//
-
-TIMEMORY_UTILITY_SIGNAL_INLINE void
+TIMEMORY_SIGNALS_INLINE void
 disable_signal_detection()
 {
     // don't re-disable
@@ -440,6 +423,16 @@ disable_signal_detection()
     _disable(signal_settings::get_disabled());
 
     signal_settings::set_active(false);
+}
+
+TIMEMORY_SIGNALS_INLINE void
+update_signal_detection(const signal_settings::signal_set_t& _signals)
+{
+    if(signal_settings::allow())
+    {
+        disable_signal_detection();
+        enable_signal_detection(_signals);
+    }
 }
 }  // namespace signals
 }  // namespace tim

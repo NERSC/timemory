@@ -33,8 +33,8 @@
 //
 namespace pysignals
 {
-using sys_signal_t      = tim::sys_signal;
-using signal_settings_t = tim::signal_settings;
+using sys_signal_t      = tim::signals::sys_signal;
+using signal_settings_t = tim::signals::signal_settings;
 using signal_set_t      = signal_settings_t::signal_set_t;
 //
 //--------------------------------------------------------------------------------------//
@@ -53,7 +53,7 @@ signal_list_to_set(py::list signal_list)
 signal_set_t
 get_default_signal_set()
 {
-    return tim::signal_settings::get_enabled();
+    return tim::signals::signal_settings::get_enabled();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -63,7 +63,7 @@ enable_signal_detection(py::list signal_list = py::list{})
 {
     auto _sig_set = (signal_list.size() == 0) ? get_default_signal_set()
                                               : signal_list_to_set(signal_list);
-    tim::enable_signal_detection(_sig_set);
+    tim::signals::enable_signal_detection(_sig_set);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -71,7 +71,7 @@ enable_signal_detection(py::list signal_list = py::list{})
 void
 disable_signal_detection()
 {
-    tim::disable_signal_detection();
+    tim::signals::disable_signal_detection();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -106,7 +106,7 @@ generate(py::module& _pymod)
             using signal_function_t = std::function<void(int)>;
             using std::placeholders::_1;
             signal_function_t _f = std::bind<void>(_func, _1);
-            tim::signal_settings::set_exit_action(_f);
+            tim::signals::signal_settings::set_exit_action(_f);
         },
         "Set the exit action when a signal is raised -- function must accept "
         "integer");

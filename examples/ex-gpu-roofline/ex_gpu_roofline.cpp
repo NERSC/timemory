@@ -208,7 +208,7 @@ main(int argc, char** argv)
     tim::timemory_init(argc, argv);
     tim::cuda::device_query();
     tim::cuda::set_device(0);
-    tim::enable_signal_detection();
+    tim::signals::enable_signal_detection();
 
     int64_t num_threads   = 1;                           // default number of threads
     int64_t num_streams   = 8;                           // default number of streams

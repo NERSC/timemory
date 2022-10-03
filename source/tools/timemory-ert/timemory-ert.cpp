@@ -241,7 +241,7 @@ main(int argc, char** argv)
     settings::verbose() = 0;
     dmp::initialize(argc, argv);
     tim::timemory_init(argc, argv, "");
-    tim::enable_signal_detection();
+    tim::signals::enable_signal_detection();
 
     auto data = std::make_shared<ert_data_t>();
 

@@ -32,7 +32,7 @@
 #include "timemory/library.h"
 #include "timemory/runtime/configure.hpp"
 #include "timemory/timemory.hpp"
-#include "timemory/utility/bits/signals.hpp"
+#include "timemory/utility/signals.hpp"
 
 #if defined(TIMEMORY_USE_MPI)
 #    include "timemory/backends/types/mpi/extern.hpp"
@@ -761,13 +761,13 @@ extern "C"
                 if(_manager && !_manager->is_finalized() && !_manager->is_finalizing())
                 {
                     std::cout << "Finalizing after signal: " << nsig << " :: "
-                              << tim::signal_settings::str(
-                                     static_cast<tim::sys_signal>(nsig))
+                              << tim::signals::signal_settings::str(
+                                     static_cast<tim::signals::sys_signal>(nsig))
                               << std::endl;
                     timemory_trace_finalize();
                 }
             };
-            tim::signal_settings::set_exit_action(_exit_action);
+            tim::signals::signal_settings::set_exit_action(_exit_action);
             std::atexit(&timemory_trace_finalize);
 #if !defined(TIMEMORY_MACOS)
             // Apple clang version 11.0.3 (clang-1103.0.32.62) doesn't seem to have this
