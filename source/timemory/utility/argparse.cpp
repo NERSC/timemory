@@ -610,6 +610,8 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
         {
             for(const auto& iitr : itr.m_requires)
             {
+                if(iitr.empty())
+                    continue;
                 if(iitr.find('|') != std::string::npos)
                 {
                     bool                  _found = false;
