@@ -1065,6 +1065,17 @@ elseif(TIMEMORY_USE_LIBUNWIND AND TIMEMORY_BUILD_LIBUNWIND)
             ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/external/libunwind
             ${PROJECT_BINARY_DIR}/external/libunwind)
 
+    # update the SOVERSION of libunwind to avoid picking up system installs
+    file(READ ${PROJECT_BINARY_DIR}/external/libunwind/src/Makefile.am
+         timemory_libunwind_src_makefile_am)
+    string(
+        REGEX
+        REPLACE "SOVERSION=([0-9]+):([0-9]+):([0-9]+)" "SOVERSION=99:0:0"
+                timemory_libunwind_src_makefile_am
+                "${timemory_libunwind_src_makefile_am}")
+    file(WRITE ${PROJECT_BINARY_DIR}/external/libunwind/src/Makefile.am
+         "${timemory_libunwind_src_makefile_am}")
+
     # glob the files copied over
     file(GLOB_RECURSE timemory_libunwind_pre_build_files
          "${PROJECT_SOURCE_DIR}/external/libunwind/*")
