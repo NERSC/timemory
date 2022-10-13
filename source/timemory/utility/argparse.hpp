@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/mpl/concepts.hpp"
+#include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include "timemory/utility/join.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
@@ -426,6 +427,12 @@ struct argument_parser
             return *this;
         }
 
+        argument& group(const std::string& _group)
+        {
+            m_group = _group;
+            return *this;
+        }
+
         argument& required(bool req)
         {
             m_required = req;
@@ -515,34 +522,34 @@ struct argument_parser
         }
 
         template <typename Tp>
-        argument& conflicts(const std::initializer_list<Tp>& _v)
+        argument& conflicts(std::initializer_list<Tp>&& _v)
         {
-            container_append(m_conflicts, _v);
+            container_append(m_conflicts, std::vector<Tp>{ _v });
             return *this;
         }
 
         template <typename Tp>
-        argument& conflicts(const Tp& _v)
+        argument& conflicts(Tp&& _v)
         {
             static_assert(helpers::is_initializing_container<Tp>::value,
                           "Error! Expected a container or initializer_list");
-            container_append(m_conflicts, _v);
+            container_append(m_conflicts, std::forward<Tp>(_v));
             return *this;
         }
 
         template <typename Tp>
-        argument& requires(const std::initializer_list<Tp>& _v)
+        argument& requires(std::initializer_list<Tp>&& _v)
         {
-            container_append(m_requires, _v);
+            container_append(m_requires, std::vector<Tp>{ _v });
             return *this;
         }
 
         template <typename Tp>
-        argument& requires(const Tp& _v)
+        argument& requires(Tp&& _v)
         {
             static_assert(helpers::is_initializing_container<Tp>::value,
                           "Error! Expected a container or initializer_list");
-            container_append(m_requires, _v);
+            container_append(m_requires, std::forward<Tp>(_v));
             return *this;
         }
 
@@ -615,6 +622,21 @@ struct argument_parser
             return ss.str().substr(1);
         }
 
+        template <typename ArchiveT>
+        void serialize(ArchiveT& ar, const unsigned) const
+        {
+            ar(cereal::make_nvp("count", m_count));
+            ar(cereal::make_nvp("min_count", m_min_count));
+            ar(cereal::make_nvp("max_count", m_max_count));
+            ar(cereal::make_nvp("names", m_names));
+            ar(cereal::make_nvp("description", m_desc));
+            ar(cereal::make_nvp("dtype", m_dtype));
+            ar(cereal::make_nvp("group", m_group));
+            ar(cereal::make_nvp("required", m_required));
+            ar(cereal::make_nvp("choices", m_choices));
+            ar(cereal::make_nvp("values", m_values));
+        }
+
     private:
         argument(const std::string& name, std::string desc, bool required = false)
         : m_desc(std::move(desc))
@@ -665,14 +687,35 @@ struct argument_parser
         }
 
         template <typename TargetT, typename Tp>
-        static void container_append(TargetT& _target, const Tp& _val)
+        static void container_append(TargetT& _target, Tp&& _val)
         {
-            for(auto&& itr : _val)
+            static_assert(helpers::is_initializing_container<Tp>::value,
+                          "Error! Expected a container or initializer_list");
+            for(auto&& itr : std::forward<Tp>(_val))
             {
                 std::stringstream ss;
                 ss << itr;
                 helpers::emplace(_target, ss.str());
             }
+        }
+
+        bool is_separator() const
+        {
+            int32_t _v = m_count + m_min_count + m_max_count;
+            int32_t _l = m_desc.length() + m_dtype.length() + m_choices.size() +
+                         m_values.size() + m_actions.size();
+            if((_v + _l) == -3)
+            {
+                if(m_names.empty())
+                    return true;
+                else if(m_names.size() == 1)
+                {
+                    if(m_names.at(0).empty() ||
+                       (m_names.at(0).front() == '[' && m_names.at(0).back() == ']'))
+                        return true;
+                }
+            }
+            return false;
         }
 
         friend struct argument_parser;
@@ -684,6 +727,7 @@ struct argument_parser
         std::string                m_color        = {};
         std::string                m_desc         = {};
         std::string                m_dtype        = {};
+        std::string                m_group        = {};
         bool                       m_found        = false;
         bool                       m_required     = false;
         int                        m_index        = -1;
@@ -711,6 +755,8 @@ struct argument_parser
     {
         m_arguments.push_back({});
         m_arguments.back().m_index = static_cast<int>(m_arguments.size()) - 1;
+        if(!m_group.empty())
+            m_arguments.back().group(m_group);
         return m_arguments.back();
     }
     //
@@ -740,6 +786,32 @@ struct argument_parser
         _entry.count(1);
         _entry.m_index = m_positional_arguments.size();
         return _entry;
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    argument_parser& start_group(std::string _v)
+    {
+        m_group           = _v;
+        std::string _name = "[";
+        for(auto& itr : _v)
+            itr = toupper(itr);
+        _name += _v + std::string{ " OPTIONS]" };
+
+        if(!m_arguments.back().is_separator())
+            add_argument({ "" }, "");
+
+        add_argument({ _name }, "");
+        add_argument({ "" }, "");
+
+        return *this;
+    }
+    //
+    argument_parser& end_group()
+    {
+        add_argument({ "" }, "");
+        m_group = std::string{};
+        return *this;
     }
     //
     //----------------------------------------------------------------------------------//
@@ -953,6 +1025,20 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
+    /// \fn argument& enable_help()
+    /// \brief Add a help command
+    argument& enable_serialize()
+    {
+        m_serialize_enabled = true;
+        return add_argument()
+            .names({ "--serialize-argparser" })
+            .description("Serializes the instance to provided JSON")
+            .dtype("filepath")
+            .count(1);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
     /// \fn bool exists(const std::string& name) const
     /// \brief Returns whether or not an option was found in the arguments. Only
     /// useful after a call to \ref parse or \ref parse_known_args.
@@ -1073,6 +1159,33 @@ struct argument_parser
     void set_use_color(bool _v) { m_use_color = _v; }
     bool get_use_color() const { return m_use_color; }
 
+    template <typename ArchiveT>
+    void serialize(ArchiveT& ar, const unsigned) const
+    {
+        ar(cereal::make_nvp("help_enabled", m_help_enabled));
+        ar(cereal::make_nvp("width", m_width));
+        ar(cereal::make_nvp("description_width", m_desc_width));
+        ar(cereal::make_nvp("description", m_desc));
+        ar(cereal::make_nvp("bin", m_bin));
+        ar(cereal::make_nvp("positional_map", m_positional_map));
+        ar(cereal::make_nvp("name_map", m_name_map));
+        if constexpr(concepts::is_output_archive<ArchiveT>::value)
+        {
+            auto _arguments = std::vector<argument>{};
+            _arguments.reserve(m_arguments.size());
+            for(const auto& itr : m_arguments)
+                if(!itr.is_separator())
+                    _arguments.emplace_back(itr);
+            ar(cereal::make_nvp("arguments", _arguments));
+        }
+        else
+        {
+            ar(cereal::make_nvp("arguments", m_arguments));
+        }
+        ar(cereal::make_nvp("positional_arguments", m_positional_arguments));
+        ar(cereal::make_nvp("positional_values", m_positional_values));
+    }
+
 private:
     template <typename... Args>
     arg_result construct_error(Args&&... args)
@@ -1166,14 +1279,17 @@ private:
     //
     //----------------------------------------------------------------------------------//
     //
+
 private:
-    bool                       m_help_enabled   = false;
-    bool                       m_use_color      = true;
-    int                        m_current        = -1;
-    int                        m_width          = 30;
-    size_t                     m_desc_width     = 90;
-    std::string                m_desc           = {};
-    std::string                m_bin            = {};
+    bool                       m_help_enabled      = false;
+    bool                       m_use_color         = true;
+    bool                       m_serialize_enabled = false;
+    int                        m_current           = -1;
+    int                        m_width             = 30;
+    size_t                     m_desc_width        = 90;
+    std::string                m_desc              = {};
+    std::string                m_bin               = {};
+    std::string                m_group             = {};
     error_func_t               m_error_func     = [](this_type&, const result_type&) {};
     std::vector<argument>      m_arguments      = {};
     std::map<int, int>         m_positional_map = {};

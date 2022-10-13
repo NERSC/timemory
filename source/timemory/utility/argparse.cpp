@@ -27,9 +27,16 @@
 
 #include "timemory/log/color.hpp"
 #include "timemory/log/logger.hpp"
+#include "timemory/operations/types/file_output_message.hpp"
+#include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/tpls/cereal/cereal.hpp"
+#include "timemory/tpls/cereal/types.hpp"
 #include "timemory/utility/delimit.hpp"
+#include "timemory/utility/filepath.hpp"
 #include "timemory/utility/join.hpp"
 
+#include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -610,6 +617,8 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
         {
             for(const auto& iitr : itr.m_requires)
             {
+                std::cerr << "[" << itr.m_names.back() << "] checking " << iitr << "..."
+                          << std::endl;
                 if(iitr.empty())
                     continue;
                 if(iitr.find('|') != std::string::npos)
@@ -647,6 +656,28 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     // return the help
     if(m_help_enabled && exists("help"))
         return arg_result("help requested");
+
+    if(m_serialize_enabled && exists("serialize-argparser"))
+    {
+        auto _fname = get<std::string>("serialize-argparser");
+        auto _ss    = std::stringstream{};
+        {
+            cereal::PrettyJSONOutputArchive _ar{ _ss };
+            _ar.setNextName("timemory");
+            _ar.startNode();
+            _ar(cereal::make_nvp("argument_parser", *this));
+            _ar.finishNode();
+        }
+        std::ofstream _ofs{};
+        if(filepath::open(_ofs, _fname))
+        {
+            operation::file_output_message<argument_parser>{}(
+                _fname, std::string{ "argument_parser" });
+            _ofs << _ss.str() << "\n";
+        }
+        _ofs.close();
+        std::exit(EXIT_SUCCESS);
+    }
 
     return arg_result{};
 }
