@@ -36,6 +36,7 @@
 #    include <cstring>
 #    include <ctime>
 #    include <fcntl.h>
+#    include <functional>
 #    include <grp.h>
 #    include <limits>
 #    include <ostream>
@@ -87,7 +88,12 @@ TIMEMORY_UTILITY_LINKAGE(void)  // NOLINT
 restore_privileges();
 //
 TIMEMORY_UTILITY_LINKAGE(strvec_t)
-read_fork(TIMEMORY_PIPE* proc, int max_counter = 50);
+read_fork(TIMEMORY_PIPE* proc, std::string_view _remove_chars,
+          std::string_view                             _delimiters,
+          const std::function<bool(std::string_view)>& _filter, int max_counter = 50);
+//
+TIMEMORY_UTILITY_LINKAGE(strvec_t)
+read_ldd_fork(TIMEMORY_PIPE* proc, int max_counter = 50);
 //
 TIMEMORY_UTILITY_LINKAGE(std::ostream&)
 flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter = 0);

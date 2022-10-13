@@ -326,8 +326,9 @@ popen(const char* path, char** argv, char** envp)
 int
 pclose(TIMEMORY_PIPE* p)
 {
-    int   status = p->child_status;
-    pid_t pid    = -1;
+    int   _status    = p->child_status;
+    auto  _child_pid = p->child_pid;
+    pid_t _pid       = -1;
 
     // clean up memory
     auto _clean = [&]() {
@@ -336,60 +337,60 @@ pclose(TIMEMORY_PIPE* p)
         if(p->write_fd)
             fclose(p->write_fd);
         delete p;
+        p = nullptr;
     };
 
-    if(status != std::numeric_limits<int>::max())
+    if(_status != std::numeric_limits<int>::max())
     {
         _clean();
-        if(WIFEXITED(status))
+        if(WIFEXITED(_status))
         {
-            // printf("process %i exited, status=%d\n", p->child_pid,
-            // WEXITSTATUS(status));
             return EXIT_SUCCESS;
         }
-        else if(WIFSIGNALED(status))
+        else if(WIFSIGNALED(_status))
         {
-            printf("process %i killed by signal %d\n", p->child_pid, WTERMSIG(status));
+            printf("process %i killed by signal %d\n", _child_pid, WTERMSIG(_status));
             return EXIT_FAILURE;
         }
-        else if(WIFSTOPPED(status))
+        else if(WIFSTOPPED(_status))
         {
-            printf("process %i stopped by signal %d\n", p->child_pid, WSTOPSIG(status));
-            // return EXIT_FAILURE;
+            printf("process %i stopped by signal %d\n", _child_pid, WSTOPSIG(_status));
         }
-        else if(WIFCONTINUED(status))
+        else if(WIFCONTINUED(_status))
         {
-            printf("process %i continued\n", p->child_pid);
-            // return EXIT_FAILURE;
+            printf("process %i continued\n", _child_pid);
         }
     }
     else
     {
-        if(p->child_pid != -1)
+        if(_child_pid != -1)
         {
             do
             {
-                pid = waitpid(p->child_pid, &status, 0);
-            } while(pid == -1 && errno == EINTR);
+                _pid = waitpid(_child_pid, &_status, 0);
+            } while(_pid == -1 && errno == EINTR);
         }
     }
     _clean();
-    if(pid != -1 && WIFEXITED(status))
-        return WEXITSTATUS(status);
-    return (pid == -1 ? -1 : 0);
+    if(_pid != -1 && WIFEXITED(_status))
+        return WEXITSTATUS(_status);
+    return (_pid == -1 ? -1 : 0);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 strvec_t
-read_fork(TIMEMORY_PIPE* proc, int max_counter)
+read_fork(TIMEMORY_PIPE* proc, std::string_view _remove_chars,
+          std::string_view                             _delimiters,
+          const std::function<bool(std::string_view)>& _filter, int max_counter)
 {
-    int      counter = 0;
-    strvec_t linked_libraries;
+    int      _counter = 0;
+    strvec_t _lines;
 
     while(proc)
     {
-        char  buffer[4096];
+        char buffer[4096];
+        memset(buffer, '\0', sizeof(buffer) * sizeof(char));
         auto* ret = fgets(buffer, 4096, proc->read_fd);
         if(ret == nullptr || strlen(buffer) == 0)
         {
@@ -401,23 +402,36 @@ read_fork(TIMEMORY_PIPE* proc, int max_counter)
                 else
                     break;
             }
-            if(counter++ > max_counter)
+            if(_counter++ > max_counter)
                 break;
             continue;
         }
-        auto line = string_t(buffer);
-        auto loc  = string_t::npos;
-        while((loc = line.find_first_of("\n\t")) != string_t::npos)
-            line.erase(loc, 1);
-        auto delim = delimit(line, " \n\t=>");
+        auto line = std::string{ buffer };
+        if(!_remove_chars.empty())
+        {
+            auto loc = std::string::npos;
+            while((loc = line.find_first_of(_remove_chars)) != std::string::npos)
+                line.erase(loc, 1);
+        }
+        auto delim = delimit(line, _delimiters);
         for(const auto& itr : delim)
         {
-            if(itr.find('/') == 0)
-                linked_libraries.push_back(itr);
+            if(_filter(itr))
+                _lines.emplace_back(itr);
         }
     }
 
-    return linked_libraries;
+    return _lines;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+strvec_t
+read_ldd_fork(TIMEMORY_PIPE* proc, int max_counter)
+{
+    return read_fork(
+        proc, "\n\t", " \n\t=>", [](std::string_view itr) { return itr.find('/') == 0; },
+        max_counter);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -425,7 +439,7 @@ read_fork(TIMEMORY_PIPE* proc, int max_counter)
 std::ostream&
 flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter)
 {
-    int counter = 0;
+    int _counter = 0;
     while(proc)
     {
         char  buffer[4096];
@@ -440,11 +454,11 @@ flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter)
                 else
                     break;
             }
-            if(counter++ > max_counter)
+            if(_counter++ > max_counter)
                 break;
             continue;
         }
-        os << string_t{ buffer } << std::flush;
+        os << std::string{ buffer } << std::flush;
     }
 
     return os;

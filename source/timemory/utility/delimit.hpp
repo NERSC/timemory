@@ -117,7 +117,7 @@ template <typename ContainerT = std::vector<std::string>,
           typename PredicateT = std::function<std::string(const std::string&)>>
 inline ContainerT
 delimit(
-    const std::string& line, const std::string& delimiters = "\"',;: ",
+    const std::string& line, std::string_view delimiters = "\"',;: ",
     PredicateT&& predicate = [](const std::string& s) -> std::string { return s; })
 {
     size_t     _beginp = 0;  // position that is the beginning of the new string
