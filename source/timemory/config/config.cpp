@@ -38,6 +38,7 @@
 #    include "timemory/mpl/filters.hpp"
 #    include "timemory/settings/declaration.hpp"
 #    include "timemory/settings/types.hpp"
+#    include "timemory/signals/signal_handlers.hpp"
 #    include "timemory/utility/argparse.hpp"
 #    include "timemory/utility/delimit.hpp"
 #    include "timemory/utility/signals.hpp"

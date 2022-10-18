@@ -82,7 +82,8 @@
             {                                                                            \
                 static std::mutex            _mtx{};                                     \
                 std::unique_lock<std::mutex> _lk{ _mtx };                                \
-                std::cerr << __VA_ARGS__ << std::endl;                                   \
+                std::cerr << "[" << __FILE__ << ":" << __LINE__ << "][" << __FUNCTION__  \
+                          << "] " << __VA_ARGS__ << std::endl;                           \
             }                                                                            \
             std::exit(EXIT_FAILURE);                                                     \
         }

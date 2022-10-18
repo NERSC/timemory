@@ -27,32 +27,61 @@
 #include "timemory/utility/filepath.hpp"
 #include "timemory/utility/procfs/maps.hpp"
 
+#include <cstdlib>
+
 namespace tim
 {
 namespace unwind
 {
 void
-processed_entry::construct(processed_entry& _v, file_map_t* _files)
+processed_entry::construct(processed_entry& _v, file_map_t* _files, bool _prefer_dlinfo)
 {
     _v.info = dlinfo::construct(_v.address - _v.offset);
 
-    auto _map = procfs::find_map(_v.address);
-    if(!_map.is_empty() && !_map.pathname.empty())
-    {
-        _v.location     = _map.pathname;
-        _v.line_address = (_v.address - _map.start_address) + _map.offset;
-    }
+    auto _dlinfo_update = [&](bool _realpath) {
+        if(_realpath)
+        {
+            _v.location = filepath::realpath(std::string{ _v.info.location.name });
+            _v.line_address =
+                (_v.info.symbol.address() - _v.info.location.address()) + _v.offset;
+        }
+        else
+        {
+            _v.location = std::string{ _v.info.location.name };
+            _v.line_address =
+                (_v.info.symbol.address() - _v.info.location.address()) + _v.offset;
+        }
+    };
 
-    if(_v.info && (_map.is_empty() || _v.location.empty()))
+    auto _procfs_update = [&]() {
+        auto _map = procfs::find_map(_v.address);
+        if(!_map.is_empty() && !_map.pathname.empty())
+        {
+            _v.location     = _map.pathname;
+            _v.line_address = (_v.address - _map.start_address) + _map.offset;
+        }
+        return _map.is_empty();
+    };
+
+    if(_prefer_dlinfo)
     {
-        _v.location = std::string{ _v.info.location.name };
-        _v.line_address =
-            (_v.info.symbol.address() - _v.info.location.address()) + _v.offset;
+        if(_v.info && _v.location.empty())
+            _dlinfo_update(true);
+
+        if(_v.location.empty())
+            _procfs_update();
+    }
+    else
+    {
+        auto _empty_map = _procfs_update();
+        if(_v.info && (_empty_map || _v.location.empty()))
+            _dlinfo_update(false);
     }
 
     if(_files != nullptr && !_v.location.empty() && filepath::exists(_v.location))
     {
         auto _get_file = [&_files](const auto& _val) {
+            auto _val_real = filepath::realpath(_val);
             if(_files->find(_val) == _files->end())
                 _files->emplace(_val, std::make_shared<bfd_file>(_val));
             return _files->at(_val);

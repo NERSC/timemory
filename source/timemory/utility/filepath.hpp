@@ -31,6 +31,7 @@
 
 #pragma once
 
+#include "timemory/log/macros.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/launch_process.hpp"
 #include "timemory/utility/macros.hpp"
@@ -50,6 +51,26 @@
 #elif defined(TIMEMORY_WINDOWS)
 #    include <direct.h>
 #    include <shlwapi.h>
+#endif
+
+#if defined(TIMEMORY_LINUX)
+#    include <linux/limits.h>
+#endif
+
+#if defined(TIMEMORY_WINDOWS) && !defined(PATH_MAX)
+#    if defined(MAX_PATH)
+#        define PATH_MAX MAX_PATH
+#    else
+#        define PATH_MAX 260
+#    endif
+#endif
+
+#if !defined(TIMEMORY_PATH_MAX)
+#    if defined(PATH_MAX)
+#        define TIMEMORY_PATH_MAX PATH_MAX
+#    else
+#        define TIMEMORY_PATH_MAX 4096
+#    endif
 #endif
 
 namespace tim
@@ -294,6 +315,44 @@ exists(std::string _fname)
 #else
     return PathFileExists(_fname.c_str());
 #endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t MaxLen = TIMEMORY_PATH_MAX>
+inline std::string
+realpath(const std::string& _relpath, std::string* _resolved = nullptr)
+{
+    auto _len = std::min<size_t>(_relpath.length(), TIMEMORY_PATH_MAX);
+
+    char _buffer[TIMEMORY_PATH_MAX];
+    memset(_buffer, '\0', sizeof(_buffer) * sizeof(char));
+    strncpy(_buffer, _relpath.data(), _len);
+
+#if defined(TIMEMORY_UNIX)
+    if(::realpath(_relpath.c_str(), _buffer) == nullptr)
+    {
+        auto _err = errno;
+        TIMEMORY_PRINTF_WARNING(stderr, "realpath failed for '%s' :: %s\n", _relpath,
+                                strerror(_err));
+    }
+#else
+    if(_fullpath(_buffer, _relpath.c_str(), _len) == nullptr)
+    {
+        TIMEMORY_PRINTF_WARNING(stderr, "fullpath failed for '%s'\n");
+    }
+#endif
+
+    if(_resolved)
+    {
+        _resolved->clear();
+        _len = strnlen(_buffer, TIMEMORY_PATH_MAX);
+        _resolved->resize(_len);
+        for(size_t i = 0; i < _len; ++i)
+            (*_resolved)[i] = _buffer[i];
+    }
+
+    return (_resolved) ? *_resolved : std::string{ _buffer };
 }
 }  // namespace filepath
 }  // namespace tim

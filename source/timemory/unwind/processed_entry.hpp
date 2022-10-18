@@ -53,7 +53,8 @@ struct processed_entry
     dlinfo         info         = {};  // dynamic library info
     addr2line_info lineinfo     = {};  // address-to-line info
 
-    static void construct(processed_entry&, file_map_t* = nullptr);
+    static void construct(processed_entry&, file_map_t* = nullptr,
+                          bool _prefer_dlinfo = false);
 
     bool operator==(const processed_entry& _v) const;
     bool operator<(const processed_entry& _v) const;

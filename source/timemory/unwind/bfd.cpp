@@ -115,7 +115,8 @@ bfd_file::open(const std::string& _v)
     initialize_bfd();
 
     auto* _data = bfd_openr(_v.c_str(), nullptr);
-    _data->flags |= BFD_DECOMPRESS;
+    if(_data)
+        _data->flags |= BFD_DECOMPRESS;
     if(_data && bfd_check_format(_data, bfd_object) == 0)
         return nullptr;
     return _data;
@@ -124,6 +125,9 @@ bfd_file::open(const std::string& _v)
 int
 bfd_file::read_symtab()
 {
+    if(!data)
+        return bfd_error(name.c_str());
+
     bfd_boolean dynamic = FALSE;
 
     bfd* _data = static_cast<bfd*>(data);

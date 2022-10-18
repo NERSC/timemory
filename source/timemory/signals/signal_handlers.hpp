@@ -76,6 +76,12 @@ enable_signal_detection(std::initializer_list<Tp>&& _signals)
 void
 termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message);
 
+void
+termination_signal_handler(int sig, siginfo_t* sinfo, void* context);
+
+void
+update_file_maps();
+
 #else  // Not a supported architecture
 
 inline bool enable_signal_detection(signal_settings::signal_set_t) { return false; }

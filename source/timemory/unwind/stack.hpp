@@ -201,7 +201,9 @@ stack<N>::get(cache_type* _cache, bool _include_with_error) const
     auto& _files       = (_cache) ? _cache->files : _local_files;
 
     std::vector<processed_entry> _data{};
-    _data.reserve(size());
+    auto                         _sz = size();
+    if(_sz > 0)
+        _data.reserve(_sz);
     for(auto itr : *this)
     {
         if(itr)

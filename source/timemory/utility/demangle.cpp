@@ -26,6 +26,7 @@
 #define TIMEMORY_UTILITY_DEMANGLE_CPP_
 
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
 
 #if !defined(TIMEMORY_UTILITY_HEADER_MODE)
 #    include "timemory/utility/demangle.hpp"
@@ -148,7 +149,10 @@ demangle_native_backtrace(const char* cstr)
     };
 
     auto _save = std::string{ cstr };
-    auto str   = demangle(std::string(cstr));
+    if(_save.length() != strlen(cstr))
+        TIMEMORY_EXCEPTION("length != strlen: " << _save.length() << " vs. "
+                                                << strlen(cstr) << " :: " << cstr);
+    auto str = demangle(std::string{ cstr });
     if(str.empty())
         return str;
     auto beg = str.find('(');
@@ -214,7 +218,10 @@ std::string
 demangle_unw_backtrace(const char* cstr)
 {
     auto _save = std::string{ cstr };
-    auto _str  = tim::demangle(cstr);
+    if(_save.length() != strlen(cstr))
+        TIMEMORY_EXCEPTION("length != strlen: " << _save.length() << " vs. "
+                                                << strlen(cstr) << " :: " << cstr);
+    auto _str = demangle(cstr);
     if(_str.empty())
         return _str;
     auto _beg = _str.find("_Z");
