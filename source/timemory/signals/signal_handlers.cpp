@@ -25,6 +25,7 @@
 
 #ifndef TIMEMORY_SIGNALS_SIGNAL_HANDLERS_CPP_
 #define TIMEMORY_SIGNALS_SIGNAL_HANDLERS_CPP_
+#include "timemory/variadic/macros.hpp"
 #endif
 
 #ifndef TIMEMORY_SIGNALS_SIGNAL_HANDLERS_HPP_
@@ -232,8 +233,13 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
                  TIMEMORY_PROJECT_NAME, process::get_id(), threading::get_id(), sig);
     }
 
+    const auto* _src_color   = (&os == &std::cerr) ? log::color::source() : "";
+    const auto* _fatal_color = (&os == &std::cerr) ? log::color::fatal() : "";
+
+    (void) _src_color;
+
     os << "\n";
-    auto message = tim::log::stream(os, log::color::fatal());
+    auto message = tim::log::stream(os, _fatal_color);
     message << _label;
 
     {
@@ -292,7 +298,97 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
         {
             if(strlen(bt.at(i)) == 0)
                 continue;
-            message << prefix << "[" << i << '/' << ntot << "]> " << bt.at(i) << "\n";
+            message << prefix << "[" << i << '/' << ntot << "] " << bt.at(i) << "\n";
+        }
+    }
+
+    /*
+    struct template_data
+    {
+        std::string      value  = {};
+        std::string_view name   = {};
+        size_t           pos    = std::string::npos;
+        size_t           length = 0;
+
+        template_data(std::string&& _v, std::string_view _name)
+        : value{ std::move(_v) }
+        , name{ _name }
+        {
+            pos       = value.find(name);
+            size_t _n = 0;
+            if(pos != std::string::npos)
+            {
+                for(size_t i = pos + name.length(); i < value.length(); ++i)
+                {
+                    if(value.at(i) == '<')
+                        ++_n;
+                    else if(_n > 0 && value.at(i) == '>')
+                        --_n;
+                    if(_n == 0)
+                    {
+                        length = i - pos + 1;
+                        break;
+                    }
+                }
+            }
+        }
+
+        operator bool() const
+        {
+            return !name.empty() && pos > 2 && pos < value.length() && length > 0;
+        }
+    };*/
+
+    auto _replace = [](std::string _v, std::string_view _old, std::string_view _new) {
+        // start at 1 to avoid replacing when it starts with string, e.g. do not replace:
+        //      std::__cxx11::basic_string<...>::~basic_string
+        auto _pos = size_t{ 1 };
+        while((_pos = _v.find(_old, _pos)) != std::string::npos)
+            _v = _v.replace(_pos, _old.length(), _new);
+        return _v;
+    };
+
+    bool _do_patch =
+        std::getenv(TIMEMORY_SETTINGS_PREFIX "BACKTRACE_DISABLE_PATCH") == nullptr;
+    auto _patch_demangled = [_replace, _do_patch](std::string _v) {
+        _v =
+            (_do_patch)
+                ? _replace(
+                      _replace(_replace(_replace(std::move(_v), demangle<std::string>(),
+                                                 "std::string"),
+                                        demangle<std::string_view>(), "std::string_view"),
+                               " > >", ">>"),
+                      "> >", ">>")
+                : _v;
+        return _v;
+        /*
+        auto _data = template_data{ std::move(_v), "std::allocator" };
+        do
+        {
+            _data = template_data{ std::move(_data.value), "std::allocator" };
+            if(_data)
+                _data.value.replace(_data.pos, _data.length, "ALLOCATOR");
+        } while(_data);
+        return _data.value;*/
+    };
+
+    {
+        size_t ntot = 0;
+        auto   bt   = get_demangled_native_backtrace<64>();
+        for(const auto& itr : bt)
+        {
+            if(itr.empty())
+                continue;
+            ++ntot;
+        }
+
+        message << "\nBacktrace (demangled):\n";
+        for(size_t i = 0; i < bt.size(); ++i)
+        {
+            if(bt.at(i).empty())
+                continue;
+            message << prefix << "[" << i << '/' << ntot << "] "
+                    << _patch_demangled(bt.at(i)) << "\n";
         }
     }
 
@@ -312,31 +408,70 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
         {
             if(bt.at(i).empty())
                 continue;
-            message << prefix << "[" << i << '/' << ntot << "]> " << bt.at(i) << "\n";
+            message << prefix << "[" << i << '/' << ntot << "] "
+                    << _patch_demangled(bt.at(i)) << "\n";
         }
     }
+#    if defined(TIMEMORY_USE_BFD)
+    {
+        unwind::set_bfd_verbose(8);
+        struct bt_line_info
+        {
+            bool        first    = false;
+            int64_t     index    = 0;
+            int64_t     line     = 0;
+            std::string name     = {};
+            std::string location = {};
+        };
+        size_t ntot   = 0;
+        auto   _bt    = get_unw_stack<64, 2>().get(nullptr, true);
+        auto   _lines = std::vector<bt_line_info>{};
+        for(const auto& itr : _bt)
+        {
+            int64_t _idx = ntot++;
+            if(itr.lineinfo.found && !itr.lineinfo.lines.empty())
+            {
+                bool _first = true;
+                // make sure the function at the top is the one that
+                // is shown in the other backtraces
+                auto _line_info = itr.lineinfo.lines;
+                std::reverse(_line_info.begin(), _line_info.end());
+                for(const auto& litr : _line_info)
+                {
+                    _lines.emplace_back(bt_line_info{
+                        _first, _idx, int64_t{ litr.line },
+                        _patch_demangled(demangle(litr.name)), demangle(litr.location) });
+                    _first = false;
+                }
+            }
+            else
+            {
+                _lines.emplace_back(bt_line_info{ true, _idx, int64_t{ 0 },
+                                                  _patch_demangled(demangle(itr.name)),
+                                                  demangle(itr.location) });
+            }
+        }
+
+        message << "\nBacktrace (lineinfo):\n";
+        for(const auto& itr : _lines)
+        {
+            auto _get_loc = [&]() -> std::string {
+                auto&& _loc = (itr.location.empty()) ? std::string{ "??" } : itr.location;
+                return (itr.line == 0) ? TIMEMORY_JOIN(":", _loc, "?")
+                                       : TIMEMORY_JOIN(":", _loc, itr.line);
+            };
+
+            if(itr.first)
+                message << prefix << "[" << itr.index << '/' << ntot << "]\n";
+
+            message << "    " << _src_color << "[" << _get_loc() << "]" << _fatal_color
+                    << " " << itr.name << "\n";
+        }
+    }
+#    endif
 #endif
 
-    {
-        size_t ntot = 0;
-        auto   bt   = get_demangled_native_backtrace<64>();
-        for(const auto& itr : bt)
-        {
-            if(itr.empty())
-                continue;
-            ++ntot;
-        }
-
-        message << "\nBacktrace (demangled):\n";
-        for(size_t i = 0; i < bt.size(); ++i)
-        {
-            if(bt.at(i).empty())
-                continue;
-            message << prefix << "[" << i << '/' << ntot << "]> " << bt.at(i) << "\n";
-        }
-    }
-
-    os << std::flush;
+    os << "\n" << std::flush;
 
     try
     {
