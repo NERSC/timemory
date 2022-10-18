@@ -3,8 +3,8 @@ file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 timemory_build_intermediate_library(
     USE_INTERFACE INSTALL_SOURCE
-    NAME settings
-    TARGET settings
+    NAME core
+    TARGET core
     CATEGORY GLOBAL
     FOLDER components
     HEADERS ${header_files}

@@ -48,26 +48,20 @@ if(NOT timemory_MAIN_PROJECT AND TIMEMORY_SOURCE_TREE_HEADERS)
                    ${CMAKE_CURRENT_LIST_DIR}/version.h COPYONLY)
 endif()
 
-file(
-    GLOB_RECURSE header_files ${CMAKE_CURRENT_SOURCE_DIR}/utility/*.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/hash/*.hpp ${CMAKE_CURRENT_SOURCE_DIR}/environment/*.hpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.hpp ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.hpp)
-file(
-    GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/utility/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/hash/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/environment/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/settings/*.cpp ${CMAKE_CURRENT_SOURCE_DIR}/plotting/*.cpp)
-
 timemory_build_intermediate_library(
-    USE_INTERFACE INSTALL_SOURCE
+    USE_INTERFACE
     NAME core
     TARGET core
     CATEGORY GLOBAL
     FOLDER components
-    HEADERS ${header_files}
-    SOURCES ${source_files}
     DEPENDS timemory::timemory-libunwind)
 
 # core
+add_subdirectory(environment)
+add_subdirectory(hash)
+add_subdirectory(utility)
+add_subdirectory(settings)
+add_subdirectory(plotting)
 add_subdirectory(signals)
 add_subdirectory(unwind)
 
