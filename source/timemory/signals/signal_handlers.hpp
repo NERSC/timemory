@@ -49,11 +49,12 @@ namespace tim
 namespace signals
 {
 //
-bool enable_signal_detection(
-    signal_settings::signal_set_t = signal_settings::get_default());
+bool
+enable_signal_detection(signal_settings::signal_set_t = signal_settings::get_default(),
+                        const signal_settings::signal_function_t& = {});
 
-void
-disable_signal_detection();
+void disable_signal_detection(
+    signal_settings::signal_set_t = signal_settings::get_active());
 
 void
 update_signal_detection(const signal_settings::signal_set_t& _signals);
@@ -94,9 +95,7 @@ enable_signal_detection(std::initializer_list<Tp>&&)
     return false;
 }
 
-inline void
-disable_signal_detection()
-{}
+inline void disable_signal_detection(signal_settings::signal_set_t = {}) {}
 #endif
 //
 //--------------------------------------------------------------------------------------//

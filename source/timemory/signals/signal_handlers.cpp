@@ -25,7 +25,10 @@
 
 #ifndef TIMEMORY_SIGNALS_SIGNAL_HANDLERS_CPP_
 #define TIMEMORY_SIGNALS_SIGNAL_HANDLERS_CPP_
+#include "timemory/signals/signal_settings.hpp"
 #include "timemory/variadic/macros.hpp"
+
+#include <bits/types/siginfo_t.h>
 #endif
 
 #ifndef TIMEMORY_SIGNALS_SIGNAL_HANDLERS_HPP_
@@ -65,8 +68,6 @@ namespace tim
 {
 namespace signals
 {
-using term_sigaction_t = struct sigaction;
-
 TIMEMORY_SIGNALS_INLINE
 void
 termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */)
@@ -119,20 +120,6 @@ termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */)
 }
 
 //--------------------------------------------------------------------------------------//
-
-TIMEMORY_SIGNALS_INLINE term_sigaction_t&
-                        tim_signal_termaction()
-{
-    static term_sigaction_t _v = {};
-    return _v;
-}
-
-TIMEMORY_SIGNALS_INLINE term_sigaction_t&
-                        tim_signal_oldaction()
-{
-    static term_sigaction_t _v = {};
-    return _v;
-}
 
 #if defined(TIMEMORY_USE_BFD)
 
@@ -569,7 +556,8 @@ update_file_maps()
 
 TIMEMORY_SIGNALS_INLINE
 bool
-enable_signal_detection(signal_settings::signal_set_t operations)
+enable_signal_detection(signal_settings::signal_set_t             _sys_signals,
+                        const signal_settings::signal_function_t& _func)
 {
     if(!signal_settings::allow())
     {
@@ -581,67 +569,79 @@ enable_signal_detection(signal_settings::signal_set_t operations)
     // call now to minimize allocations when delivering signals
     update_file_maps();
 
-    // don't re-enable
-    if(signal_settings::is_active())
-        return false;
-
-    if(operations.empty())
+    if(_sys_signals.empty())
     {
-        operations = signal_settings::get_enabled();
+        _sys_signals = signal_settings::get_enabled();
     }
     else
     {
-        auto _enabled = signal_settings::get_enabled();
-        if(!_enabled.empty())
-        {
-            for(const auto& itr : _enabled)
-                signal_settings::disable(itr);
-        }
-        signal_settings::check_environment();
-        for(const auto& itr : operations)
+        for(const auto& itr : _sys_signals)
             signal_settings::enable(itr);
+        signal_settings::check_environment();
+        for(auto itr : signal_settings::get_disabled())
+        {
+            if(_sys_signals.count(itr) > 0)
+                _sys_signals.erase(itr);
+        }
     }
 
-    std::set<int> _signals;
-    for(auto operation : operations)
-        _signals.insert(static_cast<int>(operation));
-
-    sigfillset(&tim_signal_termaction().sa_mask);
-    for(const auto& itr : _signals)
-        sigdelset(&tim_signal_termaction().sa_mask, itr);
-    tim_signal_termaction().sa_sigaction = termination_signal_handler;
-    tim_signal_termaction().sa_flags     = SA_SIGINFO;
-    for(const auto& itr : _signals)
+    for(auto itr : _sys_signals)
     {
-        sigaction(itr, &tim_signal_termaction(), &tim_signal_oldaction());
+        auto  _signum = static_cast<int>(itr);
+        auto* _entry  = signal_settings::get(itr);
+        if(!_entry)
+            continue;
+        if(_entry->active)
+            disable_signal_detection({ itr });
+        TIMEMORY_PRINTF_WARNING(stderr, "Enabling signal detection for %i...\n", _signum);
+        if(_func)
+            _entry->functor = _func;
+
+        auto _action = signal_settings::sigaction_t{};
+        auto _former = signal_settings::sigaction_t{};
+
+        sigfillset(&_action.sa_mask);
+        sigdelset(&_action.sa_mask, _signum);
+        _action.sa_flags     = SA_SIGINFO | SA_RESTART;
+        _action.sa_sigaction = termination_signal_handler;
+        sigaction(_signum, &_action, &_former);
+
+        _entry->active   = true;
+        _entry->current  = _action;
+        _entry->previous = _former;
     }
-    signal_settings::set_active(true);
 
     return true;
 }
 
 TIMEMORY_SIGNALS_INLINE void
-disable_signal_detection()
+disable_signal_detection(signal_settings::signal_set_t _sys_signals)
 {
-    // don't re-disable
-    if(!signal_settings::is_active())
-        return;
+    if(_sys_signals.empty())
+        _sys_signals = signal_settings::get_active();
 
-    sigemptyset(&tim_signal_termaction().sa_mask);
-    tim_signal_termaction().sa_handler = SIG_DFL;
+    for(auto itr : _sys_signals)
+    {
+        auto  _signum = static_cast<int>(itr);
+        auto* _entry  = signal_settings::get(itr);
+        if(!_entry)
+            continue;
+        if(!_entry->active)
+            continue;
 
-    auto _disable = [](const signal_settings::signal_set_t& _set) {
-        for(auto itr : _set)
-        {
-            int _itr = static_cast<int>(itr);
-            sigaction(_itr, &tim_signal_termaction(), nullptr);
-        }
-    };
+        TIMEMORY_PRINTF_WARNING(stderr, "Disabling signal detection for %i...\n",
+                                _signum);
 
-    _disable(signal_settings::get_enabled());
-    _disable(signal_settings::get_disabled());
+        auto _action = signal_settings::sigaction_t{};
 
-    signal_settings::set_active(false);
+        sigemptyset(&_action.sa_mask);
+        _action.sa_flags     = {};
+        _action.sa_sigaction = [](int, siginfo_t*, void*) {};
+        _action.sa_handler   = SIG_DFL;
+        sigaction(_signum, &_action, nullptr);
+        _entry->active   = false;
+        _entry->previous = _action;
+    }
 }
 
 TIMEMORY_SIGNALS_INLINE void

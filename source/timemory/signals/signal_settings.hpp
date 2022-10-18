@@ -43,6 +43,7 @@
 #include <cfenv>
 #include <csignal>
 #include <functional>
+#include <map>
 #include <set>
 #include <string>
 #include <tuple>
@@ -57,16 +58,18 @@ public:
     using signal_set_t      = std::set<sys_signal>;
     using signal_function_t = std::function<void(int)>;
     using descript_tuple_t  = std::tuple<std::string, int, std::string>;
+    using sigaction_t       = struct sigaction;
 
 public:
     static bool&            allow();
-    static bool             is_active();
-    static void             set_active(bool val);
+    static bool             is_active(int = -1);
+    static bool             is_active(sys_signal);
     static void             enable(const sys_signal&);
     static void             disable(const sys_signal&);
     static std::string      str(const sys_signal&);
     static std::string      str(bool report_disabled = false);
     static void             check_environment();
+    static bool             set_action(sys_signal, signal_function_t _f);
     static void             set_exit_action(signal_function_t _f);
     static void             exit_action(int errcode);
     static descript_tuple_t get_info(const sys_signal&);
@@ -74,6 +77,7 @@ public:
     static signal_set_t get_enabled();
     static signal_set_t get_disabled();
     static signal_set_t get_default();
+    static signal_set_t get_active();
     static bool&        enable_all();
     static bool&        disable_all();
 
@@ -87,7 +91,14 @@ protected:
         signals_data& operator=(const signals_data&) = default;
         signals_data& operator=(signals_data&&) = default;
 
-        bool              signals_active    = false;
+        struct entry
+        {
+            bool              active   = false;
+            signal_function_t functor  = {};
+            sigaction_t       current  = {};
+            sigaction_t       previous = {};
+        };
+
         bool              enable_all        = false;
         bool              disable_all       = false;
         signal_function_t signals_exit_func = [](int) {};
@@ -101,9 +112,10 @@ protected:
             sys_signal::ProfileAlarm, sys_signal::User1,     sys_signal::User2
         };
         // default signals to catch
-        signal_set_t signals_default = { sys_signal::Quit, sys_signal::Illegal,
+        signal_set_t signals_default        = { sys_signal::Quit, sys_signal::Illegal,
                                          sys_signal::Abort, sys_signal::Bus,
                                          sys_signal::SegFault };
+        std::map<sys_signal, entry> entries = {};
     };
 
     static signals_data& f_signals()
@@ -111,6 +123,9 @@ protected:
         static signal_settings::signals_data instance{};
         return instance;
     }
+
+public:
+    static auto* get(sys_signal _v) { return &f_signals().entries[_v]; }
 };
 }  // namespace signals
 }  // namespace tim

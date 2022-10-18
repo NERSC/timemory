@@ -36,6 +36,7 @@
 
 #include "timemory/environment/declaration.hpp"
 #include "timemory/settings/macros.hpp"
+#include "timemory/signals/types.hpp"
 #include "timemory/utility/declaration.hpp"
 
 #include <cfenv>
@@ -268,9 +269,24 @@ signal_settings::str(bool report_disabled)
 
 TIMEMORY_SIGNALS_INLINE
 bool
-signal_settings::is_active()
+signal_settings::is_active(int _v)
 {
-    return f_signals().signals_active;
+    if(_v < 0)
+    {
+        for(auto& itr : f_signals().entries)  // NOLINT
+            if(itr.second.active)
+                return true;
+        return false;
+    }
+    return is_active(static_cast<sys_signal>(_v));
+}
+
+TIMEMORY_SIGNALS_INLINE
+bool
+signal_settings::is_active(sys_signal _v)
+{
+    auto itr = f_signals().entries.find(_v);
+    return (itr == f_signals().entries.end()) ? false : itr->second.active;
 }
 
 TIMEMORY_SIGNALS_INLINE bool&
@@ -295,10 +311,16 @@ signal_settings::disable_all()
 }
 
 TIMEMORY_SIGNALS_INLINE
-void
-signal_settings::set_active(bool val)
+bool
+signal_settings::set_action(sys_signal _v, signal_function_t _f)
 {
-    f_signals().signals_active = val;
+    auto& itr = f_signals().entries[_v];
+    if(!itr.active)
+    {
+        itr.functor = std::move(_f);
+        return true;
+    }
+    return false;
 }
 
 TIMEMORY_SIGNALS_INLINE
@@ -310,9 +332,14 @@ signal_settings::set_exit_action(signal_function_t _f)
 
 TIMEMORY_SIGNALS_INLINE
 void
-signal_settings::exit_action(int errcode)
+signal_settings::exit_action(int _v)
 {
-    f_signals().signals_exit_func(errcode);
+    auto& _entries = f_signals().entries;
+    auto  itr      = _entries.find(static_cast<sys_signal>(_v));
+    if(itr != _entries.end() && itr->second.functor)
+        itr->second.functor(_v);
+    else
+        f_signals().signals_exit_func(_v);
 }
 
 TIMEMORY_SIGNALS_INLINE
@@ -334,6 +361,17 @@ signal_settings::signal_set_t
 signal_settings::get_default()
 {
     return f_signals().signals_default;
+}
+
+TIMEMORY_SIGNALS_INLINE
+signal_settings::signal_set_t
+signal_settings::get_active()
+{
+    auto _v = signal_set_t{};
+    for(auto& itr : f_signals().entries)
+        if(itr.second.active)
+            _v.emplace(itr.first);
+    return _v;
 }
 }  // namespace signals
 }  // namespace tim
