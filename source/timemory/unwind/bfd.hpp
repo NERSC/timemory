@@ -38,6 +38,9 @@ namespace unwind
 int
 bfd_error(const char* string);
 
+int
+bfd_message(int _lvl, std::string_view);
+
 void
 set_bfd_verbose(int);
 

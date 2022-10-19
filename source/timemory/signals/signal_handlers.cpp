@@ -25,11 +25,9 @@
 
 #ifndef TIMEMORY_SIGNALS_SIGNAL_HANDLERS_CPP_
 #define TIMEMORY_SIGNALS_SIGNAL_HANDLERS_CPP_
-#include "timemory/signals/signal_settings.hpp"
-#include "timemory/variadic/macros.hpp"
-
-#include <bits/types/siginfo_t.h>
 #endif
+
+#include "timemory/defines.h"
 
 #ifndef TIMEMORY_SIGNALS_SIGNAL_HANDLERS_HPP_
 #include "timemory/signals/signal_handlers.hpp"
@@ -44,6 +42,8 @@
 #include "timemory/defines.h"
 #include "timemory/log/color.hpp"
 #include "timemory/log/logger.hpp"
+#include "timemory/signals/signal_settings.hpp"
+#include "timemory/unwind/bfd.hpp"
 #include "timemory/unwind/processed_entry.hpp"
 #include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/declaration.hpp"
@@ -51,6 +51,7 @@
 #include "timemory/utility/filepath.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/procfs/maps.hpp"
+#include "timemory/variadic/macros.hpp"
 
 #include <atomic>
 #include <cfenv>
@@ -529,6 +530,7 @@ TIMEMORY_SIGNALS_INLINE
 void
 update_file_maps()
 {
+#if defined(TIMEMORY_USE_BFD)
     auto& _maps = procfs::get_maps(process::get_id(), true);
     for(const auto& itr : _maps)
     {
@@ -539,7 +541,9 @@ update_file_maps()
             auto _add_file = [&_files](const auto& _val) {
                 if(_files.find(_val) == _files.end())
                 {
-                    TIMEMORY_PRINTF(stderr, "Reading '%s'...\n", _val);
+                    std::stringstream _msg{};
+                    _msg << "Reading '" << _val << "'...";
+                    unwind::bfd_message(2, _msg.str());
                     _files.emplace(_val, std::make_shared<unwind::bfd_file>(_val));
                     auto _val_real = filepath::realpath(_val);
                     if(_val != _val_real)
@@ -550,6 +554,7 @@ update_file_maps()
             _add_file(_loc);
         }
     }
+#endif
 }
 
 //--------------------------------------------------------------------------------------//
@@ -593,7 +598,6 @@ enable_signal_detection(signal_settings::signal_set_t             _sys_signals,
             continue;
         if(_entry->active)
             disable_signal_detection({ itr });
-        TIMEMORY_PRINTF_WARNING(stderr, "Enabling signal detection for %i...\n", _signum);
         if(_func)
             _entry->functor = _func;
 
@@ -628,9 +632,6 @@ disable_signal_detection(signal_settings::signal_set_t _sys_signals)
             continue;
         if(!_entry->active)
             continue;
-
-        TIMEMORY_PRINTF_WARNING(stderr, "Disabling signal detection for %i...\n",
-                                _signum);
 
         auto _action = signal_settings::sigaction_t{};
 

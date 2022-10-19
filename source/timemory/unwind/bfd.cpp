@@ -86,13 +86,35 @@ initialize_bfd()
 int
 bfd_error(const char* string)
 {
-    const char* errmsg = bfd_errmsg(bfd_get_error());
-    if(string)
-        TIMEMORY_PRINTF_WARNING(stderr, "%s: %s\n", string, errmsg);
-    else
-        TIMEMORY_PRINTF_WARNING(stderr, "%s\n", errmsg);
-
+    const auto& _instance = settings::shared_instance();
+    if(_instance && _instance->get_verbose() >= get_bfd_verbose())
+    {
+        const char* errmsg = bfd_errmsg(bfd_get_error());
+        if(string)
+            TIMEMORY_PRINTF_WARNING(stderr, "[%i][%li] BFD error: %s: %s\n",
+                                    process::get_id(), threading::get_id(), string,
+                                    errmsg);
+        else
+            TIMEMORY_PRINTF_WARNING(stderr, "[%i][%li] BFD error: %s\n",
+                                    process::get_id(), threading::get_id(), errmsg);
+    }
     return -1;
+}
+
+int
+bfd_message(int _lvl, std::string_view _msg)
+{
+    if(!_msg.empty())
+    {
+        const auto& _instance = settings::shared_instance();
+        if(_instance && _instance->get_verbose() >= get_bfd_verbose() &&
+           _instance->get_verbose() >= _lvl)
+        {
+            TIMEMORY_PRINTF_INFO(stderr, "[%i][%li] BFD info: %s\n", process::get_id(),
+                                 threading::get_id(), std::string{ _msg }.c_str());
+        }
+    }
+    return 0;
 }
 
 bfd_file::bfd_file(std::string _inp)
