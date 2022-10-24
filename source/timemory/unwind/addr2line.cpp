@@ -25,8 +25,12 @@
 #include "timemory/unwind/addr2line.hpp"
 
 #include "timemory/log/macros.hpp"
+#include "timemory/macros/os.hpp"
 
-#include <linux/limits.h>
+#if defined(TIMEMORY_LINUX)
+#    include <linux/limits.h>
+#endif
+
 #include <thread>
 
 #if defined(TIMEMORY_USE_BFD)
