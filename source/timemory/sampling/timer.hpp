@@ -47,9 +47,26 @@ namespace tim
 {
 namespace sampling
 {
-using itimerval_t  = struct itimerval;
+using itimerval_t = struct itimerval;
+using sigaction_t = struct sigaction;
+
+#if defined(TIMEMORY_MACOS)
+struct timemory_timeval
+{
+    long tv_sec  = 0;  // seconds
+    long tv_nsec = 0;  // and microseconds
+};
+
+struct timemory_itimerspec
+{
+    timemory_timeval it_interval = {};  // timer interval
+    timemory_timeval it_value    = {};  // current value
+};
+
+using itimerspec_t = timemory_itimerspec;
+#else
 using itimerspec_t = struct itimerspec;
-using sigaction_t  = struct sigaction;
+#endif
 
 inline itimerspec_t
 get_itimerspec(const itimerval_t& _val)
@@ -251,15 +268,25 @@ private:
 private:
     mutable bool m_initialized = false;
     mutable bool m_is_active   = false;
-    int          m_signal      = SIGRTMAX - 1;
-    int          m_clock_id    = CLOCK_PROCESS_CPUTIME_ID;
-    int          m_notify_id   = SIGEV_SIGNAL;
-    long         m_sys_tid     = -1;
-    int64_t      m_tim_tid     = threading::get_id();
-    double       m_freq        = 50.0;
-    double       m_wait        = 0.005;
-    itimerspec_t m_spec        = {};
-    timer_t      m_timer       = {};
+#if defined(TIMEMORY_LINUX)
+    int m_signal    = SIGRTMAX - 1;
+    int m_clock_id  = CLOCK_PROCESS_CPUTIME_ID;
+    int m_notify_id = SIGEV_SIGNAL;
+#else
+    int m_signal    = SIGPROF;
+    int m_clock_id  = 0;
+    int m_notify_id = 0;
+#endif
+    long         m_sys_tid = -1;
+    int64_t      m_tim_tid = threading::get_id();
+    double       m_freq    = 50.0;
+    double       m_wait    = 0.005;
+    itimerspec_t m_spec    = {};
+#if defined(TIMEMORY_LINUX)
+    timer_t m_timer = {};
+#else
+    int m_timer     = 0;
+#endif
 };
 //
 inline timer::timer(int _signum, int _clock_type, int _notify, double _freq,
@@ -377,6 +404,7 @@ timer::initialize()
     if(m_initialized)
         return false;
 
+#if defined(TIMEMORY_LINUX)
     struct sigevent _sigevt;
     memset(&_sigevt, 0, sizeof(_sigevt));
     _sigevt.sigev_notify          = m_notify_id;
@@ -386,15 +414,29 @@ timer::initialize()
     {
         _sigevt._sigev_un._tid = m_sys_tid;
     }
+#else
+    m_clock_id      = -1;
+    switch(m_signal)
+    {
+        case SIGALRM: m_clock_id = ITIMER_REAL; break;
+        case SIGVTALRM: m_clock_id = ITIMER_VIRTUAL; break;
+        case SIGPROF: m_clock_id = ITIMER_PROF; break;
+    }
+#endif
 
     memset(&m_spec, 0, sizeof(m_spec));
     set_delay(m_spec, m_wait);
     set_frequency(m_spec, m_freq);
 
     int _ret = 0;
+#if defined(TIMEMORY_LINUX)
     TIMEMORY_REQUIRE((_ret = timer_create(m_clock_id, &_sigevt, &m_timer)) == 0)
         << "Failed to create timer! " << timer_strerror(_ret) << " :: " << _ret << ". "
         << *this;
+#else
+    TIMEMORY_REQUIRE(m_clock_id >= 0)
+        << "Invalid clock id! Signal must be SIGALRM, SIGVTALRM, or SIGPROF on macOS.";
+#endif
 
     m_initialized = (_ret == 0);
     return true;
@@ -409,10 +451,14 @@ timer::start()
     initialize();
 
     int _ret = 0;
+#if defined(TIMEMORY_LINUX)
     TIMEMORY_REQUIRE((_ret = timer_settime(m_timer, 0, &m_spec, nullptr)) == 0)
         << "Failed to start timer " << timer_strerror(_ret) << " :: " << _ret << ". "
         << *this;
-
+#else
+    auto _itimer_val = get_itimerval(m_spec);
+    _ret             = setitimer(m_clock_id, &_itimer_val, nullptr);
+#endif
     m_is_active = (_ret == 0);
 
     const double _epsilon      = 1.0e-3;
@@ -443,6 +489,7 @@ timer::stop()
 {
     if(m_initialized)
     {
+#if defined(TIMEMORY_LINUX)
         if(m_is_active)
         {
             itimerspec_t _spec;
@@ -461,6 +508,11 @@ timer::stop()
         TIMEMORY_REQUIRE((_ret = timer_delete(m_timer)) == 0)
             << "Failed to delete timer : " << timer_strerror(_ret) << " :: " << _ret
             << ". " << *this;
+#else
+        int  _ret        = 0;
+        auto _itimer_val = get_itimerval(itimerspec_t{});
+        _ret             = setitimer(m_clock_id, &_itimer_val, nullptr);
+#endif
         m_initialized = false;
         return true;
     }
