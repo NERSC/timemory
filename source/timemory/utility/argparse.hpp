@@ -498,6 +498,10 @@ struct argument_parser
             if(!m_names.empty())
             {
                 auto _name = m_names.front();
+                // remove leading dashes
+                auto _pos = std::string::npos;
+                while((_pos = _name.find('-')) == 0)
+                    _name = _name.substr(1);
                 if(m_actions.empty())
                     m_actions.emplace_back(
                         [_name](argument_parser& _p) { _p.get<T>(_name); });
