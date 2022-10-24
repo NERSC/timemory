@@ -39,7 +39,7 @@ namespace tim
 namespace log
 {
 bool&
-colorized() TIMEMORY_ATTRIBUTE(visibility("default"));
+colorized() TIMEMORY_VISIBILITY("default");
 
 inline bool&
 colorized()

@@ -95,7 +95,7 @@ enable_signal_detection(std::initializer_list<Tp>&&)
     return false;
 }
 
-inline void disable_signal_detection(signal_settings::signal_set_t = {}) {}
+inline void disable_signal_detection(signal_settings::signal_set_t) {}
 #endif
 //
 //--------------------------------------------------------------------------------------//
