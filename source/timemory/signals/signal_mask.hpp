@@ -30,10 +30,13 @@
 
 #include <csignal>
 #include <cstdio>
-#include <pthread.h>
 #include <set>
 #include <stdexcept>
 #include <string>
+
+#if defined(TIMEMORY_UNIX)
+#    include <pthread.h>
+#endif
 
 namespace tim
 {
@@ -45,6 +48,7 @@ enum class sigmask_scope : short
     process = 1
 };
 
+#if defined(TIMEMORY_UNIX)
 inline sigset_t
 block_signals(const std::set<int>& _signals, sigmask_scope _scope)
 {
@@ -94,5 +98,6 @@ unblock_signals(const std::set<int>& _signals, sigmask_scope _scope)
 
     return _old;
 }
+#endif
 }  // namespace signals
 }  // namespace tim

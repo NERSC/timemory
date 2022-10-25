@@ -103,23 +103,19 @@ template <typename Tp, typename Up = Tp>
 TIMEMORY_INLINE Tp&
                 assign(Tp&, Up&&);
 
-template <typename Tp, typename Up = Tp,
-          enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
+template <typename Tp, typename Up>
 TIMEMORY_INLINE Tp&
                 plus(Tp&, const Up&);
 
-template <typename Tp, typename Up = Tp,
-          enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
+template <typename Tp, typename Up>
 TIMEMORY_INLINE Tp&
                 minus(Tp&, const Up&);
 
-template <typename Tp, typename Up = Tp,
-          enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
+template <typename Tp, typename Up>
 TIMEMORY_INLINE Tp&
                 multiply(Tp&, const Up&);
 
-template <typename Tp, typename Up = Tp,
-          enable_if_t<!concepts::is_null_type<Tp>::value> = 0>
+template <typename Tp, typename Up>
 TIMEMORY_INLINE Tp&
                 divide(Tp&, const Up&);
 
@@ -487,31 +483,7 @@ operator/(std::variant<Types...> lhs, const std::variant<Types...>& rhs);
     TIMEMORY_INLINE TYPE min(const TYPE&, const TYPE&) { return TYPE{}; }                \
     TIMEMORY_INLINE TYPE max(const TYPE&, const TYPE&) { return TYPE{}; }                \
     TIMEMORY_INLINE void assign(TYPE&, TYPE&&) {}                                        \
-    TIMEMORY_INLINE TYPE& plus(TYPE& lhs, const TYPE&) { return lhs; }                   \
-    TIMEMORY_INLINE TYPE& minus(TYPE& lhs, const TYPE&) { return lhs; }                  \
-    TIMEMORY_INLINE TYPE& multiply(TYPE& lhs, const TYPE&) { return lhs; }               \
-    TIMEMORY_INLINE TYPE& divide(TYPE& lhs, const TYPE&) { return lhs; }                 \
-    TIMEMORY_INLINE TYPE  percent_diff(const TYPE&, const TYPE&) { return TYPE{}; }      \
-    template <typename Up>                                                               \
-    TIMEMORY_INLINE TYPE& plus(TYPE& lhs, Up&&)                                          \
-    {                                                                                    \
-        return lhs;                                                                      \
-    }                                                                                    \
-    template <typename Up>                                                               \
-    TIMEMORY_INLINE TYPE& minus(TYPE& lhs, Up&&)                                         \
-    {                                                                                    \
-        return lhs;                                                                      \
-    }                                                                                    \
-    template <typename Up>                                                               \
-    TIMEMORY_INLINE TYPE& multiply(TYPE& lhs, Up&&)                                      \
-    {                                                                                    \
-        return lhs;                                                                      \
-    }                                                                                    \
-    template <typename Up>                                                               \
-    TIMEMORY_INLINE TYPE& divide(TYPE& lhs, Up&&)                                        \
-    {                                                                                    \
-        return lhs;                                                                      \
-    }                                                                                    \
+    TIMEMORY_INLINE TYPE percent_diff(const TYPE&, const TYPE&) { return TYPE{}; }       \
     TIMEMORY_INLINE TYPE& divide(TYPE& lhs, uint64_t) { return lhs; }                    \
     TIMEMORY_INLINE TYPE& divide(TYPE& lhs, int64_t) { return lhs; }                     \
     }                                                                                    \

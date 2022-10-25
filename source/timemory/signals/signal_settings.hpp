@@ -37,6 +37,7 @@
 
 #include "timemory/backends/signals.hpp"
 #include "timemory/defines.h"
+#include "timemory/macros/os.hpp"
 #include "timemory/signals/types.hpp"
 #include "timemory/utility/macros.hpp"
 
@@ -93,10 +94,12 @@ protected:
 
         struct entry
         {
-            bool              active   = false;
-            signal_function_t functor  = {};
-            sigaction_t       current  = {};
-            sigaction_t       previous = {};
+            bool              active  = false;
+            signal_function_t functor = {};
+#if defined(TIMEMORY_UNIX)
+            sigaction_t current  = {};
+            sigaction_t previous = {};
+#endif
         };
 
         bool              enable_all        = false;

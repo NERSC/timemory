@@ -59,17 +59,6 @@ void disable_signal_detection(
 void
 update_signal_detection(const signal_settings::signal_set_t& _signals);
 
-template <typename Tp,
-          std::enable_if_t<!std::is_enum<Tp>::value && std::is_integral<Tp>::value> = 0>
-bool
-enable_signal_detection(std::initializer_list<Tp>&& _signals)
-{
-    auto operations = signal_settings::signal_set_t{};
-    for(const auto& itr : _signals)
-        operations.insert(static_cast<sys_signal>(itr));
-    return enable_signal_detection(operations);
-}
-
 //--------------------------------------------------------------------------------------//
 //
 #if defined(TIMEMORY_SIGNAL_AVAILABLE)
@@ -85,12 +74,9 @@ update_file_maps();
 
 #else  // Not a supported architecture
 
-inline bool enable_signal_detection(signal_settings::signal_set_t) { return false; }
-
-template <typename Tp,
-          enable_if_t<!std::is_enum<Tp>::value && std::is_integral<Tp>::value>>
 inline bool
-enable_signal_detection(std::initializer_list<Tp>&&)
+enable_signal_detection(signal_settings::signal_set_t,
+                        const signal_settings::signal_function_t&)
 {
     return false;
 }
@@ -98,7 +84,17 @@ enable_signal_detection(std::initializer_list<Tp>&&)
 inline void disable_signal_detection(signal_settings::signal_set_t) {}
 #endif
 //
-//--------------------------------------------------------------------------------------//
+template <typename Tp,
+          std::enable_if_t<!std::is_enum<Tp>::value && std::is_integral<Tp>::value> = 0>
+inline bool
+enable_signal_detection(std::initializer_list<Tp>&&               _signals,
+                        const signal_settings::signal_function_t& _func = {})
+{
+    auto operations = signal_settings::signal_set_t{};
+    for(const auto& itr : _signals)
+        operations.insert(static_cast<sys_signal>(itr));
+    return enable_signal_detection(operations, _func);
+}
 }  // namespace signals
 }  // namespace tim
 

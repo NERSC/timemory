@@ -163,12 +163,14 @@ divide(Tp& _lhs, Up _rhs, index_sequence<Idx...>, long)
     return _lhs;
 }
 
-template <typename Tp, typename Up, enable_if_t<!concepts::is_null_type<Tp>::value>>
+template <typename Tp, typename Up>
 Tp&
 divide(Tp& _lhs, const Up& _rhs)
 {
-    divide(_lhs, _rhs, get_index_sequence<Tp>::value, 0);
+    if constexpr(!concepts::is_null_type<Tp>::value && !concepts::is_null_type<Up>::value)
+        divide(_lhs, _rhs, get_index_sequence<Tp>::value, 0);
     return _lhs;
+    (void) _rhs;
 }
 }  // namespace math
 }  // namespace tim

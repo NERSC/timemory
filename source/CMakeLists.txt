@@ -44,7 +44,9 @@ set(_TIMEMORY_CXX_LIBRARY_EXCLUDE)
 foreach(_SRC ${TIMEMORY_CXX_LIBRARY_EXCLUDE})
     list(APPEND _TIMEMORY_CXX_LIBRARY_EXCLUDE ${CMAKE_CURRENT_LIST_DIR}/${_SRC} ${_SRC})
 endforeach()
-list(REMOVE_ITEM cxx_sources ${_TIMEMORY_CXX_LIBRARY_EXCLUDE})
+if(_TIMEMORY_CXX_LIBRARY_EXCLUDE)
+    list(REMOVE_ITEM cxx_sources ${_TIMEMORY_CXX_LIBRARY_EXCLUDE})
+endif()
 
 set(_CATEGORIES backends mpl utility variadic)
 # bits folder

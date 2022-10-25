@@ -438,7 +438,7 @@ public:
                                             bool _use_suffix, Args... args)
     {
         return compose_output_filename(std::move(_tag), std::move(_ext),
-                                       compose_filename_config{ _use_suffix, args... });
+                                       compose_filename_config(_use_suffix, args...));
     }
 
     template <typename... Args>
@@ -446,7 +446,7 @@ public:
                                            Args... args)
     {
         return compose_input_filename(std::move(_tag), std::move(_ext),
-                                      compose_filename_config{ _use_suffix, args... });
+                                      compose_filename_config(_use_suffix, args...));
     }
 
 public:

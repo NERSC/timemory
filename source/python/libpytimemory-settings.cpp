@@ -400,8 +400,8 @@ generate(py::module& _pymod)
         py::arg("filename") = std::string{}, py::arg("instance") = nullptr);
     settings.def_static(
         "compose_output_filename",
-        [](std::string _base, std::string _ext, bool _dmp, int _rank, bool _make_dir,
-           std::string _explicit, std::string _subdir) {
+        [](std::string _base, std::string _ext, bool _dmp, tim::process::id_t _rank,
+           bool _make_dir, std::string _explicit, std::string _subdir) {
             return tim::settings::compose_output_filename(
                 _base, _ext,
                 tim::settings::compose_filename_config{ _dmp, _rank, _make_dir, _explicit,
@@ -417,7 +417,7 @@ generate(py::module& _pymod)
         py::arg("subdirectory") = std::string{});
     settings.def_static(
         "compose_input_filename",
-        [](std::string _base, std::string _ext, bool _dmp, int _rank,
+        [](std::string _base, std::string _ext, bool _dmp, tim::process::id_t _rank,
            std::string _explicit, std::string _subdir) {
             return tim::settings::compose_input_filename(
                 _base, _ext,

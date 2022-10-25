@@ -79,8 +79,11 @@ struct gperftools_cpu_profiler : public base<gperftools_cpu_profiler, void>
             const auto& _dmp_info = get_dmp_info();
             bool        _dmp_init = std::get<0>(_dmp_info);
             int32_t     _dmp_rank = std::get<1>(_dmp_info);
-            auto        fname     = settings::compose_output_filename(
-                label() + "_" + std::to_string(index), ".dat", _dmp_init, _dmp_rank);
+            auto        _cfg      = settings::compose_filename_config{};
+            _cfg.use_suffix       = _dmp_init;
+            _cfg.suffix           = _dmp_rank;
+            auto fname            = settings::compose_output_filename(
+                label() + "_" + std::to_string(index), ".dat", _cfg);
             auto ret = gperftools::cpu::profiler_start(fname);
             if(ret == 0)
             {

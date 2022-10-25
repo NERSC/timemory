@@ -9,6 +9,7 @@ settings.json
 .spack-env
 /.cache
 /compile_commands.json
+/.clangd
 
 # Edit files
 *~
