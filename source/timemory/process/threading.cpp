@@ -22,13 +22,13 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-#ifndef TIMEMORY_BACKENDS_THREADING_CPP_
-#define TIMEMORY_BACKENDS_THREADING_CPP_
+#ifndef TIMEMORY_PROCESS_THREADING_CPP_
+#define TIMEMORY_PROCESS_THREADING_CPP_
 
-#include "timemory/backends/defines.hpp"
+#include "timemory/process/defines.hpp"
 
-#if !defined(TIMEMORY_BACKENDS_THREADING_HPP_)
-#    include "timemory/backends/threading.hpp"
+#if !defined(TIMEMORY_PROCESS_THREADING_HPP_)
+#    include "timemory/process/threading.hpp"
 #endif
 
 #include "timemory/defines.h"
@@ -75,7 +75,7 @@ namespace threading
 {
 namespace internal
 {
-TIMEMORY_BACKENDS_INLINE
+TIMEMORY_PROCESS_INLINE
 thread_id_manager::thread_id_manager(int64_t _max_threads)
 : max_threads{ _max_threads }
 , global_counter{ 0 }
@@ -85,7 +85,7 @@ thread_id_manager::thread_id_manager(int64_t _max_threads)
     offset.reserve(max_threads);
 }
 
-TIMEMORY_BACKENDS_INLINE
+TIMEMORY_PROCESS_INLINE
 std::pair<int64_t, scope::destructor>
 get_id(thread_id_manager* _manager, bool _debug)
 {
@@ -173,7 +173,7 @@ get_id(thread_id_manager* _manager, bool _debug)
 }  // namespace internal
 
 // clang-format off
-TIMEMORY_BACKENDS_INLINE
+TIMEMORY_PROCESS_INLINE
 std::set<int64_t>
 add_reserved_id(int64_t _v)
 // clang-format on
@@ -188,7 +188,7 @@ add_reserved_id(int64_t _v)
 }
 
 // clang-format off
-TIMEMORY_BACKENDS_INLINE
+TIMEMORY_PROCESS_INLINE
 std::set<int64_t>
 erase_reserved_id(int64_t _v)
 // clang-format on
@@ -203,7 +203,7 @@ erase_reserved_id(int64_t _v)
 }
 
 // clang-format off
-TIMEMORY_BACKENDS_INLINE
+TIMEMORY_PROCESS_INLINE
 void
 set_thread_name(const char* _name)
 // clang-format on
@@ -242,7 +242,7 @@ set_thread_name(const char* _name)
 }
 
 // clang-format off
-TIMEMORY_BACKENDS_INLINE
+TIMEMORY_PROCESS_INLINE
 std::string
 get_thread_name()
 // clang-format on
@@ -282,7 +282,7 @@ get_thread_name()
 #endif
 }
 
-TIMEMORY_BACKENDS_INLINE
+TIMEMORY_PROCESS_INLINE
 int64_t
 affinity::hw_physicalcpu()
 {
@@ -320,7 +320,7 @@ affinity::hw_physicalcpu()
     return _value;
 }
 
-TIMEMORY_BACKENDS_INLINE
+TIMEMORY_PROCESS_INLINE
 affinity::functor_t&
 affinity::get_algorithm()
 {
@@ -376,7 +376,7 @@ affinity::get_algorithm()
     return _instance;
 }
 
-TIMEMORY_BACKENDS_INLINE
+TIMEMORY_PROCESS_INLINE
 int64_t
 affinity::set()
 {
@@ -396,7 +396,7 @@ affinity::set()
 #endif
 }
 
-TIMEMORY_BACKENDS_INLINE
+TIMEMORY_PROCESS_INLINE
 int64_t
 affinity::set(native_handle_t athread)
 {

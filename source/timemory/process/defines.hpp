@@ -24,4 +24,11 @@
 
 #pragma once
 
-#include "timemory/process/process.hpp"
+#if defined(TIMEMORY_CORE_SOURCE) || defined(TIMEMORY_PROCESS_SOURCE)
+#    define TIMEMORY_PROCESS_INLINE
+#elif defined(TIMEMORY_USE_CORE_EXTERN) || defined(TIMEMORY_USE_PROCESS_EXTERN)
+#    define TIMEMORY_PROCESS_INLINE
+#else
+#    define TIMEMORY_PROCESS_INLINE inline
+#    define TIMEMORY_PROCESS_HEADER_MODE 1
+#endif

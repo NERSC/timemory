@@ -65,6 +65,7 @@ add_subdirectory(plotting)
 add_subdirectory(signals)
 add_subdirectory(unwind)
 add_subdirectory(data)
+add_subdirectory(process)
 
 if(TIMEMORY_USE_COVERAGE)
     if(TARGET timemory-core-shared)
