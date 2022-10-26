@@ -27,7 +27,7 @@
 #include "timemory/storage/macros.hpp"
 #include "timemory/storage/types.hpp"
 
-#if defined(TIMEMORY_STORAGE_HEADER_ONLY_MODE)
+#if defined(TIMEMORY_STORAGE_HEADER_MODE)
 #    include "timemory/storage/base_storage.cpp"
 #endif
 

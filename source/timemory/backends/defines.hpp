@@ -46,7 +46,7 @@
 #endif
 //
 #if !defined(TIMEMORY_BACKENDS_SOURCE) && !defined(TIMEMORY_USE_BACKENDS_EXTERN)
-#    if !defined(TIMEMORY_BACKENDS_HEADER_ONLY_MODE)
-#        define TIMEMORY_BACKENDS_HEADER_ONLY_MODE 1
+#    if !defined(TIMEMORY_BACKENDS_HEADER_MODE)
+#        define TIMEMORY_BACKENDS_HEADER_MODE 1
 #    endif
 #endif

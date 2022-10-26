@@ -151,6 +151,6 @@ storage::base_instance()
 }  // namespace base
 }  // namespace tim
 
-#if defined(TIMEMORY_STORAGE_HEADER_ONLY_MODE)
+#if defined(TIMEMORY_STORAGE_HEADER_MODE)
 #    include "timemory/storage/base_storage.cpp"
 #endif

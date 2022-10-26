@@ -75,6 +75,6 @@ struct hash<tim::static_string>
 }  // namespace std
 
 // include the definitions inline if header-only mode
-#if defined(TIMEMORY_HASH_HEADER_ONLY_MODE) && TIMEMORY_HASH_HEADER_ONLY_MODE > 0
+#if defined(TIMEMORY_HASH_HEADER_MODE) && TIMEMORY_HASH_HEADER_MODE > 0
 #    include "timemory/hash/static_string.cpp"
 #endif

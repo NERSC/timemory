@@ -180,6 +180,6 @@ wrap(std::array<binding_t, N>& _arr, const std::array<bool, N>& _filled,
 }  // namespace backend
 }  // namespace tim
 
-#if defined(TIMEMORY_BACKENDS_HEADER_ONLY_MODE) && TIMEMORY_BACKENDS_HEADER_ONLY_MODE > 0
+#if defined(TIMEMORY_BACKENDS_HEADER_MODE) && TIMEMORY_BACKENDS_HEADER_MODE > 0
 #    include "timemory/backends/gotcha.cpp"
 #endif

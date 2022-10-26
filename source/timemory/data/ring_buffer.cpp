@@ -22,16 +22,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef TIMEMORY_STORAGE_RING_BUFFER_CPP_
-#define TIMEMORY_STORAGE_RING_BUFFER_CPP_
+#ifndef TIMEMORY_DATA_RING_BUFFER_CPP_
+#define TIMEMORY_DATA_RING_BUFFER_CPP_
 
-#include "timemory/log/macros.hpp"
-#include "timemory/storage/macros.hpp"
+#include "timemory/data/macros.hpp"
 
-#if !defined(TIMEMORY_STORAGE_HEADER_ONLY_MODE)
+#if !defined(TIMEMORY_DATA_RING_BUFFER_HPP_)
 #    include "timemory/data/ring_buffer.hpp"
 #endif
 
+#include "timemory/log/macros.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/settings/settings.hpp"
 #include "timemory/units.hpp"
@@ -52,17 +52,17 @@ namespace tim
 {
 namespace base
 {
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 ring_buffer::ring_buffer(size_t _size, bool _use_mmap)
 {
     set_use_mmap(_use_mmap);
     init(_size);
 }
 
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 ring_buffer::~ring_buffer() { destroy(); }
 
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 ring_buffer::ring_buffer(const ring_buffer& rhs)
 : m_use_mmap{ rhs.m_use_mmap }
 , m_use_mmap_explicit{ rhs.m_use_mmap_explicit }
@@ -70,7 +70,7 @@ ring_buffer::ring_buffer(const ring_buffer& rhs)
     init(rhs.m_size);
 }
 
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 ring_buffer::ring_buffer(ring_buffer&& rhs) noexcept
 : m_init{ rhs.m_init }
 , m_use_mmap{ rhs.m_use_mmap }
@@ -83,7 +83,7 @@ ring_buffer::ring_buffer(ring_buffer&& rhs) noexcept
     rhs.reset();
 }
 
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 ring_buffer&
 ring_buffer::operator=(const ring_buffer& rhs)
 {
@@ -96,7 +96,7 @@ ring_buffer::operator=(const ring_buffer& rhs)
     return *this;
 }
 
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 ring_buffer&
 ring_buffer::operator=(ring_buffer&& rhs) noexcept
 {
@@ -114,7 +114,7 @@ ring_buffer::operator=(ring_buffer&& rhs) noexcept
     return *this;
 }
 
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 void
 ring_buffer::init(size_t _size)
 {
@@ -166,7 +166,7 @@ ring_buffer::init(size_t _size)
 #endif
 }
 
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 void
 ring_buffer::destroy()
 {
@@ -195,7 +195,7 @@ ring_buffer::destroy()
     m_ptr         = nullptr;
 }
 
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 void
 ring_buffer::set_use_mmap(bool _v)
 {
@@ -206,7 +206,7 @@ ring_buffer::set_use_mmap(bool _v)
     m_use_mmap_explicit = true;
 }
 
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 std::string
 ring_buffer::as_string() const
 {
@@ -219,7 +219,7 @@ ring_buffer::as_string() const
     return ss.str();
 }
 //
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 void*
 ring_buffer::request(size_t _length)
 {
@@ -246,7 +246,7 @@ ring_buffer::request(size_t _length)
     return _out;
 }
 //
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 void*
 ring_buffer::retrieve(size_t _length)
 {
@@ -272,7 +272,7 @@ ring_buffer::retrieve(size_t _length)
     return _out;
 }
 //
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 size_t
 ring_buffer::rewind(size_t n) const
 {
@@ -282,7 +282,7 @@ ring_buffer::rewind(size_t n) const
     return n;
 }
 //
-TIMEMORY_STORAGE_INLINE
+TIMEMORY_DATA_INLINE
 void
 ring_buffer::reset()
 {

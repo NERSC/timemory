@@ -1035,6 +1035,6 @@ get_hwcounter_info(const std::string& event_code_str);
 }  // namespace papi
 }  // namespace tim
 
-#if defined(TIMEMORY_BACKENDS_HEADER_ONLY_MODE) && TIMEMORY_BACKENDS_HEADER_ONLY_MODE > 0
+#if defined(TIMEMORY_BACKENDS_HEADER_MODE) && TIMEMORY_BACKENDS_HEADER_MODE > 0
 #    include "timemory/backends/papi.cpp"
 #endif

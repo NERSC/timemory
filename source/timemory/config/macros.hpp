@@ -47,8 +47,8 @@
 #    define TIMEMORY_CONFIG_LINKAGE(...) __VA_ARGS__
 #else
 #    define TIMEMORY_CONFIG_LINKAGE(...) inline __VA_ARGS__
-#    if !defined(TIMEMORY_CONFIG_HEADER_ONLY_MODE)
-#        define TIMEMORY_CONFIG_HEADER_ONLY_MODE 1
+#    if !defined(TIMEMORY_CONFIG_HEADER_MODE)
+#        define TIMEMORY_CONFIG_HEADER_MODE 1
 #    endif
 #endif
 //

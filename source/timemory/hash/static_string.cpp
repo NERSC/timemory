@@ -27,8 +27,8 @@
 
 #include "timemory/hash/macros.hpp"
 
-#if !defined(TIMEMORY_HASH_HEADER_ONLY_MODE) ||                                          \
-    (defined(TIMEMORY_HASH_HEADER_ONLY_MODE) && TIMEMORY_HASH_HEADER_ONLY_MODE == 0)
+#if !defined(TIMEMORY_HASH_HEADER_MODE) ||                                               \
+    (defined(TIMEMORY_HASH_HEADER_MODE) && TIMEMORY_HASH_HEADER_MODE == 0)
 #    include "timemory/hash/static_string.hpp"
 #endif
 

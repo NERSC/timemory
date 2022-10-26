@@ -24,6 +24,11 @@
 
 #pragma once
 
+#ifndef TIMEMORY_DATA_RING_BUFFER_HPP_
+#    define TIMEMORY_DATA_RING_BUFFER_HPP_
+#endif
+
+#include "timemory/data/macros.hpp"
 #include "timemory/units.hpp"
 
 #include <algorithm>
@@ -514,6 +519,6 @@ ring_buffer<Tp>::operator=(const ring_buffer<Tp>& rhs)
 
 #include "timemory/storage/macros.hpp"
 
-#if defined(TIMEMORY_STORAGE_HEADER_ONLY_MODE)
+#if defined(TIMEMORY_DATA_HEADER_MODE) && TIMEMORY_DATA_HEADER_MODE > 0
 #    include "timemory/data/ring_buffer.cpp"
 #endif

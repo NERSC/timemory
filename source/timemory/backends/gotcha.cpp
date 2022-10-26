@@ -27,9 +27,8 @@
 
 #include "timemory/backends/defines.hpp"
 
-#if !defined(TIMEMORY_BACKENDS_HEADER_ONLY_MODE) ||                                      \
-    (defined(TIMEMORY_BACKENDS_HEADER_ONLY_MODE) &&                                      \
-     TIMEMORY_BACKENDS_HEADER_ONLY_MODE == 0)
+#if !defined(TIMEMORY_BACKENDS_HEADER_MODE) ||                                           \
+    (defined(TIMEMORY_BACKENDS_HEADER_MODE) && TIMEMORY_BACKENDS_HEADER_MODE == 0)
 #    include "timemory/backends/gotcha.hpp"
 #endif
 
