@@ -41,8 +41,9 @@
 #endif
 
 #if !defined(TIMEMORY_USE_USER_BUNDLE_EXTERN) &&                                         \
-    !defined(TIMEMORY_USER_BUNDLE_SOURCE) && !defined(TIMEMORY_USER_BUNDLE_HEADER_MODE)
-#    define TIMEMORY_USER_BUNDLE_HEADER_MODE
+    !defined(TIMEMORY_USER_BUNDLE_SOURCE) &&                                             \
+    !defined(TIMEMORY_USER_BUNDLE_COMPONENT_HEADER_MODE)
+#    define TIMEMORY_USER_BUNDLE_COMPONENT_HEADER_MODE
 #endif
 
 //======================================================================================//

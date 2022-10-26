@@ -193,9 +193,9 @@ TIMEMORY_PROPERTY_SPECIALIZATION(ompt_handle<TIMEMORY_API>, TIMEMORY_OMPT_HANDLE
                                  "ompt_handle", "ompt", "ompt_handle", "openmp",
                                  "openmp_tools")
 
-#if defined(TIMEMORY_USE_OMPT) &&                                                        \
-    (!defined(TIMEMORY_OMPT_HEADER_MODE) ||                                              \
-     (defined(TIMEMORY_OMPT_HEADER_MODE) && TIMEMORY_OMPT_HEADER_MODE == 0))
+#if defined(TIMEMORY_USE_OMPT) && (!defined(TIMEMORY_OMPT_COMPONENT_HEADER_MODE) ||      \
+                                   (defined(TIMEMORY_OMPT_COMPONENT_HEADER_MODE) &&      \
+                                    TIMEMORY_OMPT_COMPONENT_HEADER_MODE == 0))
 
 extern "C"
 {

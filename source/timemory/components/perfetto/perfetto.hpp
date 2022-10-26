@@ -159,7 +159,7 @@ tim::component::perfetto_trace::stop(tim::type_list<ApiT>, Args&&... _args)
 
 //--------------------------------------------------------------------------------------//
 
-#if defined(TIMEMORY_COMPONENT_PERFETTO_HEADER_ONLY_MODE) &&                             \
-    TIMEMORY_COMPONENT_PERFETTO_HEADER_ONLY_MODE > 0
+#if defined(TIMEMORY_PERFETTO_COMPONENT_HEADER_MODE) &&                                  \
+    TIMEMORY_PERFETTO_COMPONENT_HEADER_MODE > 0
 #    include "timemory/components/perfetto/perfetto.cpp"
 #endif

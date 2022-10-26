@@ -27,7 +27,7 @@
 
 #include "timemory/components/user_bundle/types.hpp"
 
-#if !defined(TIMEMORY_USER_BUNDLE_HEADER_MODE)
+#if !defined(TIMEMORY_USER_BUNDLE_COMPONENT_HEADER_MODE)
 #    define TIMEMORY_USER_BUNDLE_INLINE
 #    include "timemory/components/user_bundle/components.hpp"
 #    include "timemory/runtime/properties.hpp"

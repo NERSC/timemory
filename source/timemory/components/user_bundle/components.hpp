@@ -74,7 +74,7 @@ inline user_bundle_variables_t& get_user_bundle_variables(ApiT)
     return _instance;
 }
 //
-#if defined(TIMEMORY_USER_BUNDLE_HEADER_MODE)
+#if defined(TIMEMORY_USER_BUNDLE_COMPONENT_HEADER_MODE)
 /// static so that projects cannot globally change this
 static inline user_bundle_variables_t& get_user_bundle_variables(TIMEMORY_API);
 static inline user_bundle_variables_t& get_user_bundle_variables(project::kokkosp);
@@ -453,6 +453,6 @@ user_bundle<Idx, Tag>::persistent_init()
 //
 //======================================================================================//
 
-#if defined(TIMEMORY_USER_BUNDLE_HEADER_MODE)
+#if defined(TIMEMORY_USER_BUNDLE_COMPONENT_HEADER_MODE)
 #    include "timemory/components/user_bundle/components.cpp"
 #endif

@@ -161,7 +161,7 @@ protected:
 
 #endif
 
-#if defined(TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE) &&                                 \
-    TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE > 0
+#if defined(TIMEMORY_PAPI_COMPONENT_HEADER_MODE) &&                                      \
+    TIMEMORY_PAPI_COMPONENT_HEADER_MODE > 0
 #    include "timemory/components/papi/papi_vector.cpp"
 #endif

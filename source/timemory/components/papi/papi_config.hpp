@@ -157,8 +157,8 @@ papi_config::make_mutable(const Tp* _v)
 }  // namespace tim
 
 #if !defined(TIMEMORY_COMPONENTS_PAPI_PAPI_CONFIG_CPP_)
-#    if defined(TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE) &&                             \
-        TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE > 0
+#    if defined(TIMEMORY_PAPI_COMPONENT_HEADER_MODE) &&                                  \
+        TIMEMORY_PAPI_COMPONENT_HEADER_MODE > 0
 #        include "timemory/components/papi/papi_config.cpp"
 #    endif
 #endif

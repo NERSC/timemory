@@ -97,7 +97,7 @@ private:
 }  // namespace component
 }  // namespace tim
 
-#if defined(TIMEMORY_TAU_MARKER_COMPONENT_HEADER_ONLY_MODE) &&                           \
-    TIMEMORY_TAU_MARKER_COMPONENT_HEADER_ONLY_MODE > 0
+#if defined(TIMEMORY_TAU_MARKER_COMPONENT_HEADER_MODE) &&                                \
+    TIMEMORY_TAU_MARKER_COMPONENT_HEADER_MODE > 0
 #    include "timemory/components/tau_marker/components.cpp"
 #endif

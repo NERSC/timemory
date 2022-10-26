@@ -27,9 +27,9 @@
 
 #include "timemory/components/tau_marker/macros.hpp"
 
-#if !defined(TIMEMORY_TAU_MARKER_COMPONENT_HEADER_ONLY_MODE) ||                          \
-    (defined(TIMEMORY_TAU_MARKER_COMPONENT_HEADER_ONLY_MODE) &&                          \
-     TIMEMORY_TAU_MARKER_COMPONENT_HEADER_ONLY_MODE < 1)
+#if !defined(TIMEMORY_TAU_MARKER_COMPONENT_HEADER_MODE) ||                               \
+    (defined(TIMEMORY_TAU_MARKER_COMPONENT_HEADER_MODE) &&                               \
+     TIMEMORY_TAU_MARKER_COMPONENT_HEADER_MODE < 1)
 #    include "timemory/components/tau_marker/components.hpp"
 #endif
 

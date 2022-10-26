@@ -27,7 +27,7 @@
 
 #include "timemory/components/timestamp/types.hpp"
 
-#if !defined(TIMEMORY_COMPONENT_TIMESTAMP_HEADER_ONLY_MODE)
+#if !defined(TIMEMORY_TIMESTAMP_COMPONENT_HEADER_MODE)
 #    include "timemory/components/timestamp/timestamp.hpp"
 #    define TIMEMORY_COMPONENT_TIMESTAMP_INLINE
 #else

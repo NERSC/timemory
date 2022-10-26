@@ -31,8 +31,8 @@
 #include "timemory/tpls/cereal/cereal.hpp"
 
 #if !defined(TIMEMORY_COMPONENT_SOURCE) && !defined(TIMEMORY_USE_PRINTER_EXTERN)
-#    if !defined(TIMEMORY_COMPONENT_PRINTER_HEADER_ONLY_MODE)
-#        define TIMEMORY_COMPONENT_PRINTER_HEADER_ONLY_MODE 1
+#    if !defined(TIMEMORY_PRINTER_COMPONENT_HEADER_MODE)
+#        define TIMEMORY_PRINTER_COMPONENT_HEADER_MODE 1
 #    endif
 #endif
 

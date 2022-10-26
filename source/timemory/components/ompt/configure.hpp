@@ -31,8 +31,9 @@
 #include "timemory/components/ompt/tool.hpp"
 #include "timemory/log/macros.hpp"
 
-#if !defined(TIMEMORY_OMPT_HEADER_MODE) ||                                               \
-    (defined(TIMEMORY_OMPT_HEADER_MODE) && TIMEMORY_OMPT_HEADER_MODE == 0)
+#if !defined(TIMEMORY_OMPT_COMPONENT_HEADER_MODE) ||                                     \
+    (defined(TIMEMORY_OMPT_COMPONENT_HEADER_MODE) &&                                     \
+     TIMEMORY_OMPT_COMPONENT_HEADER_MODE == 0)
 #    include "timemory/components/extern.hpp"
 #endif
 

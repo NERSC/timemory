@@ -27,7 +27,7 @@
 
 #include "timemory/components/printer/types.hpp"
 
-#if !defined(TIMEMORY_COMPONENT_PRINTER_HEADER_ONLY_MODE)
+#if !defined(TIMEMORY_PRINTER_COMPONENT_HEADER_MODE)
 #    include "timemory/components/printer/printer.hpp"
 #    define TIMEMORY_COMPONENT_PRINTER_INLINE
 #else

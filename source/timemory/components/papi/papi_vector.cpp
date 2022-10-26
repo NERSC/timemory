@@ -29,8 +29,8 @@
 
 #if defined(TIMEMORY_PAPI_SOURCE) && TIMEMORY_PAPI_SOURCE > 0
 #    include "timemory/components/papi/papi_vector.hpp"
-#elif !defined(TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE) ||                              \
-    TIMEMORY_PAPI_COMPONENT_HEADER_ONLY_MODE == 0
+#elif !defined(TIMEMORY_PAPI_COMPONENT_HEADER_MODE) ||                                   \
+    TIMEMORY_PAPI_COMPONENT_HEADER_MODE == 0
 #    include "timemory/components/papi/papi_vector.hpp"
 #endif
 

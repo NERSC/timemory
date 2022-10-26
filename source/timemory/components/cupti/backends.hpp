@@ -942,6 +942,6 @@ struct perfworks_translation
 //--------------------------------------------------------------------------------------//
 //
 
-#if defined(TIMEMORY_CUPTI_HEADER_MODE)
+#if defined(TIMEMORY_CUPTI_COMPONENT_HEADER_MODE)
 #    include "timemory/components/cupti/backends.cpp"
 #endif

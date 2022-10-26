@@ -31,7 +31,7 @@
 #elif defined(TIMEMORY_USE_OMPT_EXTERN)
 #    define TIMEMORY_OMPT_INLINE
 #else
-#    define TIMEMORY_OMPT_HEADER_MODE 1
+#    define TIMEMORY_OMPT_COMPONENT_HEADER_MODE 1
 #    define TIMEMORY_OMPT_INLINE inline
 #endif
 

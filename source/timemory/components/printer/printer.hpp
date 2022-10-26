@@ -120,7 +120,7 @@ tim::component::printer::store(Args&&... args)
     m_stream << _tp << "> " << TIMEMORY_JOIN("", std::forward<Args>(args)...) << '\n';
 }
 
-#if defined(TIMEMORY_COMPONENT_PRINTER_HEADER_ONLY_MODE) &&                              \
-    TIMEMORY_COMPONENT_PRINTER_HEADER_ONLY_MODE > 0
+#if defined(TIMEMORY_PRINTER_COMPONENT_HEADER_MODE) &&                                   \
+    TIMEMORY_PRINTER_COMPONENT_HEADER_MODE > 0
 #    include "timemory/components/printer/printer.cpp"
 #endif

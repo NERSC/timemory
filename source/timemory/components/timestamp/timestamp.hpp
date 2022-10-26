@@ -127,7 +127,7 @@ stream_entry::construct<timestamp_value_t>(const timestamp_value_t& val);
 }  // namespace data
 }  // namespace tim
 
-#if defined(TIMEMORY_COMPONENT_TIMESTAMP_HEADER_ONLY_MODE) &&                            \
-    TIMEMORY_COMPONENT_TIMESTAMP_HEADER_ONLY_MODE > 0
+#if defined(TIMEMORY_TIMESTAMP_COMPONENT_HEADER_MODE) &&                                 \
+    TIMEMORY_TIMESTAMP_COMPONENT_HEADER_MODE > 0
 #    include "timemory/components/timestamp/timestamp.cpp"
 #endif

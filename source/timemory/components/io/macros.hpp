@@ -34,5 +34,5 @@
 #    define TIMEMORY_IO_INLINE
 #else
 #    define TIMEMORY_IO_INLINE inline
-#    define TIMEMORY_IO_HEADER_MODE 1
+#    define TIMEMORY_IO_COMPONENT_HEADER_MODE 1
 #endif

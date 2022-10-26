@@ -25,12 +25,12 @@
 #pragma once
 
 #if !defined(TIMEMORY_CUPTI_SOURCE) && !defined(TIMEMORY_USE_CUPTI_EXTERN) &&            \
-    !defined(TIMEMORY_CUPTI_HEADER_MODE)
-#    define TIMEMORY_CUPTI_HEADER_MODE 1
+    !defined(TIMEMORY_CUPTI_COMPONENT_HEADER_MODE)
+#    define TIMEMORY_CUPTI_COMPONENT_HEADER_MODE 1
 #endif
 
 #if !defined(TIMEMORY_CUPTI_INLINE)
-#    if defined(TIMEMORY_CUPTI_HEADER_MODE)
+#    if defined(TIMEMORY_CUPTI_COMPONENT_HEADER_MODE)
 #        define TIMEMORY_CUPTI_INLINE inline
 #    else
 #        define TIMEMORY_CUPTI_INLINE

@@ -212,6 +212,6 @@ pcstall::load(Archive& ar, const unsigned int)
 
 // #endif  // TIMEMORY_USE_CUPTI_PCSAMPLING
 
-#if defined(TIMEMORY_CUPTI_HEADER_MODE)
+#if defined(TIMEMORY_CUPTI_COMPONENT_HEADER_MODE)
 #    include "timemory/components/cupti/cupti_pcsampling.cpp"
 #endif

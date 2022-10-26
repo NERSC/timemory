@@ -275,6 +275,13 @@ read_char::record(const cache_type& _cache)
 
 TIMEMORY_IO_INLINE
 void
+read_char::start(const cache_type& _cache)
+{
+    value = record(_cache);
+}
+
+TIMEMORY_IO_INLINE
+void
 read_char::stop(const cache_type& _cache)
 {
     using namespace tim::component::operators;

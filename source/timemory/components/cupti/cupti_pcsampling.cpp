@@ -26,7 +26,7 @@
 
 #    include "timemory/components/cupti/types.hpp"
 
-#    if !defined(TIMEMORY_CUPTI_HEADER_MODE)
+#    if !defined(TIMEMORY_CUPTI_COMPONENT_HEADER_MODE)
 #        include "timemory/components/cupti/cupti_pcsampling.hpp"
 #    endif
 

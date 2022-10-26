@@ -240,6 +240,6 @@ struct written_bytes : public base<written_bytes, std::array<int64_t, 2>>
 }  // namespace component
 }  // namespace tim
 
-#if defined(TIMEMORY_IO_HEADER_MODE) && TIMEMORY_IO_HEADER_MODE > 0
+#if defined(TIMEMORY_IO_COMPONENT_HEADER_MODE) && TIMEMORY_IO_COMPONENT_HEADER_MODE > 0
 #    include "timemory/components/io/components.cpp"
 #endif
