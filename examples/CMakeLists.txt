@@ -27,8 +27,10 @@ add_subdirectory(ex-array-of-bundles)
 
 if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
     set(DEFAULT_CHOICE ON)
+    set(INVERSE_CHOICE OFF)
 else()
     set(DEFAULT_CHOICE OFF)
+    set(INVERSE_CHOICE ON)
 endif()
 
 option(TIMEMORY_BUILD_C_EXAMPLES "Enable building these examples" ${DEFAULT_CHOICE})
@@ -44,6 +46,8 @@ option(TIMEMORY_BUILD_COMPILER_INSTRUMENT_EXAMPLES "Enable building these exampl
        ${DEFAULT_CHOICE})
 option(TIMEMORY_BUILD_GPU_KERNEL_INSTRUMENT_EXAMPLES
        "Enable building GPU kernel instrumentation examples" ${DEFAULT_CHOICE})
+option(TIMEMORY_BUILD_COMPONENT_EXAMPLES "Enable building these examples"
+       ${INVERSE_CHOICE})
 
 # C language related
 if(TIMEMORY_BUILD_C_EXAMPLES)
@@ -86,6 +90,11 @@ endif()
 # Compiler instrumentation
 if(TIMEMORY_BUILD_COMPILER_INSTRUMENT_EXAMPLES)
     add_subdirectory(ex-compiler-instrument)
+endif()
+
+# Header-only vs. library
+if(TIMEMORY_BUILD_COMPONENT_EXAMPLES)
+    add_subdirectory(ex-cxx-header-only)
 endif()
 
 cmake_policy(POP)

@@ -157,8 +157,8 @@ if(TIMEMORY_CMAKE_FORMATTER)
         CMAKE_FORMAT_FILES
         ${PROJECT_SOURCE_DIR}/cmake/*.cmake
         ${PROJECT_SOURCE_DIR}/cmake/*.cmake.in
-        ${PROJECT_SOURCE_DIR}/source/*/CMakeLists.txt
-        ${PROJECT_SOURCE_DIR}/examples/*/CMakeLists.txt)
+        ${PROJECT_SOURCE_DIR}/source/*CMakeLists.txt
+        ${PROJECT_SOURCE_DIR}/examples/*CMakeLists.txt)
 
     list(INSERT CMAKE_FORMAT_FILES 0 ${PROJECT_SOURCE_DIR}/CMakeLists.txt
          ${PROJECT_SOURCE_DIR}/source/CMakeLists.txt
