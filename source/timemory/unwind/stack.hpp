@@ -58,6 +58,7 @@ struct stack
     using iterator       = typename array_type::iterator;
     using const_iterator = typename array_type::const_iterator;
     using cache_type     = cache;
+    using file_map_t     = std::unordered_map<std::string, std::shared_ptr<bfd_file>>;
 
     TIMEMORY_DEFAULT_OBJECT(stack)
 
@@ -97,12 +98,14 @@ struct stack
 
     template <size_t DefaultBufferSize = 4096, bool Shrink = true>
     std::vector<processed_entry> get(cache_type* _cache              = nullptr,
-                                     bool        _include_with_error = false) const;
+                                     bool        _include_with_error = false,
+                                     file_map_t* _files              = nullptr) const;
 
     template <size_t DefaultBufferSize = 4096, bool Shrink = true>
-    std::vector<processed_entry> get(bool _include_with_error) const
+    std::vector<processed_entry> get(bool        _include_with_error,
+                                     file_map_t* _files = nullptr) const
     {
-        return get<DefaultBufferSize, Shrink>(nullptr, _include_with_error);
+        return get<DefaultBufferSize, Shrink>(nullptr, _include_with_error, _files);
     }
 
     template <size_t RhsN>
@@ -194,11 +197,10 @@ stack<N>::shift(int64_t _n)
 template <size_t N>
 template <size_t DefaultBufferSize, bool Shrink>
 std::vector<processed_entry>
-stack<N>::get(cache_type* _cache, bool _include_with_error) const
+stack<N>::get(cache_type* _cache, bool _include_with_error, file_map_t* _files) const
 {
-    using file_map_t   = std::unordered_map<std::string, std::shared_ptr<bfd_file>>;
-    auto  _local_files = file_map_t{};
-    auto& _files       = (_cache) ? _cache->files : _local_files;
+    if(!_files && _cache)
+        _files = &_cache->files;
 
     std::vector<processed_entry> _data{};
     auto                         _sz = size();
@@ -224,7 +226,7 @@ stack<N>::get(cache_type* _cache, bool _include_with_error) const
             _v.name    = itr->template get_name<DefaultBufferSize, Shrink>(
                 context, &_v.offset, &_v.error);
 
-            processed_entry::construct(_v, &_files);
+            processed_entry::construct(_v, _files);
 
             if(_v.error == 0 || _include_with_error)
                 _data.emplace_back(_v);

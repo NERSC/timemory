@@ -479,6 +479,7 @@ private:
 protected:
     int                             m_verbose     = tim::settings::verbose();
     int                             m_flags       = SA_RESTART | SA_SIGINFO;
+    int                             m_pid         = process::get_id();
     sig_atomic_t                    m_sig_lock    = 0;
     size_t                          m_idx         = get_counter()++;
     size_t                          m_buffer_size = trait::buffer_size<this_type>::value;

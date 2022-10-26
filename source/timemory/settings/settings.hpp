@@ -39,12 +39,14 @@
 #include "timemory/settings/types.hpp"
 #include "timemory/settings/vsettings.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <ctime>
 #include <map>
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #if defined(TIMEMORY_UNIX)
@@ -209,14 +211,15 @@ struct TIMEMORY_VISIBILITY("default") settings
         tim::type_list<bool, string_t, int16_t, int32_t, int64_t, uint16_t, uint32_t,
                        uint64_t, size_t, float, double>;
     friend class manager;
-    using strvector_t    = std::vector<std::string>;
-    using strset_t       = std::set<std::string>;
-    using value_type     = std::shared_ptr<vsettings>;
-    using data_type      = std::unordered_map<string_view_t, value_type>;
-    using iterator       = typename data_type::iterator;
-    using const_iterator = typename data_type::const_iterator;
-    using pointer_t      = std::shared_ptr<settings>;
-    using strpair_t      = std::pair<std::string, std::string>;
+    using strvector_t      = std::vector<std::string>;
+    using strset_t         = std::set<std::string>;
+    using value_type       = std::shared_ptr<vsettings>;
+    using data_type        = std::unordered_map<string_view_t, value_type>;
+    using iterator         = typename data_type::iterator;
+    using const_iterator   = typename data_type::const_iterator;
+    using pointer_t        = std::shared_ptr<settings>;
+    using strpair_t        = std::pair<std::string, std::string>;
+    using compose_suffix_t = std::variant<process::id_t, std::string>;
 
     template <typename Tp, typename Vp>
     using tsetting_pointer_t = std::shared_ptr<tsettings<Tp, Vp>>;
@@ -389,19 +392,32 @@ public:
     TIMEMORY_STATIC_ACCESSOR(bool, use_output_suffix,
                              get_env<bool>(TIMEMORY_SETTINGS_PREFIX "USE_OUTPUT_SUFFIX",
                                            false))
-#if defined(TIMEMORY_USE_MPI) || defined(TIMEMORY_USE_UPCXX)
-    TIMEMORY_STATIC_ACCESSOR(process::id_t, default_process_suffix, dmp::rank())
-#else
-    TIMEMORY_STATIC_ACCESSOR(process::id_t, default_process_suffix, process::get_id())
-#endif
+    TIMEMORY_STATIC_ACCESSOR(compose_suffix_t, default_process_suffix, "%nid%")
 
     struct compose_filename_config
     {
-        bool          use_suffix    = false;
-        process::id_t suffix        = process::get_id();
-        bool          make_dir      = false;
-        std::string   explicit_path = {};
-        std::string   subdirectory  = {};
+        TIMEMORY_DEFAULT_OBJECT(compose_filename_config)
+
+        template <typename SuffixT>
+        compose_filename_config(bool, SuffixT, bool = false, std::string_view = {},
+                                std::string_view = {});
+
+        bool             use_suffix    = false;
+        compose_suffix_t suffix        = "%nid%";
+        bool             make_dir      = false;
+        std::string      explicit_path = {};
+        std::string      subdirectory  = {};
+    };
+
+    struct output_key
+    {
+        output_key(std::string _key, std::string _val, std::string _desc = {});
+
+        operator std::pair<std::string, std::string>() const;
+
+        std::string key         = {};
+        std::string value       = {};
+        std::string description = {};
     };
 
     static strvector_t get_global_environment();
@@ -426,8 +442,8 @@ public:
 
     static void parse(const std::shared_ptr<settings>&);
 
-    static std::vector<std::pair<std::string, std::string>> output_keys(
-        const std::string& _tag) TIMEMORY_VISIBILITY("hidden");
+    static std::vector<output_key> output_keys(const std::string& _tag)
+        TIMEMORY_VISIBILITY("hidden");
     static std::string format(std::string _fpath, const std::string& _tag)
         TIMEMORY_VISIBILITY("hidden");
     static std::string format(std::string _prefix, std::string _tag, std::string _suffix,
@@ -438,7 +454,7 @@ public:
                                             bool _use_suffix, Args... args)
     {
         return compose_output_filename(std::move(_tag), std::move(_ext),
-                                       compose_filename_config(_use_suffix, args...));
+                                       compose_filename_config{ _use_suffix, args... });
     }
 
     template <typename... Args>
@@ -446,7 +462,7 @@ public:
                                            Args... args)
     {
         return compose_input_filename(std::move(_tag), std::move(_ext),
-                                      compose_filename_config(_use_suffix, args...));
+                                      compose_filename_config{ _use_suffix, args... });
     }
 
 public:
@@ -714,6 +730,37 @@ private:
     static void handle_exception(std::string_view, std::string_view, std::string_view,
                                  std::string_view);
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename SuffixT>
+inline settings::compose_filename_config::compose_filename_config(
+    bool _use, SuffixT _suffix, bool _make_dir, std::string_view _path,
+    std::string_view _subdir)
+: use_suffix{ _use }
+, make_dir{ _make_dir }
+, explicit_path{ _path }
+, subdirectory{ _subdir }
+{
+    if constexpr(std::is_same<SuffixT, compose_suffix_t>::value)
+        suffix = _suffix;
+    else if constexpr(std::is_integral<SuffixT>::value)
+        suffix = static_cast<process::id_t>(_suffix);
+    else
+        suffix = std::string{ _suffix };
+}
+//
+inline settings::output_key::output_key(std::string _key, std::string _val,
+                                        std::string _desc)
+: key{ std::move(_key) }
+, value{ std::move(_val) }
+, description{ std::move(_desc) }
+{}
+//
+inline settings::output_key::operator std::pair<std::string, std::string>() const
+{
+    return std::make_pair(key, value);
+}
 //
 //--------------------------------------------------------------------------------------//
 //

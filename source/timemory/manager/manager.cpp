@@ -439,7 +439,8 @@ TIMEMORY_MANAGER_INLINE std::ostream&
 //----------------------------------------------------------------------------------//
 //
 TIMEMORY_MANAGER_INLINE void
-manager::write_metadata(const std::string& _output_dir, const char* context, int32_t _id)
+manager::write_metadata(const std::string& _output_dir, const char* context,
+                        settings::compose_filename_config _cfg)
 {
     if(m_rank != 0)
     {
@@ -456,11 +457,7 @@ manager::write_metadata(const std::string& _output_dir, const char* context, int
         return;
     }
 
-    auto _cfg          = tim::settings::compose_filename_config{};
     _cfg.explicit_path = _output_dir;
-    _cfg.use_suffix    = (_id >= 0);
-    if(_id >= 0)
-        _cfg.suffix = _id;
 
     auto fname = settings::compose_output_filename("metadata", "json", _cfg);
     auto hname = settings::compose_output_filename("functions", "json", _cfg);

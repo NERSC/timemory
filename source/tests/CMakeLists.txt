@@ -227,10 +227,12 @@ timemory_add_google_test(
     SOURCES api_tests.cpp
     LINK_LIBRARIES common-test-libs timemory::timemory-core ${_LIBRARY})
 
-timemory_add_google_test(
-    ring_buffer_tests
-    SOURCES ring_buffer_tests.cpp
-    LINK_LIBRARIES common-test-libs ${_LIBRARY} test-werror-flags)
+if(NOT WIN32)
+    timemory_add_google_test(
+        ring_buffer_tests
+        SOURCES ring_buffer_tests.cpp
+        LINK_LIBRARIES common-test-libs ${_LIBRARY} test-werror-flags)
+endif()
 
 timemory_add_google_test(
     type_trait_tests DISCOVER_TESTS
@@ -355,7 +357,7 @@ timemory_add_google_test(
     LINK_LIBRARIES common-test-libs timemory::timemory-plotting timemory::timemory-core
                    timemory::timemory-ompt ${_LIBRARY} ${_OPENMP})
 
-if(TIMEMORY_USE_PTL OR TARGET PTL::ptl)
+if(TIMEMORY_USE_PTL AND TARGET PTL::ptl)
     list(APPEND ptl_tests_env "TIMEMORY_ENABLE_PTHREAD_GOTCHA_WRAPPER=ON")
     timemory_add_google_test(
         ptl_tests

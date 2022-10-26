@@ -158,7 +158,6 @@ private:
     bool           m_init              = false;
     bool           m_use_mmap          = true;
     bool           m_use_mmap_explicit = false;
-    int            m_fd                = 0;
     void*          m_ptr               = nullptr;
     size_t         m_size              = 0;
     mutable size_t m_read_count        = 0;
@@ -516,5 +515,5 @@ ring_buffer<Tp>::operator=(const ring_buffer<Tp>& rhs)
 #include "timemory/storage/macros.hpp"
 
 #if defined(TIMEMORY_STORAGE_HEADER_ONLY_MODE)
-#    include "timemory/storage/ring_buffer.cpp"
+#    include "timemory/data/ring_buffer.cpp"
 #endif

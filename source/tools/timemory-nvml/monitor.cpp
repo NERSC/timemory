@@ -31,8 +31,8 @@
 #include <chrono>
 #include <map>
 #include <thread>
+#include <timemory/data/ring_buffer.hpp>
 #include <timemory/general/serialization.hpp>
-#include <timemory/storage/ring_buffer.hpp>
 #include <timemory/timemory.hpp>
 #include <timemory/tpls/cereal/cereal.hpp>
 #include <timemory/variadic/lightweight_tuple.hpp>

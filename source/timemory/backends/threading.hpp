@@ -100,7 +100,7 @@ struct thread_id_manager
 inline auto&
 get_manager()
 {
-    static auto _v = new thread_id_manager{};
+    static auto* _v = new thread_id_manager{};
     return _v;
 }
 //

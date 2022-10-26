@@ -286,8 +286,36 @@ stream(StreamT& _os, const char* _color)
     return stream_base<StreamT>{ _os, _color };
 }
 
+template <typename StreamT>
+stream_base<StreamT>
+info_stream(StreamT& _os)
+{
+    return stream_base<StreamT>{ _os, color::info() };
+}
+
+template <typename StreamT>
+stream_base<StreamT>
+source_stream(StreamT& _os)
+{
+    return stream_base<StreamT>{ _os, color::source() };
+}
+
+template <typename StreamT>
+stream_base<StreamT>
+warning_stream(StreamT& _os)
+{
+    return stream_base<StreamT>{ _os, color::warning() };
+}
+
+template <typename StreamT>
+stream_base<StreamT>
+fatal_stream(StreamT& _os)
+{
+    return stream_base<StreamT>{ _os, color::fatal() };
+}
+
 inline std::string
-string(const char* _color, string_view_cref_t _v)
+string(const char* _color, std::string_view _v)
 {
     return std::string{ _color } + std::string{ _v } + std::string{ color::end() };
 }
@@ -296,6 +324,40 @@ inline std::string
 string(const char* _color, std::stringstream& _v)
 {
     return std::string{ _color } + _v.str() + std::string{ color::end() };
+}
+
+inline std::string
+string(const char* _color, std::stringstream&& _v)
+{
+    return std::string{ _color } + _v.str() + std::string{ color::end() };
+}
+
+template <typename Tp>
+inline auto
+info_string(Tp&& _v)
+{
+    return string(color::info(), std::forward<Tp>(_v));
+}
+
+template <typename Tp>
+inline auto
+source_string(Tp&& _v)
+{
+    return string(color::source(), std::forward<Tp>(_v));
+}
+
+template <typename Tp>
+inline auto
+warning_string(Tp&& _v)
+{
+    return string(color::warning(), std::forward<Tp>(_v));
+}
+
+template <typename Tp>
+inline auto
+fatal_string(Tp&& _v)
+{
+    return string(color::fatal(), std::forward<Tp>(_v));
 }
 }  // namespace log
 }  // namespace tim

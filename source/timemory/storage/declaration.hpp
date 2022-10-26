@@ -39,7 +39,7 @@
 #include "timemory/storage/types.hpp"
 
 // #include "timemory/storage/node.hpp"
-// #include "timemory/storage/ring_buffer.hpp"
+// #include "timemory/data/ring_buffer.hpp"
 // #include "timemory/storage/basic_tree.hpp"
 // #include "timemory/storage/graph_data.hpp"
 // #include "timemory/storage/graph.hpp"

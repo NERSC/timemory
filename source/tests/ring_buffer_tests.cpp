@@ -28,8 +28,8 @@ TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/components/data_tracker/components.hpp"
 #include "timemory/config.hpp"
+#include "timemory/data/ring_buffer.hpp"
 #include "timemory/data/ring_buffer_allocator.hpp"
-#include "timemory/storage/ring_buffer.hpp"
 #include "timemory/units.hpp"
 
 namespace comp = tim::component;

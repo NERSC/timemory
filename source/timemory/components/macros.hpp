@@ -35,12 +35,24 @@
 //--------------------------------------------------------------------------------------//
 //
 #if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_COMPONENT_EXTERN)
-#    define TIMEMORY_USE_COMPONENT_EXTERN
+#    define TIMEMORY_USE_COMPONENT_EXTERN 1
 #endif
 
-#if !defined(TIMEMORY_USE_COMPONENT_EXTERN) && !defined(TIMEMORY_COMPONENT_SOURCE) &&    \
-    !defined(TIMEMORY_COMPONENT_HEADER_MODE)
-#    define TIMEMORY_COMPONENT_HEADER_MODE
+#if defined(TIMEMORY_COMPONENT_SOURCE)
+#    if !defined(TIMEMORY_COMPONENT_INLINE)
+#        define TIMEMORY_COMPONENT_INLINE
+#    endif
+#elif defined(TIMEMORY_USE_COMPONENT_EXTERN)
+#    if !defined(TIMEMORY_COMPONENT_INLINE)
+#        define TIMEMORY_COMPONENT_INLINE
+#    endif
+#else
+#    if !defined(TIMEMORY_COMPONENT_INLINE)
+#        define TIMEMORY_COMPONENT_INLINE inline
+#    endif
+#    if !defined(TIMEMORY_COMPONENT_HEADER_MODE)
+#        define TIMEMORY_COMPONENT_HEADER_MODE 1
+#    endif
 #endif
 
 //--------------------------------------------------------------------------------------//

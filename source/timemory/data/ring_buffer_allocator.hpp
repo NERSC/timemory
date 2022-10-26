@@ -24,8 +24,8 @@
 
 #pragma once
 
+#include "timemory/data/ring_buffer.hpp"
 #include "timemory/environment/declaration.hpp"
-#include "timemory/storage/ring_buffer.hpp"
 #include "timemory/units.hpp"
 
 #include <cstddef>
@@ -261,11 +261,11 @@ private:
     buffer_data* get_buffer_data() const { return m_buffer_data; }
 
 private:
-    void init_current(size_t n) const
+    void init_current(size_t _n) const
     {
         if(m_buffer_data->current == nullptr || m_buffer_data->current->is_full())
         {
-            auto _n    = std::max<size_t>(n, get_buffer_count());
+            _n         = std::max<size_t>(_n, get_buffer_count());
             auto _uniq = std::make_unique<buffer_type>(_n, MMapV);
             m_buffer_data->buffers.emplace_back(std::move(_uniq));
             m_buffer_data->current = m_buffer_data->buffers.back().get();

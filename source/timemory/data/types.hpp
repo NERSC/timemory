@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/api.hpp"
+#include "timemory/data/macros.hpp"
 
 namespace tim
 {

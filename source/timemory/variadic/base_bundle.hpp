@@ -24,11 +24,11 @@
 
 #pragma once
 
+#include "timemory/data/ring_buffer.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/quirks.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
-#include "timemory/storage/ring_buffer.hpp"
 #include "timemory/utility/bit_flags.hpp"
 #include "timemory/variadic/functional.hpp"
 #include "timemory/variadic/impl.hpp"

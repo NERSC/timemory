@@ -30,7 +30,7 @@
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
-#include "timemory/storage/ring_buffer.hpp"
+#include "timemory/data/ring_buffer.hpp"
 #include "timemory/timemory.hpp"
 
 //--------------------------------------------------------------------------------------//

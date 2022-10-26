@@ -35,6 +35,9 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <fstream>
+#include <string>
+#include <vector>
 
 #if defined(TIMEMORY_UNIX)
 #    include <sys/resource.h>
@@ -95,6 +98,66 @@ get_target_id()
 {
     static auto instance = get_id();
     return instance;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+inline id_t
+get_parent_id()
+{
+#if defined(TIMEMORY_UNIX)
+    return getppid();
+#else
+    return get_id();
+#endif
+}
+//
+inline id_t
+get_group_id(id_t _id = get_id())
+{
+#if defined(TIMEMORY_UNIX)
+    return getpgid(_id);
+#else
+    return get_id();
+    (void) _id;
+#endif
+}
+//
+inline id_t
+get_session_id(id_t _id = get_id())
+{
+#if defined(TIMEMORY_UNIX)
+    return getsid(_id);
+#else
+    return get_id();
+    (void) _id;
+#endif
+}
+//
+inline std::vector<id_t>
+get_siblings(id_t _id = get_parent_id())
+{
+    auto _data = std::vector<id_t>{};
+
+#if defined(TIMEMORY_UNIX)
+    std::ifstream _ifs{ "/proc/" + std::to_string(_id) + "/task/" + std::to_string(_id) +
+                        "/children" };
+    while(_ifs)
+    {
+        id_t _n = 0;
+        _ifs >> _n;
+        if(!_ifs || _n <= 0)
+            break;
+        _data.emplace_back(_n);
+    }
+#endif
+    return _data;
+}
+//
+inline auto
+get_num_siblings(id_t _id = get_parent_id())
+{
+    return get_siblings(_id).size();
 }
 //
 //--------------------------------------------------------------------------------------//

@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/components/io/macros.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/enum.h"
 #include "timemory/macros/os.hpp"

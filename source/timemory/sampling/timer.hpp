@@ -30,6 +30,7 @@
 #include "timemory/macros/os.hpp"
 #include "timemory/units.hpp"
 
+#include <cerrno>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
@@ -277,6 +278,7 @@ private:
     int m_clock_id  = 0;
     int m_notify_id = 0;
 #endif
+    int          m_pid     = process::get_id();
     long         m_sys_tid = -1;
     int64_t      m_tim_tid = threading::get_id();
     double       m_freq    = 50.0;
@@ -344,6 +346,7 @@ inline timer::timer(timer&& rhs) noexcept
 , m_signal{ rhs.m_signal }
 , m_clock_id{ rhs.m_clock_id }
 , m_notify_id{ rhs.m_notify_id }
+, m_pid{ rhs.m_pid }
 , m_sys_tid{ rhs.m_sys_tid }
 , m_tim_tid{ rhs.m_tim_tid }
 , m_freq{ rhs.m_freq }
@@ -363,6 +366,7 @@ timer::operator=(timer&& rhs) noexcept
     m_signal          = rhs.m_signal;
     m_clock_id        = rhs.m_clock_id;
     m_notify_id       = rhs.m_notify_id;
+    m_pid             = rhs.m_pid;
     m_sys_tid         = rhs.m_sys_tid;
     m_tim_tid         = rhs.m_tim_tid;
     m_freq            = rhs.m_freq;
@@ -453,11 +457,14 @@ timer::start()
     int _ret = 0;
 #if defined(TIMEMORY_LINUX)
     TIMEMORY_REQUIRE((_ret = timer_settime(m_timer, 0, &m_spec, nullptr)) == 0)
-        << "Failed to start timer " << timer_strerror(_ret) << " :: " << _ret << ". "
+        << "Failed to start timer : " << timer_strerror(_ret) << " :: " << _ret << ". "
         << *this;
 #else
+    int  _err        = 0;
     auto _itimer_val = get_itimerval(m_spec);
-    _ret             = setitimer(m_clock_id, &_itimer_val, nullptr);
+    TIMEMORY_REQUIRE((_ret = setitimer(m_clock_id, &_itimer_val, nullptr)) == 0)
+        << "Failed to setitimer : " << strerror(_err = errno) << " :: " << _err << ". "
+        << *this;
 #endif
     m_is_active = (_ret == 0);
 
@@ -487,32 +494,21 @@ timer::start()
 inline bool
 timer::stop()
 {
-    if(m_initialized)
+    if(m_initialized && m_pid == process::get_id())
     {
-#if defined(TIMEMORY_LINUX)
-        if(m_is_active)
-        {
-            itimerspec_t _spec;
-            memset(&_spec, 0, sizeof(_spec));
-            _spec.it_value.tv_sec     = 0;
-            _spec.it_value.tv_nsec    = 0;
-            _spec.it_interval.tv_sec  = 0;
-            _spec.it_interval.tv_nsec = 0;
-            int _ret                  = 0;
-            TIMEMORY_PREFER((_ret = timer_settime(m_timer, 0, &_spec, nullptr)) == 0)
-                << "Failed to stop timer : " << timer_strerror(_ret) << " :: " << _ret
-                << ". " << *this;
-            m_is_active = false;
-        }
         int _ret = 0;
+#if defined(TIMEMORY_LINUX)
         TIMEMORY_REQUIRE((_ret = timer_delete(m_timer)) == 0)
             << "Failed to delete timer : " << timer_strerror(_ret) << " :: " << _ret
             << ". " << *this;
 #else
-        int  _ret        = 0;
+        int  _err        = 0;
         auto _itimer_val = get_itimerval(itimerspec_t{});
-        _ret             = setitimer(m_clock_id, &_itimer_val, nullptr);
+        TIMEMORY_REQUIRE((_ret = setitimer(m_clock_id, &_itimer_val, nullptr)) == 0)
+            << "Failed to setitimer : " << strerror(_err = errno) << " :: " << _err
+            << ". " << *this;
 #endif
+        m_is_active   = false;
         m_initialized = false;
         return true;
     }
@@ -524,6 +520,8 @@ timer::set_signal(int _v)
 {
     if(!m_is_active)
         m_signal = _v;
+    TIMEMORY_PREFER(!m_is_active)
+        << "timer::" << __FUNCTION__ << " ignored. timer already active\n";
 }
 
 inline void
@@ -531,6 +529,8 @@ timer::set_clock_id(int _v)
 {
     if(!m_is_active)
         m_clock_id = _v;
+    TIMEMORY_PREFER(!m_is_active)
+        << "timer::" << __FUNCTION__ << " ignored. timer already active\n";
 }
 
 inline void
@@ -538,6 +538,8 @@ timer::set_notify_id(int _v)
 {
     if(!m_is_active)
         m_notify_id = _v;
+    TIMEMORY_PREFER(!m_is_active)
+        << "timer::" << __FUNCTION__ << " ignored. timer already active\n";
 }
 
 inline void
@@ -548,6 +550,8 @@ timer::set_tid(int64_t _tim, long _sys)
         m_tim_tid = _tim;
         m_sys_tid = _sys;
     }
+    TIMEMORY_PREFER(!m_is_active)
+        << "timer::" << __FUNCTION__ << " ignored. timer already active\n";
 }
 //
 inline std::string

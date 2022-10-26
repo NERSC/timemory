@@ -154,8 +154,11 @@ sampler<CompT<Types...>, N>::~sampler()
     };
     if(!_erase_samplers(get_samplers(threading::get_id()), this))
     {
-        for(auto& itr : get_persistent_data().m_thread_instances)
-            _erase_samplers(itr.second, this);
+        if(m_pid == process::get_id())
+        {
+            for(auto& itr : get_persistent_data().m_thread_instances)
+                _erase_samplers(itr.second, this);
+        }
     }
     m_alloc.join();
 }

@@ -25,10 +25,11 @@
 #ifndef TIMEMORY_STORAGE_RING_BUFFER_CPP_
 #define TIMEMORY_STORAGE_RING_BUFFER_CPP_
 
+#include "timemory/log/macros.hpp"
 #include "timemory/storage/macros.hpp"
 
 #if !defined(TIMEMORY_STORAGE_HEADER_ONLY_MODE)
-#    include "timemory/storage/ring_buffer.hpp"
+#    include "timemory/data/ring_buffer.hpp"
 #endif
 
 #include "timemory/macros/os.hpp"
@@ -74,7 +75,6 @@ ring_buffer::ring_buffer(ring_buffer&& rhs) noexcept
 : m_init{ rhs.m_init }
 , m_use_mmap{ rhs.m_use_mmap }
 , m_use_mmap_explicit{ rhs.m_use_mmap_explicit }
-, m_fd{ rhs.m_fd }
 , m_ptr{ rhs.m_ptr }
 , m_size{ rhs.m_size }
 , m_read_count{ rhs.m_read_count }
@@ -106,7 +106,6 @@ ring_buffer::operator=(ring_buffer&& rhs) noexcept
     m_init              = rhs.m_init;
     m_use_mmap          = rhs.m_use_mmap;
     m_use_mmap_explicit = rhs.m_use_mmap_explicit;
-    m_fd                = rhs.m_fd;
     m_ptr               = rhs.m_ptr;
     m_size              = rhs.m_size;
     m_read_count        = rhs.m_read_count;
@@ -151,46 +150,19 @@ ring_buffer::init(size_t _size)
         m_ptr = malloc(m_size * sizeof(char));
         return;
     }
-    // Set file path depending on whether shared memory is compiled in or not.
-#    ifdef SHM
-    char path[] = "/dev/shm/rb-XXXXXX";
-#    else
-    char path[] = "/tmp/rb-XXXXXX";
-#    endif /* SHM */
-
-    // Create a temporary file for mmap backing.
-    if((m_fd = mkstemp(path)) < 0)
-        destroy();
-
-    // Remove file from filesystem. Note the file is still open by the process.
-    // XXX there might be a security problem with this, if so, use umaks 0600.
-    if(unlink(path) != 0)
-        destroy();
-
-    // Resize file to buffer size.
-    if(ftruncate(m_fd, m_size) < 0)
-        destroy();
 
     // Map twice the buffer size.
-    if((m_ptr = mmap(nullptr, 2 * m_size, PROT_NONE, MAP_ANONYMOUS | MAP_PRIVATE, -1,
-                     0)) == MAP_FAILED)
+    if((m_ptr = mmap(nullptr, m_size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE,
+                     -1, 0)) == MAP_FAILED)
+    {
         destroy();
-
-    // Map the temporary file into the first half of the above mapped space.
-    if(mmap(m_ptr, m_size, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_SHARED, m_fd, 0) ==
-       MAP_FAILED)
-        destroy();
-
-    // Map the temporary file into the second half of the mapped space.
-    // This creates two consecutive copies of the same physical memory, thus
-    // allowing contiues reads and writes of the buffer.
-    if(mmap(static_cast<char*>(m_ptr) + m_size, m_size, PROT_READ | PROT_WRITE,
-            MAP_FIXED | MAP_SHARED, m_fd, 0) == MAP_FAILED)
-        destroy();
+        auto _err = errno;
+        TIMEMORY_PRINTF_FATAL(stderr, "Error using mmap: %s\n", strerror(_err));
+        throw std::runtime_error(strerror(_err));
+    }
 #else
     m_use_mmap = false;
     m_ptr      = malloc(m_size * sizeof(char));
-    (void) m_fd;
 #endif
 }
 
@@ -207,19 +179,8 @@ ring_buffer::destroy()
         }
         else
         {
-            // Truncate file to zero, to avoid writing back memory to file, on munmap.
-            if(ftruncate(m_fd, 0) < 0)
-            {
-                bool _cond = settings::verbose() > 0 || settings::debug();
-                TIMEMORY_CONDITIONAL_PRINT_HERE(_cond,
-                                                "Ring buffer failed to truncate the file "
-                                                "descriptor %i\n",
-                                                m_fd);
-            }
             // Unmap the mapped virtual memmory.
-            auto ret = munmap(m_ptr, m_size * 2);
-            // Close the backing file.
-            close(m_fd);
+            auto ret = munmap(m_ptr, m_size);
             if(ret != 0)
                 perror("munmap");
         }
@@ -326,7 +287,6 @@ void
 ring_buffer::reset()
 {
     m_init        = false;
-    m_fd          = 0;
     m_ptr         = nullptr;
     m_size        = 0;
     m_read_count  = 0;

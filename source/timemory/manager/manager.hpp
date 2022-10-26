@@ -140,7 +140,8 @@ public:
     /// Set to 0 for yes if other output, -1 for never, or 1 for yes
     void set_write_metadata(short v) { m_write_metadata = v; }
     /// Print metadata to filename
-    void write_metadata(const std::string&, const char* = "", int32_t _suffix = -1);
+    void write_metadata(const std::string&, const char* = "",
+                        settings::compose_filename_config _cfg = {});
     /// Write metadata to ostream
     std::ostream& write_metadata(std::ostream&);
     /// Updates settings, rank, output prefix, etc.

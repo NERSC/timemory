@@ -64,6 +64,7 @@ add_subdirectory(settings)
 add_subdirectory(plotting)
 add_subdirectory(signals)
 add_subdirectory(unwind)
+add_subdirectory(data)
 
 if(TIMEMORY_USE_COVERAGE)
     if(TARGET timemory-core-shared)
@@ -84,6 +85,7 @@ timemory_build_intermediate_library(
     TARGET common
     CATEGORY GLOBAL
     FOLDER components
+    DEPENDS timemory::timemory-core
     PROPERTY_DEPENDS GLOBAL)
 
 add_subdirectory(manager)

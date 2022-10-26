@@ -26,11 +26,11 @@
 
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/data/ring_buffer.hpp"
 #include "timemory/defines.h"
 #include "timemory/log/logger.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/signals/signal_mask.hpp"
-#include "timemory/storage/ring_buffer.hpp"
 
 #include <atomic>
 #include <cerrno>

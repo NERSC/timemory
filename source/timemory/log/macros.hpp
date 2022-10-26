@@ -289,10 +289,15 @@ timemory_printf(FILE* _file, const char* _fmt, Args... args)
         }
 #endif
 
+#if !defined(TIMEMORY_LOG)
+#    define TIMEMORY_LOG(COLOR, EXIT_CODE)                                               \
+        (::tim::log::logger(EXIT_CODE)                                                   \
+         << ::tim::log::color::end() << ::tim::log::color::source() << "["               \
+         << TIMEMORY_PROJECT_NAME << "][" << __FILE__ << ":" << __LINE__ << "]["         \
+         << getpid() << "] " << ::tim::log::color::end() << COLOR)
+#endif
+
 #if defined(NDEBUG)
-#    if !defined(TIMEMORY_LOG)
-#        define TIMEMORY_LOG(COLOR, EXIT_CODE) (::tim::log::logger(EXIT_CODE) << COLOR)
-#    endif
 #    if !defined(TIMEMORY_INFO)
 #        define TIMEMORY_INFO (::tim::log::base())
 #    endif
@@ -300,17 +305,11 @@ timemory_printf(FILE* _file, const char* _fmt, Args... args)
 #        define TIMEMORY_ASSERT(COND) (::tim::log::base())
 #    endif
 #else
-#    if !defined(TIMEMORY_LOG)
-#        define TIMEMORY_LOG(COLOR, EXIT_CODE)                                           \
-            (::tim::log::logger(EXIT_CODE)                                               \
-             << ::tim::log::color::source() << "[" << __FILE__ << ":" << __LINE__        \
-             << "] " << COLOR)
-#    endif
 #    if !defined(TIMEMORY_INFO)
 #        define TIMEMORY_INFO TIMEMORY_LOG(::tim::log::color::info(), false)
 #    endif
 #    if !defined(TIMEMORY_ASSERT)
-#        define TIMEMORY_ASSERT(COND) (COND) ? ::tim::log::base() : FATAL
+#        define TIMEMORY_ASSERT(COND) (COND) ? ::tim::log::base() : TIMEMORY_FATAL
 #    endif
 #endif
 

@@ -25,6 +25,10 @@
 #ifndef TIMEMORY_SETTINGS_SETTINGS_CPP_
 #define TIMEMORY_SETTINGS_SETTINGS_CPP_
 
+#if !defined(__USE_XOPEN_EXTENDED)
+#    define __USE_XOPEN_EXTENDED
+#endif
+
 #include "timemory/settings/settings.hpp"
 
 #include "timemory/backends/dmp.hpp"
@@ -249,16 +253,15 @@ settings::store_command_line(int argc, char** argv)
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_SETTINGS_INLINE std::vector<std::pair<std::string, std::string>>
+TIMEMORY_SETTINGS_INLINE std::vector<settings::output_key>
                          settings::output_keys(const std::string& _tag)
 {
     auto        _cmdline     = command_line();
-    std::string _arg0_string = {};    // only the first cmdline arg
     std::string _argv_string = {};    // entire argv cmd
     std::string _args_string = {};    // cmdline args
     std::string _argt_string = _tag;  // prefix + cmdline args
     std::string _tag0_string = _tag;  // only the basic prefix
-    auto        _options     = std::vector<strpair_t>{};
+    auto        _options     = std::vector<output_key>{};
 
     auto _replace = [](auto& _v, const strpair_t& pitr) {
         auto pos = std::string::npos;
@@ -281,18 +284,16 @@ TIMEMORY_SETTINGS_INLINE std::vector<std::pair<std::string, std::string>>
 
     if(!_cmdline.empty())
     {
-        _arg0_string += _cmdline.at(0);
-        _argv_string += _cmdline.at(0);
-        for(size_t i = 1; i < _cmdline.size(); ++i)
+        for(size_t i = 0; i < _cmdline.size(); ++i)
         {
-            const auto _l = std::string{ "_" };
+            const auto _l = std::string{ (i == 0) ? "" : "_" };
             auto       _v = _cmdline.at(i);
             _argv_string += _l + _v;
-            _argt_string += _l + _v;
-            _args_string += _l + _v;
-            _options.emplace_back(TIMEMORY_JOIN("", "%arg", i, "%"), _v);
-            _options.emplace_back(TIMEMORY_JOIN("", "%arg", i, "_hash%"),
-                                  md5::compute_md5(_v));
+            if(i > 0)
+            {
+                _argt_string += (i > 1) ? (_l + _v) : _v;
+                _args_string += (i > 1) ? (_l + _v) : _v;
+            }
         }
     }
 
@@ -303,42 +304,85 @@ TIMEMORY_SETTINGS_INLINE std::vector<std::pair<std::string, std::string>>
     auto _dmp_size      = TIMEMORY_JOIN("", dmp::size());
     auto _dmp_rank      = TIMEMORY_JOIN("", dmp::rank());
     auto _proc_id       = TIMEMORY_JOIN("", process::get_id());
+    auto _parent_id     = TIMEMORY_JOIN("", process::get_parent_id());
+    auto _pgroup_id     = TIMEMORY_JOIN("", process::get_group_id());
+    auto _session_id    = TIMEMORY_JOIN("", process::get_session_id());
+    auto _proc_size     = TIMEMORY_JOIN("", process::get_num_siblings());
     auto _pwd_string    = get_env<std::string>("PWD", ".", false);
     auto _slurm_job_id  = get_env<std::string>("SLURM_JOB_ID", "0", false);
     auto _slurm_proc_id = get_env<std::string>("SLURM_PROCID", _dmp_rank, false);
     auto _launch_string = get_local_datetime(_time_format.c_str(), _launch_time);
 
-#if defined(TIMEMORY_WINDOWS)
-    auto _parent_id = TIMEMORY_JOIN("", process::get_id());
-#else
-    auto _parent_id  = TIMEMORY_JOIN("", getppid());
-#endif
+    auto _uniq_id = _proc_id;
+    if(get_env<int32_t>("SLURM_PROCID", -1, false) >= 0)
+        _uniq_id = _slurm_proc_id;
+    else if(dmp::is_initialized() || dmp::rank() > 0)
+        _uniq_id = _dmp_rank;
 
-    for(auto&& itr : std::initializer_list<strpair_t>{
-            { "%arg0%", _arg0_string },
-            { "%arg0_hash%", md5::compute_md5(_arg0_string) },
-            { "%argv%", _argv_string },
-            { "%argv_hash%", md5::compute_md5(_argv_string) },
-            { "%argt%", _argt_string },
-            { "%argt_hash%", md5::compute_md5(_argt_string) },
-            { "%args%", _args_string },
-            { "%args_hash%", md5::compute_md5(_args_string) },
-            { "%tag%", _tag0_string },
-            { "%tag_hash%", md5::compute_md5(_tag0_string) },
-            { "%pid%", _proc_id },
-            { "%ppid%", _parent_id },
-            { "%job%", _slurm_job_id },
-            { "%rank%", _slurm_proc_id },
-            { "%size%", _dmp_size },
-            { "%launch_time%", _launch_string },
-            { "%m", md5::compute_md5(_argt_string) },
-            { "%p", _proc_id },
-            { "%j", _slurm_job_id },
-            { "%r", _slurm_proc_id },
-            { "%s", _dmp_size },
+    for(auto&& itr : std::initializer_list<output_key>{
+            { "%argv%", _argv_string,
+              "Entire command-line condensed into a single string" },
+            { "%argt%", _argt_string,
+              "Similar to `%argv%` except basename of first command line argument" },
+            { "%args%", _args_string,
+              "All command line arguments condensed into a single string" },
+            { "%tag%", _tag0_string, "Basename of first command line argument" } })
+    {
+        _options.emplace_back(itr);
+    }
+
+    if(!_cmdline.empty())
+    {
+        for(size_t i = 0; i < _cmdline.size(); ++i)
+        {
+            auto _v = _cmdline.at(i);
+            _options.emplace_back(TIMEMORY_JOIN("", "%arg", i, "%"), _v,
+                                  TIMEMORY_JOIN("", "Argument #", i));
+        }
+    }
+
+    auto _hashes = _options;
+
+    for(auto&& itr : std::initializer_list<output_key>{
+            { "%pid%", _proc_id, "Process identifier" },
+            { "%ppid%", _parent_id, "Parent process identifier" },
+            { "%pgid%", _pgroup_id, "Process group identifier" },
+            { "%psid%", _session_id, "Process session identifier" },
+            { "%psize%", _proc_size, "Number of sibling process" },
+            { "%job%", _slurm_job_id, "SLURM_JOB_ID env variable" },
+            { "%rank%", _slurm_proc_id, "MPI/UPC++ rank" },
+            { "%size%", _dmp_size, "MPI/UPC++ size" },
+            { "%nid%", _uniq_id, "%rank% if possible, otherwise %pid%" },
+            { "%launch_time%", _launch_string,
+              "Data and/or time of run according to time format" },
         })
     {
         _options.emplace_back(itr);
+    }
+
+    for(auto&& itr : std::initializer_list<output_key>{
+            { "%m", md5::compute_md5(_argt_string), "Shorthand for %argt_hash%" },
+            { "%p", _proc_id, "Shorthand for %pid%" },
+            { "%j", _slurm_job_id, "Shorthand for %job%" },
+            { "%r", _slurm_proc_id, "Shorthand for %rank%" },
+            { "%s", _dmp_size, "Shorthand for %size" },
+        })
+    {
+        _options.emplace_back(itr);
+    }
+
+    for(auto& itr : _hashes)
+    {
+        if(itr.key.empty() || itr.key.find("_hash%") != std::string::npos)
+            continue;
+        // if shorthand, skip
+        if(itr.key.find_last_of('%') != itr.key.length() - 1)
+            continue;
+
+        itr.description = TIMEMORY_JOIN(" ", "MD5 sum of", itr.key);
+        itr.value       = md5::compute_md5(itr.value);
+        itr.key = std::regex_replace(itr.key, std::regex{ "%(.*)%$" }, "%$1_hash%");
+        _options.emplace_back(std::move(itr));
     }
 
     return _options;
@@ -349,10 +393,10 @@ TIMEMORY_SETTINGS_INLINE std::vector<std::pair<std::string, std::string>>
 TIMEMORY_SETTINGS_INLINE std::string
                          settings::format(std::string _fpath, const std::string& _tag)
 {
-    auto _replace = [](auto& _v, const strpair_t& pitr) {
+    auto _replace = [](auto& _v, const output_key& pitr) {
         auto pos = std::string::npos;
-        while((pos = _v.find(pitr.first)) != std::string::npos)
-            _v.replace(pos, pitr.first.length(), pitr.second);
+        while((pos = _v.find(pitr.key)) != std::string::npos)
+            _v.replace(pos, pitr.key.length(), pitr.value);
     };
 
     _fpath = filepath::canonical(_fpath);
@@ -370,10 +414,11 @@ TIMEMORY_SETTINGS_INLINE std::string
     // environment and configuration variables
     try
     {
-        for(auto _expr : { std::string{ "(.*)%(env|ENV)\\{([A-Z0-9_]+)\\}%(.*)" },
-                           std::string{ "(.*)\\$(env|ENV)\\{([A-Z0-9_]+)\\}(.*)" },
-                           std::string{ "(.*)%(cfg|CFG)\\{([A-Z0-9_]+)\\}%(.*)" },
-                           std::string{ "(.*)\\$(cfg|CFG)\\{([A-Z0-9_]+)\\}(.*)" } })
+        for(const auto& _expr :
+            { std::string{ "(.*)%(env|ENV)\\{([A-Z0-9_]+)\\}%(.*)" },
+              std::string{ "(.*)\\$(env|ENV)\\{([A-Z0-9_]+)\\}(.*)" },
+              std::string{ "(.*)%(cfg|CFG)\\{([A-Z0-9_]+)\\}%(.*)" },
+              std::string{ "(.*)\\$(cfg|CFG)\\{([A-Z0-9_]+)\\}(.*)" } })
         {
             std::regex  _re{ _expr };
             std::string _cbeg   = (_expr.find("(.*)%") == 0) ? "%" : "$";
@@ -397,7 +442,7 @@ TIMEMORY_SETTINGS_INLINE std::string
                         if(_cfg != _settings->end())
                         {
                             _val = _cfg->second->as_string();
-                            _replace(_val, strpair_t{ ",", "-" });
+                            _replace(_val, output_key{ ",", "-", "" });
                         }
                     }
                 }
@@ -510,10 +555,23 @@ settings::compose_output_filename(std::string _tag, std::string _ext,
             _prefix = filepath::osrepr(std::string{ "./" });
     }
 
-    // add the mpi rank if not root
-    auto _suffix = (_config.use_suffix && _config.suffix >= 0)
-                       ? (std::string{ "-" } + std::to_string(_config.suffix))
-                       : std::string{};
+    std::string _suffix = {};
+    if(_config.use_suffix)
+    {
+        std::visit(
+            [&_suffix](auto _val) {
+                if constexpr(!std::is_same<decltype(_val), process::id_t>::value)
+                {
+                    _suffix = std::string{ "-" } + _val;
+                }
+                else
+                {
+                    if(_val >= 0)
+                        _suffix = std::string{ "-" } + std::to_string(_val);
+                }
+            },
+            _config.suffix);
+    }
 
     // create the path
     std::string _fpath = format(_prefix, std::move(_tag), _suffix, std::move(_ext));
@@ -546,9 +604,23 @@ settings::compose_input_filename(std::string _tag, std::string _ext,
     _prefix.erase(std::remove_if(_prefix.begin(), _prefix.end(), only_ascii),
                   _prefix.end());
 
-    auto _suffix = (_config.use_suffix && _config.suffix >= 0)
-                       ? (std::string{ "-" } + std::to_string(_config.suffix))
-                       : std::string{};
+    std::string _suffix = {};
+    if(_config.use_suffix)
+    {
+        std::visit(
+            [&_suffix](auto _val) {
+                if constexpr(!std::is_same<decltype(_val), process::id_t>::value)
+                {
+                    _suffix = std::string{ "-" } + _val;
+                }
+                else
+                {
+                    if(_val >= 0)
+                        _suffix = std::string{ "-" } + std::to_string(_val);
+                }
+            },
+            _config.suffix);
+    }
 
     // create the path
     std::string _fpath = format(_prefix, std::move(_tag), _suffix, std::move(_ext));
@@ -638,17 +710,17 @@ settings::settings(const settings& rhs)
                 std::stringstream _sorder;
                 {
                     std::set<std::string> _v = {};
-                    for(auto ditr : m_data)
+                    for(const auto& ditr : m_data)
                         _v.emplace(ditr.first);
-                    for(auto ditr : _v)
+                    for(const auto& ditr : _v)
                         _sorder << "\n    " << ditr;
                 }
                 {
                     _sorder << "\n  ORIGINAL:";
                     std::set<std::string> _v = {};
-                    for(auto ditr : rhs.m_data)
+                    for(const auto& ditr : rhs.m_data)
                         _v.emplace(ditr.first);
-                    for(auto ditr : _v)
+                    for(const auto& ditr : _v)
                         _sorder << "\n    " << ditr;
                 }
                 TIMEMORY_EXCEPTION("Error! Missing ordered entry: " << itr << ". Known: "

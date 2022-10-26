@@ -87,11 +87,7 @@ list_directory(string_view_cref_t _path)
     return _entries;
 }
 #else
-inline auto
-list_directory(string_view_cref_t _path)
-{
-    return std::vector<std::string>{};
-}
+inline auto list_directory(string_view_cref_t) { return std::vector<std::string>{}; }
 #endif
 }  // namespace filesystem
 }  // namespace utility

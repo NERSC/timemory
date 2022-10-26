@@ -30,6 +30,11 @@
 
 #pragma once
 
+#ifndef TIMEMORY_DATA_STREAM_HPP_
+#    define TIMEMORY_DATA_STREAM_HPP_
+#endif
+
+#include "timemory/data/macros.hpp"
 #include "timemory/mpl/stl.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
@@ -228,20 +233,9 @@ struct entry : base::stream_entry
     }
 
     explicit entry(const std::string& _val, header& _hdr, bool _center = false,
-                   bool _left = true)
-    : base::stream_entry(_hdr)
-    , m_hdr(&_hdr)
-    , m_permit_empty(true)
-    {
-        m_center = _center;
-        m_left   = _left;
-        base::stream_entry::construct(_val);
-    }
+                   bool _left = true);
 
-    entry(const entry& _rhs)
-    : base::stream_entry(_rhs)
-    , m_hdr(_rhs.m_hdr)
-    {}
+    entry(const entry& _rhs);
 
     ~entry()       = default;
     entry(entry&&) = default;
@@ -302,14 +296,7 @@ public:
 
 public:
     explicit stream(char _delim = '|', char _fill = '-', format_flags _fmt = {},
-                    int _width = 0, int _prec = 0, bool _center = false)
-    : m_center(_center)
-    , m_fill(_fill)
-    , m_delim(_delim)
-    , m_width(_width)
-    , m_precision(_prec)
-    , m_format(_fmt)
-    {}
+                    int _width = 0, int _prec = 0, bool _center = false);
 
     bool         center() const { return m_center; }
     int          precision() const { return m_precision; }
@@ -328,28 +315,8 @@ public:
     void set_name(string_t v) { m_name = std::move(v); }
     void set_banner(string_t v) { m_banner = std::move(v); }
 
-    static int64_t index(const string_t& _val, const vector_t<string_t>& _obj)
-    {
-        for(size_t i = 0; i < _obj.size(); ++i)
-        {
-            if(_obj.at(i) == _val)
-                return static_cast<int64_t>(i);
-        }
-        return -1;
-    }
-
-    static int64_t insert(const string_t& _val, vector_t<string_t>& _obj)
-    {
-        auto idx = index(_val, _obj);
-        if(idx < 0)
-        {
-            idx = _obj.size();
-            _obj.push_back(_val);
-            if(settings::debug())
-                printf("> inserted '%s'...\n", _val.c_str());
-        }
-        return idx;
-    }
+    static int64_t index(const string_t& _val, const vector_t<string_t>& _obj);
+    static int64_t insert(const string_t& _val, vector_t<string_t>& _obj);
 
     template <typename Tp>
     static int64_t index(const string_t&                                 _val,
@@ -379,175 +346,17 @@ public:
         return idx;
     }
 
-    void set_prefix_begin(int val = -1)
-    {
-        m_prefix_begin = (val < 0) ? ((int) m_order.size()) : val;
-    }
+    void set_prefix_begin(int val = -1);
+    void set_prefix_end(int val = -1);
+    void insert_break(int val = -1);
 
-    void set_prefix_end(int val = -1)
-    {
-        m_prefix_end = (val < 0) ? ((int) m_order.size()) : val;
-    }
+    void operator()(header _hdr);
+    void operator()(entry _obj);
 
-    void insert_break(int val = -1)
-    {
-        m_break.insert((val < 0) ? ((int) m_order.size()) : val);
-    }
-
-    void operator()(header _hdr)
-    {
-        if(_hdr.get().empty())
-            throw std::runtime_error("Header has no value");
-
-        auto _w = std::max<int>(m_width, _hdr.get().length() + 2);
-        _hdr.width(_w);
-
-        m_order.push_back(m_name);
-        auto _h = insert(m_name, m_headers);
-        auto _n = m_headers[_h].second.size();
-        _hdr.center(true);
-        _hdr.row(0);
-        _hdr.column(_n);
-        m_headers[_h].second.push_back(_hdr);
-    }
-
-    void operator()(entry _obj)
-    {
-        if(_obj.get().empty() && !_obj.permit_empty())
-            throw std::runtime_error("Entry has no value");
-
-        auto _w = std::max<int>(m_width, _obj.get().length() + 2);
-        _w      = std::max<int>(_w, _obj.get_header().width());
-
-        _obj.width(_w);
-        _obj.get_header().width(_w);
-
-        auto _o = index(m_name, m_order);
-        if(_o < 0)
-            throw std::runtime_error(string_t("Missing entry for ") + m_name);
-
-        auto _r = insert(m_name, m_entries);
-        _obj.center(false);
-        _obj.row(m_rows + 1);
-        _obj.column(m_cols);
-        m_entries[_r].second.push_back(_obj);
-        ++m_cols;
-    }
-
+    std::ostream&        write(std::ostream&) const;
     friend std::ostream& operator<<(std::ostream& os, const stream& obj)
     {
-        // return if completely empty
-        if(obj.m_headers.empty())
-            return os;
-
-        // return if not entries
-        if(obj.m_entries.empty())
-            return os;
-
-        stringstream_t       ss;
-        map_t<string_t, int> offset;
-
-        obj.write_banner(ss);
-
-        obj.write_separator(ss, '-');
-
-        int64_t norder_col = 0;
-        for(const auto& itr : obj.m_order)
-        {
-            int64_t col = ++norder_col;
-
-            stringstream_t _ss;
-            const auto&    _key    = itr;
-            auto           _offset = offset[_key]++;
-            auto           _idx    = index(_key, obj.m_headers);
-            if(_idx < 0 ||
-               (_idx >= 0 && !(_offset < (int) obj.m_headers[_idx].second.size())))
-            {
-                throw std::runtime_error("Error! indexing issue!");
-            }
-
-            const auto& hitr = obj.m_headers[_idx].second.at(_offset);
-            base::write_entry(_ss, hitr);
-
-            ss << obj.delim() << ' ' << _ss.str() << ' ';
-
-            if(obj.m_break.count(col) > 0)
-                break;
-        }
-
-        // end the line
-        ss << obj.delim() << '\n';
-
-        obj.write_separator(ss, obj.m_delim);
-
-        auto write_empty = [&](stringstream_t& _ss, int64_t _hidx, int64_t _offset) {
-            const auto& _hitr  = obj.m_headers[_hidx].second;
-            auto        _hsize = _hitr.size();
-            const auto& _hdr   = _hitr.at(_offset % _hsize);
-            _ss << obj.delim() << ' ' << std::setw(_hdr.width() - 2) << "" << ' ';
-        };
-
-        offset.clear();
-
-        for(int i = 0; i < obj.m_rows; ++i)
-        {
-            bool just_broke = false;
-            norder_col      = 0;
-            for(const auto& itr : obj.m_order)
-            {
-                just_broke  = false;
-                int64_t col = ++norder_col;
-
-                stringstream_t _ss;
-                const auto&    _key    = itr;
-                auto           _offset = offset[_key]++;
-
-                auto _hidx = index(_key, obj.m_headers);
-                auto _eidx = index(_key, obj.m_entries);
-
-                if(_eidx < 0 && _hidx >= 0)
-                {
-                    write_empty(ss, _hidx, _offset);
-                }
-                else
-                {
-                    assert(_hidx >= 0);
-                    assert(_eidx >= 0);
-
-                    const auto& _eitr  = obj.m_entries[_eidx].second;
-                    auto        _esize = _eitr.size();
-                    const auto& _itr   = _eitr.at(_offset % _esize);
-
-                    base::write_entry(_ss, _itr);
-                    ss << obj.delim() << ' ' << _ss.str() << ' ';
-                }
-
-                // printf("column: %i, order size: %i, count: %i\n", col,
-                // obj.m_order.size(),
-                //       obj.m_break.count(col));
-                if(col < (int64_t) obj.m_order.size() && obj.m_break.count(col) > 0)
-                {
-                    ss << obj.m_delim << '\n';
-                    just_broke = true;
-                    for(auto j = obj.m_prefix_begin; j < obj.m_prefix_end; ++j)
-                        write_empty(ss, j, 0);
-                }
-            }
-            if(!just_broke)
-                ss << obj.m_delim << '\n';
-
-            if(obj.m_separator_freq > 0)
-            {
-                if((i + 1) < obj.m_rows &&
-                   (i % obj.m_separator_freq) == (obj.m_separator_freq - 1))
-                    obj.write_separator(ss, obj.m_delim);
-            }
-        }
-
-        obj.write_separator(ss, '-');
-
-        os << ss.str();
-        return os;
+        return obj.write(os);
     }
 
     template <typename StreamT>
@@ -665,39 +474,13 @@ public:
     template <typename... Tp, template <typename...> class _Tuple, size_t... Idx>
     static void write(stream&, const _Tuple<Tp...>&, index_sequence<Idx...>);
 
-    void clear()
-    {
-        m_name = "";
-        m_headers.clear();
-        m_entries.clear();
-    }
+    void clear();
 
-    header& get_header(const string_t& _key, int64_t _n)
-    {
-        auto idx = index(_key, m_headers);
-        if(idx < 0)
-        {
-            stringstream_t ss;
-            ss << "Missing header '" << _key << "'";
-            throw std::runtime_error(ss.str());
-        }
-
-        if(!(_n < (int64_t) m_headers[idx].second.size()))
-        {
-            auto _size = m_headers[idx].second.size();
-            return m_headers[idx].second[_n % _size];
-        }
-
-        return m_headers[idx].second[_n];
-    }
+    header& get_header(const string_t& _key, int64_t _n);
 
     /// \fn int stream::add_row()
     /// \brief indicate that a row of data has been finished
-    int add_row()
-    {
-        m_cols = 0;
-        return ++m_rows;
-    }
+    int add_row();
 
     /// \fn void stream::sort(sorter, keys, exclude)
     /// \brief Provide a \param sorter functor that operates on all or a specific
@@ -707,54 +490,7 @@ public:
     /// end of the container in the order consistent with the origial construction
     void sort(const std::function<bool(const std::string&, const std::string&)>& sorter,
               std::vector<std::string>     keys    = {},
-              const std::set<std::string>& exclude = {})
-    {
-        // if no keys were provided, add all of them
-        if(keys.empty())
-        {
-            for(const auto& itr : m_order)
-                keys.push_back(itr);
-        }
-
-        // the new headers
-        order_map_t _order{};
-
-        // sort the keys
-        std::sort(keys.begin(), keys.end(), sorter);
-
-        // generate the new layout in the order specified
-        for(const auto& itr : keys)
-        {
-            bool found = false;
-            for(auto hitr = m_order.begin(); hitr != m_order.end(); ++hitr)
-            {
-                if(*hitr == itr)
-                {
-                    _order.push_back(*hitr);
-                    // remove entry
-                    m_order.erase(hitr);
-                    found = true;
-                    break;
-                }
-            }
-            if(!found)
-            {
-                TIMEMORY_PRINT_HERE(
-                    "Warning! Expected header tag '%s' not found when sorting",
-                    itr.c_str());
-            }
-        }
-
-        // insert any remaining not excluded
-        for(const auto& itr : m_order)
-        {
-            if(exclude.count(itr) == 0)
-                _order.push_back(itr);
-        }
-
-        // set the new headers
-        m_order = _order;
-    }
+              const std::set<std::string>& exclude = {});
 
 private:
     bool         m_center         = false;
@@ -1003,7 +739,8 @@ write_entry(Args&&... args)
 }
 //
 }  // namespace utility
-
-//--------------------------------------------------------------------------------------//
-
 }  // namespace tim
+
+#if defined(TIMEMORY_DATA_HEADER_MODE) && TIMEMORY_DATA_HEADER_MODE > 0
+#    include "timemory/data/stream.cpp"
+#endif

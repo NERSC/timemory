@@ -179,7 +179,7 @@ add_reserved_id(int64_t _v)
 // clang-format on
 {
     auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
-    auto        _manager = internal::get_manager();
+    auto*       _manager = internal::get_manager();
     if(!_manager)
         return std::set<int64_t>{};
     else if(_v > 0)
@@ -194,7 +194,7 @@ erase_reserved_id(int64_t _v)
 // clang-format on
 {
     auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
-    auto        _manager = internal::get_manager();
+    auto*       _manager = internal::get_manager();
     if(!_manager)
         return std::set<int64_t>{};
     if(_v > 0)
