@@ -11,7 +11,7 @@ timemory_build_intermediate_library(
     NAME containers
     TARGET containers
     CATEGORY EXTERN
-    FOLDER components
+    FOLDER ${CMAKE_INSTALL_LIBDIR}
     HEADERS ${header_files}
     SOURCES ${source_files}
     PROPERTY_DEPENDS GLOBAL COMPONENT USER_BUNDLE)

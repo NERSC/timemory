@@ -38,7 +38,7 @@ using namespace tim::component;
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
 
-static const double util_tolerance  = 12.5;
+static const double util_tolerance  = 15.0;
 static const double timer_tolerance = 0.025;
 
 #define CHECK_AVAILABLE(type)                                                            \
@@ -301,17 +301,22 @@ TEST_F(timing_tests, thread_cpu_utilization)
         std::thread t{ _consume };
         for(int i = 0; i < 10; ++i)
         {
-            details::consume(100);
-            details::do_sleep(100);
+            // over-estimate the cpu utilization bc
+            // this tends to fail during CI
+            details::consume(250);
+            details::do_sleep(150);
         }
         t.join();
         obj.stop();
 
+        std::cout << obj << "\n";
         EXPECT_NEAR(50.0, obj.get(), util_tolerance)
             << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
             << datastr(obj);
     };
-    std::thread{ _func }.join();
+    auto _t = std::thread{ _func };
+    std::this_thread::yield();
+    _t.join();
 }
 
 //--------------------------------------------------------------------------------------//

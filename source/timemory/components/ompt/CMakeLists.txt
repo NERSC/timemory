@@ -13,7 +13,7 @@ if(TIMEMORY_USE_OMPT)
         NAME ${NAME}
         TARGET ${NAME}-component
         CATEGORY COMPONENT
-        FOLDER components
+        FOLDER ${CMAKE_INSTALL_LIBDIR}
         HEADERS ${header_files}
         SOURCES ${source_files}
         DEPENDS ${DEPS}

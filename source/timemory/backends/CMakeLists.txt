@@ -8,7 +8,7 @@ if(TIMEMORY_USE_MPI_INIT)
         NAME mpi_init
         TARGET common
         CATEGORY GLOBAL
-        FOLDER components
+        FOLDER ${CMAKE_INSTALL_LIBDIR}
         HEADERS ${mpi_header_files}
         SOURCES ${mpi_source_files}
         DEPENDS timemory::timemory-mpi timemory::timemory-core
@@ -23,7 +23,7 @@ timemory_build_intermediate_library(
     NAME backends
     TARGET common
     CATEGORY GLOBAL
-    FOLDER components
+    FOLDER ${CMAKE_INSTALL_LIBDIR}
     HEADERS ${header_files}
     SOURCES ${source_files}
     DEPENDS timemory::timemory-mpi timemory::timemory-core timemory::timemory-gotcha

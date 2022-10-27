@@ -28,7 +28,7 @@ timemory_build_intermediate_library(
     NAME ert
     TARGET ert
     CATEGORY GLOBAL
-    FOLDER components
+    FOLDER ${CMAKE_INSTALL_LIBDIR}
     HEADERS ${header_files}
     SOURCES ${source_files}
     DEPENDS timemory::timemory-vector timemory::timemory-cuda timemory::timemory-hip

@@ -12,7 +12,7 @@ if(source_files)
         NAME ${tools}
         TARGET ${tools}
         CATEGORY TOOLS
-        FOLDER components
+        FOLDER ${CMAKE_INSTALL_LIBDIR}
         HEADERS ${header_files}
         SOURCES ${source_files}
         PROPERTY_DEPENDS TOOLS)

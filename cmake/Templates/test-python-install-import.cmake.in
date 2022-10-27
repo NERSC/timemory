@@ -20,13 +20,15 @@ elseif(UNIX)
 endif()
 
 execute_process(
-    COMMAND @PYTHON_EXECUTABLE@ -c
-            "import timemory; print('{}'.format(timemory.__file__))"
+    COMMAND
+        @PYTHON_EXECUTABLE@ -c
+        "print('importing timemory...'); import timemory; print('{}'.format(timemory.__file__))"
     WORKING_DIRECTORY @PROJECT_BINARY_DIR@/tests
     OUTPUT_VARIABLE OUT_MSG
     ERROR_VARIABLE ERR_MSG
     RESULT_VARIABLE ERR_CODE
-    OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE)
+    OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_STRIP_TRAILING_WHITESPACE
+    TIMEOUT 120)
 
 if(ERR_CODE)
     message(FATAL_ERROR "Error! Exit code: ${ERR_CODE}. ${ERR_MSG}")

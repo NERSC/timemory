@@ -133,6 +133,12 @@ jobs:
             export CMAKE_PREFIX_PATH=${HOME}/timemory-install:${CMAKE_PREFIX_PATH} &&
             cmake -B build-examples -DUSE_MPI=ON examples &&
             cmake --build build-examples --target ex_array_of_bundles
+      - run:
+          name: test
+          command: >
+            cd build-timemory/Linux &&
+            ctest --rerun-failed -V -N &&
+            ctest --rerun-failed -V
   cpu-dev-build:
     docker:
       - image: jrmadsen/timemory:dev-cpu
@@ -178,6 +184,12 @@ jobs:
             cmake --build build-timemory/Linux --target install --parallel 2 &&
             export CMAKE_PREFIX_PATH=${HOME}/timemory-install:${CMAKE_PREFIX_PATH} &&
             cmake -B build-examples -DUSE_MPI=ON examples
+      - run:
+          name: test
+          command: >
+            cd build-timemory/Linux &&
+            ctest --rerun-failed -V -N &&
+            ctest --rerun-failed -V -E launch-process
     resource_class: large
   gpu-dev-build:
     docker:
@@ -222,6 +234,12 @@ jobs:
             cmake --build build-timemory/Linux --target install --parallel 2 &&
             export CMAKE_PREFIX_PATH=${HOME}/timemory-install:${CMAKE_PREFIX_PATH} &&
             cmake -B build-examples -DUSE_MPI=OFF examples
+      - run:
+          name: test
+          command: >
+            cd build-timemory/Linux &&
+            ctest --rerun-failed -V -N &&
+            ctest --rerun-failed -V
   macos-dev-build:
     macos:
       xcode: 12.4.0
@@ -255,6 +273,12 @@ jobs:
             cmake --build build-timemory/Linux --target install --parallel 2 &&
             export CMAKE_PREFIX_PATH=${HOME}/timemory-install:${CMAKE_PREFIX_PATH} &&
             cmake -B build-examples -DUSE_MPI=OFF examples
+      - run:
+          name: test
+          command: >
+            cd build-timemory/Linux &&
+            ctest --rerun-failed -V -N &&
+            ctest --rerun-failed -V
 
 workflows:
   version: 2

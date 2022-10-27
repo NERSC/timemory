@@ -158,6 +158,14 @@ jobs:
           conda activate pyctest
           cmake --build . --target install --parallel $(nproc)
 
+      - name: Validate Tests
+        working-directory: ${{github.workspace}}/build-timemory/Linux
+        run: |
+          source activate
+          conda activate pyctest
+          ctest --rerun-failed -V -N
+          ctest --rerun-failed -V
+
       - name: Test Python Build
         if: ${{ matrix.BUILD_TYPE != 'Debug' }}
         working-directory: ${{github.workspace}}/build-timemory/Linux

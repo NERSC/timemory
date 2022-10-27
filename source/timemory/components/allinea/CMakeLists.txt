@@ -10,7 +10,7 @@ if(TIMEMORY_USE_ALLINEA_MAP)
         NAME ${NAME}
         TARGET ${NAME}-component
         CATEGORY COMPONENT
-        FOLDER components
+        FOLDER ${CMAKE_INSTALL_LIBDIR}
         HEADERS ${header_files}
         SOURCES ${source_files}
         DEPENDS ${DEPS}

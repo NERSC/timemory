@@ -6,7 +6,7 @@ timemory_build_intermediate_library(
     NAME operations
     TARGET common
     CATEGORY GLOBAL
-    FOLDER components
+    FOLDER ${CMAKE_INSTALL_LIBDIR}
     HEADERS ${header_files}
     SOURCES ${source_files}
     DEPENDS timemory::timemory-core)

@@ -7,7 +7,7 @@ timemory_build_intermediate_library(
     NAME ${NAME}
     TARGET ${NAME}-component
     CATEGORY COMPONENT
-    FOLDER components
+    FOLDER ${CMAKE_INSTALL_LIBDIR}
     HEADERS ${header_files}
     SOURCES ${source_files}
     PROPERTY_DEPENDS GLOBAL)

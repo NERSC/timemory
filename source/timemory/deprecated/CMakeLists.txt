@@ -7,7 +7,7 @@ if(TIMEMORY_USE_DEPRECATED)
         NAME deprecated
         TARGET deprecated
         CATEGORY GLOBAL
-        FOLDER components
+        FOLDER ${CMAKE_INSTALL_LIBDIR}
         HEADERS ${header_files}
         SOURCES ${source_files}
         PROPERTY_DEPENDS GLOBAL)

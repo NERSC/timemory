@@ -53,7 +53,7 @@ timemory_build_intermediate_library(
     NAME core
     TARGET core
     CATEGORY GLOBAL
-    FOLDER components
+    FOLDER ${CMAKE_INSTALL_LIBDIR}
     DEPENDS timemory::timemory-libunwind)
 
 # core
@@ -85,7 +85,7 @@ timemory_build_intermediate_library(
     NAME common
     TARGET common
     CATEGORY GLOBAL
-    FOLDER components
+    FOLDER ${CMAKE_INSTALL_LIBDIR}
     DEPENDS timemory::timemory-core
     PROPERTY_DEPENDS GLOBAL)
 
