@@ -443,18 +443,8 @@ timemory_finalize(manager* _manager, settings* _settings, bool _lookup)
             mpi::finalize();
         }
 
-        if(_settings->get_debug() || _settings->get_verbose() > 3)
-            TIMEMORY_PRINT_HERE("%s", "");
-
-        if(_settings->get_enable_signal_handler())
-        {
-            if(_settings->get_debug())
-                TIMEMORY_PRINT_HERE("%s", "disabling signal detection");
-            signals::disable_signal_detection();
-        }
-
         if(_settings->get_debug())
-            TIMEMORY_PRINT_HERE("%s", "done");
+            TIMEMORY_PRINT_HERE("%s", "timemory finalized");
     }
 }
 //
