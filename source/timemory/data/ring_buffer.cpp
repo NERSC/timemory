@@ -292,6 +292,37 @@ ring_buffer::reset()
     m_read_count  = 0;
     m_write_count = 0;
 }
+//
+TIMEMORY_DATA_INLINE
+void
+ring_buffer::save(std::fstream& _fs)
+{
+    _fs.write(reinterpret_cast<char*>(&m_use_mmap), sizeof(m_use_mmap));
+    _fs.write(reinterpret_cast<char*>(&m_use_mmap_explicit), sizeof(m_use_mmap_explicit));
+    _fs.write(reinterpret_cast<char*>(&m_size), sizeof(m_size));
+    _fs.write(reinterpret_cast<char*>(&m_read_count), sizeof(m_read_count));
+    _fs.write(reinterpret_cast<char*>(&m_write_count), sizeof(m_write_count));
+    _fs.write(reinterpret_cast<char*>(m_ptr), m_size * sizeof(char));
+}
+//
+TIMEMORY_DATA_INLINE
+void
+ring_buffer::load(std::fstream& _fs)
+{
+    destroy();
+
+    _fs.read(reinterpret_cast<char*>(&m_use_mmap), sizeof(m_use_mmap));
+    _fs.read(reinterpret_cast<char*>(&m_use_mmap_explicit), sizeof(m_use_mmap_explicit));
+    _fs.read(reinterpret_cast<char*>(&m_size), sizeof(m_size));
+
+    init(m_size);
+    if(!m_ptr)
+        m_ptr = malloc(m_size);
+
+    _fs.read(reinterpret_cast<char*>(&m_read_count), sizeof(m_read_count));
+    _fs.read(reinterpret_cast<char*>(&m_write_count), sizeof(m_write_count));
+    _fs.read(reinterpret_cast<char*>(m_ptr), m_size * sizeof(char));
+}
 }  // namespace base
 }  // namespace tim
 

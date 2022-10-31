@@ -33,6 +33,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -141,6 +142,9 @@ struct ring_buffer
     bool get_use_mmap() const { return m_use_mmap; }
 
     std::string as_string() const;
+
+    void save(std::fstream& _fs);
+    void load(std::fstream& _fs);
 
     friend std::ostream& operator<<(std::ostream& os, const ring_buffer& obj)
     {
@@ -442,6 +446,8 @@ struct ring_buffer : private base::ring_buffer
     }
 
     using base_type::get_use_mmap;
+    using base_type::load;
+    using base_type::save;
     using base_type::set_use_mmap;
 
     std::string as_string() const
