@@ -406,7 +406,18 @@ public:
 
     /// \fn void set_verbose(int)
     /// \brief Configure the verbosity
-    void set_verbose(int _v) { m_verbose = _v; }
+    void set_verbose(int _v)
+    {
+        m_verbose = _v;
+        m_alloc.set_verbose(_v);
+    }
+
+    /// Pass a function to the allocator for offloading a full buffer
+    template <typename FuncT>
+    void set_offload(FuncT&& _v)
+    {
+        m_alloc.set_offload(std::forward<FuncT>(_v));
+    }
 
     /// \fn void remove_timer(int)
     /// \brief Remove from set of timers

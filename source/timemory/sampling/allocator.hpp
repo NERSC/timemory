@@ -97,10 +97,11 @@ using semaphore_t = sem_t;
 template <typename Tp>
 struct allocator
 {
-    using this_type   = allocator<Tp>;
-    using data_type   = typename Tp::bundle_type;
-    using buffer_type = data_storage::ring_buffer<data_type>;
-    using lock_type   = std::unique_lock<std::mutex>;
+    using this_type         = allocator<Tp>;
+    using data_type         = typename Tp::bundle_type;
+    using buffer_type       = data_storage::ring_buffer<data_type>;
+    using lock_type         = std::unique_lock<std::mutex>;
+    using offload_func_type = void (*)(int64_t, buffer_type&&);
 
     allocator(Tp* _obj);
     ~allocator();
@@ -110,19 +111,49 @@ struct allocator
     allocator& operator=(const allocator&) = delete;
     allocator& operator=(allocator&&) noexcept = default;
 
-    auto&       get_data();
-    const auto& get_data() const;
-    bool        is_alive() const { return m_alive; }
-    void        join();
-    void        start() { m_start.set_value(); }
-    void        restart(Tp* _obj);
-    void        block_signal(int _v);
-    void        emplace(buffer_type&&);
-    void        set_verbose(int _v) { m_verbose = _v; }
+    /// Set a callback function for handling non-empty memory buffers.
+    /// This is useful if you want to manually manage the memory, e.g.
+    /// write the data to a file.
+    /// When set, this function gets invoked when:
+    /// - a memory buffer is full
+    /// - the sampler holding the allocator instance is stopped
+    /// - the \ref get_data() function is called
+    /// Invoking \ref get_data() within the offload function will cause a deadlock
+    auto set_offload(offload_func_type _v) { return m_offload.exchange(_v); }
 
-    static void execute(allocator*, Tp*);
+    /// This function will return any data stored internally (i.e. not offloaded)
+    auto& get_data();
+
+    /// This function will return any data stored internally (i.e. not offloaded)
+    const auto& get_data() const;
+
+    bool is_alive() const { return m_alive; }
+
+    /// waits for the allocator's thread to finish
+    void join();
+
+    /// notify the allocator's thread to start waiting for buffers
+    void start() { m_start.set_value(); }
+
+    /// restart the background thread
+    void restart(Tp* _obj);
+
+    /// blocks the specified signal number from being delievered
+    /// to the allocator's thread
+    void block_signal(int _v);
+
+    /// provide data to the allocator. Will either invoke offload callback or store
+    /// internally
+    void emplace(buffer_type&&);
+
+    void set_verbose(int _v) { m_verbose = _v; }
 
 private:
+    using atomic_offload_func_t = std::atomic<offload_func_type>;
+
+    /// the execution function for the allocator's thread
+    static void execute(allocator*, Tp*);
+
     /// this function makes sure that allocator isn't interrupted by signals
     void block_pending_signals();
     void update_data();
@@ -131,6 +162,7 @@ private:
     int                      m_verbose = 0;
     int64_t                  m_tid     = threading::get_id();
     semaphore_t              m_sem;
+    atomic_offload_func_t    m_offload = { nullptr };
     std::mutex               m_signal_mutex;
     std::mutex               m_buffer_mutex;
     std::promise<void>       m_ready                   = {};
@@ -208,8 +240,15 @@ template <typename Tp>
 void
 allocator<Tp>::emplace(buffer_type&& _v)
 {
-    lock_type _lk{ m_buffer_mutex };
-    m_buffers.emplace_back(std::move(_v));
+    if(m_offload)
+    {
+        (*m_offload)(m_tid, std::move(_v));
+    }
+    else
+    {
+        lock_type _lk{ m_buffer_mutex };
+        m_buffers.emplace_back(std::move(_v));
+    }
 }
 
 template <typename Tp>
@@ -246,6 +285,24 @@ allocator<Tp>::update_data()
             _lk.lock();
         std::swap(m_buffers, _buffers);
     }
+
+    /// if a callback function for handling was the memory buffers was provided,
+    /// transfer the data via that callback and return
+    if(m_offload)
+    {
+        for(auto& itr : _buffers)
+        {
+            if(!itr.is_empty())
+                (*m_offload)(m_tid, std::move(itr));
+            else
+                itr.destroy();
+        }
+        return;
+    }
+
+    /// if no offload callback function was provided, empty out the
+    /// the ring buffer and store for retrieval later (which
+    /// is done via the \ref get_data() function)
     size_t _n = 0;
     for(auto& itr : _buffers)
         _n += itr.count();
@@ -431,6 +488,12 @@ struct allocator<void>
     {}
 
     void set_verbose(int) {}
+
+    template <typename FuncT>
+    static decltype(auto) set_offload(FuncT&& _func)
+    {
+        return std::forward<FuncT>(_func);
+    }
 };
 
 }  // namespace sampling
