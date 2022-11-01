@@ -402,11 +402,18 @@ function(DETECT_HOST_ARCHITECTURE _CPU_ARCH_VAR)
                 set(TARGET_ARCHITECTURE "silvermont")
             elseif(_cpu_model EQUAL 102)
                 set(TARGET_ARCHITECTURE "cannonlake")
+            elseif(_cpu_model EQUAL 125 OR _cpu_model EQUAL 126)
+                set(TARGET_ARCHITECTURE "icelake")
+            elseif(_cpu_model EQUAL 106 OR _cpu_model EQUAL 108)
+                set(TARGET_ARCHITECTURE "icelake-server")
             elseif(_cpu_model EQUAL 142 OR _cpu_model EQUAL 158) # 8E, 9E
                 set(TARGET_ARCHITECTURE "kaby-lake")
             elseif(_cpu_model EQUAL 85) # 55
                 set(TARGET_ARCHITECTURE "skylake-avx512")
-            elseif(_cpu_model EQUAL 78 OR _cpu_model EQUAL 94) # 4E, 5E
+            elseif(
+                _cpu_model EQUAL 78
+                OR _cpu_model EQUAL 94
+                OR _cpu_model EQUAL 165) # 4E, 5E
                 set(TARGET_ARCHITECTURE "skylake")
             elseif(
                 _cpu_model EQUAL 61
