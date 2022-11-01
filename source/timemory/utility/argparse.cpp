@@ -366,7 +366,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     bool _pdash = false;
     for(int i = 1; i < *argc; ++i)
     {
-        if((*argv)[i] == std::string("--"))
+        if(std::string_view{ (*argv)[i] } == _delim)
             _pdash = true;
     }
 
@@ -387,7 +387,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     return _perrc;
 }
 
-TIMEMORY_UTILITY_INLINE argument_parser::known_args_t
+TIMEMORY_UTILITY_INLINE argument_parser::known_args
                         argument_parser::parse_known_args(int argc, char** argv, strvec_t& _args,
                                   const std::string& _delim, int verbose_level)
 {
@@ -444,7 +444,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::known_args_t
         log::stream(std::cerr, log::color::info())
             << "[command]>  " << cmd_string(_cmdc, _cmdv) << "\n\n";
 
-    return known_args_t{ parse(_args, verbose_level), _cmdc, _cmdv };
+    return known_args{ parse(_args, verbose_level), _cmdc, _cmdv };
 }
 
 TIMEMORY_UTILITY_INLINE argument_parser::arg_result

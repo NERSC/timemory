@@ -214,7 +214,7 @@ timemory_init(int* argc, char*** argv, const std::string& _prefix,
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_CONFIG_LINKAGE(void)
-timemory_init(int* argc, char*** argv, argparse::argument_parser& parser,
+timemory_init(int* argc, char*** argv, argparse::argument_parser& _parser,
               const std::string& _prefix, const std::string& _suffix)
 {
     if(settings::mpi_init())
@@ -234,13 +234,13 @@ timemory_init(int* argc, char*** argv, argparse::argument_parser& parser,
     }
 
     timemory_init(*argc, *argv, _prefix, _suffix);
-    timemory_argparse(argc, argv, &parser);
+    timemory_argparse(argc, argv, &_parser);
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_CONFIG_LINKAGE(void)
-timemory_init(std::vector<std::string>& args, argparse::argument_parser& parser,
+timemory_init(std::vector<std::string>& args, argparse::argument_parser& _parser,
               const std::string& _prefix, const std::string& _suffix)
 {
     int    argc = args.size();
@@ -270,7 +270,7 @@ timemory_init(std::vector<std::string>& args, argparse::argument_parser& parser,
     }
 
     timemory_init(argc, argv, _prefix, _suffix);
-    timemory_argparse(args, &parser);
+    timemory_argparse(args, &_parser);
 
     for(int i = 0; i < argc; ++i)
         delete[] argv[i];
@@ -280,9 +280,11 @@ timemory_init(std::vector<std::string>& args, argparse::argument_parser& parser,
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_CONFIG_LINKAGE(void)
-timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
+timemory_argparse(int* argc, char*** argv, argparse::argument_parser* _parser,
                   tim::settings* _settings)
 {
+    using parser_t = argparse::argument_parser;
+
     // if pointers are null, return
     if(!argc || !argv)
         return;
@@ -291,42 +293,22 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
     if(*argc < 2)
         return;
 
-    using parser_t     = argparse::argument_parser;
-    using parser_err_t = typename parser_t::result_type;
-
-    // print help
-    auto help_action = [](parser_t& p) {
-        if(dmp::rank() == 0)
-            p.print_help("-- <NON_TIMEMORY_ARGS>");
-        exit(EXIT_SUCCESS);
-    };
-
-    auto err_action = [=](const parser_err_t& _err) {
-        if(dmp::rank() == 0 && _err)
-            log::stream(std::cerr, log::color::warning())
-                << "[" << TIMEMORY_PROJECT_NAME << "][argparse]> Error! " << _err << "\n";
-    };
-
-    // if argument parser was not provided
-    bool _cleanup_parser = parser == nullptr;
-    if(_cleanup_parser)
-        parser = new parser_t{ (*argv)[0] };
-
     // if settings instance was not provided
-    bool _cleanup_settings = (_settings == nullptr);
-    auto _shared_settings  = tim::settings::shared_instance();
-    if(_cleanup_settings && !_shared_settings)
-        return;
-    if(_cleanup_settings)
+    auto _shared_settings = tim::settings::shared_instance();
+    if(_settings == nullptr)
         _settings = _shared_settings.get();
 
-    // enable help
-    parser->enable_help();
-    parser->on_error([=](parser_t& p, const parser_err_t& _err) {
-        err_action(_err);
-        if(dmp::rank() == 0 && _settings->get_verbose() > 0)
-            p.print_help("-- <NON_TIMEMORY_ARGS>");
-    });
+    if(!_settings)
+        return;
+
+    // if argument parser was not provided
+    parser_t _local_parser{ (*argv)[0] };
+    _local_parser.enable_help();
+    if(_parser == nullptr)
+        _parser = &_local_parser;
+
+    if(!_parser)
+        return;
 
     // add the arguments in the order they were appended to the settings
     for(const auto& itr : _settings->ordering())
@@ -334,11 +316,11 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
         auto sitr = _settings->find(itr);
         if(sitr != _settings->end() && sitr->second)
         {
-            sitr->second->add_argument(*parser);
+            sitr->second->add_argument(*_parser);
         }
     }
 
-    parser->add_argument()
+    _parser->add_argument()
         .names({ "--" TIMEMORY_PROJECT_NAME "-args" })
         .description("A generic option for any setting. Each argument MUST be passed in "
                      "form: 'NAME=VALUE'. E.g. --" TIMEMORY_PROJECT_NAME "-args "
@@ -369,19 +351,13 @@ timemory_argparse(int* argc, char*** argv, argparse::argument_parser* parser,
             }
         });
 
-    err_action(parser->parse_known_args(argc, argv, "--", settings::verbose()));
-    if(parser->exists("help"))
-        help_action(*parser);
-
-    // cleanup if argparse was not provided
-    if(_cleanup_parser)
-        delete parser;
+    _parser->parse_known_args(argc, argv, "--", settings::verbose());
 }
 //
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_CONFIG_LINKAGE(void)
-timemory_argparse(std::vector<std::string>& args, argparse::argument_parser* parser,
+timemory_argparse(std::vector<std::string>& args, argparse::argument_parser* _parser,
                   tim::settings* _settings)
 {
     int    argc = args.size();
@@ -395,7 +371,7 @@ timemory_argparse(std::vector<std::string>& args, argparse::argument_parser* par
         argv[i][len] = '\0';
     }
 
-    timemory_argparse(&argc, &argv, parser, _settings);
+    timemory_argparse(&argc, &argv, _parser, _settings);
 
     // updates args
     args.clear();

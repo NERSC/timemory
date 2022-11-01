@@ -26,6 +26,7 @@
 
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
+#include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/join.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
@@ -352,7 +353,6 @@ struct argument_parser
     using action_func_t = std::function<void(this_type&)>;
     using action_pair_t = std::pair<bool_func_t, action_func_t>;
     using error_func_t  = std::function<void(this_type&, arg_result&)>;
-    using known_args_t  = std::tuple<arg_result, int, char**>;
     using strvec_t      = std::vector<std::string>;
     using strset_t      = std::set<std::string>;
     //
@@ -375,6 +375,28 @@ struct argument_parser
     private:
         bool        m_error = false;
         std::string m_what  = {};
+    };
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    struct known_args : std::tuple<arg_result, int, char**>
+    {
+        using base_type = std::tuple<arg_result, int, char**>;
+
+        known_args(arg_result _err, int _argc, char** _argv)
+        : base_type{ std::move(_err), _argc, _argv }
+        {}
+
+        ~known_args()                 = default;
+        known_args(const known_args&) = default;
+        known_args(known_args&&)      = default;
+
+        known_args& operator=(const known_args&) = default;
+        known_args& operator=(known_args&&) = default;
+
+        const arg_result& error() const { return std::get<0>(*this); }
+        int               argc() const { return std::get<1>(*this); }
+        char**            argv() const { return std::get<2>(*this); }
     };
     //
     //----------------------------------------------------------------------------------//
@@ -912,8 +934,8 @@ struct argument_parser
     /// \brief Basic variant of \ref parse_known_args which does not replace argc/argv
     /// and does not provide an array of strings that it processed
     ///
-    known_args_t parse_known_args(int argc, char** argv, const std::string& _delim = "--",
-                                  int verbose_level = 0)
+    known_args parse_known_args(int argc, char** argv, const std::string& _delim = "--",
+                                int verbose_level = 0)
     {
         strvec_t _args{};
         return parse_known_args(argc, argv, _args, _delim, verbose_level);
@@ -980,9 +1002,8 @@ struct argument_parser
     /// In other words, this will remove all arguments after <CMD> until the first "--" if
     /// reached and everything after the "--" will be placed in argv[1:]
     ///
-    known_args_t parse_known_args(int argc, char** argv, strvec_t& _args,
-                                  const std::string& _delim        = "--",
-                                  int                verbose_level = 0);
+    known_args parse_known_args(int argc, char** argv, strvec_t& _args,
+                                const std::string& _delim = "--", int verbose_level = 0);
     //
     //----------------------------------------------------------------------------------//
     //
@@ -994,13 +1015,24 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
-    arg_result parse(int argc, char** argv, int verbose_level = 0)
+    arg_result parse(int argc, char** argv, std::string_view _delim = "--",
+                     int verbose_level = 0)
     {
         std::vector<std::string> _args;
         _args.reserve(argc);
         for(int i = 0; i < argc; ++i)
+        {
+            if(std::string_view{ argv[i] } == _delim)
+                break;
             _args.emplace_back((const char*) argv[i]);
+        }
         return parse(_args, verbose_level);
+    }
+    //
+    arg_result parse(int argc, char** argv, int verbose_level,
+                     std::string_view _delim = "--")
+    {
+        return parse(argc, argv, _delim, verbose_level);
     }
     //
     //----------------------------------------------------------------------------------//
