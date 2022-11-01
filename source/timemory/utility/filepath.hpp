@@ -31,6 +31,10 @@
 
 #pragma once
 
+#ifndef TIMEMORY_UTILITY_FILEPATH_HPP_
+#    define TIMEMORY_UTILITY_FILEPATH_HPP_
+#endif
+
 #include "timemory/log/macros.hpp"
 #include "timemory/macros/os.hpp"
 #include "timemory/utility/launch_process.hpp"
@@ -80,146 +84,37 @@ namespace filepath
 int
 makedir(std::string _dir, int umask = TIMEMORY_DEFAULT_UMASK);
 
-inline std::string&
-replace(std::string& _path, char _c, const char* _v)
-{
-    auto _pos = std::string::npos;
-    while((_pos = _path.find(_c)) != std::string::npos)
-        _path.replace(_pos, 1, _v);
-    return _path;
-}
+std::string
+get_cwd();
 
-inline std::string&
-replace(std::string& _path, const char* _c, const char* _v)
-{
-    auto _pos = std::string::npos;
-    while((_pos = _path.find(_c)) != std::string::npos)
-        _path.replace(_pos, strlen(_c), _v);
-    return _path;
-}
+std::string&
+replace(std::string& _path, char _c, const char* _v);
 
-#if defined(TIMEMORY_WINDOWS)
+std::string&
+replace(std::string& _path, const char* _c, const char* _v);
 
-inline std::string
-os()
-{
-    return "\\";
-}
+std::string
+os();
 
-inline std::string
-inverse()
-{
-    return "/";
-}
+std::string
+inverse();
 
-inline std::string
-osrepr(std::string _path)
-{
-    // OS-dependent representation
-    while(_path.find('/') != std::string::npos)
-        _path.replace(_path.find('/'), 1, "\\");
-    return _path;
-}
+std::string
+osrepr(std::string _path);
 
-#elif defined(TIMEMORY_UNIX)
+std::string
+canonical(std::string _path);
 
-inline std::string
-os()
-{
-    return "/";
-}
+std::string dirname(std::string);
 
-inline std::string
-inverse()
-{
-    return "\\";
-}
+bool
+exists(std::string _fname);
 
-inline std::string
-osrepr(std::string _path)
-{
-    // OS-dependent representation
-    while(_path.find("\\\\") != std::string::npos)
-        _path.replace(_path.find("\\\\"), 2, "/");
-    while(_path.find('\\') != std::string::npos)
-        _path.replace(_path.find('\\'), 1, "/");
-    return _path;
-}
+bool
+direxists(std::string _fname);
 
-#endif
+//--------------------------------------------------------------------------------------//
 
-inline std::string
-canonical(std::string _path)
-{
-    replace(_path, '\\', "/");
-    replace(_path, "//", "/");
-    return _path;
-}
-
-inline int
-makedir(std::string _dir, int umask)
-{
-#if defined(TIMEMORY_UNIX)
-    while(_dir.find("\\\\") != std::string::npos)
-        _dir.replace(_dir.find("\\\\"), 2, "/");
-    while(_dir.find('\\') != std::string::npos)
-        _dir.replace(_dir.find('\\'), 1, "/");
-
-    if(_dir.length() == 0)
-        return 0;
-
-    int ret = mkdir(_dir.c_str(), umask);
-    if(ret != 0)
-    {
-        int err = errno;
-        if(err != EEXIST)
-        {
-            std::stringstream _mdir{};
-            _mdir << "mkdir(" << _dir.c_str() << ", " << umask << ") returned: " << ret
-                  << "\n";
-            std::stringstream _sdir{};
-            _sdir << "/bin/mkdir -p " << _dir;
-            ret = (launch_process(_sdir.str().c_str())) ? 0 : 1;
-            if(ret != 0)
-            {
-                std::cerr << _mdir.str() << _sdir.str() << " returned: " << ret
-                          << std::endl;
-            }
-            return ret;
-        }
-    }
-#elif defined(TIMEMORY_WINDOWS)
-    consume_parameters(umask);
-    while(_dir.find('/') != std::string::npos)
-        _dir.replace(_dir.find('/'), 1, "\\");
-
-    if(_dir.length() == 0)
-        return 0;
-
-    int ret = _mkdir(_dir.c_str());
-    if(ret != 0)
-    {
-        int err = errno;
-        if(err != EEXIST)
-        {
-            std::stringstream _mdir{};
-            _mdir << "_mkdir(" << _dir.c_str() << ") returned: " << ret << "\n";
-            std::stringstream _sdir{};
-            _sdir << "mkdir " << _dir;
-            ret = (launch_process(_sdir.str().c_str())) ? 0 : 1;
-            if(ret != 0)
-            {
-                std::cerr << _mdir.str() << _sdir.str() << " returned: " << ret
-                          << std::endl;
-            }
-            return ret;
-        }
-    }
-#endif
-    return 0;
-}
-
-//
 template <typename... Args>
 inline bool
 open(std::ofstream& _ofs, std::string _fpath, Args&&... _args)
@@ -249,7 +144,8 @@ open(std::ofstream& _ofs, std::string _fpath, Args&&... _args)
     return (_ofs && _ofs.is_open() && _ofs.good());
 }
 
-//
+//--------------------------------------------------------------------------------------//
+
 template <typename... Args>
 inline bool
 open(std::ifstream& _ofs, std::string _fpath, Args&&... _args)
@@ -272,7 +168,8 @@ open(std::ifstream& _ofs, std::string _fpath, Args&&... _args)
     return (_ofs && _ofs.is_open() && _ofs.good());
 }
 
-//
+//--------------------------------------------------------------------------------------//
+
 template <typename... Args>
 inline auto*
 fopen(std::string _fpath, const char* _mode)
@@ -299,22 +196,6 @@ fopen(std::string _fpath, const char* _mode)
     }
 
     return ::fopen(osrepr(_fpath).c_str(), _mode);
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline bool
-exists(std::string _fname)
-{
-    _fname = osrepr(_fname);
-#if defined(TIMEMORY_UNIX)
-    struct stat _buffer;
-    if(stat(_fname.c_str(), &_buffer) == 0)
-        return (S_ISREG(_buffer.st_mode) != 0 || S_ISLNK(_buffer.st_mode) != 0);
-    return false;
-#else
-    return PathFileExists(_fname.c_str());
-#endif
 }
 
 //--------------------------------------------------------------------------------------//
@@ -357,4 +238,6 @@ realpath(const std::string& _relpath, std::string* _resolved = nullptr)
 }  // namespace filepath
 }  // namespace tim
 
-//--------------------------------------------------------------------------------------//
+#if defined(TIMEMORY_UTILITY_HEADER_MODE) && TIMEMORY_UTILITY_HEADER_MODE > 0
+#    include "timemory/utility/filepath.cpp"
+#endif

@@ -39,27 +39,7 @@ namespace tim
 std::string
 dirname(std::string _fname)
 {
-#if defined(TIMEMORY_UNIX)
-    char* _cfname = realpath(_fname.c_str(), nullptr);
-    _fname        = std::string(_cfname);
-    free(_cfname);
-
-    while(_fname.find("\\\\") != std::string::npos)
-        _fname.replace(_fname.find("\\\\"), 2, "/");
-    while(_fname.find('\\') != std::string::npos)
-        _fname.replace(_fname.find('\\'), 1, "/");
-
-    auto _pos = _fname.find_last_of('/');
-    return (_pos != std::string::npos) ? _fname.substr(0, _pos) : _fname;
-#elif defined(TIMEMORY_WINDOWS)
-    while(_fname.find('/') != std::string::npos)
-        _fname.replace(_fname.find('/'), 1, "\\");
-
-    _fname = _fname.substr(0, _fname.find_last_of('\\'));
-    return (_fname.at(_fname.length() - 1) == '\\')
-               ? _fname.substr(0, _fname.length() - 1)
-               : _fname;
-#endif
+    return filepath::dirname(std::move(_fname));
 }
 
 //--------------------------------------------------------------------------------------//
