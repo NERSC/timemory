@@ -336,10 +336,36 @@ signal_settings::exit_action(int _v)
 {
     auto& _entries = f_signals().entries;
     auto  itr      = _entries.find(static_cast<sys_signal>(_v));
+
     if(itr != _entries.end() && itr->second.functor)
         itr->second.functor(_v);
-    else
-        f_signals().signals_exit_func(_v);
+
+    auto& _exit_func = f_signals().signals_exit_func;
+    if(_exit_func)
+        _exit_func(_v);
+}
+
+TIMEMORY_SIGNALS_INLINE
+void
+signal_settings::exit_action(int _signum, void* _siginfo, void* _context)
+{
+    auto& _entries = f_signals().entries;
+    auto  itr      = _entries.find(static_cast<sys_signal>(_signum));
+    if(itr != _entries.end())
+    {
+        auto& _former = itr->second.previous;
+        if((_former.sa_flags & (1 << SA_SIGINFO)) != 0)
+        {
+            if(_former.sa_sigaction)
+                _former.sa_sigaction(_signum, reinterpret_cast<siginfo_t*>(_siginfo),
+                                     _context);
+        }
+        else
+        {
+            if(_former.sa_handler)
+                _former.sa_handler(_signum);
+        }
+    }
 }
 
 TIMEMORY_SIGNALS_INLINE
@@ -372,6 +398,16 @@ signal_settings::get_active()
         if(itr.second.active)
             _v.emplace(itr.first);
     return _v;
+}
+
+// clang-format off
+TIMEMORY_SIGNALS_INLINE
+signal_settings::signals_data&
+signal_settings::f_signals()
+// clang-format on
+{
+    static auto* _v = new signals_data{};
+    return *_v;
 }
 }  // namespace signals
 }  // namespace tim

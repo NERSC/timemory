@@ -73,6 +73,7 @@ public:
     static bool             set_action(sys_signal, signal_function_t _f);
     static void             set_exit_action(signal_function_t _f);
     static void             exit_action(int errcode);
+    static void             exit_action(int errcode, void*, void*);
     static descript_tuple_t get_info(const sys_signal&);
 
     static signal_set_t get_enabled();
@@ -121,11 +122,7 @@ protected:
         std::map<sys_signal, entry> entries = {};
     };
 
-    static signals_data& f_signals()
-    {
-        static signal_settings::signals_data instance{};
-        return instance;
-    }
+    static signals_data& f_signals();
 
 public:
     static auto* get(sys_signal _v) { return &f_signals().entries[_v]; }
