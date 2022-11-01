@@ -46,6 +46,9 @@ endif()
 if(NOT CMAKE_VERSION VERSION_LESS 3.18)
     cmake_policy(SET CMP0104 OLD)
 endif()
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW) # DOWNLOAD_EXTRACT_TIMESTAMP
+endif()
 
 # Check if project is being used directly or via add_subdirectory
 set(${PROJECT_NAME}_MAIN_PROJECT ON)
