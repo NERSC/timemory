@@ -467,7 +467,7 @@ termination_signal_message(int _sig, siginfo_t* _sinfo, std::ostream& os)
             std::string location = {};
         };
         size_t ntot   = 0;
-        auto   _bt    = get_unw_stack<64, 3>();
+        auto   _bt    = get_unw_stack<64, 2>();
         auto   _lines = std::vector<bt_line_info>{};
         auto&  _files = tim_signal_file_maps();
         for(const auto& itr : _bt)
