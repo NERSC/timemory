@@ -252,10 +252,10 @@ template <typename Tp>
 bool
 vsettings::report_change(Tp _old, const Tp& _new, update_type _upd)
 {
+    if(_upd != update_type::unspecified)
+        m_updated = _upd;
     if(get_debug() >= 1 && _old != _new)
     {
-        if(_upd != update_type::unspecified)
-            m_updated = _upd;
         std::ostringstream oss;
         oss << std::boolalpha;
         oss << "[" << TIMEMORY_PROJECT_NAME << "][settings] " << m_name << " ("
