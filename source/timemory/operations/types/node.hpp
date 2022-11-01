@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/type_traits.hpp"
@@ -340,13 +341,11 @@ private:
             // if storage is null, iterator is stale which means targ and stats are too
             if(_storage == nullptr)
             {
-#if !defined(NDEBUG)
                 TIMEMORY_CONDITIONAL_PRINT_HERE(
-                    settings::debug() || settings::verbose() > 1,
+                    settings::debug() && settings::verbose() >= 1,
                     "storage for thread %li was deleted for component of type %s while "
                     "it was still on the stack",
                     _tid, demangle<Tp>().c_str());
-#endif
                 return nullptr;
             }
 
@@ -355,13 +354,13 @@ private:
             type&  targ  = itr->data();
             auto&  stats = itr->stats();
 
-            if(settings::debug())
+            if(settings::debug() && settings::verbose() >= 3)
             {
                 TIMEMORY_PRINTF(stderr, "\n");
-                TIMEMORY_PRINTF(stderr, "[START][TARG]> %s\n",
-                                TIMEMORY_JOIN("", targ).data());
-                TIMEMORY_PRINTF(stderr, "[START][DATA]> %s\n",
-                                TIMEMORY_JOIN("", _obj).data());
+                TIMEMORY_PRINTF(stderr, "[START][TARG][%i][%li]> %s\n", process::get_id(),
+                                threading::get_id(), TIMEMORY_JOIN("", targ).data());
+                TIMEMORY_PRINTF(stderr, "[START][DATA][%i][%li]> %s\n", process::get_id(),
+                                threading::get_id(), TIMEMORY_JOIN("", _obj).data());
             }
 
             // reset depth change and set valid state on target
@@ -370,10 +369,10 @@ private:
             // add measurement to target in storage
             operation::plus<type>(targ, _obj);
             //
-            if(settings::debug())
+            if(settings::debug() && settings::verbose() >= 3)
             {
-                TIMEMORY_PRINTF(stderr, "[AFTER][TARG]> %s\n",
-                                TIMEMORY_JOIN("", targ).data());
+                TIMEMORY_PRINTF(stderr, "[AFTER][TARG][%i][%li]> %s\n", process::get_id(),
+                                threading::get_id(), TIMEMORY_JOIN("", targ).data());
             }
             // add the secondary data
             operation::add_secondary<type>(_storage, itr, _obj);
