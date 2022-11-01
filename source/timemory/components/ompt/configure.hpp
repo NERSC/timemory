@@ -177,7 +177,7 @@ configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
     //      General thread
     //
     //----------------------------------------------------------------------------------//
-
+    /*
     using thread_begin_cb_t =
         openmp::ompt_wrapper<connector_type, openmp::mode::begin_callback, ompt_thread_t,
                              ompt_data_t*>;
@@ -189,7 +189,7 @@ configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
                                     TIMEMORY_OMPT_CBCAST(thread_begin_cb_t::callback));
     timemory_ompt_register_callback(ompt_callback_thread_end,
                                     TIMEMORY_OMPT_CBCAST(thread_end_cb_t::callback));
-
+    */
     using parallel_begin_cb_t =
         openmp::ompt_wrapper<connector_type, openmp::mode::begin_callback, ompt_data_t*,
                              const ompt_frame_t*, ompt_data_t*, unsigned int, int,
