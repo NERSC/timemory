@@ -29,6 +29,7 @@
 #include "timemory/unwind/entry.hpp"
 #include "timemory/unwind/processed_entry.hpp"
 #include "timemory/unwind/types.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <memory>
 #include <string>
@@ -55,8 +56,15 @@ struct cache
     using entry_map_t = std::unordered_map<entry, processed_entry>;
     using file_map_t  = std::unordered_map<std::string, std::shared_ptr<bfd_file>>;
 
-    entry_map_t entries = {};
-    file_map_t  files   = {};
+    TIMEMORY_DEFAULT_OBJECT(cache)
+
+    explicit cache(bool _use_files)
+    : use_files{ _use_files }
+    {}
+
+    bool        use_files = true;
+    entry_map_t entries   = {};
+    file_map_t  files     = {};
 };
 }  // namespace unwind
 }  // namespace tim

@@ -199,7 +199,7 @@ template <size_t DefaultBufferSize, bool Shrink>
 std::vector<processed_entry>
 stack<N>::get(cache_type* _cache, bool _include_with_error, file_map_t* _files) const
 {
-    if(!_files && _cache)
+    if(!_files && _cache && _cache->use_files)
         _files = &_cache->files;
 
     std::vector<processed_entry> _data{};
