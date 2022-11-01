@@ -28,6 +28,7 @@
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/environment/types.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/settings/types.hpp"
 #include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/types.hpp"
@@ -56,9 +57,11 @@ struct argument_parser;
 /// \brief Virtual base class for storing settings
 struct vsettings
 {
-    using parser_t      = argparse::argument_parser;
-    using parser_func_t = std::function<void(parser_t&)>;
-    using display_map_t = std::map<std::string, std::string>;
+    using parser_t         = argparse::argument_parser;
+    using parser_func_t    = std::function<void(parser_t&)>;
+    using display_map_t    = std::map<std::string, std::string>;
+    using shared_pointer_t = std::shared_ptr<vsettings>;
+    using update_type      = setting_update_type;
 
     struct noparse
     {};
@@ -85,14 +88,14 @@ struct vsettings
     vsettings& operator=(const vsettings&) = default;
     vsettings& operator=(vsettings&&) = default;
 
-    virtual std::string                as_string() const                        = 0;
-    virtual bool                       reset()                                  = 0;
-    virtual bool                       parse()                                  = 0;
-    virtual bool                       parse(const std::string&)                = 0;
-    virtual bool                       is_updated()                             = 0;
-    virtual void                       add_argument(argparse::argument_parser&) = 0;
-    virtual std::shared_ptr<vsettings> clone()                                  = 0;
-    virtual void                       clone(const std::shared_ptr<vsettings>& rhs);
+    virtual std::string as_string() const                                          = 0;
+    virtual bool        reset()                                                    = 0;
+    virtual bool        parse()                                                    = 0;
+    virtual bool parse(const std::string&, update_type = update_type::unspecified) = 0;
+    virtual bool is_updated()                                                      = 0;
+    virtual void add_argument(argparse::argument_parser&)                          = 0;
+    virtual shared_pointer_t clone()                                               = 0;
+    virtual void             clone(const shared_pointer_t& rhs);
 
     virtual display_map_t get_display(std::ios::fmtflags fmt = {}, int _w = -1,
                                       int _p = -1);
@@ -112,14 +115,18 @@ struct vsettings
     void set_choices(const std::vector<std::string>& v) { m_choices = v; }
     void set_command_line(const std::vector<std::string>& v) { m_cmdline = v; }
     void set_categories(const std::set<std::string>& v) { m_categories = v; }
-    void set_config_updated(bool _v) { m_cfg_updated = _v; }
-    void set_environ_updated(bool _v) { m_env_updated = _v; }
+    auto set_updated(update_type _v) { return (std::swap(m_updated, _v), _v); }
+    auto set_user_updated() { return set_updated(update_type::user); }
+    auto set_config_updated() { return set_updated(update_type::config); }
+    auto set_environ_updated() { return set_updated(update_type::environ); }
 
     auto get_hidden() const { return m_hidden; }
     auto get_type_index() const { return m_type_index; }
     auto get_value_index() const { return m_value_index; }
-    auto get_config_updated() const { return m_cfg_updated; }
-    auto get_environ_updated() const { return m_env_updated; }
+    auto get_updated() const { return (m_updated != update_type::default_value); }
+    auto get_user_updated() const { return (m_updated == update_type::user); }
+    auto get_config_updated() const { return (m_updated == update_type::config); }
+    auto get_environ_updated() const { return (m_updated == update_type::environ); }
 
     // enabled = true/false does not affect the return value, it is provided
     // so that is can be specified to various tools, e.g. timemory-avail, whether
@@ -139,8 +146,11 @@ struct vsettings
     bool get(Tp& _val) const;
 
     template <typename Tp, enable_if_t<std::is_fundamental<decay_t<Tp>>::value> = 0>
-    bool set(const Tp& _val);
-    bool set(const std::string& _val) { return parse(_val); }
+    bool set(Tp _val, update_type = update_type::unspecified);
+    bool set(const std::string& _val, update_type _upd = update_type::unspecified)
+    {
+        return parse(_val, _upd);
+    }
 
     virtual parser_func_t get_action(TIMEMORY_API) = 0;
 
@@ -167,18 +177,17 @@ protected:
     }
 
     template <typename Tp>
-    bool report_change(Tp _old, const Tp& _new);
+    bool report_change(Tp _old, const Tp& _new, update_type _upd);
 
     vsettings(std::string _name, std::string _env_name, std::string _descript,
               std::set<std::string> _categories, std::vector<std::string> _cmdline,
               int32_t _count, int32_t _max_count, std::vector<std::string> _choices,
-              bool _cfg_upd, bool _env_upd, bool _enabled, bool _hidden);
+              update_type _upd, bool _enabled, bool _hidden);
 
 protected:
     bool                     m_enabled     = true;
     bool                     m_hidden      = false;
-    bool                     m_cfg_updated = false;
-    bool                     m_env_updated = false;
+    update_type              m_updated     = update_type::default_value;
     std::type_index          m_type_index  = std::type_index(typeid(void));
     std::type_index          m_value_index = std::type_index(typeid(void));
     int32_t                  m_count       = -1;
@@ -220,19 +229,19 @@ vsettings::get(Tp& _val) const
 //
 template <typename Tp, enable_if_t<std::is_fundamental<decay_t<Tp>>::value>>
 bool
-vsettings::set(const Tp& _val)
+vsettings::set(Tp _val, update_type _upd)
 {
     auto _ref = dynamic_cast<tsettings<Tp, Tp&>*>(this);
     if(_ref)
     {
-        _ref->set(_val);
+        _ref->set(_val, _upd);
         return true;
     }
 
     auto _nref = dynamic_cast<tsettings<Tp, Tp>*>(this);
     if(_nref)
     {
-        _nref->set(_val);
+        _nref->set(_val, _upd);
         return true;
     }
 
@@ -241,20 +250,42 @@ vsettings::set(const Tp& _val)
 //
 template <typename Tp>
 bool
-vsettings::report_change(Tp _old, const Tp& _new)
+vsettings::report_change(Tp _old, const Tp& _new, update_type _upd)
 {
     if(get_debug() >= 1 && _old != _new)
     {
+        if(_upd != update_type::unspecified)
+            m_updated = _upd;
         std::ostringstream oss;
         oss << std::boolalpha;
         oss << "[" << TIMEMORY_PROJECT_NAME << "][settings] " << m_name << " ("
             << m_env_name << ") changed: " << _old << " --> " << _new;
-        if(m_cfg_updated)
-            oss << " [via config]\n";
-        else if(m_env_updated)
-            oss << " [via environ]\n";
-        else
-            oss << "\n";
+        switch(m_updated)
+        {
+            case update_type::config:
+            {
+                oss << " [via config]\n";
+                break;
+            }
+            case update_type::environ:
+            {
+                oss << " [via environ]\n";
+                break;
+            }
+            case update_type::user:
+            {
+                oss << " [via user]\n";
+                break;
+            }
+            case update_type::default_value:
+            case update_type::unspecified:
+            default:
+            {
+                oss << "\n";
+                break;
+            }
+        };
+
         if(get_debug() >= 2)
         {
             timemory_print_demangled_backtrace<6, 3>(oss);

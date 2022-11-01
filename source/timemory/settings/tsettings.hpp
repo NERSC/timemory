@@ -55,6 +55,9 @@ namespace tim
 template <typename Tp, typename Vp>
 struct tsettings final : public vsettings
 {
+    static_assert(is_one_of<Tp, setting_supported_data_types>::value,
+                  "Error! Type is not a supported data type for settings");
+
 private:
     template <typename Up>
     static constexpr bool is_bool_type()
@@ -81,6 +84,7 @@ public:
     using parser_t      = base_type::parser_t;
     using parser_func_t = base_type::parser_func_t;
     using vpointer_t    = std::shared_ptr<vsettings>;
+    using update_type   = setting_update_type;
 
 public:
     template <typename Up = Vp, enable_if_t<!std::is_reference<Up>::value> = 0>
@@ -105,10 +109,10 @@ public:
     Tp          get_value(const std::string& val) const;
     std::string as_string() const override;
 
-    bool set(Tp);
+    bool set(Tp, update_type = update_type::unspecified);
     bool reset() final;
     bool parse() final;
-    bool parse(const std::string& v) final;
+    bool parse(const std::string& v, update_type = update_type::unspecified) final;
     bool is_updated() final { return (m_value != m_init); }
     void add_argument(argparse::argument_parser& p) final;
     void clone(const std::shared_ptr<vsettings>& rhs) final;
@@ -220,11 +224,11 @@ tsettings<Tp, Vp>::get_value(const std::string& val) const
 //
 template <typename Tp, typename Vp>
 bool
-tsettings<Tp, Vp>::set(Tp _value)
+tsettings<Tp, Vp>::set(Tp _value, update_type _upd)
 {
     auto _old = m_value;
     m_value   = std::move(_value);
-    return report_change(std::move(_old), m_value);
+    return report_change(std::move(_old), m_value, _upd);
 }
 //
 template <typename Tp, typename Vp>
@@ -248,25 +252,14 @@ template <typename Tp, typename Vp>
 bool
 tsettings<Tp, Vp>::parse()
 {
-    if(!m_env_name.empty())
+    if(!m_env_name.empty() &&
+       !get_env<bool>(TIMEMORY_SETTINGS_KEY("SUPPRESS_PARSING"), false, false))
     {
         char* c_env_val = std::getenv(m_env_name.c_str());
         if(c_env_val)
         {
-            auto _env_upd = get_environ_updated();
-            auto _cfg_upd = get_config_updated();
-
-            set_config_updated(false);
-            set_environ_updated(true);
-
-            auto _updated = parse(std::string{ c_env_val });
-
-            if(!_updated)
-            {
-                set_config_updated(_cfg_upd);
-                set_environ_updated(_env_upd);
-            }
-            return _updated;
+            // returns old update_type
+            return parse(std::string{ c_env_val }, update_type::environ);
         }
     }
     return false;
@@ -274,9 +267,9 @@ tsettings<Tp, Vp>::parse()
 //
 template <typename Tp, typename Vp>
 bool
-tsettings<Tp, Vp>::parse(const std::string& v)
+tsettings<Tp, Vp>::parse(const std::string& v, update_type _upd)
 {
-    return set(std::move(get_value<decay_t<Tp>>(v)));
+    return set(std::move(get_value<decay_t<Tp>>(v)), _upd);
 }
 //
 template <typename Tp, typename Vp>
@@ -321,8 +314,8 @@ tsettings<Tp, Vp>::clone()
         noparse{}, Up{ m_value }, std::string{ m_name }, std::string{ m_env_name },
         std::string{ m_description }, std::set<std::string>{ m_categories },
         std::vector<std::string>{ m_cmdline }, int32_t{ m_count }, int32_t{ m_max_count },
-        std::vector<std::string>{ m_choices }, bool{ m_cfg_updated },
-        bool{ m_env_updated }, bool{ m_enabled }, bool{ m_hidden });
+        std::vector<std::string>{ m_choices }, update_type{ m_updated },
+        bool{ m_enabled }, bool{ m_hidden });
 }
 //
 template <typename Tp, typename Vp>
@@ -359,6 +352,12 @@ tsettings<Tp, Vp>::save(Archive& ar, const unsigned int,
 {
     std::string _dtype =
         (std::is_same<Tp, std::string>::value) ? "string" : demangle<Tp>();
+    std::string _updated =
+        (m_updated == update_type::default_value)
+            ? "default"
+            : (m_updated == update_type::config)
+                  ? "config"
+                  : (m_updated == update_type::environ) ? "environ" : "user";
     ar(cereal::make_nvp("name", m_name));
     ar(cereal::make_nvp("environ", m_env_name));
     ar(cereal::make_nvp("description", m_description));
@@ -369,8 +368,7 @@ tsettings<Tp, Vp>::save(Archive& ar, const unsigned int,
     ar(cereal::make_nvp("data_type", _dtype));
     ar(cereal::make_nvp("initial", m_init));
     ar(cereal::make_nvp("value", m_value));
-    ar(cereal::make_nvp("config_updated", m_cfg_updated));
-    ar(cereal::make_nvp("environ_updated", m_env_updated));
+    ar(cereal::make_nvp("updated", _updated));
     ar(cereal::make_nvp("enabled", m_enabled));
 }
 //
@@ -396,7 +394,7 @@ tsettings<Tp, Vp>::load(Archive& ar, const unsigned int ver)
     {}
     ar(cereal::make_nvp("value", m_value));
     if(m_value != m_init)
-        set_config_updated(true);
+        set_config_updated();
 }
 //
 template <typename Tp, typename Vp>

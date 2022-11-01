@@ -28,6 +28,7 @@
 #include "timemory/settings/macros.hpp"
 #include "timemory/utility/argparse.hpp"
 #include "timemory/utility/serializer.hpp"
+#include "timemory/utility/type_list.hpp"
 
 #include <functional>
 #include <map>
@@ -50,6 +51,21 @@ std::string
 get_local_datetime(const char* dt_format, std::time_t* dt_curr = nullptr);
 //
 //--------------------------------------------------------------------------------------//
+//
+/// this enumeration is used to specify how setting values were updated
+///
+enum class setting_update_type : short
+{
+    default_value = 0,
+    environ,
+    config,
+    user,
+    unspecified,
+};
+//
+using setting_supported_data_types =
+    type_list<bool, std::string, int16_t, int32_t, int64_t, uint16_t, uint32_t, uint64_t,
+              size_t, float, double>;
 //
 struct TIMEMORY_VISIBILITY("default") vsettings;
 //

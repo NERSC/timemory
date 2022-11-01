@@ -677,9 +677,10 @@ settings::parse(settings* _settings)
 //
 TIMEMORY_SETTINGS_INLINE
 settings::settings()
-: m_data(data_type{})
 {
-    m_order.reserve(get_env<size_t>("TIMEMORY_TOTAL_SETTINGS", 4096));
+    auto _reserve_size = get_env<size_t>(TIMEMORY_SETTINGS_KEY("TOTAL_SETTINGS"), 4096);
+    m_order.reserve(_reserve_size);
+    m_data.reserve(_reserve_size);
     initialize();
 }
 //
@@ -689,11 +690,11 @@ TIMEMORY_SETTINGS_INLINE
 settings::settings(const settings& rhs)
 : m_initialized{ rhs.m_initialized }
 , m_tag{ rhs.m_tag }
+, m_read_configs{ rhs.m_read_configs }
 , m_config_stack{ rhs.m_config_stack }
 , m_order{ rhs.m_order }
 , m_command_line{ rhs.m_command_line }
 , m_environment{ rhs.m_environment }
-, m_read_configs{ rhs.m_read_configs }
 , m_unknown_configs{ rhs.m_unknown_configs }
 {
     m_order.reserve(rhs.m_order.capacity());
@@ -2281,9 +2282,7 @@ settings::read(std::istream& ifs, std::string inp)
                         }
                         else
                         {
-                            itr.second->set_config_updated(true);
-                            itr.second->set_environ_updated(false);
-                            itr.second->parse(val);
+                            itr.second->parse(val, update_type::config);
                         }
                     }
                 }

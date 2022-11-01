@@ -205,12 +205,10 @@ struct TIMEMORY_VISIBILITY("default") settings
 {
     friend void timemory_init(int, char**, const std::string&, const std::string&);
     friend void timemory_finalize(manager*, settings*, bool);
+    friend class manager;
 
     // this is the list of the current and potentially used data types
-    using data_type_list_t =
-        tim::type_list<bool, string_t, int16_t, int32_t, int64_t, uint16_t, uint32_t,
-                       uint64_t, size_t, float, double>;
-    friend class manager;
+    using data_type_list_t = setting_supported_data_types;
     using strvector_t      = std::vector<std::string>;
     using strset_t         = std::set<std::string>;
     using value_type       = std::shared_ptr<vsettings>;
@@ -220,6 +218,7 @@ struct TIMEMORY_VISIBILITY("default") settings
     using pointer_t        = std::shared_ptr<settings>;
     using strpair_t        = std::pair<std::string, std::string>;
     using compose_suffix_t = std::variant<process::id_t, std::string>;
+    using update_type      = setting_update_type;
 
     template <typename Tp, typename Vp>
     using tsetting_pointer_t = std::shared_ptr<tsettings<Tp, Vp>>;
@@ -696,13 +695,13 @@ private:
 
 private:
     bool                   m_initialized     = false;
-    data_type              m_data            = {};
     std::string            m_tag             = {};
+    std::set<std::string>  m_read_configs    = {};
     strvector_t            m_config_stack    = {};
     strvector_t            m_order           = {};
     strvector_t            m_command_line    = {};
     strvector_t            m_environment     = get_global_environment();
-    std::set<std::string>  m_read_configs    = {};
+    data_type              m_data            = {};
     std::vector<strpair_t> m_unknown_configs = {};
 
     /// This is set by timemory_init
