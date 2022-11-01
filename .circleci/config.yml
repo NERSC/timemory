@@ -188,8 +188,8 @@ jobs:
           name: test
           command: >
             cd build-timemory/Linux &&
-            ctest --rerun-failed -V -N &&
-            ctest --rerun-failed -V -E launch-process
+            ctest --rerun-failed -V -E dynamic_instrument -N &&
+            ctest --rerun-failed -V -E dynamic_instrument
     resource_class: large
   gpu-dev-build:
     docker:
