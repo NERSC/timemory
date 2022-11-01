@@ -26,11 +26,15 @@
 
 #include "timemory/components.hpp"
 #include "timemory/components/opaque/definition.hpp"
-#include "timemory/containers/definition.hpp"
 #include "timemory/ert/definition.hpp"
 #include "timemory/operations/definition.hpp"
 #include "timemory/storage/definition.hpp"
 #include "timemory/variadic/definition.hpp"
+
+#if !defined(TIMEMORY_USE_CONTAINERS) ||                                                 \
+    (defined(TIMEMORY_USE_CONTAINERS) && TIMEMORY_USE_CONTAINERS > 0)
+#    include "timemory/containers/definition.hpp"
+#endif
 
 #if !defined(TIMEMORY_USE_EXTERN)
 //

@@ -38,13 +38,13 @@
 //======================================================================================//
 //
 #if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_CONTAINERS_EXTERN)
-#    define TIMEMORY_USE_CONTAINERS_EXTERN
+#    define TIMEMORY_USE_CONTAINERS_EXTERN 1
 #endif
 //
 #if defined(TIMEMORY_CONTAINERS_SOURCE)
 #    define TIMEMORY_CONTAINERS_LINKAGE(...) __VA_ARGS__
 #elif defined(TIMEMORY_USE_CONTAINERS_EXTERN)
-#    define TIMEMORY_CONTAINERS_LINKAGE(...) extern __VA_ARGS__
+#    define TIMEMORY_CONTAINERS_LINKAGE(...) __VA_ARGS__
 #else
 #    define TIMEMORY_CONTAINERS_LINKAGE(...) inline __VA_ARGS__
 #endif

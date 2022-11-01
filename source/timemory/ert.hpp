@@ -24,15 +24,21 @@
 
 #pragma once
 
-#include "timemory/components/timing/ert_timer.hpp"
-#include "timemory/ert/aligned_allocator.hpp"
-#include "timemory/ert/barrier.hpp"
-#include "timemory/ert/cache_size.hpp"
-#include "timemory/ert/configuration.hpp"
-#include "timemory/ert/counter.hpp"
-#include "timemory/ert/data.hpp"
-#include "timemory/ert/definition.hpp"
-#include "timemory/ert/extern.hpp"
-#include "timemory/ert/kernels.hpp"
 #include "timemory/ert/macros.hpp"
-#include "timemory/ert/types.hpp"
+
+#if !defined(TIMEMORY_USE_ERT) || (defined(TIMEMORY_USE_ERT) && TIMEMORY_USE_ERT > 0)
+#    include "timemory/components/timing/ert_timer.hpp"
+#    include "timemory/ert/aligned_allocator.hpp"
+#    include "timemory/ert/barrier.hpp"
+#    include "timemory/ert/cache_size.hpp"
+#    include "timemory/ert/configuration.hpp"
+#    include "timemory/ert/counter.hpp"
+#    include "timemory/ert/data.hpp"
+#    include "timemory/ert/definition.hpp"
+#    include "timemory/ert/kernels.hpp"
+#    include "timemory/ert/types.hpp"
+
+#    if defined(TIMEMORY_USE_ERT_EXTERN) && TIMEMORY_USE_ERT_EXTERN > 0
+#        include "timemory/ert/extern.hpp"
+#    endif
+#endif

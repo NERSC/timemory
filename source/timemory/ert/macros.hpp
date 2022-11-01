@@ -34,7 +34,7 @@
 //======================================================================================//
 //
 #if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_ERT_EXTERN)
-#    define TIMEMORY_USE_ERT_EXTERN
+#    define TIMEMORY_USE_ERT_EXTERN 1
 #endif
 //
 #if defined(TIMEMORY_ERT_SOURCE)

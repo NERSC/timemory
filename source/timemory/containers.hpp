@@ -24,13 +24,17 @@
 
 #pragma once
 
-#include "timemory/containers/auto_timer.hpp"
-#include "timemory/containers/auto_user_bundle.hpp"
-#include "timemory/containers/declaration.hpp"
-#include "timemory/containers/definition.hpp"
 #include "timemory/containers/macros.hpp"
-#include "timemory/containers/types.hpp"
 
-#if defined(TIMEMORY_USE_CONTAINERS_EXTERN)
-#    include "timemory/containers/extern.hpp"
+#if !defined(TIMEMORY_USE_CONTAINERS) ||                                                 \
+    (defined(TIMEMORY_USE_CONTAINERS) && TIMEMORY_USE_CONTAINERS > 0)
+#    include "timemory/containers/auto_timer.hpp"
+#    include "timemory/containers/auto_user_bundle.hpp"
+#    include "timemory/containers/declaration.hpp"
+#    include "timemory/containers/definition.hpp"
+#    include "timemory/containers/types.hpp"
+
+#    if defined(TIMEMORY_USE_CONTAINERS_EXTERN) && TIMEMORY_USE_CONTAINERS > 0
+#        include "timemory/containers/extern.hpp"
+#    endif
 #endif

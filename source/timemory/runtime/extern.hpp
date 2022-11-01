@@ -37,8 +37,6 @@
 #include "timemory/backends/types/mpi/extern.hpp"
 #include "timemory/components/extern.hpp"
 #include "timemory/components/user_bundle/extern.hpp"
-#include "timemory/containers/auto_timer.hpp"
-#include "timemory/containers/auto_user_bundle.hpp"
 #include "timemory/environment/extern.hpp"
 #include "timemory/hash/extern.hpp"
 #include "timemory/manager/extern.hpp"
@@ -60,6 +58,10 @@ TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_ompt_bundle, scope:
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_mpip_bundle, scope::config)
 TIMEMORY_RUNTIME_USER_BUNDLE_EXTERN_TEMPLATE(component::user_ncclp_bundle, scope::config)
 //
+#if defined(TIMEMORY_USE_CONTAINERS_EXTERN) && TIMEMORY_USE_CONTAINERS > 0
+#    include "timemory/containers/auto_timer.hpp"
+#    include "timemory/containers/auto_user_bundle.hpp"
+
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(full_auto_timer_t)
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(minimal_auto_timer_t)
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(auto_user_bundle_t)
@@ -68,3 +70,4 @@ TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(complete_component_list_t)
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(available_component_list_t)
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(complete_auto_list_t)
 TIMEMORY_RUNTIME_INITIALIZE_EXTERN_TEMPLATE(available_auto_list_t)
+#endif

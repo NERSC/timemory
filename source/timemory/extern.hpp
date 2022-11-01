@@ -34,11 +34,14 @@
 // clang-format on
 #endif
 //
+#include "timemory/ert/macros.hpp"
+#include "timemory/containers/macros.hpp"
+//
 #if defined(TIMEMORY_USE_MANAGER_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #    include "timemory/manager/extern.hpp"
 #endif
 //
-#if defined(TIMEMORY_USE_ERT_EXTERN) || defined(TIMEMORY_USE_EXTERN)
+#if defined(TIMEMORY_USE_ERT_EXTERN) && TIMEMORY_USE_ERT_EXTERN > 0
 #    include "timemory/ert/extern.hpp"
 #endif
 //
@@ -70,7 +73,7 @@
 #    include "timemory/components/user_bundle/extern.hpp"
 #endif
 //
-#if defined(TIMEMORY_USE_CONTAINERS_EXTERN) || defined(TIMEMORY_USE_EXTERN)
+#if defined(TIMEMORY_USE_CONTAINERS_EXTERN) && TIMEMORY_USE_CONTAINERS_EXTERN > 0
 #    include "timemory/containers/extern.hpp"
 #endif
 //
