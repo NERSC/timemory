@@ -241,8 +241,8 @@ TIMEMORY_UTILITY_INLINE std::string
     return _path;
 }
 
-std::string
-dirname(std::string _fname)
+TIMEMORY_UTILITY_INLINE std::string
+                        dirname(std::string _fname)
 {
 #if defined(TIMEMORY_UNIX)
     _fname = realpath(_fname);
