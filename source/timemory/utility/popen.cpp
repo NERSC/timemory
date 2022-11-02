@@ -442,8 +442,10 @@ flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter)
     int _counter = 0;
     while(proc)
     {
-        char  buffer[4096];
-        auto* ret = fgets(buffer, 4096, proc->read_fd);
+        constexpr size_t N = 4096;
+        char             buffer[N];
+        memset(buffer, '\0', N);
+        auto* ret = fgets(buffer, N, proc->read_fd);
         if(ret == nullptr || strlen(buffer) == 0)
         {
             if(max_counter == 0)
@@ -458,7 +460,8 @@ flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter)
                 break;
             continue;
         }
-        os << std::string{ buffer } << std::flush;
+        if(strnlen(buffer, N + 1) < N + 1)
+            os << buffer << std::flush;
     }
 
     return os;

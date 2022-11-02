@@ -33,8 +33,8 @@
 namespace tim
 {
 bool
-launch_process(const char* cmd, const std::string& extra = "",
-               std::ostream* os = nullptr);
+launch_process(const char* cmd, const std::string& extra = {}, std::ostream* os = nullptr,
+               const std::vector<std::pair<std::string, std::string>>& _env = {});
 }  // namespace tim
 
 #if defined(TIMEMORY_UTILITY_HEADER_MODE) && TIMEMORY_UTILITY_HEADER_MODE > 0

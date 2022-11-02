@@ -25,9 +25,11 @@
 #ifndef TIMEMORY_UTILITY_LAUNCH_PROCESS_CPP_
 #define TIMEMORY_UTILITY_LAUNCH_PROCESS_CPP_
 
+#include "timemory/environment/types.hpp"
 #include "timemory/utility/delimit.hpp"
 #include "timemory/utility/popen.hpp"
 #include "timemory/utility/types.hpp"
+#include "timemory/variadic/macros.hpp"
 
 namespace tim
 {
@@ -35,14 +37,23 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 //
 TIMEMORY_UTILITY_LINKAGE(bool)
-launch_process(const char* cmd, const std::string& extra, std::ostream* os)
+launch_process(const char* cmd, const std::string& extra, std::ostream* os,
+               const std::vector<std::pair<std::string, std::string>>& _env)
 {
+    // save the original env variables and override
+    auto _orig_env = std::vector<std::pair<std::string, std::string>>{};
+    for(const auto& itr : _env)
+    {
+        _orig_env.emplace_back(itr.first, get_env(itr.first, std::string{}, false));
+        set_env(itr.first, itr.second, 1);
+    }
+
 #if !defined(TIMEMORY_WINDOWS)
     auto                       delim = delimit(cmd, " \t");
     tim::popen::TIMEMORY_PIPE* fp    = nullptr;
     if(delim.size() < 2)
     {
-        fp = tim::popen::popen(cmd, nullptr, nullptr);
+        fp = tim::popen::popen(cmd, nullptr);
     }
     else
     {
@@ -100,6 +111,10 @@ launch_process(const char* cmd, const std::string& extra, std::ostream* os)
     }
     (void) os;
 #endif
+
+    // restore original env
+    for(const auto& itr : _orig_env)
+        set_env(itr.first, itr.second, 1);
 
     return true;
 }
