@@ -774,7 +774,7 @@ settings::operator=(const settings& rhs)
             auto ritr = rhs.m_data.find(itr);
             if(ritr == rhs.m_data.end())
             {
-                TIMEMORY_EXCEPTION(string_t("Error! Missing ordered entry: ") + itr)
+                TIMEMORY_EXCEPTION(std::string("Error! Missing ordered entry: ") + itr)
             }
             else
             {
@@ -914,7 +914,7 @@ settings::initialize_core()
     const auto* homedir = "%env{HOME}%";
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, config_file, TIMEMORY_SETTINGS_KEY("CONFIG_FILE"),
+        std::string, config_file, TIMEMORY_SETTINGS_KEY("CONFIG_FILE"),
         "Configuration file for " TIMEMORY_PROJECT_NAME,
         TIMEMORY_JOIN(';', TIMEMORY_JOIN('/', homedir, "." TIMEMORY_PROJECT_NAME ".cfg"),
                       TIMEMORY_JOIN('/', homedir, "." TIMEMORY_PROJECT_NAME ".json")),
@@ -985,7 +985,7 @@ void
 settings::initialize_components()
 {
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, global_components, TIMEMORY_SETTINGS_KEY("GLOBAL_COMPONENTS"),
+        std::string, global_components, TIMEMORY_SETTINGS_KEY("GLOBAL_COMPONENTS"),
         "A specification of components which is used by multiple variadic bundlers and "
         "user_bundles as the fall-back set of components if their specific variable is "
         "not set. E.g. user_mpip_bundle will use this if MPIP_COMPONENTS is not "
@@ -994,7 +994,7 @@ settings::initialize_components()
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-global-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, ompt_components, TIMEMORY_SETTINGS_KEY("OMPT_COMPONENTS"),
+        std::string, ompt_components, TIMEMORY_SETTINGS_KEY("OMPT_COMPONENTS"),
         "A specification of components which will be added to structures containing "
         "the 'user_ompt_bundle'. Priority: TRACE_COMPONENTS -> PROFILER_COMPONENTS -> "
         "COMPONENTS -> GLOBAL_COMPONENTS",
@@ -1002,7 +1002,7 @@ settings::initialize_components()
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-ompt-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, mpip_components, TIMEMORY_SETTINGS_KEY("MPIP_COMPONENTS"),
+        std::string, mpip_components, TIMEMORY_SETTINGS_KEY("MPIP_COMPONENTS"),
         "A specification of components which will be added to structures containing "
         "the 'user_mpip_bundle'. Priority: TRACE_COMPONENTS -> PROFILER_COMPONENTS -> "
         "COMPONENTS -> GLOBAL_COMPONENTS",
@@ -1010,7 +1010,7 @@ settings::initialize_components()
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-mpip-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, ncclp_components, TIMEMORY_SETTINGS_KEY("NCCLP_COMPONENTS"),
+        std::string, ncclp_components, TIMEMORY_SETTINGS_KEY("NCCLP_COMPONENTS"),
         "A specification of components which will be added to structures containing "
         "the 'user_ncclp_bundle'. Priority: MPIP_COMPONENTS -> TRACE_COMPONENTS -> "
         "PROFILER_COMPONENTS -> COMPONENTS -> GLOBAL_COMPONENTS",
@@ -1018,7 +1018,7 @@ settings::initialize_components()
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-ncclp-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, trace_components, TIMEMORY_SETTINGS_KEY("TRACE_COMPONENTS"),
+        std::string, trace_components, TIMEMORY_SETTINGS_KEY("TRACE_COMPONENTS"),
         "A specification of components which will be used by the interfaces which "
         "are designed for full profiling. These components will be subjected to "
         "throttling. "
@@ -1027,7 +1027,7 @@ settings::initialize_components()
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-trace-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, profiler_components, TIMEMORY_SETTINGS_KEY("PROFILER_COMPONENTS"),
+        std::string, profiler_components, TIMEMORY_SETTINGS_KEY("PROFILER_COMPONENTS"),
         "A specification of components which will be used by the interfaces which "
         "are designed for full python profiling. This specification will be overridden "
         "by a trace_components specification. Priority: COMPONENTS -> GLOBAL_COMPONENTS",
@@ -1035,7 +1035,7 @@ settings::initialize_components()
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-profiler-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, kokkos_components, TIMEMORY_SETTINGS_KEY("KOKKOS_COMPONENTS"),
+        std::string, kokkos_components, TIMEMORY_SETTINGS_KEY("KOKKOS_COMPONENTS"),
         "A specification of components which will be used by the interfaces which "
         "are designed for kokkos profiling. Priority: TRACE_COMPONENTS -> "
         "PROFILER_COMPONENTS -> COMPONENTS -> GLOBAL_COMPONENTS",
@@ -1043,7 +1043,7 @@ settings::initialize_components()
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-kokkos-components" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, components, TIMEMORY_SETTINGS_KEY("COMPONENTS"),
+        std::string, components, TIMEMORY_SETTINGS_KEY("COMPONENTS"),
         "A specification of components which is used by the library interface. This "
         "falls back to GLOBAL_COMPONENTS.",
         "", TIMEMORY_ESC(strset_t{ "native", "component" }),
@@ -1132,7 +1132,7 @@ settings::initialize_io()
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-ctest-notes" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, output_path, TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"),
+        std::string, output_path, TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"),
         "Explicitly specify the output folder for results",
         TIMEMORY_PROJECT_NAME "-%tag%-output",
         TIMEMORY_ESC(strset_t{ "native", "io", "filename" }),
@@ -1140,14 +1140,14 @@ settings::initialize_io()
         1);  // folder
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, output_prefix, TIMEMORY_SETTINGS_KEY("OUTPUT_PREFIX"),
+        std::string, output_prefix, TIMEMORY_SETTINGS_KEY("OUTPUT_PREFIX"),
         "Explicitly specify a prefix for all output files", "",
         TIMEMORY_ESC(strset_t{ "native", "io", "filename" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-output-prefix" }),
         1);  // file prefix
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, input_path, TIMEMORY_SETTINGS_KEY("INPUT_PATH"),
+        std::string, input_path, TIMEMORY_SETTINGS_KEY("INPUT_PATH"),
         "Explicitly specify the input folder for difference "
         "comparisons (see also: DIFF_OUTPUT)",
         "", TIMEMORY_ESC(strset_t{ "native", "io", "filename" }),
@@ -1155,7 +1155,7 @@ settings::initialize_io()
         1);  // folder
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, input_prefix, TIMEMORY_SETTINGS_KEY("INPUT_PREFIX"),
+        std::string, input_prefix, TIMEMORY_SETTINGS_KEY("INPUT_PREFIX"),
         "Explicitly specify the prefix for input files used in difference "
         "comparisons (see also: DIFF_OUTPUT)",
         "", TIMEMORY_ESC(strset_t{ "native", "io", "filename" }),
@@ -1163,7 +1163,7 @@ settings::initialize_io()
         1);  // file prefix
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, input_extensions, TIMEMORY_SETTINGS_KEY("INPUT_EXTENSIONS"),
+        std::string, input_extensions, TIMEMORY_SETTINGS_KEY("INPUT_EXTENSIONS"),
         "File extensions used when searching for input files used in difference "
         "comparisons (see also: DIFF_OUTPUT)",
         "json,xml", TIMEMORY_ESC(strset_t{ "native", "io", "filename" }),
@@ -1177,7 +1177,7 @@ void
 settings::initialize_format()
 {
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, time_format, TIMEMORY_SETTINGS_KEY("TIME_FORMAT"),
+        std::string, time_format, TIMEMORY_SETTINGS_KEY("TIME_FORMAT"),
         "Customize the folder generation when TIME_OUTPUT is enabled (see also: "
         "strftime)",
         "%F_%H.%M", TIMEMORY_ESC(strset_t{ "native", "io", "format", "filename" }),
@@ -1218,7 +1218,7 @@ settings::initialize_format()
         TIMEMORY_ESC(strset_t{ "native", "io", "format" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, timing_units, TIMEMORY_SETTINGS_KEY("TIMING_UNITS"),
+        std::string, timing_units, TIMEMORY_SETTINGS_KEY("TIMING_UNITS"),
         "Set the units for components with "
         "'uses_timing_units' type-trait",
         "", TIMEMORY_ESC(strset_t{ "native", "io", "format" }),
@@ -1241,7 +1241,7 @@ settings::initialize_format()
         TIMEMORY_ESC(strset_t{ "native", "io", "format" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, memory_units, TIMEMORY_SETTINGS_KEY("MEMORY_UNITS"),
+        std::string, memory_units, TIMEMORY_SETTINGS_KEY("MEMORY_UNITS"),
         "Set the units for components with "
         "'uses_memory_units' type-trait",
         "", TIMEMORY_ESC(strset_t{ "native", "io", "format" }),
@@ -1317,7 +1317,7 @@ settings::initialize_parallel()
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-mpi-thread" }), -1, 1);
 
     TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(
-        string_t, mpi_thread_type, TIMEMORY_SETTINGS_KEY("MPI_THREAD_TYPE"),
+        std::string, mpi_thread_type, TIMEMORY_SETTINGS_KEY("MPI_THREAD_TYPE"),
         "MPI_Init_thread mode: 'single', 'serialized', 'funneled', or 'multiple' "
         "(see also: MPI_INIT and MPI_THREAD)",
         mpi::use_mpi_thread_type(),
@@ -1378,7 +1378,7 @@ settings::initialize_tpls()
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-papi-quiet" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, papi_events, TIMEMORY_SETTINGS_KEY("PAPI_EVENTS"),
+        std::string, papi_events, TIMEMORY_SETTINGS_KEY("PAPI_EVENTS"),
         "PAPI presets and events to collect (see also: papi_avail)", "",
         TIMEMORY_ESC(strset_t{ "native", "tpl", "papi" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-papi-events" }));
@@ -1411,20 +1411,20 @@ settings::initialize_tpls()
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-cupti-activity-level" }), 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, cupti_activity_kinds, TIMEMORY_SETTINGS_KEY("CUPTI_ACTIVITY_KINDS"),
+        std::string, cupti_activity_kinds, TIMEMORY_SETTINGS_KEY("CUPTI_ACTIVITY_KINDS"),
         "Specific cupti activity kinds to track", "",
         TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-cupti-activity-kinds" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, cupti_events, TIMEMORY_SETTINGS_KEY("CUPTI_EVENTS"),
+        std::string, cupti_events, TIMEMORY_SETTINGS_KEY("CUPTI_EVENTS"),
         "Hardware counter event types to collect on NVIDIA "
         "GPUs",
         "", TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-cupti-events" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, cupti_metrics, TIMEMORY_SETTINGS_KEY("CUPTI_METRICS"),
+        std::string, cupti_metrics, TIMEMORY_SETTINGS_KEY("CUPTI_METRICS"),
         "Hardware counter metric types to collect on "
         "NVIDIA GPUs",
         "", TIMEMORY_ESC(strset_t{ "native", "tpl", "cuda", "cupti" }),
@@ -1479,13 +1479,13 @@ settings::initialize_tpls()
         strvector_t{ "--" TIMEMORY_PROJECT_NAME "-cupti-pcsampling-stall-reasons" });
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
-        string_t, craypat_categories, TIMEMORY_SETTINGS_KEY("CRAYPAT"),
+        std::string, craypat_categories, TIMEMORY_SETTINGS_KEY("CRAYPAT"),
         "Configure the CrayPAT categories to collect (same as PAT_RT_PERFCTR)",
         get_env<std::string>("PAT_RT_PERFCTR", "", false),
         TIMEMORY_ESC(strset_t{ "native", "tpl", "craypat" }))
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, python_exe, TIMEMORY_SETTINGS_KEY("PYTHON_EXE"),
+        std::string, python_exe, TIMEMORY_SETTINGS_KEY("PYTHON_EXE"),
         "Configure the python executable to use", TIMEMORY_PYTHON_PLOTTER,
         TIMEMORY_ESC(strset_t{ "native", "tpl", "python" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-python-exe" }));
@@ -1498,14 +1498,14 @@ void
 settings::initialize_roofline()
 {
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, roofline_mode, TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE"),
+        std::string, roofline_mode, TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE"),
         "Configure the roofline collection mode. Options: 'op' 'ai'.", "op",
         TIMEMORY_ESC(strset_t{ "native", "component", "roofline" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-roofline-mode" }), 1, 1,
         strvector_t({ "op", "ai" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, cpu_roofline_mode, TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE_CPU"),
+        std::string, cpu_roofline_mode, TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE_CPU"),
         "Configure the roofline collection mode for CPU "
         "specifically. Options: 'op', 'ai'",
         "op", TIMEMORY_ESC(strset_t{ "native", "component", "roofline", "cpu_roofline" }),
@@ -1513,10 +1513,10 @@ settings::initialize_roofline()
         strvector_t({ "op", "ai" }));
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, gpu_roofline_mode, TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE_GPU"),
+        std::string, gpu_roofline_mode, TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE_GPU"),
         "Configure the roofline collection mode for GPU specifically. Options: 'op', "
         "'ai'.",
-        static_cast<tsettings<string_t>*>(
+        static_cast<tsettings<std::string>*>(
             m_data[TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE")].get())
             ->get(),
         TIMEMORY_ESC(strset_t{ "native", "component", "roofline", "gpu_roofline" }),
@@ -1524,12 +1524,12 @@ settings::initialize_roofline()
         strvector_t({ "op", "ai" }));
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
-        string_t, cpu_roofline_events, TIMEMORY_SETTINGS_KEY("ROOFLINE_EVENTS_CPU"),
+        std::string, cpu_roofline_events, TIMEMORY_SETTINGS_KEY("ROOFLINE_EVENTS_CPU"),
         "Configure custom hw counters to add to the cpu roofline", "",
         TIMEMORY_ESC(strset_t{ "native", "component", "roofline", "cpu_roofline" }));
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
-        string_t, gpu_roofline_events, TIMEMORY_SETTINGS_KEY("ROOFLINE_EVENTS_GPU"),
+        std::string, gpu_roofline_events, TIMEMORY_SETTINGS_KEY("ROOFLINE_EVENTS_GPU"),
         "Configure custom hw counters to add to the gpu roofline", "",
         TIMEMORY_ESC(strset_t{ "native", "component", "roofline", "gpu_roofline" }));
 
@@ -1717,7 +1717,7 @@ settings::initialize_ert()
         TIMEMORY_ESC(strset_t{ "native", "ert", "roofline", "gpu_roofline" }));
 
     TIMEMORY_SETTINGS_MEMBER_IMPL(
-        string_t, ert_skip_ops, TIMEMORY_SETTINGS_KEY("ERT_SKIP_OPS"),
+        std::string, ert_skip_ops, TIMEMORY_SETTINGS_KEY("ERT_SKIP_OPS"),
         "Skip these number of ops (i.e. ERT_FLOPS) when were set at compile time", "",
         TIMEMORY_ESC(strset_t{ "native", "ert", "roofline" }));
 }
@@ -1729,7 +1729,7 @@ void
 settings::initialize_dart()
 {
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
-        string_t, dart_type, TIMEMORY_SETTINGS_KEY("DART_TYPE"),
+        std::string, dart_type, TIMEMORY_SETTINGS_KEY("DART_TYPE"),
         "Only echo this measurement type (see also: DART_OUTPUT)", "",
         TIMEMORY_ESC(strset_t{ "native", "io", "dart", "cdash" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-dart-type" }));
@@ -2210,8 +2210,8 @@ settings::read(std::istream& ifs, std::string inp)
             }
             if(!delim.empty())
             {
-                string_t key = delim.front();
-                string_t val = {};
+                std::string key = delim.front();
+                std::string val = {};
                 // combine into another string separated by commas
                 for(size_t i = 1; i < delim.size(); ++i)
                 {
@@ -2409,7 +2409,8 @@ settings::handle_exception(std::string_view _env_var, std::string_view _func,
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, config_file, TIMEMORY_SETTINGS_KEY("CONFIG_FILE"))
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, config_file,
+                             TIMEMORY_SETTINGS_KEY("CONFIG_FILE"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, suppress_parsing,
                              TIMEMORY_SETTINGS_KEY("SUPPRESS_PARSING"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, suppress_config,
@@ -2437,7 +2438,8 @@ TIMEMORY_SETTINGS_MEMBER_DEF(bool, collapse_threads,
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, collapse_processes,
                              TIMEMORY_SETTINGS_KEY("COLLAPSE_PROCESSES"))
 TIMEMORY_SETTINGS_MEMBER_DEF(uint16_t, max_depth, TIMEMORY_SETTINGS_KEY("MAX_DEPTH"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, time_format, TIMEMORY_SETTINGS_KEY("TIME_FORMAT"))
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, time_format,
+                             TIMEMORY_SETTINGS_KEY("TIME_FORMAT"))
 TIMEMORY_SETTINGS_MEMBER_DEF(int16_t, precision, TIMEMORY_SETTINGS_KEY("PRECISION"))
 TIMEMORY_SETTINGS_MEMBER_DEF(int16_t, width, TIMEMORY_SETTINGS_KEY("WIDTH"))
 TIMEMORY_SETTINGS_MEMBER_DEF(int32_t, max_width, TIMEMORY_SETTINGS_KEY("MAX_WIDTH"))
@@ -2445,26 +2447,27 @@ TIMEMORY_SETTINGS_MEMBER_DEF(bool, scientific, TIMEMORY_SETTINGS_KEY("SCIENTIFIC
 TIMEMORY_SETTINGS_MEMBER_DEF(int16_t, timing_precision,
                              TIMEMORY_SETTINGS_KEY("TIMING_PRECISION"))
 TIMEMORY_SETTINGS_MEMBER_DEF(int16_t, timing_width, TIMEMORY_SETTINGS_KEY("TIMING_WIDTH"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, timing_units,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, timing_units,
                              TIMEMORY_SETTINGS_KEY("TIMING_UNITS"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, timing_scientific,
                              TIMEMORY_SETTINGS_KEY("TIMING_SCIENTIFIC"))
 TIMEMORY_SETTINGS_MEMBER_DEF(int16_t, memory_precision,
                              TIMEMORY_SETTINGS_KEY("MEMORY_PRECISION"))
 TIMEMORY_SETTINGS_MEMBER_DEF(int16_t, memory_width, TIMEMORY_SETTINGS_KEY("MEMORY_WIDTH"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, memory_units,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, memory_units,
                              TIMEMORY_SETTINGS_KEY("MEMORY_UNITS"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, memory_scientific,
                              TIMEMORY_SETTINGS_KEY("MEMORY_SCIENTIFIC"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, output_path, TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, output_prefix,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, output_path,
+                             TIMEMORY_SETTINGS_KEY("OUTPUT_PATH"))
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, output_prefix,
                              TIMEMORY_SETTINGS_KEY("OUTPUT_PREFIX"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, input_path, TIMEMORY_SETTINGS_KEY("INPUT_PATH"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, input_prefix,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, input_path, TIMEMORY_SETTINGS_KEY("INPUT_PATH"))
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, input_prefix,
                              TIMEMORY_SETTINGS_KEY("INPUT_PREFIX"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, input_extensions,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, input_extensions,
                              TIMEMORY_SETTINGS_KEY("INPUT_EXTENSIONS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, dart_type, TIMEMORY_SETTINGS_KEY("DART_TYPE"))
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, dart_type, TIMEMORY_SETTINGS_KEY("DART_TYPE"))
 TIMEMORY_SETTINGS_MEMBER_DEF(uint64_t, dart_count, TIMEMORY_SETTINGS_KEY("DART_COUNT"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, dart_label, TIMEMORY_SETTINGS_KEY("DART_LABEL"))
 TIMEMORY_SETTINGS_MEMBER_DEF(size_t, max_thread_bookmarks,
@@ -2477,31 +2480,31 @@ TIMEMORY_SETTINGS_MEMBER_DEF(size_t, throttle_count,
                              TIMEMORY_SETTINGS_KEY("THROTTLE_COUNT"))
 TIMEMORY_SETTINGS_MEMBER_DEF(size_t, throttle_value,
                              TIMEMORY_SETTINGS_KEY("THROTTLE_VALUE"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, global_components,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, global_components,
                              TIMEMORY_SETTINGS_KEY("GLOBAL_COMPONENTS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, tuple_components,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, tuple_components,
                              TIMEMORY_SETTINGS_KEY("TUPLE_COMPONENTS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, list_components,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, list_components,
                              TIMEMORY_SETTINGS_KEY("LIST_COMPONENTS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, ompt_components,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, ompt_components,
                              TIMEMORY_SETTINGS_KEY("OMPT_COMPONENTS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, mpip_components,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, mpip_components,
                              TIMEMORY_SETTINGS_KEY("MPIP_COMPONENTS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, ncclp_components,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, ncclp_components,
                              TIMEMORY_SETTINGS_KEY("NCCLP_COMPONENTS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, trace_components,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, trace_components,
                              TIMEMORY_SETTINGS_KEY("TRACE_COMPONENTS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, profiler_components,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, profiler_components,
                              TIMEMORY_SETTINGS_KEY("PROFILER_COMPONENTS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, kokkos_components,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, kokkos_components,
                              TIMEMORY_SETTINGS_KEY("KOKKOS_COMPONENTS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, components, TIMEMORY_SETTINGS_KEY("COMPONENTS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, network_interface,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, components, TIMEMORY_SETTINGS_KEY("COMPONENTS"))
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, network_interface,
                              TIMEMORY_SETTINGS_KEY("NETWORK_INTERFACE"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, mpi_init, TIMEMORY_SETTINGS_KEY("MPI_INIT"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, mpi_finalize, TIMEMORY_SETTINGS_KEY("MPI_FINALIZE"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, mpi_thread, TIMEMORY_SETTINGS_KEY("MPI_THREAD"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, mpi_thread_type,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, mpi_thread_type,
                              TIMEMORY_SETTINGS_KEY("MPI_THREAD_TYPE"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, upcxx_init, TIMEMORY_SETTINGS_KEY("UPCXX_INIT"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, upcxx_finalize,
@@ -2513,7 +2516,8 @@ TIMEMORY_SETTINGS_MEMBER_DEF(bool, papi_multiplexing,
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, papi_fail_on_error,
                              TIMEMORY_SETTINGS_KEY("PAPI_FAIL_ON_ERROR"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, papi_quiet, TIMEMORY_SETTINGS_KEY("PAPI_QUIET"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, papi_events, TIMEMORY_SETTINGS_KEY("PAPI_EVENTS"))
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, papi_events,
+                             TIMEMORY_SETTINGS_KEY("PAPI_EVENTS"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, papi_attach, TIMEMORY_SETTINGS_KEY("PAPI_ATTACH"))
 TIMEMORY_SETTINGS_MEMBER_DEF(int, papi_overflow, TIMEMORY_SETTINGS_KEY("PAPI_OVERFLOW"))
 TIMEMORY_SETTINGS_MEMBER_DEF(uint64_t, cuda_event_batch_size,
@@ -2522,22 +2526,22 @@ TIMEMORY_SETTINGS_MEMBER_DEF(bool, nvtx_marker_device_sync,
                              TIMEMORY_SETTINGS_KEY("NVTX_MARKER_DEVICE_SYNC"))
 TIMEMORY_SETTINGS_MEMBER_DEF(int32_t, cupti_activity_level,
                              TIMEMORY_SETTINGS_KEY("CUPTI_ACTIVITY_LEVEL"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, cupti_activity_kinds,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, cupti_activity_kinds,
                              TIMEMORY_SETTINGS_KEY("CUPTI_ACTIVITY_KINDS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, cupti_events,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, cupti_events,
                              TIMEMORY_SETTINGS_KEY("CUPTI_EVENTS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, cupti_metrics,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, cupti_metrics,
                              TIMEMORY_SETTINGS_KEY("CUPTI_METRICS"))
 TIMEMORY_SETTINGS_MEMBER_DEF(int, cupti_device, TIMEMORY_SETTINGS_KEY("CUPTI_DEVICE"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, roofline_mode,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, roofline_mode,
                              TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, cpu_roofline_mode,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, cpu_roofline_mode,
                              TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE_CPU"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, gpu_roofline_mode,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, gpu_roofline_mode,
                              TIMEMORY_SETTINGS_KEY("ROOFLINE_MODE_GPU"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, cpu_roofline_events,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, cpu_roofline_events,
                              TIMEMORY_SETTINGS_KEY("ROOFLINE_EVENTS_CPU"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, gpu_roofline_events,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, gpu_roofline_events,
                              TIMEMORY_SETTINGS_KEY("ROOFLINE_EVENTS_GPU"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, roofline_type_labels,
                              TIMEMORY_SETTINGS_KEY("ROOFLINE_TYPE_LABELS"))
@@ -2573,14 +2577,14 @@ TIMEMORY_SETTINGS_MEMBER_DEF(uint64_t, ert_max_data_size_cpu,
                              TIMEMORY_SETTINGS_KEY("ERT_MAX_DATA_SIZE_CPU"))
 TIMEMORY_SETTINGS_MEMBER_DEF(uint64_t, ert_max_data_size_gpu,
                              TIMEMORY_SETTINGS_KEY("ERT_MAX_DATA_SIZE_GPU"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, ert_skip_ops,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, ert_skip_ops,
                              TIMEMORY_SETTINGS_KEY("ERT_SKIP_OPS"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, craypat_categories,
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, craypat_categories,
                              TIMEMORY_SETTINGS_KEY("CRAYPAT"))
 TIMEMORY_SETTINGS_MEMBER_DEF(int32_t, node_count, TIMEMORY_SETTINGS_KEY("NODE_COUNT"))
 TIMEMORY_SETTINGS_MEMBER_DEF(bool, destructor_report,
                              TIMEMORY_SETTINGS_KEY("DESTRUCTOR_REPORT"))
-TIMEMORY_SETTINGS_MEMBER_DEF(string_t, python_exe, TIMEMORY_SETTINGS_KEY("PYTHON_EXE"))
+TIMEMORY_SETTINGS_MEMBER_DEF(std::string, python_exe, TIMEMORY_SETTINGS_KEY("PYTHON_EXE"))
 // stream
 TIMEMORY_SETTINGS_MEMBER_DEF(int64_t, separator_frequency,
                              TIMEMORY_SETTINGS_KEY("SEPARATOR_FREQ"))

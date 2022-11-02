@@ -262,7 +262,7 @@ struct TIMEMORY_VISIBILITY("default") settings
     //
     //==================================================================================//
 
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, config_file)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, config_file)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, suppress_parsing)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, suppress_config)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, strict_config)
@@ -285,25 +285,25 @@ struct TIMEMORY_VISIBILITY("default") settings
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, collapse_threads)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, collapse_processes)
     TIMEMORY_SETTINGS_MEMBER_DECL(uint16_t, max_depth)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, time_format)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, time_format)
     TIMEMORY_SETTINGS_MEMBER_DECL(int16_t, precision)
     TIMEMORY_SETTINGS_MEMBER_DECL(int16_t, width)
     TIMEMORY_SETTINGS_MEMBER_DECL(int32_t, max_width)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, scientific)
     TIMEMORY_SETTINGS_MEMBER_DECL(int16_t, timing_precision)
     TIMEMORY_SETTINGS_MEMBER_DECL(int16_t, timing_width)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, timing_units)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, timing_units)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, timing_scientific)
     TIMEMORY_SETTINGS_MEMBER_DECL(int16_t, memory_precision)
     TIMEMORY_SETTINGS_MEMBER_DECL(int16_t, memory_width)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, memory_units)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, memory_units)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, memory_scientific)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, output_path)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, output_prefix)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, input_path)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, input_prefix)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, input_extensions)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, dart_type)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, output_path)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, output_prefix)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, input_path)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, input_prefix)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, input_extensions)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, dart_type)
     TIMEMORY_SETTINGS_MEMBER_DECL(uint64_t, dart_count)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, dart_label)
     TIMEMORY_SETTINGS_MEMBER_DECL(size_t, max_thread_bookmarks)
@@ -312,42 +312,42 @@ struct TIMEMORY_VISIBILITY("default") settings
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, add_secondary)
     TIMEMORY_SETTINGS_MEMBER_DECL(size_t, throttle_count)
     TIMEMORY_SETTINGS_MEMBER_DECL(size_t, throttle_value)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, global_components)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, tuple_components)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, list_components)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, ompt_components)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, mpip_components)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, ncclp_components)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, trace_components)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, profiler_components)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, kokkos_components)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, components)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, network_interface)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, global_components)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, tuple_components)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, list_components)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, ompt_components)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, mpip_components)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, ncclp_components)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, trace_components)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, profiler_components)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, kokkos_components)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, components)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, network_interface)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, mpi_init)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, mpi_finalize)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, mpi_thread)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, mpi_thread_type)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, mpi_thread_type)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, upcxx_init)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, upcxx_finalize)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, papi_threading)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, papi_multiplexing)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, papi_fail_on_error)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, papi_quiet)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, papi_events)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, papi_events)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, papi_attach)
     TIMEMORY_SETTINGS_MEMBER_DECL(int, papi_overflow)
     TIMEMORY_SETTINGS_MEMBER_DECL(uint64_t, cuda_event_batch_size)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, nvtx_marker_device_sync)
     TIMEMORY_SETTINGS_MEMBER_DECL(int32_t, cupti_activity_level)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, cupti_activity_kinds)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, cupti_events)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, cupti_metrics)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, cupti_activity_kinds)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, cupti_events)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, cupti_metrics)
     TIMEMORY_SETTINGS_MEMBER_DECL(int, cupti_device)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, roofline_mode)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, cpu_roofline_mode)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, gpu_roofline_mode)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, cpu_roofline_events)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, gpu_roofline_events)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, roofline_mode)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, cpu_roofline_mode)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, gpu_roofline_mode)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, cpu_roofline_events)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, gpu_roofline_events)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, roofline_type_labels)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, roofline_type_labels_cpu)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, roofline_type_labels_gpu)
@@ -365,11 +365,11 @@ struct TIMEMORY_VISIBILITY("default") settings
     TIMEMORY_SETTINGS_MEMBER_DECL(uint64_t, ert_max_data_size)
     TIMEMORY_SETTINGS_MEMBER_DECL(uint64_t, ert_max_data_size_cpu)
     TIMEMORY_SETTINGS_MEMBER_DECL(uint64_t, ert_max_data_size_gpu)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, ert_skip_ops)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, craypat_categories)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, ert_skip_ops)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, craypat_categories)
     TIMEMORY_SETTINGS_MEMBER_DECL(int32_t, node_count)
     TIMEMORY_SETTINGS_MEMBER_DECL(bool, destructor_report)
-    TIMEMORY_SETTINGS_MEMBER_DECL(string_t, python_exe)
+    TIMEMORY_SETTINGS_MEMBER_DECL(std::string, python_exe)
     // stream
     TIMEMORY_SETTINGS_MEMBER_DECL(int64_t, separator_frequency)
     // signals
@@ -420,22 +420,22 @@ public:
     };
 
     static strvector_t get_global_environment();
-    static string_t    tolower(string_t str);
-    static string_t    toupper(string_t str);
-    static string_t    get_global_input_prefix(std::string subdir = {});
-    static string_t    get_global_output_prefix(bool        _make_dir = false,
+    static std::string tolower(std::string str);
+    static std::string toupper(std::string str);
+    static std::string get_global_input_prefix(std::string subdir = {});
+    static std::string get_global_output_prefix(bool        _make_dir = false,
                                                 std::string subdir    = {});
     static void        store_command_line(int argc, char** argv);
-    static string_t    compose_output_filename(string_t _tag, string_t _ext,
+    static std::string compose_output_filename(std::string _tag, std::string _ext,
                                                const compose_filename_config& = {
-                                                use_output_suffix(),
-                                                default_process_suffix(), false,
-                                                std::string{}, std::string{} });
-    static string_t    compose_input_filename(string_t _tag, string_t _ext,
+                                                   use_output_suffix(),
+                                                   default_process_suffix(), false,
+                                                   std::string{}, std::string{} });
+    static std::string compose_input_filename(std::string _tag, std::string _ext,
                                               const compose_filename_config& = {
-                                               use_output_suffix(),
-                                               default_process_suffix(), false,
-                                               std::string{}, std::string{} });
+                                                  use_output_suffix(),
+                                                  default_process_suffix(), false,
+                                                  std::string{}, std::string{} });
 
     static void parse(settings* = instance<TIMEMORY_API>());
 
@@ -449,16 +449,16 @@ public:
                               std::string _ext) TIMEMORY_VISIBILITY("hidden");
 
     template <typename... Args>
-    static string_t compose_output_filename(string_t _tag, string_t _ext,
-                                            bool _use_suffix, Args... args)
+    static std::string compose_output_filename(std::string _tag, std::string _ext,
+                                               bool _use_suffix, Args... args)
     {
         return compose_output_filename(std::move(_tag), std::move(_ext),
                                        compose_filename_config{ _use_suffix, args... });
     }
 
     template <typename... Args>
-    static string_t compose_input_filename(string_t _tag, string_t _ext, bool _use_suffix,
-                                           Args... args)
+    static std::string compose_input_filename(std::string _tag, std::string _ext,
+                                              bool _use_suffix, Args... args)
     {
         return compose_input_filename(std::move(_tag), std::move(_ext),
                                       compose_filename_config{ _use_suffix, args... });
@@ -510,16 +510,16 @@ public:
     const_iterator cbegin() const { return get_next(m_data.cbegin(), m_data.cend()); }
     const_iterator cend() const { return m_data.cend(); }
 
-    template <typename Sp = string_t>
+    template <typename Sp = std::string>
     auto find(Sp&& _key, bool _exact = true, const std::string& _category = {});
 
-    template <typename Tp, typename Sp = string_t>
+    template <typename Tp, typename Sp = std::string>
     Tp get(Sp&& _key, bool _exact = true);
 
-    template <typename Tp, typename Sp = string_t>
+    template <typename Tp, typename Sp = std::string>
     bool get(Sp&& _key, Tp& _val, bool _exact);
 
-    template <typename Tp, typename Sp = string_t>
+    template <typename Tp, typename Sp = std::string>
     bool set(Sp&& _key, Tp&& _val, bool _exact = true);
 
     /// mark this option as enabled. returns whether option was found
@@ -553,7 +553,7 @@ public:
     /// \tparam Tp Data-type of the setting
     /// \tparam Vp Value-type of the setting (Tp or Tp&)
     /// \tparam Sp String-type
-    template <typename Tp, typename Vp, typename Sp = string_t>
+    template <typename Tp, typename Vp, typename Sp = std::string>
     auto insert(tsetting_pointer_t<Tp, Vp> _ptr, Sp&& _env = {});
 
     /// \tparam API Tagged type
