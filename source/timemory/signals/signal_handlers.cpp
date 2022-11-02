@@ -273,14 +273,14 @@ termination_signal_message(int _sig, siginfo_t* _sinfo, std::ostream& os)
         }
     }
 
-    if(_sinfo && !_name.empty() && !_desc.empty())
-        message << ". code: " << _sinfo->si_code << " (" << _name << " :: " << _desc
-                << ")";
-    else
-        message << ". code: " << _sinfo->si_code;
-
     if(_sinfo)
     {
+        if(!_name.empty() && !_desc.empty())
+            message << ". code: " << _sinfo->si_code << " (" << _name << " :: " << _desc
+                    << ")";
+        else
+            message << ". code: " << _sinfo->si_code;
+
         switch(_sig)
         {
             case SIGILL:
@@ -294,6 +294,10 @@ termination_signal_message(int _sig, siginfo_t* _sinfo, std::ostream& os)
             case SIGIO: message << ", band event: " << _sinfo->si_band; break;
             default: break;
         }
+    }
+    else
+    {
+        message << ".";
     }
 
     char prefix[buffer_size];
