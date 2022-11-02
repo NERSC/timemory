@@ -190,7 +190,8 @@ env_settings::collapse()
                     // create a new unique entry for the index
                     if(m_env->find(key)->second != mitr.second)
                     {
-                        key += string_t("[@") + std::to_string(i + 1) + string_t("]");
+                        key +=
+                            std::string("[@") + std::to_string(i + 1) + std::string("]");
                         (*m_env)[key] = mitr.second;
                     }
                 }

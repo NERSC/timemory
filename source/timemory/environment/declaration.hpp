@@ -56,10 +56,9 @@ namespace tim
 class env_settings
 {
 public:
-    using string_t       = std::string;
-    using env_map_t      = std::map<string_t, string_t>;
-    using env_uomap_t    = std::map<string_t, string_t>;
-    using env_pair_t     = std::pair<string_t, string_t>;
+    using env_map_t      = std::map<std::string, std::string>;
+    using env_uomap_t    = std::map<std::string, std::string>;
+    using env_pair_t     = std::pair<std::string, std::string>;
     using iterator       = typename env_map_t::iterator;
     using const_iterator = typename env_map_t::const_iterator;
     using filter_func_t  = std::function<bool(const std::string&)>;
@@ -79,8 +78,8 @@ public:
     void insert(const std::string& env_id, Tp val);
 
     env_map_t      get() const;
-    iterator       get(const string_t& _entry) { return m_env->find(_entry); }
-    const_iterator get(const string_t& _entry) const { return m_env->find(_entry); }
+    iterator       get(const std::string& _entry) { return m_env->find(_entry); }
+    const_iterator get(const std::string& _entry) const { return m_env->find(_entry); }
     iterator       begin() { return m_env->begin(); }
     iterator       end() { return m_env->end(); }
     const_iterator begin() const { return m_env->begin(); }
