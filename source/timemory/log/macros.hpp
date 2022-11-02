@@ -28,6 +28,7 @@
 #include "timemory/log/color.hpp"
 #include "timemory/macros/attributes.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/process/process.hpp"
 
 #include <cstdint>
 #include <cstdio>
@@ -105,7 +106,16 @@ template <typename Arg>
 TIMEMORY_INLINE auto
 timemory_proxy_value(Arg arg, long)
 {
-    return static_cast<std::decay_t<Arg>>(arg);
+    if constexpr(std::is_same<Arg, std::string_view>::value)
+    {
+        auto _len = arg.length();
+        return (strnlen(arg.data(), _len + 1) == _len) ? arg.data()
+                                                       : "unterminated-string-view";
+    }
+    else
+    {
+        return static_cast<std::decay_t<Arg>>(arg);
+    }
 }
 
 template <typename... Args>
@@ -113,8 +123,13 @@ TIMEMORY_NOINLINE void
 timemory_print_here(const char* _pid_tid, const char* _file, int _line, const char* _func,
                     Args... args)
 {
+#if defined(TIMEMORY_PROJECT_NAME)
+    fprintf(stderr, "%s[%s]%s[%s:%i][%s]> ", ::tim::log::color::info(),
+            TIMEMORY_PROJECT_NAME, _pid_tid, _file, _line, _func);
+#else
     fprintf(stderr, "%s%s[%s:%i@'%s']> ", ::tim::log::color::info(), _pid_tid, _file,
             _line, _func);
+#endif
     fprintf(stderr, timemory_proxy_value(args, 0)...);
     fprintf(stderr, "...\n%s", ::tim::log::color::end());
     fflush(stderr);
@@ -128,9 +143,12 @@ timemory_printf(const char* _color, FILE* _file, const char* _fmt)
     if(_file == stdout || _file == stderr)
     {
 #if defined(TIMEMORY_PROJECT_NAME)
-        fprintf(_file, "%s[%s] ", _color, TIMEMORY_PROJECT_NAME);
+        fprintf(_file, "%s[%s][%i]", _color, TIMEMORY_PROJECT_NAME,
+                ::tim::process::get_id());
+        if(strnlen(_fmt, 2) > 0 && _fmt[0] != '[')
+            fprintf(_file, " ");
 #else
-        fprintf(_file, "%s", _color);
+        fprintf(_file, "%s[%i]", _color, ::tim::process::get_id());
 #endif
     }
     fprintf(_file, "%s", _fmt);
@@ -149,14 +167,15 @@ timemory_printf(const char* _color, FILE* _file, const char* _fmt, Arg arg, Args
 #if defined(TIMEMORY_PROJECT_NAME)
         if(std::string_view{ _fmt }.find("[" TIMEMORY_PROJECT_NAME "]") != 0)
         {
-            fprintf(_file, "%s[%s]", _color, TIMEMORY_PROJECT_NAME);
-            if(strlen(_fmt) > 0 && _fmt[0] != '[')
+            fprintf(_file, "%s[%s][%i]", _color, TIMEMORY_PROJECT_NAME,
+                    ::tim::process::get_id());
+            if(strnlen(_fmt, 2) > 0 && _fmt[0] != '[')
                 fprintf(_file, " ");
         }
         else
             fprintf(_file, "%s", _color);
 #else
-        fprintf(_file, "%s", _color);
+        fprintf(_file, "%s[%i]", _color, ::tim::process::get_id());
 #endif
     }
     fprintf(_file, _fmt, timemory_proxy_value(arg, 0), timemory_proxy_value(args, 0)...);
