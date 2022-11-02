@@ -24,101 +24,10 @@
 
 #pragma once
 
+#include "timemory/plotting/declaration.hpp"
 #include "timemory/plotting/macros.hpp"
 #include "timemory/plotting/types.hpp"
 
-#if defined(TIMEMORY_PLOTTING_SOURCE) || !defined(TIMEMORY_USE_PLOTTING_EXTERN)
-
-#    include "timemory/plotting/declaration.hpp"
-#    include "timemory/settings/settings.hpp"
-#    include "timemory/utility/launch_process.hpp"
-#    include "timemory/utility/locking.hpp"
-
-#    include <fstream>
-#    include <iostream>
-#    include <mutex>
-#    include <ostream>
-#    include <sstream>
-#    include <string>
-
-namespace tim
-{
-namespace plotting
-{
-//
-TIMEMORY_PLOTTING_LINKAGE(void)
-plot(const string_t& _label, const string_t& _prefix, const string_t& _dir,
-     bool _echo_dart, const string_t& _json_file)
-{
-    auto_lock_t lk(type_mutex<std::ostream>());
-
-    if(settings::debug() || settings::verbose() > 2)
-        TIMEMORY_PRINT_HERE("%s", "");
-
-    if(settings::python_exe().empty())
-    {
-        fprintf(stderr, "[%s]> Empty '%s' (env: '%s'). Plot generation is disabled...\n",
-                _label.c_str(), "tim::settings::python_exe()", "TIMEMORY_PYTHON_EXE");
-        return;
-    }
-
-    if(settings::debug() || settings::verbose() > 2)
-        TIMEMORY_PRINT_HERE("%s", "");
-
-    const auto& _file = _json_file;
-    {
-        std::ifstream ifs{ _file };
-        bool          exists = ifs.good();
-        ifs.close();
-        if(!exists)
-        {
-            fprintf(stderr,
-                    "[%s]> file '%s' does not exist. Plot generation is disabled...\n",
-                    _label.c_str(), _file.c_str());
-            return;
-        }
-    }
-
-    auto _ctor = get_env<std::string>("TIMEMORY_LIBRARY_CTOR", "");
-    auto _bann = get_env<std::string>("TIMEMORY_BANNER", "");
-    auto _plot = get_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "");
-    // if currently in plotting mode, we dont want to plot again
-    if(_plot.length() > 0)
-        return;
-
-    // set-up environment such that forking is safe
-    set_env<std::string>("TIMEMORY_LIBRARY_CTOR", "OFF", 1);
-    set_env<std::string>("TIMEMORY_BANNER", "OFF", 1);
-    set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", "1", 1);
-    auto cmd =
-        operation::join(" ", settings::python_exe(), "-m", "timemory.plotting", "-f",
-                        _file, "-t", TIMEMORY_JOIN("\"", "", _prefix, ""), "-o", _dir);
-
-    if(_echo_dart)
-        cmd += " -e";
-
-    if(settings::verbose() > 2 || settings::debug())
-        TIMEMORY_PRINT_HERE("PLOT COMMAND: '%s'", cmd.c_str());
-
-    std::stringstream _log{};
-    auto              _success = launch_process(cmd.c_str(),
-                                   TIMEMORY_LABEL("") + " plot generation failed", &_log);
-    if(_success)
-    {
-        std::cout << _log.str() << '\n';
-    }
-    else
-    {
-        std::cerr << _log.str() << '\n';
-    }
-
-    // revert the environment
-    set_env<std::string>("TIMEMORY_CXX_PLOT_MODE", _plot, 1);
-    set_env<std::string>("TIMEMORY_BANNER", _bann, 1);
-    set_env<std::string>("TIMEMORY_LIBRARY_CTOR", _ctor, 1);
-}
-//
-}  // namespace plotting
-}  // namespace tim
-
-#endif  // !defined(TIMEMORY_USE_EXTERN) || defined(TIMEMORY_PLOTTING_SOURCE)
+#if defined(TIMEMORY_PLOTTING_HEADER_MODE) && TIMEMORY_PLOTTING_HEADER_MODE > 0
+#    include "timemory/plotting/plotting.cpp"
+#endif

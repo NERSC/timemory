@@ -24,20 +24,27 @@
 
 #pragma once
 
-#if defined(TIMEMORY_CORE_SOURCE)
-#    define TIMEMORY_PLOTTING_SOURCE
-#elif defined(TIMEMORY_USE_CORE_EXTERN)
-#    define TIMEMORY_USE_PLOTTING_EXTERN
+#if defined(TIMEMORY_CORE_SOURCE) && !defined(TIMEMORY_PLOTTING_SOURCE)
+#    define TIMEMORY_PLOTTING_SOURCE 1
 #endif
-//
+
+#if !defined(TIMEMORY_USE_PLOTTING_EXTERN) &&                                            \
+    (defined(TIMEMORY_USE_CORE_EXTERN) || defined(TIMEMORY_USE_EXTERN))
+#    define TIMEMORY_USE_PLOTTING_EXTERN 1
+#endif
+
 #if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_PLOTTING_EXTERN)
 #    define TIMEMORY_USE_PLOTTING_EXTERN
 #endif
-//
+
 #if defined(TIMEMORY_PLOTTING_SOURCE)
 #    define TIMEMORY_PLOTTING_LINKAGE(...) __VA_ARGS__
-#elif !defined(TIMEMORY_USE_PLOTTING_EXTERN)
-#    define TIMEMORY_PLOTTING_LINKAGE(...) inline __VA_ARGS__
+#    define TIMEMORY_PLOTTING_INLINE
+#elif defined(TIMEMORY_USE_PLOTTING_EXTERN)
+#    define TIMEMORY_PLOTTING_LINKAGE(...) __VA_ARGS__
+#    define TIMEMORY_PLOTTING_INLINE
 #else
-#    define TIMEMORY_PLOTTING_LINKAGE(...) extern __VA_ARGS__
+#    define TIMEMORY_PLOTTING_LINKAGE(...) inline __VA_ARGS__
+#    define TIMEMORY_PLOTTING_INLINE inline
+#    define TIMEMORY_PLOTTING_HEADER_MODE 1
 #endif

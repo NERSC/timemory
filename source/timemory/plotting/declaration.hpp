@@ -24,6 +24,10 @@
 
 #pragma once
 
+#ifndef TIMEMORY_PLOTTING_DECLARATION_HPP_
+#    define TIMEMORY_PLOTTING_DECLARATION_HPP_
+#endif
+
 #include "timemory/plotting/macros.hpp"
 #include "timemory/plotting/types.hpp"
 #include "timemory/settings/declaration.hpp"
@@ -40,38 +44,10 @@
 
 namespace tim
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              plotting
-//
-//--------------------------------------------------------------------------------------//
-//
 namespace plotting
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-void
-plot(const std::string& _label, const std::string& _prefix, const std::string& _dir,
-     bool _echo_dart, const std::string& _json_file) TIMEMORY_VISIBILITY("default");
-//
-void
-echo_dart_file(const string_t& filepath, attributes_t attributes)
-    TIMEMORY_VISIBILITY("default");
-//
-template <typename... Types>
-std::enable_if_t<(sizeof...(Types) > 0), void>
-plot(std::string _prefix = "", const std::string& _dir = settings::output_path(),
-     bool _echo_dart = settings::dart_output(), std::string _json_file = "");
-//
-//--------------------------------------------------------------------------------------//
-//
 namespace operation
 {
-//
-//--------------------------------------------------------------------------------------//
-//
 template <typename Arg, typename... Args>
 auto
 join(const char* sep, Arg&& arg, Args&&... args)
@@ -87,9 +63,15 @@ join(const char* sep, Arg&& arg, Args&&... args)
 //
 template <typename Tp>
 void
-plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_file)
+plot(std::string _prefix, std::optional<std::string> _dir, std::optional<bool> _echo_dart,
+     std::string _json_file)
 {
-    if(std::is_same<typename Tp::value_type, void>::value)
+    if(!_dir)
+        _dir = settings::output_path();
+    if(!_echo_dart)
+        _echo_dart = settings::dart_output();
+
+    if constexpr(std::is_same<typename Tp::value_type, void>::value)
     {
         if(settings::debug() || settings::verbose() > 2)
             TIMEMORY_PRINT_HERE("%s", "");
@@ -111,7 +93,7 @@ plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_fil
 
     auto _label = demangle<Tp>();
 
-    plot(_label, _prefix, _dir, _echo_dart, _json_file);
+    plot(_label, _prefix, *_dir, *_echo_dart, _json_file);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -122,139 +104,33 @@ plot(string_t _prefix, const string_t& _dir, bool _echo_dart, string_t _json_fil
 //
 namespace impl
 {
-//
 template <typename... Types>
 struct plot
 {
-    static void generate(string_t _prefix, const string_t& _dir, bool _echo,
-                         string_t _json)
+    static void generate(std::string _prefix, const std::string& _dir, bool _echo,
+                         std::string _json)
     {
         TIMEMORY_FOLD_EXPRESSION(operation::plot<Types>(_prefix, _dir, _echo, _json));
     }
 };
 //
-//--------------------------------------------------------------------------------------//
-//
 template <typename... Types>
 struct plot<std::tuple<Types...>> : plot<Types...>
 {};
 //
-//--------------------------------------------------------------------------------------//
-//
 template <typename... Types>
 struct plot<type_list<Types...>> : plot<Types...>
 {};
-//
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace impl
 //
 //--------------------------------------------------------------------------------------//
 //
 template <typename... Types>
 std::enable_if_t<(sizeof...(Types) > 0), void>
-plot(const string_t& _prefix, const string_t& _dir, bool _echo_dart,
-     const string_t& _json_file)
+plot(const std::string& _prefix, const std::string& _dir, bool _echo_dart,
+     const std::string& _json_file)
 {
     impl::plot<Types...>::generate(_prefix, _dir, _echo_dart, _json_file);
 }
-//
-//--------------------------------------------------------------------------------------//
-//
-inline void
-echo_dart_file(const string_t& filepath, attributes_t attributes)
-{
-    auto attribute_string = [](const string_t& key, const string_t& item) {
-        return operation::join("", key, '=', "\"", item, "\"");
-    };
-
-    auto lowercase = [](string_t _str) {
-        for(auto& itr : _str)
-            itr = tolower(itr);
-        return _str;
-    };
-
-    auto contains = [&lowercase](const string_t& str, const std::set<string_t>& items) {
-        auto lstr = lowercase(str);
-        return std::any_of(items.begin(), items.end(), [&lstr](const auto& itr) {
-            return lstr.find(itr) != string_t::npos;
-        });
-    };
-
-    auto is_numeric = [](const string_t& str) -> bool {
-        return (str.find_first_not_of("0123456789.e+-*/") == string_t::npos);
-    };
-
-    if(attributes.find("name") == attributes.end())
-    {
-        auto name = filepath;
-        if(name.find('/') != string_t::npos)
-            name = name.substr(name.find_last_of('/') + 1);
-        if(name.find('\\') != string_t::npos)
-            name = name.substr(name.find_last_of('\\') + 1);
-        if(name.find('.') != string_t::npos)
-            name.erase(name.find_last_of('.'));
-        attributes["name"] = name;
-    }
-
-    if(attributes.find("type") == attributes.end())
-    {
-        if(contains(filepath, { ".jpeg", ".jpg" }))
-        {
-            attributes["type"] = "image/jpeg";
-        }
-        else if(contains(filepath, { ".png" }))
-        {
-            attributes["type"] = "image/png";
-        }
-        else if(contains(filepath, { ".tiff", ".tif" }))
-        {
-            attributes["type"] = "image/tiff";
-        }
-        else if(contains(filepath, { ".txt" }))
-        {
-            bool          numeric_file = true;
-            std::ifstream ifs;
-            ifs.open(filepath);
-            if(ifs)
-            {
-                while(!ifs.eof())
-                {
-                    string_t entry;
-                    ifs >> entry;
-                    if(ifs.eof())
-                        break;
-                    if(!is_numeric(entry))
-                    {
-                        numeric_file = false;
-                        break;
-                    }
-                }
-            }
-            ifs.close();
-            if(numeric_file)
-            {
-                attributes["type"] = "numeric/double";
-            }
-            else
-            {
-                attributes["type"] = "text/string";
-            }
-        }
-    }
-
-    std::stringstream ss;
-    ss << "<DartMeasurementFile";
-    for(const auto& itr : attributes)
-        ss << " " << attribute_string(itr.first, itr.second);
-    ss << ">" << filepath << "</DartMeasurementFile>";
-    std::cout << ss.str() << std::endl;
-}
-//
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace plotting
 }  // namespace tim
-//
-//--------------------------------------------------------------------------------------//
-//

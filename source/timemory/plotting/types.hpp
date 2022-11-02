@@ -24,35 +24,30 @@
 
 #pragma once
 
+#include "timemory/macros/attributes.hpp"
 #include "timemory/plotting/macros.hpp"
 
 #include <map>
+#include <optional>
 #include <string>
 
 namespace tim
 {
-//
-//--------------------------------------------------------------------------------------//
-//
-//                              plotting
-//
-//--------------------------------------------------------------------------------------//
-//
 namespace plotting
 {
+using attributes_t = std::map<std::string, std::string>;
+
+void
+plot(const std::string& _label, const std::string& _prefix, const std::string& _dir,
+     bool _echo_dart, const std::string& _json_file) TIMEMORY_VISIBILITY("default");
 //
-//--------------------------------------------------------------------------------------//
+void
+echo_dart_file(std::string filepath, attributes_t attributes)
+    TIMEMORY_VISIBILITY("default");
 //
-using string_t     = std::string;
-using attributes_t = std::map<string_t, string_t>;
-//
-//--------------------------------------------------------------------------------------//
-//
+template <typename... Types>
+std::enable_if_t<(sizeof...(Types) > 0), void>
+plot(std::string _prefix = {}, std::optional<std::string> _dir = {},
+     std::optional<bool> _echo_dart = {}, std::string _json_file = {});
 }  // namespace plotting
-//
-//--------------------------------------------------------------------------------------//
-//
 }  // namespace tim
-//
-//--------------------------------------------------------------------------------------//
-//
