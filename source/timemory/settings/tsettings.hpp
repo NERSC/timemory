@@ -252,8 +252,7 @@ template <typename Tp, typename Vp>
 bool
 tsettings<Tp, Vp>::parse()
 {
-    if(!m_env_name.empty() &&
-       !get_env<bool>(TIMEMORY_SETTINGS_KEY("SUPPRESS_PARSING"), false, false))
+    if(!m_env_name.empty())
     {
         char* c_env_val = std::getenv(m_env_name.c_str());
         if(c_env_val)

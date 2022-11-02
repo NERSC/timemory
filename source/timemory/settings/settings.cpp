@@ -656,7 +656,19 @@ settings::parse(settings* _settings)
         return;
     }
 
-    if(_settings->get_suppress_parsing())
+    bool _suppress = false;
+    auto _v        = _settings->find("suppress_parsing");
+    if(_v != _settings->end())
+    {
+        _v->second->parse();
+        _suppress = _v->second->get<bool>().second;
+    }
+    else
+    {
+        _suppress = _settings->get_suppress_parsing();
+    }
+
+    if(_suppress)
     {
         static auto _once = false;
         if(!_once)
