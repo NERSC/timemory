@@ -42,7 +42,7 @@ namespace tim
 namespace ompt
 {
 template <typename ApiT>
-void
+finalize_tool_func_t
 configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
 {
 #if defined(TIMEMORY_USE_OMPT)
@@ -57,7 +57,7 @@ configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
     //----------------------------------------------------------------------------------//
     //
 #    define TIMEMORY_OMPT_LOOKUP(TYPE, NAME)                                             \
-        if(settings::verbose() > 1 || settings::debug())                                 \
+        if(settings::verbose() >= 2 || settings::debug())                                \
             TIMEMORY_PRINTF(stderr, "[ompt] finding %s...\n", #NAME);                    \
         static TYPE OMPT_##NAME = (TYPE) lookup(#NAME);                                  \
         consume_parameters(OMPT_##NAME)
@@ -108,7 +108,7 @@ configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
     //------------------------------------------------------------------------------//
     //
     if(!trait::is_available<handle_type>::value)
-        return;
+        return nullptr;
 
     handle_type::configure();
     auto manager = tim::manager::instance();
@@ -120,7 +120,7 @@ configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
 
     auto register_callback = [](ompt_callbacks_t cbidx, ompt_callback_t cb) {
         int ret = ompt_set_callback(cbidx, cb);
-        if(settings::verbose() < 1 && !settings::debug())
+        if(settings::verbose() < 2 && !settings::debug())
             return ret;
         const auto* name = openmp::ompt_callback_labels[cbidx];
         switch(ret)
@@ -391,10 +391,14 @@ configure(ompt_function_lookup_t lookup, int _v, ompt_data_t* _data)
     */
     if(settings::verbose() > 1 || settings::debug())
         TIMEMORY_PRINTF(stderr, "\n");
+
+    return OMPT_ompt_finalize_tool;
 #endif
     (void) lookup;
     (void) _v;
     (void) _data;
+
+    return nullptr;
 }
 }  // namespace ompt
 }  // namespace tim

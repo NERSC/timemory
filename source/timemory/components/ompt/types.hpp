@@ -183,8 +183,10 @@ struct ompt_wrapper
 
 namespace ompt
 {
+using finalize_tool_func_t = void (*)(void);
+
 template <typename ApiT>
-void
+finalize_tool_func_t
 configure(ompt_function_lookup_t lookup, int, ompt_data_t*);
 }  // namespace ompt
 }  // namespace tim

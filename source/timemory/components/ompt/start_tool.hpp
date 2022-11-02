@@ -48,8 +48,13 @@ extern "C"
                                          ompt_data_t*           tool_data) -> int {
             TIMEMORY_PRINTF(stderr, "OpenMP-tools configuring for initial device %i\n\n",
                             initial_device_num);
-            tim::ompt::configure<TIMEMORY_OMPT_API_TAG>(lookup, initial_device_num,
-                                                        tool_data);
+            auto _fini = tim::ompt::configure<TIMEMORY_OMPT_API_TAG>(
+                lookup, initial_device_num, tool_data);
+            if(_fini != nullptr && tim::manager::instance())
+                tim::manager::instance()->add_cleanup("timemory-ompt", [_fini]() {
+                    if(_fini)
+                        (*_fini)();
+                });
             return 1;  // success
         };
 

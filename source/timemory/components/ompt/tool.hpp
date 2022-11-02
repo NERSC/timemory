@@ -467,7 +467,7 @@ protected:
 namespace ompt
 {
 template <typename ApiT>
-void
+finalize_tool_func_t
 configure(ompt_function_lookup_t lookup, int, ompt_data_t*);
 }  // namespace ompt
 }  // namespace tim
