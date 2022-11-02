@@ -26,10 +26,12 @@
 #define TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_CPP_
 
 #include "timemory/defines.h"
+
 #if !defined(TIMEMORY_COMPONENTS_GOTCHA_COMPONENTS_HPP_)
 #    include "timemory/components/gotcha/components.hpp"
 #endif
 
+#include "timemory/backends/gotcha.hpp"
 #include "timemory/components/gotcha/backends.hpp"
 #include "timemory/components/macros.hpp"
 #include "timemory/mpl/types.hpp"
@@ -192,7 +194,7 @@ gotcha<Nt, BundleT, DiffT>::construct(const std::string& _func, int _priority,
         storage_type::instance()->add_hash_id(_label);
 
         if(_data.verbose == 0)
-            _data.verbose = (settings::debug()) ? 16 : settings::verbose();
+            _data.verbose = backend::gotcha::get_verbose();
 
         _data.filled   = true;
         _data.priority = _priority;
@@ -525,7 +527,7 @@ gotcha<Nt, BundleT, DiffT>::is_permitted(const std::string& _func)
         {
             if(_func == itr || _func == tofortran(itr))
             {
-                if(settings::debug())
+                if(backend::gotcha::get_verbose() >= 1)
                 {
                     TIMEMORY_PRINTF(stderr,
                                     "[gotcha] Skipping gotcha binding for %s...\n",
@@ -542,7 +544,7 @@ gotcha<Nt, BundleT, DiffT>::is_permitted(const std::string& _func)
     // if function matches a reject_listed entry, do not construct wrapper
     if(_reject_list.count(_func) > 0)
     {
-        if(settings::debug())
+        if(backend::gotcha::get_verbose() >= 1)
         {
             TIMEMORY_PRINTF(stderr,
                             "[gotcha] GOTCHA binding for function '%s' is in reject "
@@ -558,7 +560,7 @@ gotcha<Nt, BundleT, DiffT>::is_permitted(const std::string& _func)
     {
         if(_permit_list.count(_func) == 0)
         {
-            if(settings::debug())
+            if(backend::gotcha::get_verbose() >= 3)
             {
                 TIMEMORY_PRINTF(
                     stderr,
@@ -589,7 +591,7 @@ gotcha<Nt, BundleT, DiffT>::check_error(error_t _ret, const std::string& _prefix
             << static_cast<int>(_ret) << ": " << backend::gotcha::get_error(_ret) << "\n";
         log::stream(std::cerr, log::color::warning()) << msg.str();
     }
-    else if(_data.verbose >= 2)
+    else if(_data.verbose >= 3)
     {
 #if defined(TIMEMORY_USE_GOTCHA)
         std::stringstream msg;

@@ -38,6 +38,33 @@ namespace backend
 {
 namespace gotcha
 {
+namespace
+{
+int&
+verbose()
+{
+    static auto _v = get_env<int>(
+        TIMEMORY_SETTINGS_PREFIX "GOTCHA_DEBUG",
+        get_env<int>("GOTCHA_DEBUG",
+                     (settings::debug() && settings::verbose() >= 2) ? 8 : 0));
+    return _v;
+}
+}  // namespace
+
+TIMEMORY_BACKENDS_INLINE
+void
+set_verbose(int _v)
+{
+    verbose() = _v;
+}
+
+TIMEMORY_BACKENDS_INLINE
+int
+get_verbose()
+{
+    return verbose();
+}
+
 TIMEMORY_BACKENDS_INLINE
 bool
 initialize()
@@ -49,10 +76,11 @@ initialize()
         auto        _ret = ::gotcha_init_ext((_v) ? 1 : 0);
         if(_v && _ret != 0)
         {
-            fprintf(stderr,
-                    "[%s][gotcha_init] gotcha library is already initialized. %s=true "
-                    "ignored.\n",
-                    TIMEMORY_PROJECT_NAME, _env);
+            TIMEMORY_PRINTF(
+                stderr,
+                "[gotcha_init] gotcha library is already initialized. %s=true "
+                "ignored.\n",
+                _env);
         }
         return (_ret == 0);
     }();
@@ -85,21 +113,24 @@ error_t
 set_priority(const char* _tool, int _priority)
 {
     initialize();
-    if(settings::debug())
+    if(get_verbose() >= 3)
     {
-        printf("[gotcha::%s]> Setting priority for tool: %s to %i...\n", __FUNCTION__,
-               _tool, _priority);
+        TIMEMORY_PRINTF(stderr, "[gotcha][%s]> Setting priority for tool: %s to %i...\n",
+                        __FUNCTION__, _tool, _priority);
     }
 #if defined(TIMEMORY_USE_GOTCHA)
     // return GOTCHA_SUCCESS;
     error_t _ret = gotcha_set_priority(_tool, _priority);
     if(_ret != GOTCHA_SUCCESS)
-        printf("[gotcha::%s]> Warning! set_priority == %i failed for '%s'. err %i: %s\n",
-               __FUNCTION__, _priority, _tool, static_cast<int>(_ret), get_error(_ret));
+        TIMEMORY_PRINTF(
+            stderr,
+            "[gotcha][%s]> Warning! set_priority == %i failed for '%s'. err %i: %s\n",
+            __FUNCTION__, _priority, _tool, static_cast<int>(_ret), get_error(_ret));
     return _ret;
 #else
-    if(settings::debug())
-        printf("[gotcha::%s]> Warning! GOTCHA not truly enabled!", __FUNCTION__);
+    if(get_verbose() >= 3)
+        TIMEMORY_PRINTF(stderr, "[gotcha][%s]> Warning! GOTCHA not truly enabled!",
+                        __FUNCTION__);
     return GOTCHA_SUCCESS;
 #endif
 }
@@ -111,21 +142,24 @@ error_t
 get_priority(const char* _tool, int& _priority)
 {
     initialize();
-    if(settings::debug())
+    if(get_verbose() >= 3)
     {
-        printf("[gotcha::%s]> Getting priority for tool: %s to %i...\n", __FUNCTION__,
-               _tool, _priority);
+        TIMEMORY_PRINTF(stderr, "[gotcha][%s]> Getting priority for tool: %s to %i...\n",
+                        __FUNCTION__, _tool, _priority);
     }
 #if defined(TIMEMORY_USE_GOTCHA)
     // return GOTCHA_SUCCESS;
     error_t _ret = gotcha_get_priority(_tool, &_priority);
     if(_ret != GOTCHA_SUCCESS)
-        printf("[gotcha::%s]> Warning! get_priority == %i failed for '%s'. err %i: %s\n",
-               __FUNCTION__, _priority, _tool, static_cast<int>(_ret), get_error(_ret));
+        TIMEMORY_PRINTF(
+            stderr,
+            "[gotcha][%s]> Warning! get_priority == %i failed for '%s'. err %i: %s\n",
+            __FUNCTION__, _priority, _tool, static_cast<int>(_ret), get_error(_ret));
     return _ret;
 #else
-    if(settings::debug())
-        printf("[gotcha::%s]> Warning! GOTCHA not truly enabled!", __FUNCTION__);
+    if(get_verbose() >= 3)
+        TIMEMORY_PRINTF(stderr, "[gotcha][%s]> Warning! GOTCHA not truly enabled!",
+                        __FUNCTION__);
     return GOTCHA_SUCCESS;
 #endif
 }
@@ -139,15 +173,17 @@ wrap(binding_t& _bind, const char* _label)
     error_t _ret = GOTCHA_SUCCESS;
 
     initialize();
-    if(settings::debug())
-        printf("[gotcha::%s]> Adding tool: %s...\n", __FUNCTION__, _label);
+    if(get_verbose() >= 3)
+        TIMEMORY_PRINTF(stderr, "[gotcha][%s]> Adding tool: %s...\n", __FUNCTION__,
+                        _label);
 
 #if defined(TIMEMORY_USE_GOTCHA)
     if(_ret == GOTCHA_SUCCESS)
         _ret = gotcha_wrap(&_bind, 1, _label);
 #else
-    if(settings::debug())
-        printf("[gotcha::%s]> Warning! GOTCHA not truly enabled!", __FUNCTION__);
+    if(get_verbose() >= 3)
+        TIMEMORY_PRINTF(stderr, "[gotcha][%s]> Warning! GOTCHA not truly enabled!",
+                        __FUNCTION__);
     consume_parameters(_bind);
 #endif
 

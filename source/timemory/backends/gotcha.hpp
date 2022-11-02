@@ -121,6 +121,12 @@ using error_t   = _gotcha_error_timemory;
 
 //--------------------------------------------------------------------------------------//
 
+void
+set_verbose(int);
+
+int
+get_verbose();
+
 bool
 initialize();
 
