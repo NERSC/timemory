@@ -381,12 +381,12 @@ TEST_F(traits_tests, sizeof)
     auto var_test      = TYPE_TEST(variadic_component<double, 1, 3>);
 
     EXPECT_EQ(void_test, 1);
-    EXPECT_EQ(int64_test, 56);
-    EXPECT_EQ(temp_i32_test, 48);
-    EXPECT_EQ(temp_i64_test, 64);
-    EXPECT_EQ(temp_u64_test, 64);
-    EXPECT_EQ(array_test, 64);
-    EXPECT_EQ(var_test, 96);
+    EXPECT_EQ(int64_test, 48);
+    EXPECT_EQ(temp_i32_test, 40);
+    EXPECT_EQ(temp_i64_test, 56);
+    EXPECT_EQ(temp_u64_test, 56);
+    EXPECT_EQ(array_test, 56);
+    EXPECT_EQ(var_test, 88);
 #undef TYPE_TEST
 }
 
