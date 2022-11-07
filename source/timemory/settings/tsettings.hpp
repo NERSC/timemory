@@ -258,7 +258,7 @@ tsettings<Tp, Vp>::parse()
         if(c_env_val)
         {
             // returns old update_type
-            return parse(std::string{ c_env_val }, update_type::environ);
+            return parse(std::string{ c_env_val }, update_type::env);
         }
     }
     return false;
@@ -356,7 +356,7 @@ tsettings<Tp, Vp>::save(Archive& ar, const unsigned int,
             ? "default"
             : (m_updated == update_type::config)
                   ? "config"
-                  : (m_updated == update_type::environ) ? "environ" : "user";
+                  : (m_updated == update_type::env) ? "environ" : "user";
     ar(cereal::make_nvp("name", m_name));
     ar(cereal::make_nvp("environ", m_env_name));
     ar(cereal::make_nvp("description", m_description));

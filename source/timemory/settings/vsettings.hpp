@@ -118,7 +118,7 @@ struct vsettings
     auto set_updated(update_type _v) { return (std::swap(m_updated, _v), _v); }
     auto set_user_updated() { return set_updated(update_type::user); }
     auto set_config_updated() { return set_updated(update_type::config); }
-    auto set_environ_updated() { return set_updated(update_type::environ); }
+    auto set_environ_updated() { return set_updated(update_type::env); }
 
     auto get_hidden() const { return m_hidden; }
     auto get_type_index() const { return m_type_index; }
@@ -126,7 +126,7 @@ struct vsettings
     auto get_updated() const { return (m_updated != update_type::default_value); }
     auto get_user_updated() const { return (m_updated == update_type::user); }
     auto get_config_updated() const { return (m_updated == update_type::config); }
-    auto get_environ_updated() const { return (m_updated == update_type::environ); }
+    auto get_environ_updated() const { return (m_updated == update_type::env); }
 
     // enabled = true/false does not affect the return value, it is provided
     // so that is can be specified to various tools, e.g. timemory-avail, whether
@@ -267,7 +267,7 @@ vsettings::report_change(Tp _old, const Tp& _new, update_type _upd)
                 oss << " [via config]\n";
                 break;
             }
-            case update_type::environ:
+            case update_type::env:
             {
                 oss << " [via environ]\n";
                 break;

@@ -57,7 +57,7 @@ get_local_datetime(const char* dt_format, std::time_t* dt_curr = nullptr);
 enum class setting_update_type : short
 {
     default_value = 0,
-    environ,
+    env,
     config,
     user,
     unspecified,
