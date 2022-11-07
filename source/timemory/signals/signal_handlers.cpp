@@ -73,6 +73,18 @@ TIMEMORY_SIGNALS_INLINE
 void
 termination_signal_handler(int _sig, siginfo_t* _sinfo, void* _context)
 {
+    fprintf(stderr, "\n%s[%s][%i][%li] Signal %i caught : ", log::color::warning(),
+            TIMEMORY_PROJECT_NAME, process::get_id(), threading::get_id(), _sig);
+#if defined(PSIGINFO_AVAILABLE)
+    if(_sinfo)
+        psiginfo(_sinfo, "");
+    else
+        psignal(_sig, "");
+#else
+    psignal(_sig, "");
+#endif
+    fprintf(stderr, "%s", log::color::end());
+
     static auto _blocked = std::atomic<int>{ 0 };
     {
         // provide some basic synchronization
@@ -88,18 +100,6 @@ termination_signal_handler(int _sig, siginfo_t* _sinfo, void* _context)
                 break;
         }
     }
-
-    fprintf(stderr, "\n%s[%s][%i][%li] Signal %i caught : ", log::color::warning(),
-            TIMEMORY_PROJECT_NAME, process::get_id(), threading::get_id(), _sig);
-#if defined(PSIGINFO_AVAILABLE)
-    if(_sinfo)
-        psiginfo(_sinfo, "");
-    else
-        psignal(_sig, "");
-#else
-    psignal(_sig, "");
-#endif
-    fprintf(stderr, "%s", log::color::end());
 
     signal_settings::disable(static_cast<sys_signal>(_sig));
     disable_signal_detection();
