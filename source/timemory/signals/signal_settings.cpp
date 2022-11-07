@@ -35,6 +35,7 @@
 #endif
 
 #include "timemory/environment/declaration.hpp"
+#include "timemory/macros/os.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/signals/types.hpp"
 #include "timemory/utility/declaration.hpp"
@@ -345,12 +346,18 @@ signal_settings::exit_action(int _v)
         _exit_func(_v);
 }
 
+#if defined(TIMEMORY_WINDOWS)
+TIMEMORY_SIGNALS_INLINE
+void
+signal_settings::exit_action(int, void*, void*)
+{}
+#else
 TIMEMORY_SIGNALS_INLINE
 void
 signal_settings::exit_action(int _signum, void* _siginfo, void* _context)
 {
     auto& _entries = f_signals().entries;
-    auto  itr      = _entries.find(static_cast<sys_signal>(_signum));
+    auto itr = _entries.find(static_cast<sys_signal>(_signum));
     if(itr != _entries.end())
     {
         auto& _former = itr->second.previous;
@@ -367,6 +374,7 @@ signal_settings::exit_action(int _signum, void* _siginfo, void* _context)
         }
     }
 }
+#endif
 
 TIMEMORY_SIGNALS_INLINE
 signal_settings::signal_set_t
