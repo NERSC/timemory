@@ -169,10 +169,9 @@
 #    define TIMEMORY_SETTINGS_MEMBER_IMPL(TYPE, FUNC, ENV_VAR, DESC, INIT, CATEGORIES)   \
                                                                                          \
         if(m_data                                                                        \
-               .insert(                                                                  \
-                   { ENV_VAR, std::make_shared<tsettings<TYPE>>(                         \
-                                  INIT, std::string{ #FUNC }, std::string{ ENV_VAR },    \
-                                  std::string{ DESC }, CATEGORIES) })                    \
+               .emplace(ENV_VAR, std::make_shared<tsettings<TYPE>>(                      \
+                                     INIT, std::string{ #FUNC }, std::string{ ENV_VAR }, \
+                                     std::string{ DESC }, CATEGORIES))                   \
                .second)                                                                  \
             m_order.push_back(ENV_VAR);
 #endif
@@ -183,9 +182,9 @@
 #    define TIMEMORY_SETTINGS_HIDDEN_MEMBER_IMPL(TYPE, ENV_VAR, DESC, INIT, CATEGORIES)  \
                                                                                          \
         if(m_data                                                                        \
-               .insert({ ENV_VAR, std::make_shared<tsettings<TYPE>>(                     \
-                                      INIT, std::string{}, std::string{ ENV_VAR },       \
-                                      std::string{ DESC }, CATEGORIES) })                \
+               .emplace(ENV_VAR, std::make_shared<tsettings<TYPE>>(                      \
+                                     INIT, std::string{}, std::string{ ENV_VAR },        \
+                                     std::string{ DESC }, CATEGORIES))                   \
                .second)                                                                  \
             m_order.push_back(ENV_VAR);
 #endif
@@ -196,10 +195,9 @@
 #    define TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(TYPE, FUNC, ENV_VAR, DESC, INIT, ...)      \
                                                                                          \
         if(m_data                                                                        \
-               .insert(                                                                  \
-                   { ENV_VAR, std::make_shared<tsettings<TYPE>>(                         \
-                                  INIT, std::string{ #FUNC }, std::string{ ENV_VAR },    \
-                                  std::string{ DESC }, __VA_ARGS__) })                   \
+               .emplace(ENV_VAR, std::make_shared<tsettings<TYPE>>(                      \
+                                     INIT, std::string{ #FUNC }, std::string{ ENV_VAR }, \
+                                     std::string{ DESC }, __VA_ARGS__))                  \
                .second)                                                                  \
             m_order.push_back(ENV_VAR);
 #endif
@@ -210,9 +208,9 @@
 #    define TIMEMORY_SETTINGS_HIDDEN_MEMBER_ARG_IMPL(TYPE, ENV_VAR, DESC, INIT, ...)     \
                                                                                          \
         if(m_data                                                                        \
-               .insert({ ENV_VAR, std::make_shared<tsettings<TYPE>>(                     \
-                                      INIT, std::string{}, std::string{ ENV_VAR },       \
-                                      std::string{ DESC }, __VA_ARGS__) })               \
+               .emplace(ENV_VAR, std::make_shared<tsettings<TYPE>>(                      \
+                                     INIT, std::string{}, std::string{ ENV_VAR },        \
+                                     std::string{ DESC }, __VA_ARGS__))                  \
                .second)                                                                  \
             m_order.push_back(ENV_VAR);
 #endif
@@ -224,10 +222,9 @@
                                              CATEGORIES)                                 \
                                                                                          \
         if(m_data                                                                        \
-               .insert(                                                                  \
-                   { ENV_VAR, std::make_shared<tsettings<TYPE, TYPE&>>(                  \
-                                  INIT, std::string{ #FUNC }, std::string{ ENV_VAR },    \
-                                  std::string{ DESC }, CATEGORIES) })                    \
+               .emplace(ENV_VAR, std::make_shared<tsettings<TYPE, TYPE&>>(               \
+                                     INIT, std::string{ #FUNC }, std::string{ ENV_VAR }, \
+                                     std::string{ DESC }, CATEGORIES))                   \
                .second)                                                                  \
             m_order.push_back(ENV_VAR);
 #endif
@@ -237,10 +234,9 @@
 #if !defined(TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL)
 #    define TIMEMORY_SETTINGS_REFERENCE_ARG_IMPL(TYPE, FUNC, ENV_VAR, DESC, INIT, ...)   \
         if(m_data                                                                        \
-               .insert(                                                                  \
-                   { ENV_VAR, std::make_shared<tsettings<TYPE, TYPE&>>(                  \
-                                  INIT, std::string{ #FUNC }, std::string{ ENV_VAR },    \
-                                  std::string{ DESC }, __VA_ARGS__) })                   \
+               .emplace(ENV_VAR, std::make_shared<tsettings<TYPE, TYPE&>>(               \
+                                     INIT, std::string{ #FUNC }, std::string{ ENV_VAR }, \
+                                     std::string{ DESC }, __VA_ARGS__))                  \
                .second)                                                                  \
             m_order.push_back(ENV_VAR);
 #endif
