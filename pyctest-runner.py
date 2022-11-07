@@ -800,6 +800,7 @@ def run_pyctest():
             "CPUPROFILE_REALTIME=1",
             "CALI_CONFIG_PROFILE=runtime-report",
             "TIMEMORY_PLOT_OUTPUT=ON",
+            "TIMEMORY_ENABLE_SIGNAL_HANDLER=ON",
             "PYTHONPATH={}".format(pypath),
         ]
     )
