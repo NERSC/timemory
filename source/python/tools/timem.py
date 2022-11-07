@@ -105,6 +105,7 @@ if __name__ == "__main__":
 
         # grab a manager handle
         timemory_manager = timemory.manager()
+        timemory_manager.set_write_metadata(-1)
 
         # rusage records child processes
         timemory.set_rusage_children()
