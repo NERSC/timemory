@@ -31,6 +31,7 @@
 
 #include "timemory/backends/dmp.hpp"
 #include "timemory/macros/attributes.hpp"
+#include "timemory/macros/compiler.hpp"
 #include "timemory/mpl/function_traits.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/macros.hpp"
@@ -611,11 +612,16 @@ private:
         return obj.get_is_running();
     }
 
+#if !defined(TIMEMORY_NVCC_COMPILER)
+    // NVCC compiler has errors when object has private is_running function.
+    // Particularly, the papi_vector class which has private inheritance
+    // from papi_common<Tp>, which has a is_running() function.
     template <typename Up>
     static auto sfinae(const Up& obj, long) -> decltype(obj.is_running())
     {
         return obj.is_running();
     }
+#endif
 
     template <typename Up>
     static auto sfinae(const Up&, ...) -> bool

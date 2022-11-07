@@ -24,6 +24,10 @@
 
 #pragma once
 
+#ifndef TIMEMORY_COMPONENTS_CUPTI_CUPTI_PCSAMPLING_HPP_
+#    define TIMEMORY_COMPONENTS_CUPTI_CUPTI_PCSAMPLING_HPP_ 1
+#endif
+
 #include "timemory/components/base.hpp"
 #include "timemory/components/cupti/backends.hpp"
 #include "timemory/components/cupti/types.hpp"

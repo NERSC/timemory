@@ -26,10 +26,15 @@
 
 #    include "timemory/components/cupti/types.hpp"
 
-#    if !defined(TIMEMORY_CUPTI_COMPONENT_HEADER_MODE)
+#    if !defined(TIMEMORY_COMPONENTS_CUPTI_CUPTI_PCSAMPLING_HPP_)
 #        include "timemory/components/cupti/cupti_pcsampling.hpp"
 #    endif
 
+#    include "timemory/operations/types/derive.hpp"
+#    include "timemory/operations/types/node.hpp"
+#    include "timemory/operations/types/reset.hpp"
+#    include "timemory/operations/types/start.hpp"
+#    include "timemory/operations/types/stop.hpp"
 #    include "timemory/operations/types/store.hpp"
 #    include "timemory/variadic/component_tuple.hpp"
 

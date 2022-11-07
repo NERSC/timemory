@@ -40,11 +40,13 @@ namespace math
 {
 template <typename Tp, typename Up>
 TIMEMORY_INLINE auto
-plus(Tp& _lhs, const Up& _rhs, type_list<>, ...)
-    -> decltype(_lhs += _rhs, std::declval<Tp&>())
+plus(Tp& _lhs, Up&& _rhs, type_list<>, ...)
+    -> decltype(_lhs += std::forward<Up>(_rhs), std::declval<Tp&>())
 {
     static_assert(!concepts::is_null_type<Tp>::value, "Error! null type");
-    return (_lhs += _rhs);
+    static_assert(!std::is_const<Tp>::value, "Error! Tp is const");
+    _lhs += std::forward<Up>(_rhs);
+    return _lhs;
 }
 
 #if defined(CXX17)

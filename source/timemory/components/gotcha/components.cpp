@@ -34,11 +34,17 @@
 #include "timemory/backends/gotcha.hpp"
 #include "timemory/components/gotcha/backends.hpp"
 #include "timemory/components/macros.hpp"
+#include "timemory/macros/compiler.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types.hpp"
 
 #include <cstddef>
 #include <string>
+
+#if defined(TIMEMORY_NVCC_COMPILER)
+// 187: '=' should possibly be '==' warning
+#    pragma nv_diag_suppress 187
+#endif
 
 namespace tim
 {

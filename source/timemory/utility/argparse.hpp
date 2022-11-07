@@ -521,8 +521,7 @@ struct argument_parser
             {
                 auto _name = m_names.front();
                 // remove leading dashes
-                auto _pos = std::string::npos;
-                while((_pos = _name.find('-')) == 0)
+                while(_name.find('-') == 0)
                     _name = _name.substr(1);
                 if(m_actions.empty())
                     m_actions.emplace_back(
