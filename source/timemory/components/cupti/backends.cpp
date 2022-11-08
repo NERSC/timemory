@@ -137,7 +137,7 @@ pcsample::pcsample(const CUpti_PCSamplingPCData_t& _pcdata)
     {
         const auto& _stall = _pcdata.stallReason[i];
         auto        ridx   = _stall.pcSamplingStallReasonIndex;
-        stalls[ridx]       = std::move(pcstall{ _stall });
+        stalls[ridx]       = pcstall{ _stall };
     }
 
     for(auto& itr : stalls)
