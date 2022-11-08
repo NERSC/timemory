@@ -86,7 +86,7 @@ endif()
 add_library(test-debug-flags INTERFACE)
 string(REPLACE " " ";" _FLAGS "${CMAKE_CXX_FLAGS_DEBUG}")
 target_compile_options(test-debug-flags INTERFACE ${_FLAGS})
-add_target_flag_if_avail(test-debug-flags "-O0" "-g")
+add_target_flag_if_avail(test-debug-flags "-Og" "-g")
 
 # Any warnings trigger an error flags
 add_library(test-werror-flags INTERFACE)
@@ -218,8 +218,8 @@ if(_LIBRARY_TARGET
     timemory_add_google_test(
         throttle_tests DISCOVER_TESTS RUN_SERIAL
         SOURCES throttle_tests.cpp
-        LINK_LIBRARIES common-test-libs ${_LIBRARY_TARGET} PROPERTIES PROCESSOR_AFFINITY
-                       ON)
+        LINK_LIBRARIES common-test-libs ${_LIBRARY_TARGET} test-opt-flags PROPERTIES
+                       PROCESSOR_AFFINITY ON)
 endif()
 
 timemory_add_google_test(
