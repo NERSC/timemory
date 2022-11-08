@@ -314,6 +314,24 @@ def configure():
         action="store_true",
     )
     parser.add_argument(
+        "--unwind",
+        help="TIMEMORY_USE_LIBUNWIND=ON",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--plot",
+        help="TIMEMORY_PLOT_OUTPUT=ON during tests",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
+        "--dart",
+        help="TIMEMORY_DART_OUTPUT=ON during tests",
+        default=False,
+        action="store_true",
+    )
+    parser.add_argument(
         "--build-libs",
         help="Build library type(s)",
         default=["shared"],
@@ -544,6 +562,7 @@ def run_pyctest():
         "TIMEMORY_BUILD_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_BUILD_PYTHON": "ON" if args.python else "OFF",
         "TIMEMORY_BUILD_CALIPER": "ON" if args.caliper else "OFF",
+        "TIMEMORY_BUILD_LIBUNWIND": "ON" if args.unwind else "OFF",
         "TIMEMORY_BUILD_DEVELOPER": "ON" if args.developer else "OFF",
         "TIMEMORY_BUILD_TESTING": "ON" if not args.quick else "OFF",
         "TIMEMORY_BUILD_EXAMPLES": "OFF"
@@ -573,6 +592,7 @@ def run_pyctest():
         "TIMEMORY_USE_COVERAGE": "ON" if args.coverage else "OFF",
         "TIMEMORY_USE_GPERFTOOLS": "ON" if args.gperftools else "OFF",
         "TIMEMORY_USE_STATISTICS": "ON" if args.stats else "OFF",
+        "TIMEMORY_USE_LIBUNWIND": "ON" if args.unwind else "OFF",
         "TIMEMORY_USE_COMPILE_TIMING": "ON" if args.timing else "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "ON" if args.static_analysis else "OFF",
@@ -799,17 +819,19 @@ def run_pyctest():
             "CPUPROFILE_FREQUENCY=200",
             "CPUPROFILE_REALTIME=1",
             "CALI_CONFIG_PROFILE=runtime-report",
-            "TIMEMORY_PLOT_OUTPUT=ON",
             "TIMEMORY_ENABLE_SIGNAL_HANDLER=ON",
             "PYTHONPATH={}".format(pypath),
+            "TIMEMORY_PLOT_OUTPUT={}".format("ON" if args.plot else "OFF"),
         ]
     )
     if args.coverage or pyct.BUILD_TYPE == "Debug":
         base_env = ";".join(
             [base_env, "TIMEMORY_DEBUG=ON", "TIMEMORY_VERBOSE=6"]
         )
-    test_env = ";".join(
-        [base_env, "TIMEMORY_DART_OUTPUT=ON", "TIMEMORY_DART_COUNT=1"]
+    test_env = (
+        ";".join([base_env, "TIMEMORY_DART_OUTPUT=ON", "TIMEMORY_DART_COUNT=1"])
+        if args.dart
+        else base_env[:]
     )
 
     # create tests
