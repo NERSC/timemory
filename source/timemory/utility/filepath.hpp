@@ -54,7 +54,6 @@
 #    include <sys/types.h>
 #elif defined(TIMEMORY_WINDOWS)
 #    include <direct.h>
-#    include <shlwapi.h>
 #endif
 
 #if defined(TIMEMORY_LINUX)

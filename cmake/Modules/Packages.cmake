@@ -30,6 +30,10 @@ timemory_add_interface_library(
     timemory-default-disabled
     "Enables pre-processor directive for disabling timemory by default at runtime")
 
+if(WIN32)
+    timemory_add_interface_library(timemory-shlwapi "Provides Windows shlwapi library")
+endif()
+
 set(TIMEMORY_REQUIRED_INTERFACES timemory-headers)
 
 timemory_add_interface_library(
@@ -583,6 +587,40 @@ if(NOT TIMEMORY_BUILD_PORTABLE
    AND pthread_LIBRARY
    AND NOT WIN32)
     target_link_libraries(timemory-threading INTERFACE ${pthread_LIBRARY})
+endif()
+
+# ----------------------------------------------------------------------------------------#
+#
+# timemory shlwapi
+#
+# ----------------------------------------------------------------------------------------#
+
+if(WIN32)
+    set(SHLWAPI_PATHS
+        "C:/Windows/System32;C:/Windows/SysWOW64"
+        CACHE STRING "Search paths for shlwapi library")
+    find_library(
+        SHLWAPI_LIBRARY
+        NAMES shlwapi
+        HINTS ${SHLWAPI_PATHS}
+        PATHS ${SHLWAPI_PATHS})
+    if(NOT SHLWAPI_LIBRARY)
+        # find_library appears fails for shlwapi lib for some reason
+        find_file(
+            SHLWAPI_LIBRARY
+            NAMES shlwapi.dll shlwapi.lib
+            HINTS ${SHLWAPI_PATHS}
+            PATHS ${SHLWAPI_PATHS})
+    endif()
+    find_package_handle_standard_args(shlwapi-library REQUIRED_VARS SHLWAPI_LIBRARY)
+
+    if(shlwapi-library_FOUND)
+        target_link_libraries(timemory-shlwapi INTERFACE ${SHLWAPI_LIBRARY})
+        timemory_target_compile_definitions(timemory-shlwapi INTERFACE
+                                            TIMEMORY_USE_SHLWAPI)
+    else()
+        timemory_inform_empty_interface(timemory-shlwapi "shlwapi")
+    endif()
 endif()
 
 # ----------------------------------------------------------------------------------------#

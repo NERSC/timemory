@@ -34,6 +34,10 @@
 #    include <unistd.h>
 #endif
 
+#if defined(TIMEMORY_USE_SHLWAPI)
+#    include <shlwapi.h>
+#endif
+
 #include <cerrno>
 #include <cstdio>
 #include <cstring>
@@ -273,8 +277,10 @@ exists(std::string _fname)
     if(stat(_fname.c_str(), &_buffer) == 0)
         return (S_ISREG(_buffer.st_mode) != 0 || S_ISLNK(_buffer.st_mode) != 0);
     return false;
-#else
+#elif defined(TIMEMORY_USE_SHLWAPI)
     return PathFileExists(_fname.c_str());
+#else
+    return false;
 #endif
 }
 
@@ -287,8 +293,10 @@ direxists(std::string _fname)
     if(stat(_fname.c_str(), &_buffer) == 0)
         return (S_ISDIR(_buffer.st_mode) != 0);
     return false;
-#else
+#elif defined(TIMEMORY_USE_SHLWAPI)
     return PathIsDirectory(_fname.c_str());
+#else
+    return false;
 #endif
 }
 }  // namespace filepath

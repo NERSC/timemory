@@ -54,7 +54,7 @@ timemory_build_intermediate_library(
     TARGET core
     CATEGORY GLOBAL
     FOLDER ${CMAKE_INSTALL_LIBDIR}
-    DEPENDS timemory::timemory-libunwind)
+    DEPENDS timemory::timemory-libunwind $<TARGET_EXISTS:timemory::timemory-shlwapi>)
 
 # core
 add_subdirectory(environment)
