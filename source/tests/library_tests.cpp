@@ -115,11 +115,6 @@ consume(long n)
 
 //--------------------------------------------------------------------------------------//
 
-void
-start_metric();
-void
-stop_metric();
-
 class library_tests : public ::testing::Test
 {
 protected:
@@ -134,12 +129,10 @@ protected:
 
         if(!timemory_library_is_initialized())
             timemory_init_library(_argc, _argv);
-        start_metric();
     }
 
     static void TearDownTestSuite()
     {
-        stop_metric();
         if(timemory_library_is_initialized())
             timemory_finalize_library();
     }
@@ -703,18 +696,5 @@ TEST_F(library_tests, override_default)
 #include "test_macros.hpp"
 
 TIMEMORY_TEST_MAIN
-
-void
-start_metric()
-{
-    metric().start();
-}
-
-void
-stop_metric()
-{
-    metric().stop();
-    print_dart(metric());
-}
 
 //--------------------------------------------------------------------------------------//

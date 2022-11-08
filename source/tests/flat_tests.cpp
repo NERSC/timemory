@@ -162,12 +162,10 @@ protected:
         tim::settings::dart_count()  = 1;
         tim::settings::banner()      = false;
         tim::settings::parse();
-        metric().start();
     }
 
     static void TearDownTestSuite()
     {
-        metric().stop();
         tim::timemory_finalize();
         tim::dmp::finalize();
     }

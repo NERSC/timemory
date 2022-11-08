@@ -112,14 +112,9 @@ protected:
             ::testing::UnitTest::GetInstance()->current_test_suite()->name());
         tim::settings::dart_output() = true;
         tim::settings::dart_count()  = 1;
-        metric().start();
     }
 
-    static void TearDownTestSuite()
-    {
-        metric().stop();
-        kokkosp_finalize_library();
-    }
+    static void TearDownTestSuite() { kokkosp_finalize_library(); }
 };
 
 //--------------------------------------------------------------------------------------//

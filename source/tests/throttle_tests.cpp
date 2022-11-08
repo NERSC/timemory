@@ -97,7 +97,6 @@ protected:
         tim::settings::verbose() = 1;
         tim::settings::debug()   = false;
         puts("[SetupTestSuite] setup completed");
-        metric().start();
     }
 
     // always disable debug
@@ -111,8 +110,6 @@ protected:
 
     static void TearDownTestSuite()
     {
-        metric().stop();
-        print_dart(metric());
         timemory_trace_finalize();
         tim::timemory_finalize();
         if(tim::dmp::rank() == 0)

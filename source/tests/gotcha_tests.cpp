@@ -212,12 +212,10 @@ protected:
         cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
         cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);
 #endif
-        metric().start();
     }
 
     static void TearDownTestSuite()
     {
-        metric().stop();
         tim::timemory_finalize();
         tim::manager::master_instance().reset();
         tim::dmp::finalize();

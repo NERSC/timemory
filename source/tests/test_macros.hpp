@@ -70,45 +70,6 @@ as_string(const Tp&)
     return std::string{};
 }
 #endif
-//
-#if !defined(TIMEMORY_TEST_NO_METRIC) && !defined(DISABLE_TIMEMORY)
-inline auto&
-metric()
-{
-    static tim::lightweight_tuple<tim::component::wall_clock, tim::component::peak_rss>
-        _instance{ ::testing::UnitTest::GetInstance()->current_test_suite()->name() };
-    return _instance;
-}
-inline void
-print_dart(
-    tim::lightweight_tuple<tim::component::wall_clock, tim::component::peak_rss>& ct)
-{
-    if(tim::dmp::rank() > 0)
-        return;
-    using namespace tim::component;
-    auto* wc = ct.get<wall_clock>();
-    if(wc)
-        tim::operation::echo_measurement<wall_clock, true>{ *wc, { "wall_clock" } };
-    auto* pr = ct.get<peak_rss>();
-    if(pr)
-        tim::operation::echo_measurement<peak_rss, true>{ *pr, { "peak_rss" } };
-}
-#else
-struct dummy
-{
-    void start() {}
-    void stop() {}
-};
-inline auto&
-metric()
-{
-    static dummy _instance{};
-    return _instance;
-}
-inline void
-print_dart(dummy&)
-{}
-#endif
 }  // namespace
 
 #if !defined(DISABLE_TIMEMORY)
@@ -147,7 +108,6 @@ print_dart(dummy&)
             tim::settings::banner()      = false;                                        \
             __VA_ARGS__;                                                                 \
             puts("[SetupTestSuite] setup completed");                                    \
-            metric().start();                                                            \
         }
 
 #    define TIMEMORY_TEST_DEFAULT_SUITE_SETUP TIMEMORY_TEST_SUITE_SETUP({})
@@ -156,8 +116,6 @@ print_dart(dummy&)
     protected:                                                                           \
         static void TearDownTestSuite()                                                  \
         {                                                                                \
-            metric().stop();                                                             \
-            print_dart(metric());                                                        \
             __VA_ARGS__;                                                                 \
             tim::timemory_finalize();                                                    \
             if(tim::dmp::rank() == 0)                                                    \

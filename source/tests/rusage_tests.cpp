@@ -235,7 +235,6 @@ protected:
         tim::timemory_init(_argc, _argv);
         tim::settings::file_output() = false;
 
-        metric().start();
         // preform allocation only once here
         details::allocate();
     }

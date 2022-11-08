@@ -154,7 +154,6 @@ protected:
         tim::settings::dart_count()  = 1;
         tim::settings::banner()      = false;
 
-        metric().start();
         std::vector<std::thread> threads;
         for(uint64_t i = 0; i < 2; ++i)
             threads.emplace_back(std::thread(details::generate_history, 5, 2));
@@ -165,7 +164,6 @@ protected:
 
     static void TearDownTestSuite()
     {
-        metric().stop();
         tim::timemory_finalize();
         tim::dmp::finalize();
         std::cout << "Finalized" << std::endl;

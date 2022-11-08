@@ -162,7 +162,6 @@ protected:
         tim::settings::dart_output() = true;
         tim::settings::dart_count()  = 1;
         tim::settings::banner()      = false;
-        metric().start();
     }
 
     TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
