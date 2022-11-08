@@ -167,18 +167,19 @@ jobs:
             export PATH="${HOME}/miniconda/bin:${PATH}" &&
             source activate &&
             conda activate pyctest &&
-            python ./pyctest-runner.py -SF --pyctest-drop-site=my.cdash.org --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release -T Start Update Configure
+            python ./pyctest-runner.py -SF --pyctest-drop-site=my.cdash.org --pyctest-site=CircleCI --pyctest-model=Continuous --pyctest-build-type=Release
             --build-libs shared
             --dart
             --mpi
             --gotcha
             --tools mpip mallocp dyninst
             --cxx-standard=17
-            -- -VV
+            -j 2
+            -- -V --output-on-failure -E dynamic_instrument
             -- -DTIMEMORY_BUILD_{CALIPER,GOTCHA,COMPILER_INSTRUMENTATION}=OFF -DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install &&
             cmake --build build-timemory/Linux --target all --parallel 2 &&
             pushd build-timemory/Linux &&
-            ctest --output-on-failure -E dynamic_instrument &&
+            ctest -VV -E dynamic_instrument --rerun-failed &&
             popd
       - run:
           name: install
