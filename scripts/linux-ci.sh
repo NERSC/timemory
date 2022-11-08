@@ -4,7 +4,7 @@
 run-verbose()
 {
     echo -e "\n\t##### Running : '$@'... #####\n"
-    eval $@
+    eval "${@}"
 }
 
 # enable manpages to be installed
@@ -20,10 +20,10 @@ DISTRIB_CODENAME=$(cat /etc/lsb-release | grep DISTRIB_CODENAME | awk -F '=' '{p
 run-verbose apt-get update
 run-verbose apt-get install -y software-properties-common wget curl
 # test
-run-verbose add-apt-repository -u -y ppa:ubuntu-toolchain-r/test
+# run-verbose add-apt-repository -u -y ppa:ubuntu-toolchain-r/test
 # cmake
 wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc | apt-key add -
-apt-add-repository "deb https://apt.kitware.com/ubuntu/ ${DISTRIB_CODENAME} main"
+apt-add-repository -y "deb https://apt.kitware.com/ubuntu/ ${DISTRIB_CODENAME} main"
 # llvm
 wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
 cat << EOF > /etc/apt/sources.list.d/llvm-toolchain.list
