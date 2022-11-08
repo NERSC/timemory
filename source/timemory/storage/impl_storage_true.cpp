@@ -104,6 +104,9 @@ storage<Type, true>::storage()
         operation::set_storage<Type>{}(static_cast<tim::storage<Type, value_type>*>(this),
                                        m_thread_idx);
     }
+
+    if(!m_is_master && master_instance())
+        master_instance()->add_child(this);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -146,23 +149,23 @@ storage<Type, true>::~storage()
     if(!m_standalone)
         component::state<Type>::has_storage() = false;
 
-    auto _debug = m_settings->get_debug();
+    auto _debug = (m_settings) ? m_settings->get_debug() : true;
 
     TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> destroying storage",
                                     m_label.c_str(), (long) m_instance_id);
 
     if(!m_standalone)
     {
-        auto _main_instance = singleton_t::master_instance();
-
         if(!m_is_master)
         {
-            if(_main_instance)
+            auto _main_instance = singleton_t::master_instance();
+            if(_main_instance && _main_instance != this)
             {
                 TIMEMORY_CONDITIONAL_PRINT_HERE(_debug,
                                                 "[%s|%li]> merging into primary instance",
                                                 m_label.c_str(), (long) m_instance_id);
                 _main_instance->merge(this);
+                _main_instance->remove_child(this);
             }
             else
             {
@@ -600,29 +603,14 @@ template <typename Type>
 void
 storage<Type, true>::merge()
 {
-    if(!m_is_master || !m_initialized)
-        return;
+    auto_lock_t _lk{ base_type::m_mutex };
 
-    auto m_children = singleton_t::children();
-    if(m_children.empty())
-        return;
-
-    for(auto& itr : m_children)
-        merge(itr);
-
-    // create lock
-    auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-    if(!l.owns_lock())
-        l.lock();
-
-    for(auto& itr : m_children)
-        singleton_t::remove(itr);
-
-    // for(auto& itr : m_children)
-    // {
-    //     if(itr != this)
-    //         itr->data().clear();
-    // }
+    for(auto itr : base_type::get_children())
+    {
+        auto _v = dynamic_cast<this_type*>(itr);
+        if(_v)
+            merge(_v);
+    }
 
     stack_clear();
 }

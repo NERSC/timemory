@@ -38,6 +38,7 @@
 #    include <atomic>
 #    include <cstdint>
 #    include <functional>
+#    include <set>
 #    include <string>
 
 namespace tim
@@ -167,6 +168,81 @@ storage::free_shared_manager()
 {
     if(m_manager)
         m_manager->remove_finalizer(m_label);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STORAGE_INLINE void
+storage::add_child(storage* _v, int64_t _tid)
+{
+    if(!_v)
+        return;
+    auto_lock_t _lk{ m_mutex };
+
+    if(_tid < 0)
+        _tid = _v->m_thread_idx;
+    m_children[_tid].emplace(_v);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STORAGE_INLINE void
+storage::remove_child(storage* _v, int64_t _tid)
+{
+    if(!_v)
+        return;
+    auto_lock_t _lk{ m_mutex };
+
+    // if tid is specified, we only want to delete from that mapped set
+    bool _explicit = (_tid >= 0);
+    // if no thread id was provided, search the instances thread index row first
+    if(!_explicit)
+        _tid = _v->m_thread_idx;
+
+    auto itr = m_children.find(_tid);
+    if(itr != m_children.end())
+    {
+        itr->second.erase(_v);
+    }
+    else if(!_explicit)
+    {
+        // only if TID is not provided
+        for(auto& itr : m_children)
+        {
+            auto vitr = itr.second.find(_v);
+            if(vitr != itr.second.end())
+                itr.second.erase(vitr);
+        }
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_STORAGE_INLINE std::set<storage*>
+                        storage::get_children(int64_t _tid)
+{
+    auto_lock_t _lk{ m_mutex };
+
+    // if thread id is specified, return mapped set or nothing
+    if(_tid >= 0)
+    {
+        auto itr = m_children.find(_tid);
+        if(itr != m_children.end())
+            return itr->second;
+        return std::set<storage*>{};
+    }
+
+    // if no tid is specified, return all the children
+    std::set<storage*> _v{};
+    for(auto itr : m_children)
+    {
+        for(auto iitr : itr.second)
+        {
+            if(iitr)
+                _v.emplace(iitr);
+        }
+    }
+    return _v;
 }
 }  // namespace base
 }  // namespace tim

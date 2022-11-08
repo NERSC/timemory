@@ -82,6 +82,9 @@ storage<Type, false>::storage()
         operation::set_storage<Type>{}(static_cast<tim::storage<Type, value_type>*>(this),
                                        m_thread_idx);
     }
+
+    if(!m_is_master && master_instance())
+        master_instance()->add_child(this);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -102,9 +105,37 @@ storage<Type, false>::storage(standalone_storage, int64_t _instance_id,
 template <typename Type>
 storage<Type, false>::~storage()
 {
-    component::state<Type>::has_storage() = false;
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "destroying %s",
-                                    m_label.c_str());
+    if(!m_standalone)
+        component::state<Type>::has_storage() = false;
+
+    auto _debug = (m_settings) ? m_settings->get_debug() : true;
+
+    TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> destroying storage",
+                                    m_label.c_str(), (long) m_instance_id);
+
+    if(!m_standalone)
+    {
+        if(!m_is_master)
+        {
+            auto _main_instance = singleton_t::master_instance();
+            if(_main_instance && _main_instance != this)
+            {
+                TIMEMORY_CONDITIONAL_PRINT_HERE(_debug,
+                                                "[%s|%li]> merging into primary instance",
+                                                m_label.c_str(), (long) m_instance_id);
+                _main_instance->merge(this);
+                _main_instance->remove_child(this);
+            }
+            else
+            {
+                TIMEMORY_CONDITIONAL_PRINT_HERE(
+                    _debug,
+                    "[%s|%li]> skipping merge into non-existent primary "
+                    "instance",
+                    m_label.c_str(), (long) m_instance_id);
+            }
+        }
+    }
 
     if(operation::get_storage<Type>{}(m_thread_idx) == this)
         operation::set_storage<Type>{}(nullptr, m_thread_idx);
@@ -210,14 +241,13 @@ template <typename Type>
 void
 storage<Type, false>::merge()
 {
-    auto m_children = singleton_t::children();
-    if(m_children.size() == 0)
-        return;
+    auto_lock_t _lk{ base_type::m_mutex };
 
-    if(m_settings && m_settings->get_stack_clearing())
+    for(auto itr : base_type::get_children())
     {
-        for(auto& itr : m_children)
-            merge(itr);
+        auto _v = dynamic_cast<this_type*>(itr);
+        if(_v)
+            merge(_v);
     }
 
     stack_clear();

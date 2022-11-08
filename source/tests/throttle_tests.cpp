@@ -24,6 +24,8 @@
 
 #include "test_macros.hpp"
 
+#include <bits/stdint-uintn.h>
+
 TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/library.h"
@@ -219,9 +221,14 @@ TEST_F(throttle_tests, multithreaded)
 {
     std::array<bool, nthreads> is_throttled;
     is_throttled.fill(false);
+    auto _main_storage = tim::storage<tim::component::wall_clock>::master_instance();
+    std::atomic<uint64_t> _ncount{ 0 };
+    std::promise<void>    _prom{};
+    auto                  _fut = _prom.get_future().share();
 
-    auto _run = [&is_throttled](uint64_t idx) {
+    auto _run = [&is_throttled, &_ncount, &_fut, _main_storage](uint64_t idx) {
         timemory_push_trace("thread");
+        ++_ncount;
         auto name = details::get_test_name();
         auto n    = 2 * tim::settings::throttle_count();
         auto v    = 2 * tim::settings::throttle_value();
@@ -230,7 +237,6 @@ TEST_F(throttle_tests, multithreaded)
             for(size_t i = 0; i < n; ++i)
             {
                 timemory_push_trace(name.c_str());
-                // details::do_sleep(v);
                 details::consume(v);
                 timemory_pop_trace(name.c_str());
             }
@@ -245,13 +251,30 @@ TEST_F(throttle_tests, multithreaded)
         }
         timemory_pop_trace("thread");
         is_throttled.at(idx) = timemory_is_throttled(name.c_str());
+
+        auto _tid = tim::threading::get_id();
+        EXPECT_EQ(_main_storage->get_children(_tid).size(), 1)
+            << "main storage should have 1 child for thread " << _tid;
+        _fut.wait();
     };
 
     std::vector<std::thread> threads;
     for(uint64_t i = 0; i < nthreads; ++i)
         threads.emplace_back(_run, i);
+
+    // wait for all the threads to start
+    while(_ncount.load(std::memory_order_relaxed) < nthreads)
+        ;
+
+    // check the children are counted properly
+    EXPECT_EQ(_main_storage->get_children().size(), nthreads);
+
+    // release the threads
+    _prom.set_value();
+
     for(auto& itr : threads)
         itr.join();
+    threads.clear();
 
     for(uint64_t i = 0; i < nthreads; ++i)
     {

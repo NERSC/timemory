@@ -36,8 +36,10 @@
 
 #include <atomic>
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <string>
 
 namespace tim
@@ -47,8 +49,9 @@ namespace base
 class storage
 {
 public:
-    using string_t  = std::string;
-    using this_type = storage;
+    using string_t       = std::string;
+    using this_type      = storage;
+    using children_map_t = std::map<int64_t, std::set<storage*>>;
 
 public:
     storage(bool _is_master, int64_t _instance_id, std::string _label);
@@ -85,6 +88,10 @@ public:
     int64_t instance_id() const { return m_instance_id; }
     void    free_shared_manager();
 
+    void               add_child(storage*, int64_t _tid = -1);
+    void               remove_child(storage*, int64_t _tid = -1);
+    std::set<storage*> get_children(int64_t _tid = -1);
+
 protected:
     void add_file_output(const string_t& _category, const string_t& _label,
                          const string_t& _file);
@@ -114,10 +121,12 @@ protected:
     uint32_t                  m_thread_idx   = threading::get_id();       // NOLINT
     int64_t                   m_instance_id  = -1;                        // NOLINT
     string_t                  m_label        = {};                        // NOLINT
+    mutex_t                   m_mutex        = {};                        // NOLINT
     hash_map_ptr_t            m_hash_ids     = hash::get_hash_ids();      // NOLINT
     hash_alias_ptr_t          m_hash_aliases = hash::get_hash_aliases();  // NOLINT
     std::shared_ptr<manager>  m_manager      = {};                        // NOLINT
     std::shared_ptr<settings> m_settings     = {};                        // NOLINT
+    children_map_t            m_children     = {};                        // NOLINT
 };
 //
 template <typename Tp, typename Vp>

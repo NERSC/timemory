@@ -123,7 +123,6 @@ public:
     using mutex_t       = std::recursive_mutex;
     using auto_lock_t   = std::unique_lock<mutex_t>;
     using pointer       = Type*;
-    using children_t    = std::set<pointer>;
     using smart_pointer = PointerT;
     using deleter_t     = std::function<void(PointerT&)>;
     using dtor_map_t    = std::map<pointer, std::function<void()>>;
@@ -156,13 +155,12 @@ public:
     // the thread the master instance was created on
     static thread_id_t master_thread_id() { return f_master_thread(); }
 
-    static children_t children() { return f_children(); }
-    static bool       is_master(pointer ptr) { return ptr == master_instance_ptr(); }
-    static bool       is_main_thread();
-    static void       insert(smart_pointer& itr);
-    static void       remove(pointer itr);
-    static mutex_t&   get_mutex() { return f_mutex(); }
-    static void       initialize();
+    static bool     is_master(pointer ptr) { return ptr == master_instance_ptr(); }
+    static bool     is_main_thread();
+    static void     insert(smart_pointer& itr);
+    static void     remove(pointer itr);
+    static mutex_t& get_mutex() { return f_mutex(); }
+    static void     initialize();
 
     void reset(pointer ptr);
     void reset();
@@ -206,7 +204,6 @@ private:
         mutex_t     m_mutex;
         thread_id_t m_master_thread   = std::this_thread::get_id();
         pointer     m_master_instance = nullptr;
-        children_t  m_children        = {};
         dtor_map_t  m_dtors           = {};
 
         persistent_data()                       = default;
@@ -216,27 +213,13 @@ private:
         persistent_data& operator=(const persistent_data&) = delete;
         persistent_data& operator=(persistent_data&&) = delete;
 
-        void reset()
-        {
-            m_master_instance = nullptr;
-            m_children.clear();
-        }
+        void reset() { m_master_instance = nullptr; }
 
         friend std::ostream& operator<<(std::ostream& _os, const persistent_data& _v)
         {
             std::stringstream _ss{};
             _ss << "[master thread: " << _v.m_master_thread
-                << "][master instance: " << _v.m_master_instance << "][children:";
-            if(!_v.m_children.empty())
-            {
-                for(const auto& itr : _v.m_children)
-                    _ss << " " << itr;
-            }
-            else
-            {
-                _ss << " none";
-            }
-            _ss << "][dtors:";
+                << "][master instance: " << _v.m_master_instance << "][dtors:";
             if(!_v.m_dtors.empty())
             {
                 for(const auto& itr : _v.m_dtors)
@@ -262,7 +245,6 @@ private:
     static thread_id_t& f_master_thread();
     static mutex_t&     f_mutex();
     static pointer&     f_master_instance();
-    static children_t&  f_children();
     static dtor_map_t&  f_dtors();
 
     template <typename... Tp, typename PredicateT>
@@ -320,15 +302,6 @@ typename singleton<Type, PointerT, TagT>::mutex_t&
 singleton<Type, PointerT, TagT>::f_mutex()
 {
     return f_persistent_data().m_mutex;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename Type, typename PointerT, typename TagT>
-typename singleton<Type, PointerT, TagT>::children_t&
-singleton<Type, PointerT, TagT>::f_children()
-{
-    return f_persistent_data().m_children;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -437,9 +410,7 @@ singleton<Type, PointerT, TagT>::insert(smart_pointer& itr)
     auto_lock_t _lk{ f_mutex(), std::defer_lock };
     if(!_lk.owns_lock())
         _lk.lock();
-    auto& _children = f_children();
-    auto& _dtors    = f_dtors();
-    _children.insert(itr.get());
+    auto& _dtors = f_dtors();
     _dtors.emplace(itr.get(), [&]() { itr.reset(); });
 }
 
@@ -453,37 +424,23 @@ singleton<Type, PointerT, TagT>::remove(pointer itr)
     if(!_lk.owns_lock())
         _lk.lock();
 
-    auto _info = as_string();
     if(!itr)
     {
-        TIMEMORY_PRINT_HERE("%s :: nullptr passed to remove", _info.c_str());
+        TIMEMORY_PRINT_HERE("%s :: nullptr passed to remove", as_string().c_str());
         return;
     }
 
-    auto& _children     = f_children();
-    auto& _dtors        = f_dtors();
-    bool  _has_children = !_children.empty();
-    bool  _has_dtors    = !_dtors.empty();
-
-    size_t _n = discard_if(_children, [itr](pointer _v) { return (_v == itr); });
-
-    if(_has_children && _n != 1)
-    {
-        TIMEMORY_PRINT_HERE("%s :: Warning! Expected one child to be removed but "
-                            "removed %zu children",
-                            _info.c_str(), _n);
-    }
-
-    if(_has_dtors)
+    auto& _dtors = f_dtors();
+    if(!_dtors.empty())
     {
         auto ditr = _dtors.find(itr);
         if(ditr != _dtors.end())
             _dtors.erase(ditr);
         else
         {
-            TIMEMORY_PRINT_HERE("%s :: Warning! Expected destructor to be removed but "
-                                "destructor was not found",
-                                _info.c_str());
+            TIMEMORY_PRINT_HERE(
+                "%s :: Warning! Expected destructor for %p but was not found",
+                as_string().c_str(), (void*) itr);
         }
     }
 }
