@@ -144,8 +144,8 @@ add_subdirectory(external)
 foreach(_LINK_TYPE shared static)
     foreach(_DEPTH_VALUE 0 5)
         set(compiler_instr_env
-            "TIMEMORY_SUPPRESS_CONFIG=ON;TIMEMORY_COMPILER_SUPPRESS_CONFIG=ON;TIMEMORY_COMPILER_COUT_OUTPUT=ON"
-            )
+            "TIMEMORY_SUPPRESS_CONFIG=ON" "TIMEMORY_COMPILER_SUPPRESS_CONFIG=ON"
+            "TIMEMORY_COMPILER_COUT_OUTPUT=ON" "TIMEMORY_COMPILER_FLAT_PROFILE=ON")
         if(NOT "${_DEPTH_VALUE}" STREQUAL "0")
             set(_EXTRA "_max_depth_${_DEPTH_VALUE}")
             list(APPEND compiler_instr_env "TIMEMORY_COMPILER_MAX_DEPTH=${_DEPTH_VALUE}")
@@ -735,33 +735,36 @@ if(TIMEMORY_USE_PYTHON AND PYTHON_EXECUTABLE)
 endif()
 
 # Tests recording the symbols of each compiled library
-find_program(NM_EXE NAMES nm)
-mark_as_advanced(NM_EXE)
-if(NM_EXE AND NOT WIN32)
-    set(_COMPILED_LIBS ${TIMEMORY_TOOL_LIBRARIES} ${TIMEMORY_COMPILED_LIBRARIES}
-                       ${TIMEMORY_INTERMEDIATE_LIBRARIES})
-    list(REMOVE_DUPLICATES _COMPILED_LIBS)
-    if(TARGET libpytimemory AND NOT "libpytimemory" IN_LIST _COMPILED_LIBS)
-        list(APPEND _COMPILED_LIBS "libpytimemory")
+timemory_add_option(TIMEMORY_NM_TESTS "Include nm tests" OFF NO_FEATURE)
+if(TIMEMORY_NM_TESTS)
+    find_program(NM_EXE NAMES nm)
+    mark_as_advanced(NM_EXE)
+    if(NM_EXE AND NOT WIN32)
+        set(_COMPILED_LIBS ${TIMEMORY_TOOL_LIBRARIES} ${TIMEMORY_COMPILED_LIBRARIES}
+                           ${TIMEMORY_INTERMEDIATE_LIBRARIES})
+        list(REMOVE_DUPLICATES _COMPILED_LIBS)
+        if(TARGET libpytimemory AND NOT "libpytimemory" IN_LIST _COMPILED_LIBS)
+            list(APPEND _COMPILED_LIBS "libpytimemory")
+        endif()
+        foreach(_LIB ${_COMPILED_LIBS})
+            if(NOT TARGET ${_LIB})
+                continue()
+            endif()
+            add_test(
+                NAME nm-mangled-${_LIB}
+                COMMAND ${NM_EXE} -g $<TARGET_FILE:${_LIB}>
+                WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+            if(APPLE
+               AND "$ENV{USER}" STREQUAL "travis"
+               AND "$ENV{TRAVIS}" STREQUAL "true")
+                continue()
+            endif()
+            add_test(
+                NAME nm-demangled-${_LIB}
+                COMMAND ${NM_EXE} -g --demangle $<TARGET_FILE:${_LIB}>
+                WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        endforeach()
     endif()
-    foreach(_LIB ${_COMPILED_LIBS})
-        if(NOT TARGET ${_LIB})
-            continue()
-        endif()
-        add_test(
-            NAME nm-mangled-${_LIB}
-            COMMAND ${NM_EXE} -g $<TARGET_FILE:${_LIB}>
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-        if(APPLE
-           AND "$ENV{USER}" STREQUAL "travis"
-           AND "$ENV{TRAVIS}" STREQUAL "true")
-            continue()
-        endif()
-        add_test(
-            NAME nm-demangled-${_LIB}
-            COMMAND ${NM_EXE} -g --demangle $<TARGET_FILE:${_LIB}>
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    endforeach()
 endif()
 
 # disable during code-coverage
