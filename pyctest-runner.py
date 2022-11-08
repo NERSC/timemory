@@ -677,6 +677,7 @@ def run_pyctest():
     )
     pyct.set("CTEST_CUSTOM_MAXIMUM_NUMBER_OF_ERRORS", "100")
     pyct.set("CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS", "100")
+    pyct.set("CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE", "10240")
 
     # Use the options to create a build name with configuration
     pyct.BUILD_NAME = (
