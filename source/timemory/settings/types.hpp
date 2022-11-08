@@ -25,8 +25,8 @@
 #pragma once
 
 #include "timemory/compat/macros.h"
+#include "timemory/process/process.hpp"
 #include "timemory/settings/macros.hpp"
-#include "timemory/utility/argparse.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/type_list.hpp"
 
@@ -65,7 +65,7 @@ enum class setting_update_type : short
 //
 using setting_supported_data_types =
     type_list<bool, std::string, int16_t, int32_t, int64_t, uint16_t, uint32_t, uint64_t,
-              size_t, float, double>;
+              size_t, process::id_t, float, double>;
 //
 struct TIMEMORY_VISIBILITY("default") vsettings;
 //
