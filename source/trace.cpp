@@ -507,7 +507,13 @@ extern "C"
 
         // configure bundle
         if(user_trace_bundle::bundle_size() == 0)
-            user_trace_bundle::global_init(true);
+        {
+            static std::mutex _bmtx{};
+            _bmtx.lock();
+            if(user_trace_bundle::bundle_size() == 0)
+                user_trace_bundle::global_init(true);
+            _bmtx.unlock();
+        }
 
         _trace_map[id].emplace_back(traceset_t{ id });
         _trace_map[id].back().start();
