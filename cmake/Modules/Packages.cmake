@@ -5,6 +5,7 @@ include_guard(DIRECTORY)
 # MUST come before "enable_testing"
 add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
 enable_testing()
+include(CTest)
 
 # ########################################################################################
 #

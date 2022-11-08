@@ -155,6 +155,33 @@ parse:
         TARGET: '*'
         VALID: '*'
         CANDIDATES: '*'
+    ctest_memcheck:
+      flags:
+        - APPEND
+        - QUIET
+        - STOP_ON_FAILURE
+      kwargs:
+        BUILD: '*'
+        START: '*'
+        END: '*'
+        STRIDE: '*'
+        EXCLUDE: '*'
+        INCLUDE: '*'
+        EXCLUDE_LABEL: '*'
+        INCLUDE_LABEL: '*'
+        EXCLUDE_FIXTURE: '*'
+        EXCLUDE_FIXTURE_SETUP: '*'
+        EXCLUDE_FIXTURE_CLEANUP: '*'
+        PARALLEL_LEVEL: '*'
+        RESOURCE_SPEC_FILE: '*'
+        TEST_LOAD: '*'
+        SCHEDULE_RANDOM: '*'
+        STOP_TIME: '*'
+        RETURN_VALUE: '*'
+        CAPTURE_CMAKE_ERROR: '*'
+        REPEAT: '*'
+        OUTPUT_JUNIT: '*'
+        DEFECT_COUNT: '*'
   override_spec: {}
   vartags: []
   proptags: []

@@ -1769,6 +1769,20 @@ def run_pyctest():
 
     pyct.generate_config(pyct.BINARY_DIRECTORY)
     pyct.generate_test_file(os.path.join(pyct.BINARY_DIRECTORY, "tests"))
+    pyct.copy_files()
+    # copy over the custom scripts
+    for itr in [
+        "CustomInit.cmake",
+        "CustomStages.cmake",
+        "PyCTestPreInit.cmake",
+    ]:
+        _src = os.path.join(pyct.SOURCE_DIRECTORY, "cmake", "Templates", itr)
+        _dst = os.path.join(pyct.BINARY_DIRECTORY, itr)
+        if os.path.exists(_src):
+            import shutil
+
+            shutil.copy2(_src, _dst)
+
     if not args.generate:
         mem = None
         fname = "._report-memory.tmp"
