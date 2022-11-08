@@ -39,6 +39,7 @@
 #    include <functional>
 #    include <grp.h>
 #    include <limits>
+#    include <memory>
 #    include <ostream>
 #    include <paths.h>
 #    include <sstream>
@@ -66,11 +67,11 @@ struct TIMEMORY_PIPE
     int   child_status = std::numeric_limits<int>::max();
 };
 //
-TIMEMORY_UTILITY_LINKAGE(TIMEMORY_PIPE*)
+TIMEMORY_UTILITY_LINKAGE(std::shared_ptr<TIMEMORY_PIPE>)
 popen(const char* path, char** argv = nullptr, char** envp = nullptr);
 //
 TIMEMORY_UTILITY_LINKAGE(int)
-pclose(TIMEMORY_PIPE* p);
+pclose(std::shared_ptr<TIMEMORY_PIPE>& p);
 //
 TIMEMORY_UTILITY_LINKAGE(pid_t)
 fork();
@@ -88,15 +89,16 @@ TIMEMORY_UTILITY_LINKAGE(void)  // NOLINT
 restore_privileges();
 //
 TIMEMORY_UTILITY_LINKAGE(strvec_t)
-read_fork(TIMEMORY_PIPE* proc, std::string_view _remove_chars,
+read_fork(const std::shared_ptr<TIMEMORY_PIPE>& proc, std::string_view _remove_chars,
           std::string_view                             _delimiters,
           const std::function<bool(std::string_view)>& _filter, int max_counter = 50);
 //
 TIMEMORY_UTILITY_LINKAGE(strvec_t)
-read_ldd_fork(TIMEMORY_PIPE* proc, int max_counter = 50);
+read_ldd_fork(const std::shared_ptr<TIMEMORY_PIPE>& proc, int max_counter = 50);
 //
 TIMEMORY_UTILITY_LINKAGE(std::ostream&)
-flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter = 0);
+flush_output(std::ostream& os, const std::shared_ptr<TIMEMORY_PIPE>& proc,
+             int max_counter = 0);
 //
 //--------------------------------------------------------------------------------------//
 //

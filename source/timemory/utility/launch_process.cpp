@@ -49,8 +49,8 @@ launch_process(const char* cmd, const std::string& extra, std::ostream* os,
     }
 
 #if !defined(TIMEMORY_WINDOWS)
-    auto                       delim = delimit(cmd, " \t");
-    tim::popen::TIMEMORY_PIPE* fp    = nullptr;
+    auto delim = delimit(cmd, " \t");
+    auto fp    = std::shared_ptr<tim::popen::TIMEMORY_PIPE>{};
     if(delim.size() < 2)
     {
         fp = tim::popen::popen(cmd, nullptr);

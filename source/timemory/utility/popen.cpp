@@ -225,12 +225,12 @@ fork()
 //
 //--------------------------------------------------------------------------------------//
 //
-TIMEMORY_PIPE*
+std::shared_ptr<TIMEMORY_PIPE>
 popen(const char* path, char** argv, char** envp)
 {
-    int            stdin_pipe[2]  = { 0, 0 };
-    int            stdout_pipe[2] = { 0, 0 };
-    TIMEMORY_PIPE* p              = nullptr;
+    int  stdin_pipe[2]  = { 0, 0 };
+    int  stdout_pipe[2] = { 0, 0 };
+    auto p              = std::shared_ptr<TIMEMORY_PIPE>{};
 
     static char** _argv = []() {
         static auto* _tmp = new char*[1];
@@ -243,10 +243,10 @@ popen(const char* path, char** argv, char** envp)
     if(argv == nullptr)
         argv = _argv;
 
-    p = new TIMEMORY_PIPE;
+    p = std::make_shared<TIMEMORY_PIPE>();
 
     if(!p)
-        return nullptr;
+        return p;
 
     p->read_fd   = nullptr;
     p->write_fd  = nullptr;
@@ -254,16 +254,16 @@ popen(const char* path, char** argv, char** envp)
 
     if(pipe(stdin_pipe) == -1)
     {
-        delete p;
-        return nullptr;
+        p.reset();
+        return p;
     }
 
     if(pipe(stdout_pipe) == -1)
     {
         close(stdin_pipe[1]);
         close(stdin_pipe[0]);
-        delete p;
-        return nullptr;
+        p.reset();
+        return p;
     }
 
     if(!(p->read_fd = fdopen(stdout_pipe[0], "r")))
@@ -272,8 +272,8 @@ popen(const char* path, char** argv, char** envp)
         close(stdout_pipe[0]);
         close(stdin_pipe[1]);
         close(stdin_pipe[0]);
-        delete p;
-        return nullptr;
+        p.reset();
+        return p;
     }
 
     if(!(p->write_fd = fdopen(stdin_pipe[1], "w")))
@@ -282,8 +282,8 @@ popen(const char* path, char** argv, char** envp)
         close(stdout_pipe[1]);
         close(stdin_pipe[1]);
         close(stdin_pipe[0]);
-        delete p;
-        return nullptr;
+        p.reset();
+        return p;
     }
 
     if((p->child_pid = popen::fork()) == -1)
@@ -292,8 +292,8 @@ popen(const char* path, char** argv, char** envp)
         fclose(p->read_fd);
         close(stdout_pipe[1]);
         close(stdin_pipe[0]);
-        delete p;
-        return nullptr;
+        p.reset();
+        return p;
     }
 
     if(p->child_pid == 0)
@@ -311,7 +311,7 @@ popen(const char* path, char** argv, char** envp)
             dup2(stdout_pipe[1], 1);
             close(stdout_pipe[1]);
         }
-        execve(path, argv, envp);
+        execvpe(path, argv, envp);
         exit(127);
     }
 
@@ -324,7 +324,7 @@ popen(const char* path, char** argv, char** envp)
 //--------------------------------------------------------------------------------------//
 //
 int
-pclose(TIMEMORY_PIPE* p)
+pclose(std::shared_ptr<TIMEMORY_PIPE>& p)
 {
     int   _status    = p->child_status;
     auto  _child_pid = p->child_pid;
@@ -336,8 +336,7 @@ pclose(TIMEMORY_PIPE* p)
             fclose(p->read_fd);
         if(p->write_fd)
             fclose(p->write_fd);
-        delete p;
-        p = nullptr;
+        p.reset();
     };
 
     if(_status != std::numeric_limits<int>::max())
@@ -349,16 +348,18 @@ pclose(TIMEMORY_PIPE* p)
         }
         else if(WIFSIGNALED(_status))
         {
-            printf("process %i killed by signal %d\n", _child_pid, WTERMSIG(_status));
+            TIMEMORY_PRINTF(stderr, "process %i killed by signal %d\n", _child_pid,
+                            WTERMSIG(_status));
             return EXIT_FAILURE;
         }
         else if(WIFSTOPPED(_status))
         {
-            printf("process %i stopped by signal %d\n", _child_pid, WSTOPSIG(_status));
+            TIMEMORY_PRINTF(stderr, "process %i stopped by signal %d\n", _child_pid,
+                            WSTOPSIG(_status));
         }
         else if(WIFCONTINUED(_status))
         {
-            printf("process %i continued\n", _child_pid);
+            TIMEMORY_PRINTF(stderr, "process %i continued\n", _child_pid);
         }
     }
     else
@@ -380,18 +381,39 @@ pclose(TIMEMORY_PIPE* p)
 //--------------------------------------------------------------------------------------//
 //
 strvec_t
-read_fork(TIMEMORY_PIPE* proc, std::string_view _remove_chars,
+read_fork(const std::shared_ptr<TIMEMORY_PIPE>& proc, std::string_view _remove_chars,
           std::string_view                             _delimiters,
           const std::function<bool(std::string_view)>& _filter, int max_counter)
 {
-    int      _counter = 0;
-    strvec_t _lines;
+    int  _counter = 0;
+    auto _lines   = strvec_t{};
+    auto _ss      = std::stringstream{};
+
+    auto _update_lines = [&]() {
+        auto _line = _ss.str();
+        _ss        = std::stringstream{};
+        if(_line.empty())
+            return;
+        if(!_remove_chars.empty())
+        {
+            auto loc = std::string::npos;
+            while((loc = _line.find_first_of(_remove_chars)) != std::string::npos)
+                _line.erase(loc, 1);
+        }
+        auto delim = delimit(_line, _delimiters);
+        for(const auto& itr : delim)
+        {
+            if(_filter(itr))
+                _lines.emplace_back(itr);
+        }
+    };
 
     while(proc)
     {
-        char buffer[4096];
-        memset(buffer, '\0', sizeof(buffer) * sizeof(char));
-        auto* ret = fgets(buffer, 4096, proc->read_fd);
+        constexpr size_t N = 4096;
+        char             buffer[N];
+        memset(buffer, '\0', N * sizeof(char));
+        auto* ret = fgets(buffer, N, proc->read_fd);
         if(ret == nullptr || strlen(buffer) == 0)
         {
             if(max_counter == 0)
@@ -406,20 +428,16 @@ read_fork(TIMEMORY_PIPE* proc, std::string_view _remove_chars,
                 break;
             continue;
         }
-        auto line = std::string{ buffer };
-        if(!_remove_chars.empty())
+        auto _len = strnlen(buffer, N + 1);
+        if(_len < N + 1)
         {
-            auto loc = std::string::npos;
-            while((loc = line.find_first_of(_remove_chars)) != std::string::npos)
-                line.erase(loc, 1);
-        }
-        auto delim = delimit(line, _delimiters);
-        for(const auto& itr : delim)
-        {
-            if(_filter(itr))
-                _lines.emplace_back(itr);
+            _ss << buffer;
+            if(buffer[_len - 1] == '\n')
+                _update_lines();
         }
     }
+
+    _update_lines();
 
     return _lines;
 }
@@ -427,7 +445,7 @@ read_fork(TIMEMORY_PIPE* proc, std::string_view _remove_chars,
 //--------------------------------------------------------------------------------------//
 //
 strvec_t
-read_ldd_fork(TIMEMORY_PIPE* proc, int max_counter)
+read_ldd_fork(const std::shared_ptr<TIMEMORY_PIPE>& proc, int max_counter)
 {
     return read_fork(
         proc, "\n\t", " \n\t=>", [](std::string_view itr) { return itr.find('/') == 0; },
@@ -437,7 +455,8 @@ read_ldd_fork(TIMEMORY_PIPE* proc, int max_counter)
 //--------------------------------------------------------------------------------------//
 //
 std::ostream&
-flush_output(std::ostream& os, TIMEMORY_PIPE* proc, int max_counter)
+flush_output(std::ostream& os, const std::shared_ptr<TIMEMORY_PIPE>& proc,
+             int max_counter)
 {
     int _counter = 0;
     while(proc)
