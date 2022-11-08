@@ -30,8 +30,8 @@ jobs:
             CXX: clang++-10
             PYTHON_VERSION: '3.7'
             BUILD_TYPE: 'Release'
-            PACKAGES: 'clang-10 build-essential libmpich-dev mpich ccache graphviz'
-            BUILD_ARGS: '--minimal --build-libs shared static --dart --python --mpi --gotcha --stats --unwind --tools mallocp mpip --cxx-standard=17'
+            PACKAGES: 'clang-10 build-essential ccache graphviz'
+            BUILD_ARGS: '--minimal --build-libs shared static --dart --python --gotcha --stats --unwind --tools mallocp --cxx-standard=17'
             CTEST_ARGS: '-V --output-on-failure'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_UNITY_BUILD=OFF -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
           - CC: clang-11
@@ -49,7 +49,7 @@ jobs:
             PACKAGES: 'gcc-7 g++-7 gfortran-7 build-essential libmpich-dev mpich libtbb-dev libpapi-dev papi-tools lcov ccache graphviz'
             BUILD_ARGS: '--minimal --build-libs shared --dart --mpi --papi --gotcha --unwind --tools mpip --stats --cxx-standard=17 --coverage'
             CTEST_ARGS: '-V --output-on-failure'
-            CONFIG_ARGS: ''
+            CONFIG_ARGS: '-DCMAKE_C_FLAGS=-Og -DCMAKE_CXX_FLAGS=-Og'
           - CC: gcc-8
             CXX: g++-8
             FC: gfortran-8
