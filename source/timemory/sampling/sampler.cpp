@@ -126,12 +126,28 @@ sampler<CompT<Types...>, N>::get_latest_samples()
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class CompT, size_t N, typename... Types>
+template <typename Tp, enable_if_t<Tp::value>>
 sampler<CompT<Types...>, N>::sampler(std::string _label, int64_t _tid, int _verbose)
 : m_verbose{ _verbose }
-, m_alloc{ this }
+, m_tid{ _tid }
 , m_label{ std::move(_label) }
 {
-    _init_sampler(_tid);
+    _init_sampler();
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <template <typename...> class CompT, size_t N, typename... Types>
+sampler<CompT<Types...>, N>::sampler(std::shared_ptr<allocator_t> _alloc,
+                                     std::string _label, int64_t _tid, int _verbose)
+: m_verbose{ _verbose }
+, m_tid{ _tid }
+, m_alloc{ _alloc }
+, m_label{ std::move(_label) }
+{
+    if(m_alloc)
+        m_alloc->allocate(this);
+    _init_sampler();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -139,7 +155,6 @@ sampler<CompT<Types...>, N>::sampler(std::string _label, int64_t _tid, int _verb
 template <template <typename...> class CompT, size_t N, typename... Types>
 sampler<CompT<Types...>, N>::~sampler()
 {
-    m_exit();
     auto_lock_t _lk{ type_mutex<this_type>(), std::defer_lock };
     if(!_lk.owns_lock())
         _lk.lock();
@@ -160,7 +175,8 @@ sampler<CompT<Types...>, N>::~sampler()
                 _erase_samplers(itr.second, this);
         }
     }
-    m_alloc.join();
+    if(m_alloc)
+        m_alloc->deallocate(this);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -218,7 +234,7 @@ sampler<CompT<Types...>, N>::sample(Args&&... _args)
     }
     else if(m_buffer.is_full())
     {
-        m_move(std::move(m_buffer));
+        m_move(this, std::move(m_buffer));
         m_buffer = buffer_t{ m_buffer_size, true };
     }
     m_last = m_buffer.request();
@@ -298,17 +314,8 @@ sampler<CompT<Types...>, N>::start()
     if(!base_type::get_is_running())
     {
         TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "starting (index: %zu)", m_idx);
-        auto cnt = tracker_type::start();
-        if(cnt.second == 0 && !m_alloc.is_alive())
-        {
-            TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2,
-                                            "restarting allocator (index: %zu)", m_idx);
-            m_alloc.restart(this);
-        }
+        tracker_type::start();
         base_type::set_started();
-        // notify the allocator thread so that it can wake and block the signals
-        // before we start the timers
-        m_alloc.start();
         for(auto& itr : m_timers)
             itr->start();
     }
@@ -334,12 +341,11 @@ sampler<CompT<Types...>, N>::stop()
         {
             auto _v = buffer_t{};
             std::swap(itr, _v);
-            m_alloc.emplace(std::move(_v));
+            if(m_alloc)
+                m_alloc->emplace(this, std::move(_v));
         }
     };
     _alloc_emplace(m_buffer);
-    m_exit();
-    m_alloc.join();
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -444,7 +450,8 @@ sampler<CompT<Types...>, N>::configure(timer&& _v)
     _custom_sa.sa_flags = m_flags;
 
     // provide the signal to the allocator thread so it can block it
-    m_alloc.block_signal(_signum);
+    if(m_alloc)
+        m_alloc->block_signal(_signum);
 
     TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose >= 3,
                                     "configuring handler for signal %i (index: %zu)",
@@ -705,11 +712,11 @@ sampler<CompT<Types...>, N>::wait(const pid_t wait_pid, int _verbose, bool _debu
 template <template <typename...> class CompT, size_t N, typename... Types>
 template <typename Tp, enable_if_t<Tp::value>>
 void
-sampler<CompT<Types...>, N>::_init_sampler(int64_t _tid)
+sampler<CompT<Types...>, N>::_init_sampler()
 {
     m_data.fill(bundle_type{ m_label });
     m_last = &m_data.front();
-    get_samplers(_tid).emplace_back(this);
+    get_samplers(m_tid).emplace_back(this);
     if(settings::debug())
         m_verbose += 16;
 }
@@ -719,11 +726,11 @@ sampler<CompT<Types...>, N>::_init_sampler(int64_t _tid)
 template <template <typename...> class CompT, size_t N, typename... Types>
 template <typename Tp, enable_if_t<!Tp::value>>
 void
-sampler<CompT<Types...>, N>::_init_sampler(int64_t _tid)
+sampler<CompT<Types...>, N>::_init_sampler()
 {
     m_buffer.set_use_mmap(true);
     m_buffer.init(m_buffer_size);
-    get_samplers(_tid).emplace_back(this);
+    get_samplers(m_tid).emplace_back(this);
     if(settings::debug())
         m_verbose += 16;
 }

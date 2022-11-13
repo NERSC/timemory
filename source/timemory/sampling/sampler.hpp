@@ -273,7 +273,11 @@ struct sampler<CompT<Types...>, N>
     }
 
 public:
-    sampler(std::string _label, int64_t _tid = threading::get_id(), int _verbose = 0);
+    template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
+    sampler(std::string, int64_t _tid = threading::get_id(), int _verbose = 0);
+
+    sampler(std::shared_ptr<allocator_t>, std::string, int64_t _tid = threading::get_id(),
+            int _verbose = 0);
     ~sampler();
 
     template <typename... Args, typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
@@ -308,15 +312,9 @@ public:
     const bundle_type& get(size_t idx) const;
 
     template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
-    auto& get_data()
+    auto get_data() const
     {
-        return m_alloc.get_data();
-    }
-
-    template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
-    const auto& get_data() const
-    {
-        return m_alloc.get_data();
+        return (m_alloc) ? m_alloc->get_data(this) : data_type{};
     }
 
     template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
@@ -409,14 +407,16 @@ public:
     void set_verbose(int _v)
     {
         m_verbose = _v;
-        m_alloc.set_verbose(_v);
+        if(m_alloc)
+            m_alloc->set_verbose(_v);
     }
 
     /// Pass a function to the allocator for offloading a full buffer
     template <typename FuncT>
     void set_offload(FuncT&& _v)
     {
-        m_alloc.set_offload(std::forward<FuncT>(_v));
+        if(m_alloc)
+            m_alloc->set_offload(std::forward<FuncT>(_v));
     }
 
     /// \fn void remove_timer(int)
@@ -457,8 +457,7 @@ public:
     size_t get_buffer_size() const { return m_buffer_size; }
     void   set_buffer_size(size_t _v) { m_buffer_size = _v; }
 
-    allocator_t&       get_allocator() { return m_alloc; }
-    const allocator_t& get_allocator() const { return m_alloc; }
+    auto get_allocator() const { return m_alloc; }
 
     template <typename FuncT>
     void set_notify(FuncT&& _v)
@@ -472,12 +471,6 @@ public:
         m_move = std::forward<FuncT>(_v);
     }
 
-    template <typename FuncT>
-    void set_exit(FuncT&& _v)
-    {
-        m_exit = std::forward<FuncT>(_v);
-    }
-
     auto get_sample_count() const { return m_count; }
 
 private:
@@ -488,24 +481,27 @@ private:
     }
 
 protected:
-    int                             m_verbose     = tim::settings::verbose();
-    int                             m_flags       = SA_RESTART | SA_SIGINFO;
-    int                             m_pid         = process::get_id();
-    sig_atomic_t                    m_sig_lock    = 0;
-    size_t                          m_idx         = get_counter()++;
-    size_t                          m_buffer_size = trait::buffer_size<this_type>::value;
-    size_t                          m_count       = 0;
-    sigaction_t                     m_custom_sigaction   = {};
-    sigaction_t                     m_original_sigaction = {};
-    bundle_type*                    m_last               = nullptr;
-    array_t                         m_data               = {};
-    std::function<void(bool*)>      m_notify             = &default_notify;
-    std::function<void(buffer_t&&)> m_move               = [](buffer_t&&) {};
-    std::function<void()>           m_exit               = []() {};
-    buffer_t                        m_buffer             = {};
-    allocator_t                     m_alloc;
-    std::vector<timer_pointer_t>    m_timers = {};
-    std::string                     m_label  = {};
+    using notify_func_t = std::function<void(bool*)>;
+    using move_func_t   = std::function<void(this_type*, buffer_t&&)>;
+
+    int                          m_verbose     = tim::settings::verbose();
+    int                          m_flags       = SA_RESTART | SA_SIGINFO;
+    int                          m_pid         = process::get_id();
+    int64_t                      m_tid         = -1;
+    sig_atomic_t                 m_sig_lock    = 0;
+    size_t                       m_idx         = get_counter()++;
+    size_t                       m_buffer_size = trait::buffer_size<this_type>::value;
+    size_t                       m_count       = 0;
+    sigaction_t                  m_custom_sigaction   = {};
+    sigaction_t                  m_original_sigaction = {};
+    bundle_type*                 m_last               = nullptr;
+    array_t                      m_data               = {};
+    notify_func_t                m_notify             = &default_notify;
+    move_func_t                  m_move               = [](this_type*, buffer_t&&) {};
+    buffer_t                     m_buffer             = {};
+    std::shared_ptr<allocator_t> m_alloc              = {};
+    std::vector<timer_pointer_t> m_timers             = {};
+    std::string                  m_label              = {};
 
 private:
     struct timer_data
@@ -541,10 +537,10 @@ private:
     }
 
     template <typename Tp = fixed_size_t<N>, enable_if_t<Tp::value> = 0>
-    void _init_sampler(int64_t _tid = threading::get_id());
+    void _init_sampler();
 
     template <typename Tp = fixed_size_t<N>, enable_if_t<!Tp::value> = 0>
-    void _init_sampler(int64_t _tid = threading::get_id());
+    void _init_sampler();
 
 public:
     static timer_data& get_default_config()
