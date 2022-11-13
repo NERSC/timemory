@@ -207,11 +207,11 @@ storage::remove_child(storage* _v, int64_t _tid)
     else if(!_explicit)
     {
         // only if TID is not provided
-        for(auto& itr : m_children)
+        for(auto& citr : m_children)
         {
-            auto vitr = itr.second.find(_v);
-            if(vitr != itr.second.end())
-                itr.second.erase(vitr);
+            auto vitr = citr.second.find(_v);
+            if(vitr != citr.second.end())
+                citr.second.erase(vitr);
         }
     }
 }
