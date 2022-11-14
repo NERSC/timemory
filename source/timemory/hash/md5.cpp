@@ -22,22 +22,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef TIMEMORY_UTILITY_MD5_CPP_
-#define TIMEMORY_UTILITY_MD5_CPP_
+#ifndef TIMEMORY_HASH_MD5_CPP_
+#define TIMEMORY_HASH_MD5_CPP_
 
-#include "timemory/macros/os.hpp"
-#include "timemory/utility/macros.hpp"
+#include "timemory/hash/macros.hpp"
 
-#if !defined(TIMEMORY_UTILITY_HEADER_MODE)
-#    include "timemory/utility/md5.hpp"
+#if !defined(TIMEMORY_HASH_MD5_HPP_)
+#    include "timemory/hash/md5.hpp"
 #endif
 
 // system implementation headers
+#include <cstdint>
 #include <cstdio>
+#include <string>
 
 namespace tim
 {
-namespace md5
+inline namespace hash
 {
 namespace
 {
@@ -181,7 +182,7 @@ encode(uint8_t* output, const uint32_t* input, size_type len)
 //--------------------------------------------------------------------------------------//
 
 // nifty shortcut ctor, compute md5sum for string and finalize it right away
-TIMEMORY_UTILITY_INLINE
+TIMEMORY_HASH_INLINE
 md5sum::md5sum(const std::string& text)
 {
     update(text.c_str(), text.length());
@@ -191,7 +192,7 @@ md5sum::md5sum(const std::string& text)
 //--------------------------------------------------------------------------------------//
 
 // apply md5sum algo on a block
-TIMEMORY_UTILITY_INLINE
+TIMEMORY_HASH_INLINE
 void
 md5sum::transform(const uint8_t block[blocksize])
 {
@@ -283,7 +284,7 @@ md5sum::transform(const uint8_t block[blocksize])
 
 // md5sum block update operation. Continues an md5sum message-digest
 // operation, processing another message block
-TIMEMORY_UTILITY_INLINE
+TIMEMORY_HASH_INLINE
 md5sum&
 md5sum::update(const unsigned char* input, size_type length)
 {
@@ -322,7 +323,7 @@ md5sum::update(const unsigned char* input, size_type length)
 //--------------------------------------------------------------------------------------//
 
 // for convenience provide a verson with signed char
-TIMEMORY_UTILITY_INLINE
+TIMEMORY_HASH_INLINE
 md5sum&
 md5sum::update(const char* input, size_type length)
 {
@@ -333,7 +334,7 @@ md5sum::update(const char* input, size_type length)
 
 // md5sum finalization. Ends an md5sum message-digest operation, writing the
 // the message digest and zeroizing the context.
-TIMEMORY_UTILITY_INLINE
+TIMEMORY_HASH_INLINE
 md5sum&
 md5sum::finalize()
 {
@@ -373,7 +374,7 @@ md5sum::finalize()
 //--------------------------------------------------------------------------------------//
 
 // return hex representation of digest as string
-TIMEMORY_UTILITY_INLINE
+TIMEMORY_HASH_INLINE
 std::string
 md5sum::hexdigest() const
 {
@@ -390,7 +391,7 @@ md5sum::hexdigest() const
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_UTILITY_INLINE
+TIMEMORY_HASH_INLINE
 std::ostream&
 operator<<(std::ostream& out, md5sum md5)
 {
@@ -399,7 +400,7 @@ operator<<(std::ostream& out, md5sum md5)
 
 //--------------------------------------------------------------------------------------//
 
-TIMEMORY_UTILITY_INLINE
+TIMEMORY_HASH_INLINE
 std::string
 compute_md5(const std::string& inp)
 {
@@ -407,7 +408,7 @@ compute_md5(const std::string& inp)
 }
 
 //--------------------------------------------------------------------------------------//
-}  // namespace md5
+}  // namespace hash
 }  // namespace tim
 
 #endif

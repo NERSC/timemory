@@ -24,66 +24,14 @@
 
 #pragma once
 
-#include <array>
-#include <cstdint>
-#include <cstring>
-#include <iostream>
-#include <string>
+// relocated to this header
+#include "timemory/hash/md5.hpp"
 
 namespace tim
 {
 namespace md5
 {
-// helper function
-std::string
-compute_md5(const std::string& inp);
-
-// a small class for calculating MD5 hashes of strings or byte arrays
-//
-// usage: 1) feed it blocks of uchars with update()
-//      2) finalize()
-//      3) get hexdigest() string
-//      or
-//      MD5(std::string).hexdigest()
-//
-// assumes that char is 8 bit and int is 32 bit
-class md5sum
-{
-public:
-    using size_type                = uint32_t;  // must be 32bit
-    static constexpr int blocksize = 64;
-
-    md5sum(const std::string& text);
-    md5sum()              = default;
-    ~md5sum()             = default;
-    md5sum(const md5sum&) = default;
-    md5sum(md5sum&&)      = default;
-
-    md5sum& operator=(const md5sum&) = default;
-    md5sum& operator=(md5sum&&) = default;
-
-    md5sum&              update(const unsigned char* buf, size_type length);
-    md5sum&              update(const char* buf, size_type length);
-    md5sum&              finalize();
-    std::string          hexdigest() const;
-    friend std::ostream& operator<<(std::ostream&, md5sum md5);
-
-private:
-    void transform(const uint8_t block[blocksize]);
-
-    bool finalized = false;
-    // 64bit counter for number of bits (lo, hi)
-    std::array<uint32_t, 2>        count = { 0, 0 };
-    std::array<uint8_t, blocksize> buffer{};  // overflow bytes from last 64 byte chunk
-    // digest so far, initialized to magic initialization constants.
-    std::array<uint32_t, 4> state = { 0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476 };
-    std::array<uint8_t, 16> digest{};  // result
-};
+using hash::compute_md5;
+using md5sum = hash::md5sum;
 }  // namespace md5
 }  // namespace tim
-
-#include "timemory/utility/macros.hpp"
-
-#if defined(TIMEMORY_UTILITY_HEADER_MODE)
-#    include "timemory/utility/md5.cpp"
-#endif

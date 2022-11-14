@@ -237,7 +237,8 @@ get_hash_id(Tp&& _v)
 hash_value_t
 get_combined_hash_id(hash_value_t _lhs, hash_value_t _rhs)
 {
-    return (_lhs ^= _rhs + 0x9e3779b9 + (_lhs << 6) + (_lhs >> 2));
+    constexpr hash_value_t offset = 0x9e3779b97f4a7c17ul;
+    return (_lhs ^= _rhs + offset + (_lhs << 6) + (_lhs >> 2));
 }
 //
 //  compute the hash and combine it with an existing hash
