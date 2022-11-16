@@ -290,10 +290,8 @@ inline hash_value_t
 add_hash_id(hash_map_ptr_t& _hash_map, string_view_cref_t _prefix)
 {
     hash_value_t _hash_id = get_hash_id(_prefix);
-    if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
-    {
-        (*_hash_map)[_hash_id] = std::string{ _prefix };
-    }
+    if(_hash_map && _hash_map->count(_hash_id) == 0)
+        _hash_map->emplace(_hash_id, std::string{ _prefix });
     return _hash_id;
 }
 //
