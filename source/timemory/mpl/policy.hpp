@@ -264,6 +264,26 @@ struct output_archive<cereal::XMLOutputArchive, Api>
     }
 };
 #endif
+
+//--------------------------------------------------------------------------------------//
+#if defined(TIMEMORY_USE_YAML)
+///
+/// partial specialization for YAMLOutputArchive
+///
+template <typename Api>
+struct output_archive<cereal::YAMLOutputArchive, Api>
+{
+    using type    = cereal::YAMLOutputArchive;
+    using pointer = std::shared_ptr<type>;
+
+    static pointer get(std::ostream& os)
+    {
+        //  Option args: precision, spacing, indent size
+        //  The last two options are meaningless for the minimal writer
+        return std::make_shared<type>(os);
+    }
+};
+#endif
 //======================================================================================//
 
 template <typename Tp>

@@ -137,7 +137,7 @@ endif()
 # non-debug optimizations
 #
 timemory_add_interface_library(timemory-compile-extra "Extra optimization flags")
-if(NOT TIMEMORY_USE_COVERAGE)
+if(NOT TIMEMORY_USE_COVERAGE AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
     add_target_flag_if_avail(
         timemory-compile-extra "-finline-functions" "-funroll-loops" "-ftree-vectorize"
         "-ftree-loop-optimize" "-ftree-loop-vectorize")

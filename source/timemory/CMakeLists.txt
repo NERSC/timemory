@@ -57,6 +57,7 @@ timemory_build_intermediate_library(
     DEPENDS timemory::timemory-libunwind $<TARGET_EXISTS:timemory::timemory-shlwapi>)
 
 # core
+add_subdirectory(tpls)
 add_subdirectory(environment)
 add_subdirectory(hash)
 add_subdirectory(utility)

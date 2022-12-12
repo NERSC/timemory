@@ -407,6 +407,7 @@ timemory_add_option(
     TIMEMORY_BUILD_CALIPER "Enable building Caliper submodule (set to OFF for external)"
     ${_BUILD_CALIPER})
 timemory_add_option(TIMEMORY_BUILD_OMPT "Enable building OpenMP-Tools from submodule" OFF)
+timemory_add_option(TIMEMORY_BUILD_YAML "Enable building yaml-cpp from submodule" ON)
 timemory_add_option(TIMEMORY_BUILD_DYNINST
                     "Enable building Dyninst submodule (set to OFF for external)" OFF)
 timemory_add_option(
@@ -547,6 +548,7 @@ timemory_add_option(TIMEMORY_USE_LIKWID_NVMON "Enable LIKWID support for nvidia 
 timemory_add_option(TIMEMORY_USE_GOTCHA "Enable GOTCHA" ${_GOTCHA} CMAKE_DEFINE)
 timemory_add_option(TIMEMORY_USE_XML "Enable XML serialization support" ${_USE_XML}
                     CMAKE_DEFINE)
+timemory_add_option(TIMEMORY_USE_YAML "Enable YAML serialization support" ON CMAKE_DEFINE)
 timemory_add_option(TIMEMORY_USE_LIBUNWIND "Enable libunwind" ${_USE_LIBUNWIND}
                     CMAKE_DEFINE)
 timemory_add_option(

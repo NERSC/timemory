@@ -44,6 +44,8 @@ class PortableBinaryInputArchive;
 class PortableBinaryOutputArchive;
 class XMLInputArchive;
 class XMLOutputArchive;
+class YAMLInputArchive;
+class YAMLOutputArchive;
 // json are always included so no forward decl necessary
 }  // namespace cereal
 }  // namespace tim
@@ -52,6 +54,9 @@ class XMLOutputArchive;
 #include "timemory/tpls/cereal/cereal/archives/json.hpp"
 #if defined(TIMEMORY_USE_XML)
 #    include "timemory/tpls/cereal/cereal/archives/xml.hpp"
+#endif
+#if defined(TIMEMORY_USE_YAML)
+#    include "timemory/tpls/cereal/cereal/archives/yaml.hpp"
 #endif
 
 #if defined(__GNUC__) && (__GNUC__ > 7)

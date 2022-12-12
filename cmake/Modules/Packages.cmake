@@ -19,6 +19,7 @@ timemory_add_interface_library(
     timemory-precompiled-headers
     "Provides timemory-headers + precompiles headers if CMAKE_VERSION >= 3.16")
 timemory_add_interface_library(timemory-xml "Enables XML serialization support")
+timemory_add_interface_library(timemory-yaml "Enables XML serialization support")
 timemory_add_interface_library(
     timemory-extern
     "Enables pre-processor directive to ensure all extern templates are used")
@@ -563,6 +564,56 @@ endif()
 # ----------------------------------------------------------------------------------------#
 
 timemory_target_compile_definitions(timemory-xml INTERFACE TIMEMORY_USE_XML)
+
+if(TIMEMORY_BUILD_YAML)
+    timemory_checkout_git_submodule(
+        RELATIVE_PATH external/yaml-cpp
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        REPO_URL https://github.com/jrmadsen/yaml-cpp.git
+        REPO_BRANCH master)
+
+    add_library(timemory-yaml-cpp STATIC)
+    add_library(timemory::timemory-yaml-cpp ALIAS timemory-yaml-cpp)
+    file(GLOB yaml_cpp_sources ${PROJECT_SOURCE_DIR}/external/yaml-cpp/src/*.cpp)
+    file(GLOB yaml_cpp_headers ${PROJECT_SOURCE_DIR}/external/yaml-cpp/include/*.h
+         ${PROJECT_SOURCE_DIR}/external/yaml-cpp/include/node/*.h)
+    target_sources(timemory-yaml-cpp PRIVATE ${yaml_cpp_sources} ${yaml_cpp_headers})
+    target_compile_definitions(timemory-yaml-cpp PUBLIC YAML_CPP_STATIC_DEFINE=1)
+    target_include_directories(
+        timemory-yaml-cpp
+        PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/yaml-cpp/include>
+               $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/tpls>)
+
+    install(
+        TARGETS timemory-yaml-cpp
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/timemory/yaml-cpp
+        EXPORT ${PROJECT_NAME}-library-depends
+        OPTIONAL)
+
+    foreach(_header ${yaml_cpp_headers})
+        file(RELATIVE_PATH _relative ${PROJECT_SOURCE_DIR}/external/yaml-cpp/include
+             ${_header})
+        get_filename_component(_destpath ${_relative} DIRECTORY)
+        install(
+            FILES ${_header}
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory/tpls/${_destpath}
+            OPTIONAL)
+    endforeach()
+endif()
+
+if(TIMEMORY_USE_YAML)
+    timemory_target_compile_definitions(timemory-yaml INTERFACE TIMEMORY_USE_YAML
+                                        YAML_CPP_STATIC_DEFINE=1)
+    if(NOT TIMEMORY_BUILD_YAML)
+        find_package(yaml-cpp REQUIRED)
+        target_link_libraries(timemory-yaml INTERFACE yaml-cpp)
+    else()
+        target_include_directories(
+            timemory-yaml
+            INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/yaml-cpp/include>
+                      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/tpls>)
+    endif()
+endif()
 
 # ----------------------------------------------------------------------------------------#
 #
