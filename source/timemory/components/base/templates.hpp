@@ -110,21 +110,7 @@ template <typename Archive, typename Up,
 void
 base<Tp, Value>::load(Archive& ar, const unsigned int version)
 {
-    auto try_catch = [](Archive& arch, const char* key, auto& val) {
-        try
-        {
-            arch(cereal::make_nvp(key, val));
-        } catch(cereal::Exception& e)
-        {
-            if(settings::debug() || settings::verbose() > -1)
-                TIMEMORY_PRINTF_WARNING(stderr, "Warning! '%s' threw exception: %s\n",
-                                        key, e.what());
-        }
-    };
-
-    // bool _transient = get_is_transient();
-    // try_catch(ar, "is_transient", _transient);
-    try_catch(ar, "laps", laps);
+    laps_type::serialize(ar, version);
     data_type::serialize(ar, version);
     set_is_transient(true);  // assume always transient
 }

@@ -81,11 +81,11 @@ struct TIMEMORY_VISIBLE base_state;
 template <typename Tp>
 struct TIMEMORY_VISIBLE base_format;
 //
+template <typename Tp>
+struct TIMEMORY_VISIBLE base_units;
+//
 template <typename Tp, size_t Sz>
 struct TIMEMORY_VISIBLE base_data;
-//
-template <typename Tp, typename ValueT>
-struct TIMEMORY_VISIBLE base_units;
 //
 // generic static polymorphic base class
 template <typename Tp,

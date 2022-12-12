@@ -49,7 +49,7 @@ template <typename Tp, typename Value>
 void
 base<Tp, Value>::reset()
 {
-    laps = 0;
+    laps_type::reset();
     base_state::reset();
     data_type::reset();
 }
@@ -81,7 +81,7 @@ base<Tp, Value>::set_stopped()
 {
     if(get_is_running())
     {
-        ++laps;
+        laps_type::increment_laps(1);
         set_is_transient(true);
         set_is_running(false);
     }

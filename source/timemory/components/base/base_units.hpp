@@ -26,6 +26,7 @@
 
 #include "timemory/components/base/types.hpp"
 #include "timemory/macros/language.hpp"
+#include "timemory/mpl/concepts.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/settings/settings.hpp"
 #include "timemory/units.hpp"
@@ -36,194 +37,190 @@ namespace tim
 {
 namespace component
 {
-template <typename Tp, typename ValueT>
+//
+/// \struct tim::component::base_units<Tp>
+/// \tparam Tp the component type
+///
+/// \brief A helper base class for handling the units of the data in a component.
+///
+template <typename Tp>
 struct base_units
 {
     static constexpr bool is_assignable_v = trait::assignable_units<Tp>::value;
-    using value_type                      = typename trait::units<Tp>::type;
-    using display_type                    = typename trait::units<Tp>::display_type;
-    using value_return_type =
-        std::conditional_t<is_assignable_v, value_type&, value_type>;
-    using display_return_type =
-        std::conditional_t<is_assignable_v, display_type&, display_type>;
+    using units_value_type                = typename trait::units<Tp>::type;
+    using units_display_type              = typename trait::units<Tp>::display_type;
 
-    template <typename Up = Tp, typename UnitT = typename trait::units<Up>::type,
-              enable_if_t<std::is_arithmetic<UnitT>::value, int> = 0>
-    static value_return_type unit();
+    static decltype(auto) unit();
+    static decltype(auto) display_unit();
 
-    template <typename Up = Tp, typename UnitT = typename trait::units<Up>::display_type,
-              enable_if_t<std::is_same<UnitT, std::string>::value, int> = 0>
-    static display_return_type display_unit();
+    static decltype(auto) get_unit();
+    static decltype(auto) get_display_unit();
 
-    template <typename Up = Tp, typename UnitT = typename trait::units<Up>::type,
-              enable_if_t<std::is_arithmetic<UnitT>::value, int> = 0>
-    static value_type get_unit();
-
-    template <typename Up = Tp, typename UnitT = typename trait::units<Up>::display_type,
-              enable_if_t<std::is_same<UnitT, std::string>::value, int> = 0>
-    static display_type get_display_unit();
-
-    template <typename Up = Tp, enable_if_t<trait::assignable_units<Up>::value, int> = 0>
-    static void set_unit(value_type);
-
-    template <typename Up                                            = Tp,
-              enable_if_t<!trait::assignable_units<Up>::value, long> = 0>
-    static void set_unit(value_type);
-
-    template <typename Up = Tp, enable_if_t<trait::assignable_units<Up>::value, int> = 0>
-    static void set_display_unit(display_type);
-
-    template <typename Up                                            = Tp,
-              enable_if_t<!trait::assignable_units<Up>::value, long> = 0>
-    static void set_display_unit(display_type);
+    static void set_unit(units_value_type);
+    static void set_display_unit(units_display_type);
 
 private:
-    template <typename Up = Tp, typename UnitT = typename trait::units<Up>::type,
-              enable_if_t<std::is_arithmetic<UnitT>::value, int> = 0>
-    static value_type& value_impl();
-
-    template <typename Up = Tp, typename UnitT = typename trait::units<Up>::display_type,
-              enable_if_t<std::is_same<UnitT, std::string>::value, int> = 0>
-    static display_type& display_impl();
+    static void                base_units_update_impl();
+    static units_value_type&   base_units_value_impl();
+    static units_display_type& base_units_display_impl();
 };
 
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename ValueT>
-template <typename Up, typename UnitT, enable_if_t<std::is_arithmetic<UnitT>::value, int>>
-typename base_units<Tp, ValueT>::value_return_type
-base_units<Tp, ValueT>::unit()
+template <typename Tp>
+inline decltype(auto)
+base_units<Tp>::unit()
 {
-    return value_impl();
+    if constexpr(is_assignable_v)
+    {
+        return base_units_value_impl();
+    }
+    else
+    {
+        if constexpr(std::is_trivially_copyable<units_value_type>::value)
+        {
+            return units_value_type{ base_units_value_impl() };
+        }
+        else
+        {
+            return const_cast<const units_value_type&>(base_units_value_impl());
+        }
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename ValueT>
-template <typename Up, typename UnitT,
-          enable_if_t<std::is_same<UnitT, std::string>::value, int>>
-typename base_units<Tp, ValueT>::display_return_type
-base_units<Tp, ValueT>::display_unit()
+template <typename Tp>
+inline decltype(auto)
+base_units<Tp>::display_unit()
 {
-    return display_impl();
+    if constexpr(is_assignable_v)
+    {
+        return base_units_display_impl();
+    }
+    else
+    {
+        if constexpr(std::is_trivially_copyable<units_display_type>::value)
+        {
+            return units_display_type{ base_units_display_impl() };
+        }
+        else
+        {
+            return const_cast<const units_display_type&>(base_units_display_impl());
+        }
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename ValueT>
-template <typename Up, typename UnitT, enable_if_t<std::is_arithmetic<UnitT>::value, int>>
-typename base_units<Tp, ValueT>::value_type
-base_units<Tp, ValueT>::get_unit()
+template <typename Tp>
+inline void
+base_units<Tp>::base_units_update_impl()
 {
-    static bool _updated = false;
+    constexpr bool _supports_settings_config =
+        trait::uses_timing_units<Tp>::value || trait::uses_memory_units<Tp>::value;
 
-    if(_updated)
-        return Tp::unit();
-
-    auto* _settings = settings::instance();
-    if(!_settings)
-        return Tp::unit();
-    if(_settings->get_initialized())
-        _updated = true;
-
-    IF_CONSTEXPR(trait::uses_timing_units<Tp>::value)
+    if constexpr(_supports_settings_config)
     {
-        set_unit(std::get<1>(units::get_timing_unit(_settings->get_timing_units())));
-    }
-    IF_CONSTEXPR(trait::uses_memory_units<Tp>::value)
-    {
-        set_unit(std::get<1>(units::get_memory_unit(_settings->get_memory_units())));
-    }
+        const auto& _settings = settings::shared_instance();
+        if(!_settings || _settings->get_initialized())
+            return;
 
+        if constexpr(trait::uses_timing_units<Tp>::value)
+        {
+            auto&& _v = units::get_timing_unit(_settings->get_timing_units());
+            set_unit(std::get<1>(_v));
+            set_display_unit(std::get<0>(_v));
+        }
+        else if constexpr(trait::uses_memory_units<Tp>::value)
+        {
+            auto&& _v = units::get_memory_unit(_settings->get_memory_units());
+            set_unit(std::get<1>(_v));
+            set_display_unit(std::get<0>(_v));
+        }
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Tp>
+inline decltype(auto)
+base_units<Tp>::get_unit()
+{
+    base_units_update_impl();
     return Tp::unit();
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename ValueT>
-template <typename Up, typename UnitT,
-          enable_if_t<std::is_same<UnitT, std::string>::value, int>>
-typename base_units<Tp, ValueT>::display_type
-base_units<Tp, ValueT>::get_display_unit()
+template <typename Tp>
+inline decltype(auto)
+base_units<Tp>::get_display_unit()
 {
-    static bool _updated  = false;
-    static auto _settings = settings::shared_instance();
-
-    if(_updated)
-        return Tp::display_unit();
-    if(!_settings)
-        return Tp::display_unit();
-    if(_settings->get_initialized())
-        _updated = true;
-
-    IF_CONSTEXPR(trait::uses_timing_units<Tp>::value)
-    {
-        set_display_unit(
-            std::get<0>(units::get_timing_unit(_settings->get_timing_units())));
-    }
-    IF_CONSTEXPR(trait::uses_memory_units<Tp>::value)
-    {
-        set_display_unit(
-            std::get<0>(units::get_memory_unit(_settings->get_memory_units())));
-    }
-
+    base_units_update_impl();
     return Tp::display_unit();
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename ValueT>
-template <typename Up, enable_if_t<trait::assignable_units<Up>::value, int>>
-void
-base_units<Tp, ValueT>::set_unit(value_type _v)
+template <typename Tp>
+inline void
+base_units<Tp>::set_unit(units_value_type _v)
 {
-    Tp::unit() = std::move(_v);
+    if constexpr(is_assignable_v)
+    {
+        Tp::unit() = std::move(_v);
+    }
+    else
+    {
+        base_units_value_impl() = std::move(_v);
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename ValueT>
-template <typename Up, enable_if_t<!trait::assignable_units<Up>::value, long>>
-void
-base_units<Tp, ValueT>::set_unit(value_type _v)
+template <typename Tp>
+inline void
+base_units<Tp>::set_display_unit(units_display_type _v)
 {
-    value_impl() = std::move(_v);
+    if constexpr(is_assignable_v)
+    {
+        Tp::display_unit() = std::move(_v);
+    }
+    else
+    {
+        base_units_display_impl() = std::move(_v);
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename ValueT>
-template <typename Up, enable_if_t<trait::assignable_units<Up>::value, int>>
-void
-base_units<Tp, ValueT>::set_display_unit(display_type _v)
+template <typename Tp>
+typename base_units<Tp>::units_value_type&
+base_units<Tp>::base_units_value_impl()
 {
-    Tp::display_unit() = std::move(_v);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename ValueT>
-template <typename Up, enable_if_t<!trait::assignable_units<Up>::value, long>>
-void
-base_units<Tp, ValueT>::set_display_unit(display_type _v)
-{
-    display_impl() = std::move(_v);
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Tp, typename ValueT>
-template <typename Up, typename UnitT, enable_if_t<std::is_arithmetic<UnitT>::value, int>>
-typename base_units<Tp, ValueT>::value_type&
-base_units<Tp, ValueT>::value_impl()
-{
-    static value_type _v = []() -> value_type {
-        IF_CONSTEXPR(trait::uses_timing_units<Tp>::value) { return units::sec; }
-        IF_CONSTEXPR(trait::uses_memory_units<Tp>::value) { return units::megabyte; }
-        IF_CONSTEXPR(trait::uses_temperature_units<Tp>::value) { return 1; }
-        IF_CONSTEXPR(trait::uses_power_units<Tp>::value) { return units::watt; }
-        IF_CONSTEXPR(trait::uses_percent_units<Tp>::value) { return 1; }
+    static units_value_type _v = []() -> units_value_type {
+        if constexpr(trait::uses_timing_units<Tp>::value)
+        {
+            return units::sec;
+        }
+        else if constexpr(trait::uses_memory_units<Tp>::value)
+        {
+            return units::megabyte;
+        }
+        else if constexpr(trait::uses_temperature_units<Tp>::value)
+        {
+            return 1;
+        }
+        else if constexpr(trait::uses_power_units<Tp>::value)
+        {
+            return units::watt;
+        }
+        else if constexpr(trait::uses_percent_units<Tp>::value)
+        {
+            return 1;
+        }
         return 1;
     }();
     return _v;
@@ -231,31 +228,64 @@ base_units<Tp, ValueT>::value_impl()
 //
 //--------------------------------------------------------------------------------------//
 //
-template <typename Tp, typename ValueT>
-template <typename Up, typename UnitT,
-          enable_if_t<std::is_same<UnitT, std::string>::value, int>>
-typename base_units<Tp, ValueT>::display_type&
-base_units<Tp, ValueT>::display_impl()
+template <typename Tp>
+typename base_units<Tp>::units_display_type&
+base_units<Tp>::base_units_display_impl()
 {
-    static display_type _v = {};
-    if(_v.empty())
+    if constexpr(concepts::is_string_type<units_display_type>::value)
     {
-        IF_CONSTEXPR(trait::uses_timing_units<Tp>::value)
+        constexpr bool _is_std_string =
+            std::is_same<units_display_type, std::string>::value;
+        constexpr bool _is_std_string_view =
+            std::is_same<units_display_type, std::string_view>::value;
+
+        static std::string _init = []() {
+            std::string _value = {};
+            if(_value.empty())
+            {
+                if constexpr(trait::uses_timing_units<Tp>::value)
+                {
+                    _value = units::time_repr(unit());
+                }
+                else if constexpr(trait::uses_memory_units<Tp>::value)
+                {
+                    _value = units::mem_repr(unit());
+                }
+                else if constexpr(trait::uses_temperature_units<Tp>::value)
+                {
+                    _value = "degC";
+                }
+                else if constexpr(trait::uses_power_units<Tp>::value)
+                {
+                    _value = units::power_repr(unit());
+                }
+                else if constexpr(trait::uses_percent_units<Tp>::value)
+                {
+                    _value = "%";
+                }
+            }
+            return _value;
+        }();
+
+        if constexpr(_is_std_string)
         {
-            _v = units::time_repr(unit());
+            return _init;
         }
-        IF_CONSTEXPR(trait::uses_memory_units<Tp>::value)
+        else if constexpr(_is_std_string_view)
         {
-            _v = units::mem_repr(unit());
+            static auto _v = units_display_type{ _init };
+            return _v;
         }
-        IF_CONSTEXPR(trait::uses_temperature_units<Tp>::value) { _v = "degC"; }
-        IF_CONSTEXPR(trait::uses_power_units<Tp>::value)
+        else
         {
-            _v = units::power_repr(unit());
+            return _init.c_str();
         }
-        IF_CONSTEXPR(trait::uses_percent_units<Tp>::value) { _v = "%"; }
     }
-    return _v;
+    else
+    {
+        static units_display_type _v = {};
+        return _v;
+    }
 }
 }  // namespace component
 }  // namespace tim

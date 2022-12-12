@@ -26,6 +26,8 @@
 
 #include "timemory/components/base/base_data.hpp"
 #include "timemory/components/base/base_format.hpp"
+#include "timemory/components/base/base_iterator.hpp"
+#include "timemory/components/base/base_laps.hpp"
 #include "timemory/components/base/base_state.hpp"
 #include "timemory/components/base/base_units.hpp"
 #include "timemory/components/base/types.hpp"
@@ -41,9 +43,6 @@ namespace tim
 {
 namespace component
 {
-//
-template <typename Tp>
-using graph_iterator_t = typename graph<node::graph<Tp>>::iterator;
 //
 template <typename Tp>
 using graph_const_iterator_t = typename graph<node::graph<Tp>>::const_iterator;
@@ -94,23 +93,25 @@ struct empty_base
 ///
 template <typename Tp, typename Value>
 struct base
-: public trait::dynamic_base<Tp>::type
+: public concepts::component
+, public trait::dynamic_base<Tp>::type
 , private base_state
+, private base_laps<Tp>
+, private base_iterator<Tp>
 , private base_data_t<Tp, Value>
-, private base_units<Tp, Value>
+, private base_units<Tp>
 , private base_format<Tp>
-, public concepts::component
 {
-    using EmptyT = std::tuple<>;
-    template <typename U>
-    using vector_t = std::vector<U>;
+    using EmptyT = null_type;
 
 public:
     static constexpr bool is_component = true;
     using Type                         = Tp;
     using value_type                   = Value;
     using format_type                  = base_format<Tp>;
-    using units_type                   = base_units<Tp, Value>;
+    using units_type                   = base_units<Tp>;
+    using laps_type                    = base_laps<Tp>;
+    using iterator_type                = base_iterator<Tp>;
     using data_type                    = base_data_t<Tp, Value>;
     using accum_type                   = typename data_type::accum_type;
     using last_type                    = typename data_type::last_type;
@@ -121,8 +122,7 @@ public:
     using base_type         = base<Tp, Value>;
     using base_storage_type = tim::base::storage;
     using storage_type      = storage<Tp, Value>;
-    using graph_iterator    = graph_iterator_t<Tp>;
-    using state_t           = state<this_type>;
+    using state_type        = state<this_type>;
     using statistics_policy = policy::record_statistics<Tp, Value>;
     using fmtflags          = std::ios_base::fmtflags;
 
@@ -235,11 +235,6 @@ public:
     static void add_sample(Vp&&);  /// add a sample
 
     /// get number of measurement
-    TIMEMORY_INLINE int64_t get_laps() const { return laps; }
-    TIMEMORY_INLINE auto    get_iterator() const { return graph_itr; }
-    TIMEMORY_INLINE void    set_laps(int64_t v) { laps = v; }
-    TIMEMORY_INLINE void    set_iterator(graph_iterator itr) { graph_itr = itr; }
-
     using base_state::get_depth_change;
     using base_state::get_is_flat;
     using base_state::get_is_invalid;
@@ -249,6 +244,10 @@ public:
     using data_type::get_accum;
     using data_type::get_last;
     using data_type::get_value;
+    using iterator_type::get_iterator;
+    using iterator_type::set_iterator;
+    using laps_type::get_laps;
+    using laps_type::set_laps;
 
     using base_state::set_depth_change;
     using base_state::set_is_flat;
@@ -278,14 +277,14 @@ protected:
 
     TIMEMORY_INLINE void plus(const base_type& rhs)
     {
-        laps += rhs.laps;
+        static_cast<laps_type&>(*this) += static_cast<const laps_type&>(rhs);
         if(rhs.get_is_transient())
             set_is_transient(rhs.get_is_transient());
     }
 
     TIMEMORY_INLINE void minus(const base_type& rhs)
     {
-        laps -= rhs.laps;
+        static_cast<laps_type&>(*this) -= static_cast<const laps_type&>(rhs);
         if(rhs.get_is_transient())
             set_is_transient(rhs.get_is_transient());
     }
@@ -295,12 +294,10 @@ public:
     TIMEMORY_INLINE auto minus(crtp::base, const base_type& rhs) { this->minus(rhs); }
 
 protected:
-    int64_t        laps      = 0;
-    graph_iterator graph_itr = graph_iterator{ nullptr };
-
     using data_type::accum;
     using data_type::last;
     using data_type::value;
+    using laps_type::laps;
 
 public:
     using format_type::get_format_flags;
@@ -331,11 +328,11 @@ public:
 //
 template <typename Tp>
 struct base<Tp, void>
-: public trait::dynamic_base<Tp>::type
+: public concepts::component
+, public trait::dynamic_base<Tp>::type
 , private base_state
-, public concepts::component
 {
-    using EmptyT = std::tuple<>;
+    using EmptyT = null_type;
 
 public:
     static constexpr bool is_component = true;
