@@ -201,38 +201,47 @@ fopen(std::string _fpath, const char* _mode)
 
 template <size_t MaxLen = TIMEMORY_PATH_MAX>
 inline std::string
-realpath(const std::string& _relpath, std::string* _resolved = nullptr)
+realpath(const std::string& _relpath, std::string* _resolved = nullptr,
+         bool _warn_on_fail = true)
 {
     auto _len = std::min<size_t>(_relpath.length(), TIMEMORY_PATH_MAX);
 
-    char _buffer[TIMEMORY_PATH_MAX];
-    memset(_buffer, '\0', sizeof(_buffer) * sizeof(char));
-    strncpy(_buffer, _relpath.data(), _len);
+    char        _buffer[TIMEMORY_PATH_MAX] = { '\0' };
+    const char* _result                    = _buffer;
 
 #if defined(TIMEMORY_UNIX)
     if(::realpath(_relpath.c_str(), _buffer) == nullptr)
     {
         auto _err = errno;
-        TIMEMORY_PRINTF_WARNING(stderr, "realpath failed for '%s' :: %s\n", _relpath,
-                                strerror(_err));
+        errno     = 0;
+        if(_warn_on_fail)
+        {
+            TIMEMORY_PRINTF_WARNING(stderr, "realpath failed for '%s' :: %s\n", _relpath,
+                                    strerror(_err));
+        }
+        _result = _relpath.data();
     }
 #else
     if(_fullpath(_buffer, _relpath.c_str(), _len) == nullptr)
     {
-        TIMEMORY_PRINTF_WARNING(stderr, "fullpath failed for '%s'\n");
+        if(_warn_on_fail)
+        {
+            TIMEMORY_PRINTF_WARNING(stderr, "fullpath failed for '%s'\n");
+        }
+        _result = _relpath.data();
     }
 #endif
 
     if(_resolved)
     {
         _resolved->clear();
-        _len = strnlen(_buffer, TIMEMORY_PATH_MAX);
+        _len = strnlen(_result, TIMEMORY_PATH_MAX);
         _resolved->resize(_len);
         for(size_t i = 0; i < _len; ++i)
-            (*_resolved)[i] = _buffer[i];
+            (*_resolved)[i] = _result[i];
     }
 
-    return (_resolved) ? *_resolved : std::string{ _buffer };
+    return (_resolved) ? *_resolved : std::string{ _result };
 }
 }  // namespace filepath
 }  // namespace tim
