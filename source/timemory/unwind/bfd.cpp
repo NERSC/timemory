@@ -26,8 +26,8 @@
 
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
+#include "timemory/log/macros.hpp"
 #include "timemory/settings/settings.hpp"
-#include "timemory/unwind/addr2line.hpp"
 
 #include <cstdarg>
 #include <mutex>
@@ -138,9 +138,26 @@ bfd_file::open(const std::string& _v)
 
     auto* _data = bfd_openr(_v.c_str(), nullptr);
     if(_data)
+    {
         _data->flags |= BFD_DECOMPRESS;
-    if(_data && bfd_check_format(_data, bfd_object) == 0)
-        return nullptr;
+        if(!bfd_check_format(_data, bfd_object) && !bfd_check_format(_data, bfd_archive))
+        {
+            auto _err = bfd_get_error();
+            if(get_bfd_verbose() >= 2)
+            {
+                TIMEMORY_PRINTF_INFO(stderr, "[%i][%li] BFD info: %s\n",
+                                     process::get_id(), threading::get_id(),
+                                     bfd_errmsg(_err));
+            }
+            return nullptr;
+        }
+    }
+    else
+    {
+        auto _err = bfd_get_error();
+        TIMEMORY_PRINTF_INFO(stderr, "[%i][%li] BFD info: %s\n", process::get_id(),
+                             threading::get_id(), bfd_errmsg(_err));
+    }
     return _data;
 }
 
@@ -150,26 +167,33 @@ bfd_file::read_symtab()
     if(!data)
         return bfd_error(name.c_str());
 
-    bfd_boolean dynamic = FALSE;
-
     bfd* _data = static_cast<bfd*>(data);
     if((bfd_get_file_flags(_data) & HAS_SYMS) == 0)
         return bfd_error(bfd_get_filename(_data));
 
-    auto storage = bfd_get_symtab_upper_bound(_data);
-    if(storage < 0L)
+    auto _nbytes_sym = bfd_get_symtab_upper_bound(_data);
+    auto _nbytes_dyn = bfd_get_dynamic_symtab_upper_bound(_data);
+    if(_nbytes_sym < 0L && _nbytes_dyn <= 0)
         return bfd_error(bfd_get_filename(_data));
-    else if(storage == 0L)
-    {
-        storage = bfd_get_dynamic_symtab_upper_bound(_data);
-        dynamic = TRUE;
-    }
 
-    auto* _syms    = new asymbol*[storage];
-    auto  symcount = (dynamic != 0) ? bfd_canonicalize_dynamic_symtab(_data, _syms)
-                                   : bfd_canonicalize_symtab(_data, _syms);
+    using nbytes_type = decltype(_nbytes_sym);
+    auto _nbytes =
+        std::max<nbytes_type>(_nbytes_sym, 0) + std::max<nbytes_type>(_nbytes_dyn, 0);
 
-    if(symcount < 0)
+    // if(nbytes <= 0)
+    //    return bfd_error(bfd_get_filename(_data));
+
+    auto*   _syms     = new asymbol*[_nbytes];
+    int64_t _num_syms = 0;
+    int64_t _num_dyns = 0;
+
+    if(_nbytes_sym > 0)
+        _num_syms = bfd_canonicalize_symtab(_data, _syms);
+    if(_nbytes_dyn > 0)
+        _num_dyns = bfd_canonicalize_dynamic_symtab(_data, _syms + _num_syms);
+    nsyms = _num_syms + _num_dyns;
+
+    if(nsyms < 0)
     {
         delete[] _syms;
         return bfd_error(bfd_get_filename(_data));
@@ -178,6 +202,31 @@ bfd_file::read_symtab()
     syms = reinterpret_cast<void**>(_syms);
 
     return 0;
+}
+
+std::vector<bfd_file::symbol>
+bfd_file::get_symbols(bool _include_undefined) const
+{
+    auto _syms = std::vector<bfd_file::symbol>{};
+    _syms.reserve(nsyms);
+    for(int64_t i = 0; i < nsyms; ++i)
+    {
+        auto* _sym = reinterpret_cast<asymbol**>(syms)[i];
+        if(_sym)
+        {
+            const auto* _name    = bfd_asymbol_name(_sym);
+            auto*       _section = bfd_asymbol_section(_sym);
+            auto        _vmaddr  = bfd_asymbol_value(_sym);
+            if(_vmaddr <= 0 && !_include_undefined)
+                continue;
+            _syms.emplace_back(symbol{ _vmaddr, static_cast<void*>(_section),
+                                       std::string_view{ _name } });
+        }
+    }
+    std::sort(_syms.begin(), _syms.end(),
+              [](auto _lhs, auto _rhs) { return (_lhs.address < _rhs.address); });
+    _syms.shrink_to_fit();
+    return _syms;
 }
 
 #else

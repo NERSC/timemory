@@ -28,8 +28,11 @@
 #include "timemory/log/macros.hpp"
 #include "timemory/unwind/types.hpp"
 
+#include <cstdint>
 #include <string>
+#include <string_view>
 #include <utility>
+#include <vector>
 
 namespace tim
 {
@@ -48,6 +51,13 @@ set_bfd_verbose(int);
 
 struct bfd_file
 {
+    struct symbol
+    {
+        uintptr_t        address = 0;
+        void*            section = nullptr;
+        std::string_view name    = {};
+    };
+
     explicit bfd_file(std::string);
     ~bfd_file();
 
@@ -58,29 +68,46 @@ struct bfd_file
 
     operator bool() const { return is_good(); }
 
-    std::string name = {};
-    void*       data = nullptr;
-    void**      syms = nullptr;
+    std::vector<symbol> get_symbols(bool _include_undefined = false) const;
+
+    int64_t     nsyms = 0;
+    std::string name  = {};
+    void*       data  = nullptr;
+    void**      syms  = nullptr;
 };
 
 #else
 
 struct bfd_file
 {
+    struct symbol
+    {
+        uintptr_t        address = 0;
+        void*            section = nullptr;
+        std::string_view name    = {};
+    };
+
     explicit bfd_file(std::string) {}
     ~bfd_file() = default;
 
     static void* open(const std::string&) { return nullptr; }
     static int   read_symtab() { return -1; }
     static bool  is_good() { return false; }
+    static auto  get_symbols(bool _include_undefined = false) const;
 
     operator bool() const { return false; }
 
-    std::string_view name = {};
-    void*            data = nullptr;
-    void**           syms = nullptr;
+    int64_t          nsyms = 0;
+    std::string_view name  = {};
+    void*            data  = nullptr;
+    void**           syms  = nullptr;
 };
 
+inline auto
+bfd_file::get_symbols(bool) const
+{
+    return std::vector<symbol>{};
+}
 #endif
 }  // namespace unwind
 }  // namespace tim
