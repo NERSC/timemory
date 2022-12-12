@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/defines.h"
+#include "timemory/hash/types.hpp"
 #include "timemory/macros/compiler.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/macros/os.hpp"
@@ -75,9 +76,10 @@ struct stack
     auto&       at(size_t _idx) { return call_stack.at(_idx); }
     const auto& at(size_t _idx) const { return call_stack.at(_idx); }
 
-    size_t size() const;
-    bool   valid() const { return size() > 0; }
-    bool   empty() const { return size() == 0; }
+    size_t       size() const;
+    bool         valid() const { return size() > 0; }
+    bool         empty() const { return size() == 0; }
+    hash_value_t hash(hash_value_t = 1) const;
 
     template <typename Tp>
     auto& emplace_back(Tp&&);
@@ -111,22 +113,21 @@ struct stack
     template <size_t RhsN>
     bool operator==(stack<RhsN> _rhs) const;
 
-    template <typename ArchiveT>
-    void save(ArchiveT& ar, const unsigned) const
-    {
-        auto _data = get();
-        ar(cereal::make_nvp("regnum", regnum), cereal::make_nvp("data", _data));
-    }
+    template <size_t RhsN>
+    bool operator!=(stack<RhsN> _v) const;
 
     template <typename ArchiveT>
-    void load(ArchiveT& ar, const unsigned)
-    {
-        auto _data = std::vector<processed_entry>{};
-        ar(cereal::make_nvp("regnum", regnum), cereal::make_nvp("data", _data));
-        size_t _idx = 0;
-        for(const auto& itr : _data)
-            call_stack.at(_idx++) = entry{ itr.address };
-    }
+    void save(ArchiveT& ar, const unsigned) const;
+
+    template <typename ArchiveT>
+    void load(ArchiveT& ar, const unsigned);
+
+    static hash_value_t hash(stack<N> _v, hash_value_t _init = 1);
+
+private:
+    template <size_t... Idx>
+    static hash_value_t compute_hash(stack<N>     _v, std::index_sequence<Idx...>,
+                                     hash_value_t _init = 1);
 };
 //
 template <size_t N>
@@ -137,6 +138,13 @@ stack<N>::size() const
     for(auto&& itr : call_stack)
         _n += (itr) ? 1 : 0;
     return _n;
+}
+//
+template <size_t N>
+inline hash_value_t
+stack<N>::hash(hash_value_t _init) const
+{
+    return compute_hash(*this, std::make_index_sequence<N>{}, _init);
 }
 //
 template <size_t N>
@@ -280,6 +288,54 @@ stack<N>::operator==(stack<RhsN> _rhs) const
         auto _common = get_common_stack(*this, _rhs);
         return (std::get<0>(_common) == std::get<1>(_common));
     }
+}
+//
+template <size_t N>
+template <size_t RhsN>
+inline bool
+stack<N>::operator!=(stack<RhsN> _v) const
+{
+    return !(*this == _v);
+}
+//
+template <size_t N>
+template <typename ArchiveT>
+void
+stack<N>::save(ArchiveT& ar, const unsigned) const
+{
+    auto _data = get();
+    ar(cereal::make_nvp("regnum", regnum), cereal::make_nvp("data", _data));
+}
+//
+template <size_t N>
+template <typename ArchiveT>
+void
+stack<N>::load(ArchiveT& ar, const unsigned)
+{
+    auto _data = std::vector<processed_entry>{};
+    ar(cereal::make_nvp("regnum", regnum), cereal::make_nvp("data", _data));
+    size_t _idx = 0;
+    for(const auto& itr : _data)
+        call_stack.at(_idx++) = entry{ itr.address };
+}
+//
+template <size_t N>
+inline hash_value_t
+stack<N>::hash(stack<N> _v, hash_value_t _init)
+{
+    return compute_hash(std::move(_v), std::make_index_sequence<N>{}, _init);
+}
+//
+template <size_t N>
+template <size_t... Idx>
+inline hash_value_t
+stack<N>::compute_hash(stack<N> _v, std::index_sequence<Idx...>, hash_value_t _init)
+{
+    static_assert(sizeof...(Idx) <= N, "Error! Index sequence exceeds size");
+    static_assert(std::is_trivially_copyable<stack<N>>::value,
+                  "Error! Not trivially copyable");
+    auto _access = [](auto&& _e) { return (_e) ? _e->address() : 0; };
+    return get_combined_hash_id(_init, TIMEMORY_FOLD_EXPRESSION(_access(_v[Idx])));
 }
 }  // namespace unwind
 }  // namespace tim
