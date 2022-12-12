@@ -102,7 +102,7 @@ template <size_t Nt, typename BundleT, typename DiffT>
 bool&
 gotcha<Nt, BundleT, DiffT>::get_default_ready()
 {
-    static bool _instance = false;
+    static bool _instance = true;
     return _instance;
 }
 
@@ -296,10 +296,6 @@ gotcha<Nt, BundleT, DiffT>::revert()
     if(_data.filled && _data.is_active)
     {
         _data.is_active = false;
-
-        error_t ret_prio = backend::gotcha::set_priority(_data.tool_id, -1);
-        check_error<N>(ret_prio, "get priority");
-
         if(get_suppresses().find(_data.tool_id) != get_suppresses().end())
         {
             _data.ready = false;
@@ -629,6 +625,9 @@ gotcha<Nt, BundleT, DiffT>::wrap(Args... _args)
     constexpr bool _static_data =
         trait::gotcha_trait<trait::static_data, this_type, N>::value;
 
+    if(!_data.is_active || _data.is_finalized)
+        return (*_func)(_args...);
+
     if constexpr(!_prevent_reentry)
     {
         if constexpr(!std::is_void<Ret>::value)
@@ -702,11 +701,11 @@ gotcha<Nt, BundleT, DiffT>::wrap(Args... _args)
         // protects against TLS calling malloc when malloc is wrapped
         static bool _protect_tls_alloc = false;
 
+        if(_protect_tls_alloc)
+            return (*_func)(_args...);
+
         if constexpr(!std::is_void<Ret>::value)
         {
-            if(_data.is_finalized || _protect_tls_alloc)
-                return (*_func)(_args...);
-
             _protect_tls_alloc = true;
             auto _suppress =
                 gotcha_suppression::get() || (_data.suppression && *_data.suppression);
@@ -769,12 +768,6 @@ gotcha<Nt, BundleT, DiffT>::wrap(Args... _args)
         }
         else
         {
-            if(_data.is_finalized || _protect_tls_alloc)
-            {
-                (*_func)(_args...);
-                return;
-            }
-
             _protect_tls_alloc = true;
             auto _suppress =
                 gotcha_suppression::get() || (_data.suppression && *_data.suppression);
@@ -866,6 +859,9 @@ gotcha<Nt, BundleT, DiffT>::replace_func(Args... _args)
     auto& _data = get_data()[N];
     auto  _func = reinterpret_cast<func_t>(gotcha_get_wrappee(_data.wrappee));
 
+    if(!_data.is_active || _data.is_finalized)
+        return (*_func)(_args...);
+
     if constexpr(!std::is_void<Ret>::value)
     {
         if constexpr(_prevent_reentry)
@@ -893,13 +889,11 @@ gotcha<Nt, BundleT, DiffT>::replace_func(Args... _args)
     }
     else
     {
-        if constexpr(_prevent_reentry)
-        {
-            if(!_data.ready)
-                (*_func)(_args...);
+        if(!_data.ready)
+            return (*_func)(_args...);
 
+        if constexpr(_prevent_reentry)
             _data.ready = false;
-        }
         if constexpr(_static_data)
         {
             static replace_type _bundle{ _data.tool_id };
@@ -937,21 +931,22 @@ gotcha<Nt, BundleT, DiffT>::fast_func(Args... _args)
     using func_t = Ret (*)(Args...);
     constexpr bool _static_data =
         trait::gotcha_trait<trait::static_data, this_type, N>::value;
+
+    auto& _data = get_data()[N];
+    auto  _func = reinterpret_cast<func_t>(gotcha_get_wrappee(_data.wrappee));
+    if(!_data.is_active)
+        return (*_func)(_args...);
+
     if constexpr(_static_data)
     {
         using static_data_type = policy::static_data<operator_type, this_type>;
         decltype(auto) _v =
             static_data_type{}(std::integral_constant<size_t, N>{}, get_data()[N]);
-        return std::invoke(
-            _v, reinterpret_cast<func_t>(gotcha_get_wrappee(get_data()[N].wrappee)),
-            std::forward<Args>(_args)...);
+        return std::invoke(_v, _func, std::forward<Args>(_args)...);
     }
     else
     {
-        return operator_type{}(
-            get_data()[N],
-            reinterpret_cast<func_t>(gotcha_get_wrappee(get_data()[N].wrappee)),
-            std::forward<Args>(_args)...);
+        return operator_type{}(_data, _func, std::forward<Args>(_args)...);
     }
 #else
     consume_parameters(_args...);

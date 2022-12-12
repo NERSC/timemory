@@ -433,7 +433,7 @@ private:
             constexpr bool set_data_v =
                 !quirk::has_quirk<quirk::static_data, BundleT>::value;
             auto* _obj = _comp.template get<DiffT>();
-            if(_obj)
+            if(_data.is_active && _obj)
             {
                 return gotcha_invoker<DiffT, Ret, set_data_v>{}(
                     *_obj, std::forward<gotcha_data>(_data), _func,
