@@ -45,6 +45,7 @@ struct processed_entry
     using file_map_t = std::unordered_map<std::string, std::shared_ptr<bfd_file>>;
 
     int            error        = 0;
+    unsigned int   lineno       = 0;
     unw_word_t     address      = 0;
     unw_word_t     offset       = 0;
     unw_word_t     line_address = 0;   // line address in file
@@ -69,22 +70,23 @@ struct processed_entry
         ar(cereal::make_nvp("error", error), cereal::make_nvp("address", address),
            cereal::make_nvp("offset", offset),
            cereal::make_nvp("line_address", line_address), cereal::make_nvp("name", name),
-           cereal::make_nvp("location", location), cereal::make_nvp("dlinfo", info));
+           cereal::make_nvp("location", location), cereal::make_nvp("lineno", lineno),
+           cereal::make_nvp("dlinfo", info));
     }
 };
 //
 inline bool
 processed_entry::operator==(const processed_entry& _v) const
 {
-    return std::tie(error, address, offset, name, location) ==
-           std::tie(_v.error, _v.address, _v.offset, _v.name, _v.location);
+    return std::tie(error, address, offset, lineno, name, location) ==
+           std::tie(_v.error, _v.address, _v.offset, _v.lineno, _v.name, _v.location);
 }
 
 inline bool
 processed_entry::operator<(const processed_entry& _v) const
 {
-    return std::tie(name, location, offset, address, error) <
-           std::tie(_v.name, _v.location, _v.offset, _v.address, _v.error);
+    return std::tie(name, location, lineno, offset, address, error) <
+           std::tie(_v.name, _v.location, _v.lineno, _v.offset, _v.address, _v.error);
 }
 
 inline bool

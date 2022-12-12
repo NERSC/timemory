@@ -89,7 +89,11 @@ processed_entry::construct(processed_entry& _v, file_map_t* _files, bool _prefer
 
         auto _bfd = _get_file(_v.location);
         if(_bfd && *_bfd)
+        {
             _v.lineinfo = addr2line(_bfd, { _v.line_address, _v.address });
+            if(_v.lineinfo && !_v.lineinfo.lines.empty())
+                _v.lineno = _v.lineinfo.lines.front().line;
+        }
     }
 }
 }  // namespace unwind
