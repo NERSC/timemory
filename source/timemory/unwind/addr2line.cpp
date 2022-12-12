@@ -26,6 +26,7 @@
 
 #include "timemory/log/macros.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/utility/filepath.hpp"
 
 #if defined(TIMEMORY_LINUX)
 #    include <linux/limits.h>
@@ -76,7 +77,7 @@ find_address_in_section(bfd* _inp, asection* section, void* data)
                             _inp, section, _syms, pc - vma, &_file, &_func, &_line,
                             &_info->discriminator) != 0);
         if(_info->found)
-            _info->add_lineinfo(_func, _file, _line);
+            _info->add_lineinfo(_func, _file, _line, false);
     }
 
     while(_info->found)
@@ -85,7 +86,7 @@ find_address_in_section(bfd* _inp, asection* section, void* data)
         const char*  _file = nullptr;
         const char*  _func = nullptr;
         if(bfd_find_inliner_info(_inp, &_file, &_func, &_line) != 0)
-            _info->add_lineinfo(_func, _file, _line);
+            _info->add_lineinfo(_func, _file, _line, true);
         else
             break;
     }
@@ -115,26 +116,21 @@ addr2line(std::shared_ptr<bfd_file> _file, const std::vector<uint64_t>& _address
 }
 
 void
-addr2line_info::add_lineinfo(const char* _func, const char* _file, unsigned int _line)
+addr2line_info::add_lineinfo(const char* _func, const char* _file, unsigned int _line,
+                             bool _inlined)
 {
-    auto _get_realpath = [](const char* _v) {
-        char _rv[PATH_MAX];
-        if(realpath(_v, _rv) == nullptr)
-            return std::string{};
-        return std::string{ _rv };
-    };
-
     size_t _len = 0;
-    _len += (_func) ? strlen(_func) : 0;
-    _len += (_file) ? strlen(_file) : 0;
+    _len += (_func) ? strnlen(_func, 8) : 0;
+    _len += (_file) ? strnlen(_file, 8) : 0;
     if(_len > 0 && _file)
     {
-        auto _lineinfo = addr2line_info::lineinfo{};
-        _lineinfo.line = _line;
+        auto _lineinfo    = addr2line_info::lineinfo{};
+        _lineinfo.inlined = _inlined;
+        _lineinfo.line    = _line;
         if(_func)
             _lineinfo.name = _func;
-        if(_file)
-            _lineinfo.location = _get_realpath(_file);
+        if(_file != nullptr)
+            _lineinfo.location = filepath::realpath(_file, nullptr, false);
         lines.emplace_back(_lineinfo);
     }
 }
@@ -148,7 +144,7 @@ addr2line(std::shared_ptr<bfd_file> _file, const std::vector<uint64_t>&)
 }
 
 void
-addr2line_info::add_lineinfo(const char*, const char*, unsigned int)
+addr2line_info::add_lineinfo(const char*, const char*, unsigned int, bool)
 {}
 
 #endif
@@ -158,6 +154,20 @@ addr2line_info::addr2line_info(std::shared_ptr<bfd_file> _v)
 {}
 
 addr2line_info::operator bool() const { return found && !lines.empty(); }
+
+addr2line_info::lineinfo
+addr2line_info::get(callback_t _cb) const
+{
+    if(_cb == nullptr)
+        _cb = [](const lineinfo& _v) { return (_v && _v.inlined == false); };
+
+    for(const auto& itr : lines)
+    {
+        if((*_cb)(itr))
+            return itr;
+    }
+    return lineinfo{};
+}
 
 addr2line_info
 addr2line(std::shared_ptr<bfd_file> _file, unsigned long address)

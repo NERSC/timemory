@@ -43,6 +43,9 @@ namespace unwind
 {
 struct addr2line_info
 {
+    struct lineinfo;
+    using callback_t = bool (*)(const lineinfo&);
+
     explicit addr2line_info(std::shared_ptr<bfd_file>);
 
     TIMEMORY_DEFAULT_OBJECT(addr2line_info)
@@ -51,12 +54,19 @@ struct addr2line_info
 
     struct lineinfo
     {
+        bool         inlined  = false;
         unsigned int line     = 0;
         std::string  name     = {};
         std::string  location = {};
+
+        operator bool() const;
     };
 
-    void add_lineinfo(const char* _func, const char* _file, unsigned int _line);
+    void add_lineinfo(const char* _func, const char* _file, unsigned int _line,
+                      bool _inlined);
+
+    /// default behavior returns the first non-inlined lineinfo instance
+    lineinfo get(callback_t _cb = nullptr) const;
 
     bool                      found         = false;
     unsigned int              discriminator = 0;
@@ -64,5 +74,10 @@ struct addr2line_info
     std::vector<lineinfo>     lines         = {};  // include inlines
     std::shared_ptr<bfd_file> input         = {};
 };
+
+inline addr2line_info::lineinfo::operator bool() const
+{
+    return (!name.empty() || !location.empty());
+}
 }  // namespace unwind
 }  // namespace tim
