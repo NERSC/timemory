@@ -58,7 +58,7 @@ processed_entry::construct(processed_entry& _v, file_map_t* _files, bool _prefer
         if(!_map.is_empty() && !_map.pathname.empty())
         {
             _v.location     = _map.pathname;
-            _v.line_address = (_v.address - _map.start_address) + _map.offset;
+            _v.line_address = (_v.address - _map.load_address) + _map.offset;
         }
         return _map.is_empty();
     };
