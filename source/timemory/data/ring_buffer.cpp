@@ -142,7 +142,7 @@ ring_buffer::init(size_t _size)
     m_write_count = 0;
 
     if(!m_use_mmap_explicit)
-        m_use_mmap = get_env("TIMEMORY_USE_MMAP", m_use_mmap);
+        m_use_mmap = get_env(TIMEMORY_SETTINGS_KEY("USE_MMAP"), m_use_mmap);
 
 #if defined(TIMEMORY_LINUX)
     if(!m_use_mmap)
@@ -199,11 +199,16 @@ TIMEMORY_DATA_INLINE
 void
 ring_buffer::set_use_mmap(bool _v)
 {
-    if(m_init)
+    if(!m_init)
+    {
+        m_use_mmap          = _v;
+        m_use_mmap_explicit = true;
+    }
+    else
+    {
         throw std::runtime_error("tim::base::ring_buffer::set_use_mmap(bool) cannot be "
                                  "called after initialization");
-    m_use_mmap          = _v;
-    m_use_mmap_explicit = true;
+    }
 }
 
 TIMEMORY_DATA_INLINE
