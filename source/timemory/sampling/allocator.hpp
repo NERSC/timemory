@@ -548,9 +548,12 @@ allocator<Tp>::execute(allocator* _alloc)
     {
         while(_pending.load() > 0)
         {
-            auto _new_buffer = buffer_vec_t{};
-            _new_buffer.reserve(_pending.load());
+            auto _preswap_pending = _pending.load();
+            auto _new_buffer      = buffer_vec_t{};
+            _new_buffer.reserve(_preswap_pending);
             _swap_buffer(_new_buffer);
+            if(_pending.load() == _preswap_pending)
+                --_pending;
         }
 
         auto _new_buffer = buffer_vec_t{};
