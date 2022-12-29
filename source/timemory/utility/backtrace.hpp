@@ -190,6 +190,58 @@ get_unw_stack(unw_frame_regnum_t _reg = UNW_REG_IP)
     return _stack;
 }
 //
+//
+template <size_t Depth, int64_t Offset = 0>
+TIMEMORY_NOINLINE inline auto
+get_unw_signal_frame_stack(unw_frame_regnum_t _reg = UNW_REG_IP)
+{
+    static_assert(Depth > 0, "Error !(Depth > 0)");
+    static_assert(Offset >= 0, "Error !(Offset >= 0)");
+
+    // destination
+    auto _stack = unwind::stack<Depth>{ _reg };
+
+    // Initialize cursor to current frame for local unwinding.
+    unw_getcontext(&_stack.context);
+    if(unw_init_local(&_stack.cursor, &_stack.context) < 0)
+        return _stack;
+
+    int     unw_ret  = 0;
+    int64_t tot_idx  = 0;
+    bool    found_sf = false;
+    while((unw_ret = unw_step(&_stack.cursor)) != 0)
+    {
+        if(unw_ret < 0)
+            continue;
+
+        if(unw_is_signal_frame(&_stack.cursor) > 0)
+        {
+            found_sf = true;
+            continue;
+        }
+
+        if(!found_sf)
+            continue;
+
+        auto _idx = tot_idx++;
+
+        // skip all frames less than the offset
+        if(_idx < Offset)
+            continue;
+        // break when _idx - Offset will be >= max size
+        if(_idx >= static_cast<int64_t>(Depth + Offset))
+            break;
+        _idx -= Offset;             // index in stack
+        auto _addr = unw_word_t{};  // instruction pointer
+        if(unw_get_reg(&_stack.cursor, _reg, &_addr) < 0)
+            continue;
+        if(_reg == UNW_REG_IP && _addr == 0)
+            break;
+        _stack.at(_idx) = { _addr, &_stack.cursor };
+    }
+    return _stack;
+}
+//
 #    else
 //
 template <size_t Depth, int64_t Offset = 1, bool WSignalFrame = false, typename Tp = int>
