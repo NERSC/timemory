@@ -2,9 +2,9 @@ name: continuous-integration
 
 on:
   push:
-    branches: [ master, develop, omnitrace ]
+    branches: [ master, develop, omnitrace, omnitrace-causal ]
   pull_request:
-    branches: [ master, develop ]
+    branches: [ master, develop, omnitrace ]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
