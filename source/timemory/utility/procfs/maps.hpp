@@ -51,13 +51,13 @@ struct maps
 
     maps(const std::vector<std::string>& _line);
 
-    size_t              start_address = 0;
-    size_t              end_address   = 0;
-    std::array<char, 4> permissions   = {};
-    size_t              offset        = 0;
-    std::string         device        = {};
-    size_t              inode         = {};
-    std::string         pathname      = {};
+    size_t              load_address = 0;
+    size_t              last_address = 0;
+    std::array<char, 4> permissions  = {};
+    size_t              offset       = 0;
+    std::string         device       = {};
+    size_t              inode        = {};
+    std::string         pathname     = {};
 
     template <typename ArchiveT>
     void serialize(ArchiveT&, const unsigned);
@@ -76,8 +76,8 @@ struct maps
 
     friend bool operator<(const maps& _lhs, const maps& _rhs)
     {
-        return std::tie(_lhs.start_address, _lhs.end_address, _lhs.offset, _lhs.inode,
-                        _lhs.pathname) < std::tie(_rhs.start_address, _rhs.end_address,
+        return std::tie(_lhs.load_address, _lhs.last_address, _lhs.offset, _lhs.inode,
+                        _lhs.pathname) < std::tie(_rhs.load_address, _rhs.last_address,
                                                   _rhs.offset, _rhs.inode, _rhs.pathname);
     }
 };
@@ -86,8 +86,8 @@ inline maps::maps(const std::vector<std::string>& _delim)
 {
     auto _addr_str = _delim.front();
     auto _addr     = delimit(_delim.front(), "-");
-    start_address  = std::stoull(_addr.front(), nullptr, 16);
-    end_address    = std::stoull(_addr.back(), nullptr, 16);
+    load_address   = std::stoull(_addr.front(), nullptr, 16);
+    last_address   = std::stoull(_addr.back(), nullptr, 16);
     auto _perm     = _delim.at(1);
     for(size_t i = 0; i < permissions.size(); ++i)
         permissions.at(i) = _perm.at(i);
@@ -101,14 +101,14 @@ inline maps::maps(const std::vector<std::string>& _delim)
 inline size_t
 maps::length() const
 {
-    return (end_address >= start_address) ? (end_address - start_address) : 0;
+    return (last_address >= load_address) ? (last_address - load_address) : 0;
 }
 
 inline bool
 maps::is_empty() const
 {
     // sum will be zero if default initialized
-    return ((start_address + end_address + offset + inode + device.length() +
+    return ((load_address + last_address + offset + inode + device.length() +
              pathname.length()) == 0);
 }
 
@@ -120,8 +120,8 @@ maps::serialize(ArchiveT& ar, const unsigned)
     for(size_t i = 0; i < permissions.size(); ++i)
         _perms.at(i) = permissions.at(i);
 
-    ar(cereal::make_nvp("start_address", TIMEMORY_JOIN("", std::hex, start_address)),
-       cereal::make_nvp("end_address", TIMEMORY_JOIN("", std::hex, end_address)),
+    ar(cereal::make_nvp("load_address", TIMEMORY_JOIN("", std::hex, load_address)),
+       cereal::make_nvp("last_address", TIMEMORY_JOIN("", std::hex, last_address)),
        cereal::make_nvp("permissions", _perms),
        cereal::make_nvp("offset", TIMEMORY_JOIN("", std::hex, offset)),
        cereal::make_nvp("device", device), cereal::make_nvp("inode", inode),
@@ -137,13 +137,13 @@ maps::is_file_mapping() const
 inline bool
 maps::contains(size_t _addr) const
 {
-    return _addr >= start_address && _addr < end_address;
+    return _addr >= load_address && _addr < last_address;
 }
 
 inline bool
 maps::is_contiguous_with(const maps& _v) const
 {
-    return ((end_address == _v.start_address || start_address == _v.end_address) &&
+    return ((last_address == _v.load_address || load_address == _v.last_address) &&
             pathname == _v.pathname);
 }
 
@@ -152,9 +152,9 @@ maps::operator+=(const maps& _v)
 {
     if(is_contiguous_with(_v))
     {
-        start_address = std::min<size_t>(start_address, _v.start_address);
-        end_address   = std::max<size_t>(end_address, _v.end_address);
-        offset        = std::min<size_t>(offset, _v.offset);
+        load_address = std::min<size_t>(load_address, _v.load_address);
+        last_address = std::max<size_t>(last_address, _v.last_address);
+        offset       = std::min<size_t>(offset, _v.offset);
         for(size_t i = 0; i < permissions.size(); ++i)
         {
             // downgrade permissions if not equal
@@ -268,7 +268,7 @@ find_map(uint64_t _addr, pid_t _pid = process::get_target_id())
         auto _v = get_maps(_pid);
         for(const auto& itr : _v)
         {
-            if(_addr >= itr.start_address && _addr <= itr.end_address)
+            if(_addr >= itr.load_address && _addr <= itr.last_address)
                 return itr;
         }
         return maps{};
