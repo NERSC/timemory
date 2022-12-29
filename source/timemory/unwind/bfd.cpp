@@ -30,6 +30,7 @@
 #include "timemory/settings/settings.hpp"
 
 #include <cstdarg>
+#include <fcntl.h>
 #include <mutex>
 
 #if defined(TIMEMORY_USE_BFD)
@@ -119,8 +120,10 @@ bfd_message(int _lvl, std::string_view _msg)
 
 bfd_file::bfd_file(std::string _inp)
 : name{ std::move(_inp) }
-, data{ open(name) }
+, data{ open(name, &fd) }
 {
+    if(data != nullptr && fd < 0)
+        throw std::runtime_error("fd not set");
     read_symtab();
 }
 
@@ -129,14 +132,42 @@ bfd_file::~bfd_file()
     delete[] reinterpret_cast<asymbol**>(syms);
     if(data)
         bfd_close(static_cast<bfd*>(data));
+    if(fd > 0)
+        ::close(fd);
 }
 
 void*
-bfd_file::open(const std::string& _v)
+bfd_file::open(const std::string& _v, int* _fd)
 {
     initialize_bfd();
 
-    auto* _data = bfd_openr(_v.c_str(), nullptr);
+    bfd* _data = nullptr;
+    if(_fd)
+    {
+        auto _fd_v = ::open(_v.c_str(), O_RDONLY);
+        if(_fd_v < 0)
+        {
+            auto _err = errno;
+            errno     = 0;
+            if(get_bfd_verbose() >= 1)
+            {
+                TIMEMORY_PRINTF_INFO(
+                    stderr, "[%i][%li][bfd_file] Error opening '%s': %s\n",
+                    process::get_id(), threading::get_id(), _v.c_str(), strerror(_err));
+            }
+            return nullptr;
+        }
+        else
+        {
+            *_fd  = _fd_v;
+            _data = bfd_fdopenr(_v.c_str(), nullptr, _fd_v);
+        }
+    }
+    else
+    {
+        _data = bfd_openr(_v.c_str(), nullptr);
+    }
+
     if(_data)
     {
         _data->flags |= BFD_DECOMPRESS;

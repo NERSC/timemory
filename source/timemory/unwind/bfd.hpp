@@ -61,7 +61,7 @@ struct bfd_file
     explicit bfd_file(std::string);
     ~bfd_file();
 
-    static void* open(const std::string&);
+    static void* open(const std::string&, int* _fd = nullptr);
 
     int  read_symtab();
     bool is_good() const { return (data != nullptr) && !name.empty(); }
@@ -70,6 +70,7 @@ struct bfd_file
 
     std::vector<symbol> get_symbols(bool _include_undefined = false) const;
 
+    int         fd    = -1;
     int64_t     nsyms = 0;
     std::string name  = {};
     void*       data  = nullptr;
@@ -93,10 +94,11 @@ struct bfd_file
     static void* open(const std::string&) { return nullptr; }
     static int   read_symtab() { return -1; }
     static bool  is_good() { return false; }
-    static auto  get_symbols(bool _include_undefined = false) const;
+    static auto  get_symbols(bool _include_undefined = false);
 
     operator bool() const { return false; }
 
+    int              fd    = -1;
     int64_t          nsyms = 0;
     std::string_view name  = {};
     void*            data  = nullptr;
@@ -104,7 +106,7 @@ struct bfd_file
 };
 
 inline auto
-bfd_file::get_symbols(bool) const
+bfd_file::get_symbols(bool)
 {
     return std::vector<symbol>{};
 }
