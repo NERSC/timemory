@@ -43,6 +43,7 @@
 #include "timemory/log/color.hpp"
 #include "timemory/log/logger.hpp"
 #include "timemory/signals/signal_settings.hpp"
+#include "timemory/unwind/backtrace.hpp"
 #include "timemory/unwind/bfd.hpp"
 #include "timemory/unwind/processed_entry.hpp"
 #include "timemory/utility/backtrace.hpp"
@@ -130,20 +131,6 @@ termination_signal_handler(int _sig, siginfo_t* _sinfo, void* _context)
         kill(_pid, _sig);
     }
 }
-
-//--------------------------------------------------------------------------------------//
-
-#if defined(TIMEMORY_USE_BFD)
-
-using file_map_t = std::unordered_map<std::string, std::shared_ptr<unwind::bfd_file>>;
-
-TIMEMORY_SIGNALS_INLINE file_map_t&
-                        tim_signal_file_maps()
-{
-    static file_map_t _v = {};
-    return _v;
-}
-#endif
 
 //--------------------------------------------------------------------------------------//
 
@@ -300,231 +287,7 @@ termination_signal_message(int _sig, siginfo_t* _sinfo, std::ostream& os)
         message << ".";
     }
 
-    char prefix[buffer_size];
-    memset(prefix, '\0', buffer_size * sizeof(char));
-    sprintf(prefix, "[PID=%i][TID=%i]", (int) process::get_id(),
-            (int) threading::get_id());
-
-    /*
-    struct template_data
-    {
-        std::string      value  = {};
-        std::string_view name   = {};
-        size_t           pos    = std::string::npos;
-        size_t           length = 0;
-
-        template_data(std::string&& _v, std::string_view _name)
-        : value{ std::move(_v) }
-        , name{ _name }
-        {
-            pos       = value.find(name);
-            size_t _n = 0;
-            if(pos != std::string::npos)
-            {
-                for(size_t i = pos + name.length(); i < value.length(); ++i)
-                {
-                    if(value.at(i) == '<')
-                        ++_n;
-                    else if(_n > 0 && value.at(i) == '>')
-                        --_n;
-                    if(_n == 0)
-                    {
-                        length = i - pos + 1;
-                        break;
-                    }
-                }
-            }
-        }
-
-        operator bool() const
-        {
-            return !name.empty() && pos > 2 && pos < value.length() && length > 0;
-        }
-    };*/
-
-    auto _replace = [](std::string _v, const std::string& _old, const std::string& _new) {
-        // start at 1 to avoid replacing when it starts with string, e.g. do not replace:
-        //      std::__cxx11::basic_string<...>::~basic_string
-        auto _pos = size_t{ 1 };
-        while((_pos = _v.find(_old, _pos)) != std::string::npos)
-            _v = _v.replace(_pos, _old.length(), _new);
-        return _v;
-    };
-
-    bool _do_patch =
-        std::getenv(TIMEMORY_SETTINGS_PREFIX "BACKTRACE_DISABLE_PATCH") == nullptr;
-    auto _patch_demangled = [_replace, _do_patch](std::string _v) {
-        _v =
-            (_do_patch)
-                ? _replace(
-                      _replace(_replace(_replace(std::move(_v), demangle<std::string>(),
-                                                 "std::string"),
-                                        demangle<std::string_view>(), "std::string_view"),
-                               " > >", ">>"),
-                      "> >", ">>")
-                : _v;
-        return _v;
-        /*
-        auto _data = template_data{ std::move(_v), "std::allocator" };
-        do
-        {
-            _data = template_data{ std::move(_data.value), "std::allocator" };
-            if(_data)
-                _data.value.replace(_data.pos, _data.length, "ALLOCATOR");
-        } while(_data);
-        return _data.value;*/
-    };
-
-    {
-        message << "\nBacktrace:\n";
-        message.flush();
-
-        size_t ntot = 0;
-        auto   bt   = timemory_get_backtrace<64, 3>();
-        for(const auto& itr : bt)
-        {
-            auto _len = strnlen(itr, buffer_size);
-            if(_len == 0 || _len >= buffer_size)
-                continue;
-            ++ntot;
-        }
-
-        for(size_t i = 0; i < bt.size(); ++i)
-        {
-            auto* itr  = bt.at(i);
-            auto  _len = strnlen(itr, buffer_size);
-            if(_len == 0 || _len >= buffer_size)
-                continue;
-            message << prefix << "[" << i << '/' << ntot << "] " << itr << "\n";
-            os << std::flush;
-        }
-    }
-
-    {
-        message << "\nBacktrace (demangled):\n";
-        message.flush();
-
-        size_t ntot = 0;
-        auto   bt   = get_native_backtrace<64, 3>();
-        for(const auto& itr : bt)
-        {
-            auto _len = strnlen(itr, buffer_size);
-            if(_len == 0 || _len >= buffer_size)
-                continue;
-            ++ntot;
-        }
-
-        for(size_t i = 0; i < bt.size(); ++i)
-        {
-            auto* itr  = bt.at(i);
-            auto  _len = strnlen(itr, buffer_size);
-            if(_len == 0 || _len >= buffer_size)
-                continue;
-            message << prefix << "[" << i << '/' << ntot << "] "
-                    << _patch_demangled(demangle_native_backtrace(itr)) << "\n";
-            os << std::flush;
-        }
-    }
-
-#if defined(TIMEMORY_USE_LIBUNWIND)
-    {
-        message << "\nBacktrace (demangled):\n";
-        message.flush();
-
-        size_t ntot = 0;
-        auto   bt   = get_unw_backtrace<64, 3>();
-        for(const auto& itr : bt)
-        {
-            auto _len = strnlen(itr, buffer_size);
-            if(_len == 0 || _len >= buffer_size)
-                continue;
-            ++ntot;
-        }
-
-        for(size_t i = 0; i < bt.size(); ++i)
-        {
-            auto* itr  = bt.at(i);
-            auto  _len = strnlen(itr, buffer_size);
-            if(_len == 0 || _len >= buffer_size)
-                continue;
-            auto _v = std::string{};
-            _v.resize(_len);
-            for(size_t j = 0; j < _len; ++j)
-                _v.at(j) = itr[j];
-            message << prefix << "[" << i << '/' << ntot << "] "
-                    << _patch_demangled(demangle_backtrace(_v)) << "\n";
-            os << std::flush;
-        }
-    }
-#    if defined(TIMEMORY_USE_BFD)
-    {
-        message << "\nBacktrace (lineinfo):\n";
-        message.flush();
-
-        unwind::set_bfd_verbose(8);
-        struct bt_line_info
-        {
-            bool        first    = false;
-            int64_t     index    = 0;
-            int64_t     line     = 0;
-            std::string name     = {};
-            std::string location = {};
-        };
-        size_t ntot   = 0;
-        auto   _bt    = get_unw_stack<64, 2>();
-        auto   _lines = std::vector<bt_line_info>{};
-        auto&  _files = tim_signal_file_maps();
-        for(const auto& itr : _bt)
-        {
-            if(!itr)
-                continue;
-            unwind::processed_entry _entry{};
-            _entry.address = itr->address();
-            _entry.name = itr->template get_name<1024, false>(_bt.context, &_entry.offset,
-                                                              &_entry.error);
-
-            unwind::processed_entry::construct(_entry, &_files, true);
-            int64_t _idx = ntot++;
-            if(_entry.lineinfo.found && !_entry.lineinfo.lines.empty())
-            {
-                bool _first = true;
-                // make sure the function at the top is the one that
-                // is shown in the other backtraces
-                auto _line_info = _entry.lineinfo.lines;
-                std::reverse(_line_info.begin(), _line_info.end());
-                for(const auto& litr : _line_info)
-                {
-                    _lines.emplace_back(bt_line_info{
-                        _first, _idx, int64_t{ litr.line },
-                        _patch_demangled(demangle(litr.name)), demangle(litr.location) });
-                    _first = false;
-                }
-            }
-            else
-            {
-                _lines.emplace_back(bt_line_info{ true, _idx, int64_t{ 0 },
-                                                  _patch_demangled(demangle(_entry.name)),
-                                                  demangle(_entry.location) });
-            }
-        }
-
-        for(const auto& itr : _lines)
-        {
-            auto _get_loc = [&]() -> std::string {
-                auto&& _loc = (itr.location.empty()) ? std::string{ "??" } : itr.location;
-                return (itr.line == 0) ? TIMEMORY_JOIN(":", _loc, "?")
-                                       : TIMEMORY_JOIN(":", _loc, itr.line);
-            };
-
-            if(itr.first)
-                message << prefix << "[" << itr.index << '/' << ntot << "]\n";
-
-            message << "    " << _src_color << "[" << _get_loc() << "]" << _fatal_color
-                    << " " << itr.name << "\n";
-        }
-    }
-#    endif
-#endif
+    unwind::detailed_backtrace<3>(os);
 
     os << "\n" << std::flush;
 
@@ -542,39 +305,6 @@ termination_signal_message(int _sig, siginfo_t* _sinfo, std::ostream& os)
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_SIGNALS_INLINE
-void
-update_file_maps()
-{
-#if defined(TIMEMORY_USE_BFD)
-    auto& _maps = procfs::get_maps(process::get_id(), true);
-    for(const auto& itr : _maps)
-    {
-        auto& _files = tim_signal_file_maps();
-        auto  _loc   = itr.pathname;
-        if(!_loc.empty() && filepath::exists(_loc))
-        {
-            auto _add_file = [&_files](const auto& _val) {
-                if(_files.find(_val) == _files.end())
-                {
-                    std::stringstream _msg{};
-                    _msg << "Reading '" << _val << "'...";
-                    unwind::bfd_message(2, _msg.str());
-                    _files.emplace(_val, std::make_shared<unwind::bfd_file>(_val));
-                    auto _val_real = filepath::realpath(_val);
-                    if(_val != _val_real)
-                        _files.emplace(_val_real, _files.at(_val));
-                }
-            };
-
-            _add_file(_loc);
-        }
-    }
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-TIMEMORY_SIGNALS_INLINE
 bool
 enable_signal_detection(signal_settings::signal_set_t             _sys_signals,
                         const signal_settings::signal_function_t& _func)
@@ -587,7 +317,7 @@ enable_signal_detection(signal_settings::signal_set_t             _sys_signals,
     }
 
     // call now to minimize allocations when delivering signals
-    update_file_maps();
+    unwind::update_file_maps();
 
     if(_sys_signals.empty())
     {
