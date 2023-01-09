@@ -22,18 +22,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/unwind/backtrace.hpp"
+#if !defined(TIMEMORY_UNWIND_BACKTRACE_HPP_)
+#    include "timemory/unwind/backtrace.hpp"
+#endif
 
 #include "timemory/defines.h"
 #include "timemory/log/logger.hpp"
 #include "timemory/process/process.hpp"
 #include "timemory/process/threading.hpp"
 #include "timemory/unwind/bfd.hpp"
+#include "timemory/unwind/macros.hpp"
 #include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/filepath.hpp"
 #include "timemory/utility/procfs/maps.hpp"
 #include "timemory/variadic/macros.hpp"
 
+#include <cstdlib>
 #include <memory>
 #include <ostream>
 
@@ -41,6 +45,7 @@ namespace tim
 {
 namespace unwind
 {
+TIMEMORY_UNWIND_INLINE
 file_map_t&
 library_file_maps()
 {
@@ -48,6 +53,7 @@ library_file_maps()
     return _v;
 }
 
+TIMEMORY_UNWIND_INLINE
 void
 update_file_maps()
 {
@@ -79,7 +85,7 @@ update_file_maps()
 }
 
 template <size_t OffsetV, size_t DepthV>
-void
+TIMEMORY_UNWIND_INLINE void
 detailed_backtrace(std::ostream& os, bool force_color)
 {
     static_assert(OffsetV >= 0 && OffsetV < 4,
@@ -92,6 +98,9 @@ detailed_backtrace(std::ostream& os, bool force_color)
     const auto* _fatal_color =
         (&os == &std::cerr || force_color) ? log::color::fatal() : "";
     auto message = log::stream(os, _fatal_color);
+
+    (void) _src_color;
+    (void) _fatal_color;
 
     char prefix[buffer_size];
     memset(prefix, '\0', buffer_size * sizeof(char));
@@ -275,15 +284,18 @@ detailed_backtrace(std::ostream& os, bool force_color)
 #endif
 }
 
-#define DETAILED_BACKTRACE_INSTANTIATE(DEPTH)                                            \
-    template void detailed_backtrace<0, DEPTH>(std::ostream & os, bool);                 \
-    template void detailed_backtrace<1, DEPTH>(std::ostream & os, bool);                 \
-    template void detailed_backtrace<2, DEPTH>(std::ostream & os, bool);                 \
-    template void detailed_backtrace<3, DEPTH>(std::ostream & os, bool);
+#if defined(TIMEMORY_UNWIND_SOURCE) && TIMEMORY_UNWIND_SOURCE > 0
+#    define TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE(DEPTH)                        \
+        template void detailed_backtrace<0, DEPTH>(std::ostream & os, bool);             \
+        template void detailed_backtrace<1, DEPTH>(std::ostream & os, bool);             \
+        template void detailed_backtrace<2, DEPTH>(std::ostream & os, bool);             \
+        template void detailed_backtrace<3, DEPTH>(std::ostream & os, bool);
+TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE(8)
+TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE(16)
+TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE(32)
+TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE(64)
+#    undef TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE
+#endif
 
-DETAILED_BACKTRACE_INSTANTIATE(8)
-DETAILED_BACKTRACE_INSTANTIATE(16)
-DETAILED_BACKTRACE_INSTANTIATE(32)
-DETAILED_BACKTRACE_INSTANTIATE(64)
 }  // namespace unwind
 }  // namespace tim

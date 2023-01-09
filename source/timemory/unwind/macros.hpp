@@ -24,41 +24,28 @@
 
 #pragma once
 
-#ifndef TIMEMORY_UNWIND_BACKTRACE_HPP_
-#    define TIMEMORY_UNWIND_BACKTRACE_HPP_
+#if defined(TIMEMORY_CORE_SOURCE) && !defined(TIMEMORY_UNWIND_SOURCE)
+#    define TIMEMORY_UNWIND_SOURCE 1
+#elif defined(TIMEMORY_USE_CORE_EXTERN) && !defined(TIMEMORY_USE_UNWIND_EXTERN)
+#    define TIMEMORY_USE_UNWIND_EXTERN 1
 #endif
 
-#include "timemory/defines.h"
-#include "timemory/macros/attributes.hpp"
-#include "timemory/unwind/macros.hpp"
+#if defined(TIMEMORY_USE_EXTERN) && !defined(TIMEMORY_USE_UNWIND_EXTERN)
+#    define TIMEMORY_USE_UNWIND_EXTERN 1
+#endif
 
-#include <cstdlib>
-#include <memory>
-#include <ostream>
-#include <string>
-#include <unordered_map>
+#if !defined(TIMEMORY_UNWIND_INLINE)
+#    if defined(TIMEMORY_UNWIND_SOURCE)
+#        define TIMEMORY_UNWIND_INLINE
+#    elif defined(TIMEMORY_USE_UNWIND_EXTERN)
+#        define TIMEMORY_UNWIND_INLINE
+#    else
+#        define TIMEMORY_UNWIND_INLINE inline
+#    endif
+#endif
 
-namespace tim
-{
-namespace unwind
-{
-struct bfd_file;
-
-using file_map_t = std::unordered_map<std::string, std::shared_ptr<bfd_file>>;
-
-file_map_t&
-library_file_maps();
-
-void
-update_file_maps();
-
-// only instantiates offsets 0-3 and depths 8, 16, 32, 64
-template <size_t OffsetV, size_t DepthV = 64>
-void
-detailed_backtrace(std::ostream& os, bool force_color = false) TIMEMORY_INTERNAL;
-}  // namespace unwind
-}  // namespace tim
-
-#if defined(TIMEMORY_UNWIND_HEADER_MODE) && TIMEMORY_UNWIND_HEADER_MODE > 0
-#    include "timemory/unwind/backtrace.cpp"
+#if !defined(TIMEMORY_UNWIND_SOURCE) && !defined(TIMEMORY_USE_UNWIND_EXTERN)
+#    if !defined(TIMEMORY_UNWIND_HEADER_MODE)
+#        define TIMEMORY_UNWIND_HEADER_MODE 1
+#    endif
 #endif

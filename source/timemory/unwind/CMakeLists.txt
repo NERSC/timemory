@@ -7,7 +7,7 @@ file(GLOB_RECURSE source_files ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 
 timemory_build_intermediate_library(
     USE_INTERFACE INSTALL_SOURCE
-    NAME core
+    NAME unwind
     TARGET core
     CATEGORY GLOBAL
     FOLDER ${CMAKE_INSTALL_LIBDIR}
