@@ -123,21 +123,23 @@ base_units<Tp>::base_units_update_impl()
 
     if constexpr(_supports_settings_config)
     {
+        static bool _once     = false;
         const auto& _settings = settings::shared_instance();
-        if(!_settings || _settings->get_initialized())
+        if(!_settings || (_once && _settings->get_initialized()))
             return;
+        _once = true;
 
         if constexpr(trait::uses_timing_units<Tp>::value)
         {
             auto&& _v = units::get_timing_unit(_settings->get_timing_units());
-            set_unit(std::get<1>(_v));
-            set_display_unit(std::get<0>(_v));
+            Tp::set_unit(std::get<1>(_v));
+            Tp::set_display_unit(std::get<0>(_v));
         }
         else if constexpr(trait::uses_memory_units<Tp>::value)
         {
             auto&& _v = units::get_memory_unit(_settings->get_memory_units());
-            set_unit(std::get<1>(_v));
-            set_display_unit(std::get<0>(_v));
+            Tp::set_unit(std::get<1>(_v));
+            Tp::set_display_unit(std::get<0>(_v));
         }
     }
 }
