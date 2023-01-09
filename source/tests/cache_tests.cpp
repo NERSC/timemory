@@ -327,6 +327,13 @@ print_rusage_cache(const tim::rusage_cache& _rusage)
 
 TEST_F(cache_tests, units)
 {
+    auto _settings = tim::settings::instance();
+    EXPECT_TRUE(_settings->get_initialized());
+    EXPECT_EQ(tim::get_env<std::string>("TIMEMORY_MEMORY_UNITS", "", false),
+              std::string{ "B" });
+    EXPECT_EQ(_settings->get_memory_units(), std::string{ "B" });
+    EXPECT_EQ(std::get<0>(tim::units::get_memory_unit(_settings->get_memory_units())),
+              std::string{ "byte" });
     EXPECT_EQ(peak_rss::get_unit(), tim::units::byte);
     EXPECT_EQ(page_rss::get_unit(), tim::units::byte);
     EXPECT_EQ(peak_rss::get_display_unit(), "byte");
