@@ -34,6 +34,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 #include <cstring>
 #include <deque>
 #include <functional>
@@ -770,8 +771,9 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
-    argument_parser(std::string desc)
-    : m_desc(std::move(desc))
+    argument_parser(std::string _desc, std::string _long_desc = {})
+    : m_desc{ std::move(_desc) }
+    , m_long_desc{ std::move(_long_desc) }
     {}
     //
     //----------------------------------------------------------------------------------//
@@ -1057,6 +1059,45 @@ struct argument_parser
             .description("Shows this page")
             .count(0);
     }
+    //----------------------------------------------------------------------------------//
+    //
+    /// \brief Add a command printing the version
+    argument& enable_version(const std::string& _name, const std::string& _version,
+                             const std::string& _tag = {}, const std::string& _rev = {})
+    {
+        return add_argument()
+            .names({ "--version" })
+            .description("Prints the version and exit")
+            .count(0)
+            .action([_name, _version, _tag, _rev](argument_parser&) {
+                std::cerr << _name << " " << _version;
+                if(!_tag.empty() || !_rev.empty())
+                {
+                    std::cerr << " (";
+                    if(!_tag.empty())
+                    {
+                        std::cerr << "tag: " << _tag;
+                        if(!_rev.empty())
+                            std::cerr << ", ";
+                    }
+                    if(!_rev.empty())
+                        std::cerr << "rev: " << _rev;
+                    std::cerr << ")";
+                }
+                std::cerr << std::endl;
+                exit(EXIT_SUCCESS);
+            });
+    }
+    //----------------------------------------------------------------------------------//
+    //
+    /// \brief Add a command printing the version
+    argument& enable_version(const std::string& _name, std::vector<int> _versions,
+                             const std::string& _tag = {}, const std::string& _rev = {})
+    {
+        return enable_version(
+            _name, timemory::join::join(timemory::join::array_config{ "." }, _versions),
+            _tag, _rev);
+    }
     //
     //----------------------------------------------------------------------------------//
     //
@@ -1201,6 +1242,7 @@ struct argument_parser
         ar(cereal::make_nvp("width", m_width));
         ar(cereal::make_nvp("description_width", m_desc_width));
         ar(cereal::make_nvp("description", m_desc));
+        ar(cereal::make_nvp("long_description", m_long_desc));
         ar(cereal::make_nvp("bin", m_bin));
         ar(cereal::make_nvp("positional_map", m_positional_map));
         ar(cereal::make_nvp("name_map", m_name_map));
@@ -1323,6 +1365,7 @@ private:
     int                        m_width             = 30;
     size_t                     m_desc_width        = 90;
     std::string                m_desc              = {};
+    std::string                m_long_desc         = {};
     std::string                m_bin               = {};
     std::string                m_group             = {};
     error_func_t               m_error_func     = [](this_type&, const result_type&) {};

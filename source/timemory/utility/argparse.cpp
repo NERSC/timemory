@@ -222,6 +222,9 @@ argument_parser::print_help(const std::string& _extra)
         std::cerr << " " << _extra << std::endl;
     }
 
+    if(!m_long_desc.empty())
+        std::cerr << m_long_desc << std::endl;
+
     std::cerr << "\nOptions:" << std::endl;
     size_t _arguments_idx = 0;
     for(auto& a : m_arguments)
