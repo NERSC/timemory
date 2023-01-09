@@ -124,14 +124,14 @@ public:
         accum += value;
     }
 
-    TIMEMORY_NODISCARD double get() const { return accum / base_type::get_unit(); }
+    double get() const { return accum / base_type::get_unit(); }
 
-    TIMEMORY_NODISCARD double get_display() const { return get(); }
+    double get_display() const { return get(); }
 
     void set_prefix();
 
     /// nbytes is passed to malloc
-    void audit(audit::incoming, size_t nbytes)
+    void audit(const gotcha_data&, audit::incoming, size_t nbytes)
     {
         TIMEMORY_DEBUG_PRINT_HERE("%s(%i)", m_prefix, (int) nbytes);
         // malloc
@@ -140,7 +140,7 @@ public:
     }
 
     /// nmemb and size is passed to calloc
-    void audit(audit::incoming, size_t nmemb, size_t size)
+    void audit(const gotcha_data&, audit::incoming, size_t nmemb, size_t size)
     {
         TIMEMORY_DEBUG_PRINT_HERE("%s(%i, %i)", m_prefix, (int) nmemb, (int) size);
         // calloc
@@ -149,7 +149,7 @@ public:
     }
 
     /// void* is returned from malloc and calloc
-    void audit(audit::outgoing, void* ptr)
+    void audit(const gotcha_data&, audit::outgoing, void* ptr)
     {
         TIMEMORY_DEBUG_PRINT_HERE("%s(%p)", m_prefix, ptr);
         if(ptr)
@@ -160,7 +160,7 @@ public:
     }
 
     /// void* is passed to free
-    void audit(audit::incoming, void* ptr)
+    void audit(const gotcha_data&, audit::incoming, void* ptr)
     {
         TIMEMORY_DEBUG_PRINT_HERE("%s(%p)", m_prefix, ptr);
         auto itr = get_allocation_map().find(ptr);
@@ -188,7 +188,7 @@ public:
     //----------------------------------------------------------------------------------//
     // cudaMalloc, cudaMallocHost
     // hipMalloc, hipMallocHost
-    void audit(audit::incoming, void** devPtr, size_t size)
+    void audit(const gotcha_data&, audit::incoming, void** devPtr, size_t size)
     {
         TIMEMORY_DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
         // malloc
@@ -200,7 +200,8 @@ public:
     //----------------------------------------------------------------------------------//
     // cudaHostAlloc / cudaMallocManaged
     // hipHostAlloc / hipMallocManaged
-    void audit(audit::incoming, void** hostPtr, size_t size, unsigned int flags)
+    void audit(const gotcha_data&, audit::incoming, void** hostPtr, size_t size,
+               unsigned int flags)
     {
         TIMEMORY_DEBUG_PRINT_HERE("%s(void**, %lu)", m_prefix, (unsigned long) size);
         value       = (size);
@@ -212,7 +213,7 @@ public:
     //----------------------------------------------------------------------------------//
     // cudaMalloc and cudaHostAlloc
     // hipMalloc and hipHostAlloc
-    void audit(audit::outgoing, gpu::error_t err)
+    void audit(const gotcha_data&, audit::outgoing, gpu::error_t err)
     {
         if(m_last_addr)
         {
@@ -287,8 +288,8 @@ malloc_gotcha::configure()
     using tuple_t           = push_back_t<Tp, this_type>;
     using local_gotcha_type = gotcha<data_size, tuple_t, type_list<this_type>>;
 
-    local_gotcha_type::get_default_ready() = false;
-    local_gotcha_type::get_initializer()   = []() {
+    // local_gotcha_type::get_default_ready() = false;
+    local_gotcha_type::get_initializer() = []() {
         local_gotcha_type::template configure<0, void*, size_t>("malloc");
         local_gotcha_type::template configure<1, void*, size_t, size_t>("calloc");
         local_gotcha_type::template configure<2, void, void*>("free");

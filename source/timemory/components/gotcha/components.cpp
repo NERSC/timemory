@@ -211,7 +211,7 @@ gotcha<Nt, BundleT, DiffT>::construct(const std::string& _func, int _priority,
         if(get_suppresses().find(_func) != get_suppresses().end())
         {
             _data.suppression = &gotcha_suppression::get();
-            _data.ready       = false;
+            //_data.ready       = false;
         }
 
         _data.constructor = [_func, _priority, _tool]() {
