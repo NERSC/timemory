@@ -64,6 +64,10 @@
 #    include <processthreadsapi.h>
 #endif
 
+#if !defined(TIMEMORY_MAX_THREADING_CALLBACKS)
+#    define TIMEMORY_MAX_THREADING_CALLBACKS 8
+#endif
+
 namespace tim
 {
 namespace threading
@@ -82,6 +86,9 @@ get_id(thread_id_manager*, bool = false);
 //
 struct thread_id_manager
 {
+    using callback_t       = std::atomic<bool (*)(bool, int64_t, int64_t)>;
+    using callback_array_t = std::array<callback_t, TIMEMORY_MAX_THREADING_CALLBACKS>;
+
     explicit thread_id_manager(int64_t _max_threads = TIMEMORY_MAX_THREADS);
 
     int64_t              max_threads;
@@ -90,6 +97,7 @@ struct thread_id_manager
     std::vector<int64_t> available = {};
     std::vector<int64_t> offset    = {};
     std::set<int64_t>    reserved  = { 0 };
+    callback_array_t     callbacks = { nullptr };
 };
 //
 inline auto&
@@ -162,6 +170,15 @@ get_id()
     static thread_local auto _this_id = internal::get_id(internal::get_manager());
     return _this_id.first;
 }
+//
+int
+add_callback(bool (*_func)(bool, int64_t, int64_t));
+//
+bool
+remove_callback(bool (*_func)(bool, int64_t, int64_t));
+//
+void
+clear_callbacks();
 //
 std::set<int64_t>
 add_reserved_id(int64_t _v = get_id());

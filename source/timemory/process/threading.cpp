@@ -46,6 +46,7 @@
 #include <functional>
 #include <map>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <utility>
@@ -105,6 +106,39 @@ get_id(thread_id_manager* _manager, bool _debug)
 
     if(_offset.is_offset && _global_counter == 0)
         _offset = { true, false };
+
+    static thread_local int _protect = 0;
+    if(_global_counter > 0 && (_protect & 1) == 0)
+    {
+        ++_protect;
+        auto _gc_v = _global_counter.load();
+        auto _of_v = _offset_counter.load();
+        for(auto& itr : _manager->callbacks)
+        {
+            auto _cb = itr.load();
+            if(!_cb)
+                continue;
+
+            auto _req = (*_cb)(_offset.is_offset, _gc_v, _of_v);
+            if(_req != _offset.is_offset)
+            {
+                if(_offset.is_mutable)
+                    _offset.is_offset = _req;
+                else
+                {
+                    std::stringstream _msg{};
+                    _msg << std::boolalpha;
+                    _msg << "[timemory] callback for threading::get_id() tried to change "
+                            "the offset value which was already designated as immutable. "
+                            "global_counter: "
+                         << _gc_v << ", offset_counter: " << _of_v
+                         << ", current offset value: " << _offset.is_offset;
+                    throw std::invalid_argument(_msg.str());
+                }
+            }
+        }
+        ++_protect;
+    }
 
     if(_offset.is_offset)
     {
@@ -171,6 +205,71 @@ get_id(thread_id_manager* _manager, bool _debug)
     return std::make_pair(_id, scope::destructor{ std::move(_dtor) });
 }
 }  // namespace internal
+
+// clang-format off
+TIMEMORY_PROCESS_INLINE
+int
+add_callback(bool (*_func)(bool, int64_t, int64_t))
+// clang-format on
+{
+    auto*& _manager = internal::get_manager();
+    if(!_manager)
+        return -1;
+
+    size_t _idx = 0;
+    for(; _idx < _manager->callbacks.size(); ++_idx)
+    {
+        auto& itr   = _manager->callbacks.at(_idx);
+        auto  _targ = itr.load(std::memory_order_relaxed);
+        if(!_targ && _func)
+        {
+            if(itr.compare_exchange_strong(_targ, _func, std::memory_order_relaxed) &&
+               itr.load() == _func)
+                return static_cast<int>(_idx);
+        }
+        else if(_targ && _func && _targ == _func)
+        {
+            return static_cast<int>(_idx);
+        }
+    }
+    return -1;
+}
+
+// clang-format off
+TIMEMORY_PROCESS_INLINE
+bool
+remove_callback(bool (*_func)(bool, int64_t, int64_t))
+// clang-format on
+{
+    auto*& _manager = internal::get_manager();
+    if(!_manager)
+        return true;
+
+    size_t _idx = 0;
+    for(; _idx < _manager->callbacks.size(); ++_idx)
+    {
+        auto& itr   = _manager->callbacks.at(_idx);
+        auto  _targ = itr.load(std::memory_order_relaxed);
+        if(_targ == _func)
+        {
+            itr.store(nullptr);
+            return true;
+        }
+    }
+    return false;
+}
+
+TIMEMORY_PROCESS_INLINE
+void
+clear_callbacks()
+{
+    auto*& _manager = internal::get_manager();
+    if(!_manager)
+        return;
+
+    for(auto& itr : _manager->callbacks)
+        itr.store(nullptr);
+}
 
 // clang-format off
 TIMEMORY_PROCESS_INLINE
