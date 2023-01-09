@@ -174,21 +174,16 @@ bfd_file::open(const std::string& _v, int* _fd)
         if(!bfd_check_format(_data, bfd_object) && !bfd_check_format(_data, bfd_archive))
         {
             auto _err = bfd_get_error();
-            if(get_bfd_verbose() >= 2)
-            {
-                TIMEMORY_PRINTF_INFO(stderr, "[%i][%li] BFD info: %s\n",
-                                     process::get_id(), threading::get_id(),
-                                     bfd_errmsg(_err));
-            }
+            bfd_message(3, bfd_errmsg(_err));
             return nullptr;
         }
     }
     else
     {
         auto _err = bfd_get_error();
-        TIMEMORY_PRINTF_INFO(stderr, "[%i][%li] BFD info: %s\n", process::get_id(),
-                             threading::get_id(), bfd_errmsg(_err));
+        bfd_message(0, bfd_errmsg(_err));
     }
+
     return _data;
 }
 

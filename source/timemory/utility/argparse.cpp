@@ -431,21 +431,18 @@ TIMEMORY_UTILITY_INLINE argument_parser::known_args
         return ss.str();
     };
 
-    if((_cmdc > 0 && verbose_level > 0) || verbose_level > 1)
-        std::cerr << "\n";
-
-    if(verbose_level > 1)
+    if(verbose_level >= 3)
     {
-        std::cerr << "[original]> " << cmd_string(argc, argv) << std::endl;
-        std::cerr << "[cfg-args]> ";
-        for(auto& itr : _args)
-            std::cerr << itr << " ";
-        std::cerr << std::endl;
-    }
+        namespace join = ::timemory::join;
+        TIMEMORY_PRINTF(stderr, "[argparse][original] %s\n", cmd_string(argc, argv));
+        TIMEMORY_PRINTF(stderr, "[argparse][cfg-args] %s\n",
+                        join::join(join::array_config{ " " }, _args));
 
-    if(_cmdc > 0 && verbose_level >= 2)
-        log::stream(std::cerr, log::color::info())
-            << "[command]>  " << cmd_string(_cmdc, _cmdv) << "\n\n";
+        if(_cmdc > 0)
+        {
+            TIMEMORY_PRINTF(stderr, "[argparse][command] %s\n", cmd_string(_cmdc, _cmdv));
+        }
+    }
 
     return known_args{ parse(_args, verbose_level), _cmdc, _cmdv };
 }
