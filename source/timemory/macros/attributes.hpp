@@ -143,6 +143,14 @@
 #    endif
 #endif
 
+#if !defined(TIMEMORY_INTERNAL)
+#    if defined(TIMEMORY_MSVC_COMPILER)
+#        define TIMEMORY_INTERNAL
+#    else
+#        define TIMEMORY_INTERNAL TIMEMORY_ATTRIBUTE(visibility("internal"))
+#    endif
+#endif
+
 //======================================================================================//
 //
 #if !defined(TIMEMORY_ALIAS)
