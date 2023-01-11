@@ -47,15 +47,35 @@ bfd_message(int _lvl, std::string_view);
 void
 set_bfd_verbose(int);
 
+enum class bfd_binding : uint8_t
+{
+    Local = 0,
+    Global,
+    Weak,
+    Unknown
+};
+
+enum class bfd_visibility : uint8_t
+{
+    Default = 0,
+    Internal,
+    Hidden,
+    Protected,
+    Unknown
+};
+
 #if defined(TIMEMORY_USE_BFD)
 
 struct bfd_file
 {
     struct symbol
     {
-        uintptr_t        address = 0;
-        void*            section = nullptr;
-        std::string_view name    = {};
+        bfd_binding      binding    = bfd_binding::Unknown;
+        bfd_visibility   visibility = bfd_visibility::Unknown;
+        uintptr_t        address    = 0;
+        uint64_t         symsize    = 0;
+        void*            section    = nullptr;
+        std::string_view name       = {};
     };
 
     explicit bfd_file(std::string);
@@ -66,7 +86,7 @@ struct bfd_file
     int  read_symtab();
     bool is_good() const { return (data != nullptr) && !name.empty(); }
 
-    operator bool() const { return is_good(); }
+    explicit operator bool() const { return is_good(); }
 
     std::vector<symbol> get_symbols(bool _include_undefined = false) const;
 
@@ -83,9 +103,12 @@ struct bfd_file
 {
     struct symbol
     {
-        uintptr_t        address = 0;
-        void*            section = nullptr;
-        std::string_view name    = {};
+        bfd_binding      binding    = bfd_binding::Unknown;
+        bfd_visibility   visibility = bfd_visibility::Unknown;
+        uintptr_t        address    = 0;
+        uint64_t         symsize    = 0;
+        void*            section    = nullptr;
+        std::string_view name       = {};
     };
 
     explicit bfd_file(std::string) {}
@@ -96,7 +119,7 @@ struct bfd_file
     static bool  is_good() { return false; }
     static auto  get_symbols(bool _include_undefined = false);
 
-    operator bool() const { return false; }
+    explicit operator bool() const { return false; }
 
     int              fd    = -1;
     int64_t          nsyms = 0;

@@ -36,6 +36,7 @@
 #if defined(TIMEMORY_USE_BFD)
 #    define PACKAGE "timemory-bfd"
 #    include <bfd.h>
+#    include <elf-bfd.h>
 #endif
 
 #ifndef TIMEMORY_BFD_ERROR_MESSAGE_MAX
@@ -233,24 +234,47 @@ bfd_file::read_symtab()
 std::vector<bfd_file::symbol>
 bfd_file::get_symbols(bool _include_undefined) const
 {
-    auto _syms = std::vector<bfd_file::symbol>{};
+    auto _syms   = std::vector<bfd_file::symbol>{};
+    auto _flavor = bfd_get_flavour(static_cast<bfd*>(data));
     _syms.reserve(nsyms);
     for(int64_t i = 0; i < nsyms; ++i)
     {
         auto* _sym = reinterpret_cast<asymbol**>(syms)[i];
         if(_sym)
         {
-            const auto* _name    = bfd_asymbol_name(_sym);
-            auto*       _section = bfd_asymbol_section(_sym);
-            auto        _vmaddr  = bfd_asymbol_value(_sym);
+            auto        _binding    = bfd_binding::Unknown;
+            auto        _visibility = bfd_visibility::Unknown;
+            const auto* _name       = bfd_asymbol_name(_sym);
+            auto*       _section    = bfd_asymbol_section(_sym);
+            auto        _vmaddr     = bfd_asymbol_value(_sym);
+            bfd_vma     _sym_sz     = 0;
             if(_vmaddr <= 0 && !_include_undefined)
                 continue;
-            _syms.emplace_back(symbol{ _vmaddr, static_cast<void*>(_section),
+            if((_sym->flags & (BSF_SECTION_SYM | BSF_SYNTHETIC)) == 0 &&
+               _flavor == bfd_target_elf_flavour)
+            {
+                auto* _elf_sym = reinterpret_cast<elf_symbol_type*>(_sym);
+                _sym_sz        = _elf_sym->internal_elf_sym.st_size;
+                _binding       = static_cast<bfd_binding>(
+                    ELF64_ST_BIND(_elf_sym->internal_elf_sym.st_info));
+                _visibility = static_cast<bfd_visibility>(
+                    ELF64_ST_VISIBILITY(_elf_sym->internal_elf_sym.st_other));
+            }
+            else if((_sym->flags & (BSF_SECTION_SYM | BSF_SYNTHETIC)) == 0 &&
+                    bfd_is_com_section(_section))
+            {
+                _sym_sz = _sym->value;
+            }
+
+            _syms.emplace_back(symbol{ _binding, _visibility, _vmaddr, _sym_sz,
+                                       static_cast<void*>(_section),
                                        std::string_view{ _name } });
         }
     }
-    std::sort(_syms.begin(), _syms.end(),
-              [](auto _lhs, auto _rhs) { return (_lhs.address < _rhs.address); });
+    std::sort(_syms.begin(), _syms.end(), [](auto _lhs, auto _rhs) {
+        return std::tie(_lhs.address, _lhs.symsize) <
+               std::tie(_rhs.address, _rhs.symsize);
+    });
     _syms.shrink_to_fit();
     return _syms;
 }
