@@ -70,7 +70,7 @@ struct dlinfo
         template <typename ArchiveT>
         void load(ArchiveT& ar, const unsigned);
 
-        operator bool() const { return (!name.empty() && addr != nullptr); }
+        explicit operator bool() const { return (!name.empty() && addr != nullptr); }
     };
 
     static dlinfo construct(unw_word_t _ip);
@@ -85,7 +85,7 @@ struct dlinfo
     data location = {};
     data symbol   = {};
 
-    operator bool() const { return (symbol && location); }
+    explicit operator bool() const { return (symbol && location); }
 
     template <typename ArchiveT>
     void serialize(ArchiveT& ar, const unsigned);

@@ -156,7 +156,7 @@ struct lock<Tp, true>
     lock(const lock&) = delete;
     lock& operator=(const lock&) = delete;
 
-    operator bool() const { return m_value; }
+    explicit operator bool() const { return m_value; }
 
     bool& get_local() { return m_value; }
 
@@ -215,7 +215,7 @@ struct lock<Tp, false>
     lock(const lock&) = delete;
     lock& operator=(const lock&) = delete;
 
-    operator bool() const { return m_value; }
+    explicit operator bool() const { return m_value; }
 
     bool& get_local() { return m_value; }
 

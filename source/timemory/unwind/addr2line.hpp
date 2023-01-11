@@ -50,7 +50,7 @@ struct addr2line_info
 
     TIMEMORY_DEFAULT_OBJECT(addr2line_info)
 
-    operator bool() const;
+    explicit operator bool() const;
 
     struct lineinfo
     {
@@ -59,7 +59,7 @@ struct addr2line_info
         std::string  name     = {};
         std::string  location = {};
 
-        operator bool() const;
+        explicit operator bool() const;
     };
 
     void add_lineinfo(const char* _func, const char* _file, unsigned int _line,

@@ -70,7 +70,7 @@ struct opaque
     opaque& operator=(const opaque&) = default;
     opaque& operator=(opaque&&) = default;
 
-    operator bool() const { return m_valid; }
+    explicit operator bool() const { return m_valid; }
 
     void init() const;
     void setup(string_view_cref_t _prefix, scope::config _scope);

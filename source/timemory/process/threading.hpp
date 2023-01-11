@@ -122,7 +122,7 @@ offset_this_id()
 //
 struct recycle_ids
 {
-    operator bool() const { return value; }
+    explicit operator bool() const { return value; }
 
 #if defined(TIMEMORY_FORCE_UNIQUE_THREAD_IDS) && TIMEMORY_FORCE_UNIQUE_THREAD_IDS > 0
     // ignore assignments

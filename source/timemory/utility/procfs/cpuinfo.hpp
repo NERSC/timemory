@@ -42,8 +42,8 @@ struct freq
 {
     TIMEMORY_DEFAULT_OBJECT(freq)
 
-    auto operator()(size_t _idx) const;
-         operator bool() const;
+    auto     operator()(size_t _idx) const;
+    explicit operator bool() const;
 
     static auto                 get(size_t _idx);
     static size_t               size() { return get_offsets().size(); }
