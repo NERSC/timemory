@@ -85,6 +85,12 @@ struct atomic_ring_buffer
     /// Destroy ring buffer.
     void destroy();
 
+    /// Request a pointer for writing at least \param n bytes.
+    void* request(size_t n) TIMEMORY_HOT;
+
+    /// Retrieve a pointer for reading at least \param n bytes.
+    void* retrieve(size_t n) const TIMEMORY_HOT;
+
     /// Write class-type data to buffer (uses placement new).
     template <typename Tp>
     std::pair<size_t, Tp*> write(Tp* in,
@@ -101,25 +107,19 @@ struct atomic_ring_buffer
     template <typename Tp>
     Tp* request();
 
-    /// Request a pointer to an allocation for at least \param n bytes.
-    void* request(size_t n);
-
     /// Read class-type data from buffer (uses placement new).
     template <typename Tp>
     std::pair<size_t, Tp*> read(
-        Tp* out, std::enable_if_t<std::is_class<Tp>::value, int> = 0) const;
+        Tp* _dest, std::enable_if_t<std::is_class<Tp>::value, int> = 0) const;
 
     /// Read non-class-type data from buffer (uses memcpy).
     template <typename Tp>
     std::pair<size_t, Tp*> read(
-        Tp* out, std::enable_if_t<!std::is_class<Tp>::value, int> = 0) const;
+        Tp* _dest, std::enable_if_t<!std::is_class<Tp>::value, int> = 0) const;
 
     /// Retrieve a pointer to the head allocation (read).
     template <typename Tp>
-    Tp* retrieve();
-
-    /// Retrieve a pointer to the head allocation of at least \param n bytes (read).
-    void* retrieve(size_t n);
+    Tp* retrieve() const;
 
     /// Returns number of bytes currently held by the buffer.
     size_t count() const { return (m_write_count - m_read_count); }
@@ -176,28 +176,19 @@ atomic_ring_buffer::write(Tp* in, std::enable_if_t<std::is_class<Tp>::value, int
     if(in == nullptr || m_ptr == nullptr)
         return { 0, nullptr };
 
-    auto _length = sizeof(Tp);
+    auto  _length = sizeof(Tp);
+    void* _out_p  = request(_length);
 
-    // if write count is at the tail of buffer, bump to the end of buffer
-    size_t _write_count = 0;
-    size_t _offset      = 0;
-    do
-    {
-        _offset      = 0;
-        _write_count = m_write_count.load();
-        auto _modulo = m_size - (_write_count % m_size);
-        if(_modulo < _length)
-            _offset = _modulo;
-    } while(!m_write_count.compare_exchange_strong(
-        _write_count, _write_count + _length + _offset, std::memory_order_seq_cst));
+    if(_out_p == nullptr)
+        return { 0, nullptr };
 
     // pointer in buffer
-    Tp* out = reinterpret_cast<Tp*>(write_ptr(_write_count));
+    Tp* _out = reinterpret_cast<Tp*>(_out_p);
 
     // Copy in.
-    new((void*) out) Tp{ std::move(*in) };
+    new((void*) _out) Tp{ std::move(*in) };
 
-    return { _length, out };
+    return { _length, _out };
 }
 //
 template <typename Tp>
@@ -207,28 +198,19 @@ atomic_ring_buffer::write(Tp* in, std::enable_if_t<!std::is_class<Tp>::value, in
     if(in == nullptr || m_ptr == nullptr)
         return { 0, nullptr };
 
-    auto _length = sizeof(Tp);
+    auto  _length = sizeof(Tp);
+    void* _out_p  = request(_length);
 
-    // if write count is at the tail of buffer, bump to the end of buffer
-    size_t _write_count = 0;
-    size_t _offset      = 0;
-    do
-    {
-        _offset      = 0;
-        _write_count = m_write_count.load();
-        auto _modulo = m_size - (_write_count % m_size);
-        if(_modulo < _length)
-            _offset = _modulo;
-    } while(!m_write_count.compare_exchange_strong(
-        _write_count, _write_count + _length + _offset, std::memory_order_seq_cst));
+    if(_out_p == nullptr)
+        return { 0, nullptr };
 
     // pointer in buffer
-    Tp* out = reinterpret_cast<Tp*>(write_ptr(_write_count));
+    Tp* _out = reinterpret_cast<Tp*>(_out_p);
 
     // Copy in.
-    memcpy((void*) out, in, _length);
+    memcpy((void*) _out, in, _length);
 
-    return { _length, out };
+    return { _length, _out };
 }
 //
 template <typename Tp>
@@ -238,95 +220,52 @@ atomic_ring_buffer::request()
     if(m_ptr == nullptr)
         return nullptr;
 
-    auto _length = sizeof(Tp);
-
-    // if write count is at the tail of buffer, bump to the end of buffer
-    size_t _write_count = 0;
-    size_t _offset      = 0;
-    do
-    {
-        _offset      = 0;
-        _write_count = m_write_count.load();
-        auto _modulo = m_size - (_write_count % m_size);
-        if(_modulo < _length)
-            _offset = _modulo;
-    } while(!m_write_count.compare_exchange_strong(
-        _write_count, _write_count + _length + _offset, std::memory_order_seq_cst));
-
-    // pointer in buffer
-    Tp* _out = reinterpret_cast<Tp*>(write_ptr(_write_count));
-
-    return _out;
+    return request(sizeof(Tp));
 }
 //
 template <typename Tp>
 std::pair<size_t, Tp*>
-atomic_ring_buffer::read(Tp* out, std::enable_if_t<std::is_class<Tp>::value, int>) const
+atomic_ring_buffer::read(Tp* _dest, std::enable_if_t<std::is_class<Tp>::value, int>) const
 {
-    if(is_empty() || out == nullptr)
+    if(is_empty() || _dest == nullptr)
         return { 0, nullptr };
 
-    auto _length = sizeof(Tp);
+    auto  _length = sizeof(Tp);
+    void* _out_p  = retrieve(_length);
 
-    // Make sure we do not read out more than there is actually in the buffer.
-    if(_length > count())
+    if(_out_p == nullptr)
         return { 0, nullptr };
-
-    // if read count is at the tail of buffer, bump to the end of buffer
-    size_t _read_count = 0;
-    size_t _offset     = 0;
-    do
-    {
-        _offset      = 0;
-        _read_count  = m_read_count.load();
-        auto _modulo = m_size - (_read_count % m_size);
-        if(_modulo < _length)
-            _offset = _modulo;
-    } while(!m_read_count.compare_exchange_strong(
-        _read_count, _read_count + _length + _offset, std::memory_order_seq_cst));
 
     // pointer in buffer
-    Tp* in = reinterpret_cast<Tp*>(read_ptr(_read_count));
+    Tp* in = reinterpret_cast<Tp*>(_out_p);
 
     // Copy out for BYTE, nothing magic here.
-    *out = *in;
+    *_dest = *in;
 
     return { _length, in };
 }
 //
 template <typename Tp>
 std::pair<size_t, Tp*>
-atomic_ring_buffer::read(Tp* out, std::enable_if_t<!std::is_class<Tp>::value, int>) const
+atomic_ring_buffer::read(Tp* _dest,
+                         std::enable_if_t<!std::is_class<Tp>::value, int>) const
 {
-    if(is_empty() || out == nullptr)
+    if(is_empty() || _dest == nullptr)
         return { 0, nullptr };
 
-    auto _length = sizeof(Tp);
+    auto  _length = sizeof(Tp);
+    void* _out_p  = retrieve(_length);
+
+    if(_out_p == nullptr)
+        return { 0, nullptr };
+
+    // pointer in buffer
+    Tp* in = reinterpret_cast<Tp*>(_out_p);
 
     using Up = typename std::remove_const<Tp>::type;
 
-    // Make sure we do not read out more than there is actually in the buffer.
-    if(_length > count())
-        return { 0, nullptr };
-
-    // if read count is at the tail of buffer, bump to the end of buffer
-    size_t _read_count = 0;
-    size_t _offset     = 0;
-    do
-    {
-        _offset      = 0;
-        _read_count  = m_read_count.load();
-        auto _modulo = m_size - (_read_count % m_size);
-        if(_modulo < _length)
-            _offset = _modulo;
-    } while(!m_read_count.compare_exchange_strong(
-        _read_count, _read_count + _length + _offset, std::memory_order_seq_cst));
-
-    // pointer in buffer
-    Tp* in = reinterpret_cast<Tp*>(read_ptr(_read_count));
-
     // Copy out for BYTE, nothing magic here.
-    Up* _out = const_cast<Up*>(out);
+    Up* _out = const_cast<Up*>(_dest);
     memcpy(_out, in, _length);
 
     return { _length, in };
@@ -334,35 +273,12 @@ atomic_ring_buffer::read(Tp* out, std::enable_if_t<!std::is_class<Tp>::value, in
 //
 template <typename Tp>
 Tp*
-atomic_ring_buffer::retrieve()
+atomic_ring_buffer::retrieve() const
 {
     if(m_ptr == nullptr)
         return nullptr;
 
-    auto _length = sizeof(Tp);
-
-    // Make sure we don't put in more than there's room for, by writing no
-    // more than there is free.
-    if(_length > count())
-        return { 0, nullptr };
-
-    // if read count is at the tail of buffer, bump to the end of buffer
-    size_t _read_count = 0;
-    size_t _offset     = 0;
-    do
-    {
-        _offset      = 0;
-        _read_count  = m_read_count.load();
-        auto _modulo = m_size - (_read_count % m_size);
-        if(_modulo < _length)
-            _offset = _modulo;
-    } while(!m_read_count.compare_exchange_strong(
-        _read_count, _read_count + _length + _offset, std::memory_order_seq_cst));
-
-    // pointer in buffer
-    Tp* _out = reinterpret_cast<Tp*>(read_ptr(_read_count));
-
-    return _out;
+    return retrieve(sizeof(Tp));
 }
 //
 }  // namespace base
@@ -423,7 +339,7 @@ struct atomic_ring_buffer : private base::atomic_ring_buffer
     Tp* write(Tp* in) { return base_type::write<Tp>(in).second; }
 
     /// Read data from buffer. Return pointer to location of read
-    Tp* read(Tp* out) const { return base_type::read<Tp>(out).second; }
+    Tp* read(Tp* _dest) const { return base_type::read<Tp>(_dest).second; }
 
     /// Get an uninitialized address at tail of buffer.
     Tp* request() { return base_type::request<Tp>(); }

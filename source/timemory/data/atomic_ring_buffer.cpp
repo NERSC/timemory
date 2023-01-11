@@ -224,8 +224,11 @@ TIMEMORY_DATA_INLINE
 void*
 atomic_ring_buffer::request(size_t _length)
 {
-    if(m_ptr == nullptr)
+    if(m_ptr == nullptr || m_size == 0)
         return nullptr;
+
+    if(is_full())
+        return retrieve(_length);
 
     // if write count is at the tail of buffer, bump to the end of buffer
     size_t _write_count = 0;
@@ -253,9 +256,9 @@ atomic_ring_buffer::request(size_t _length)
 //
 TIMEMORY_DATA_INLINE
 void*
-atomic_ring_buffer::retrieve(size_t _length)
+atomic_ring_buffer::retrieve(size_t _length) const
 {
-    if(m_ptr == nullptr)
+    if(m_ptr == nullptr || m_size == 0)
         return nullptr;
 
     // Make sure we don't put in more than there's room for, by writing no
@@ -287,8 +290,8 @@ void
 atomic_ring_buffer::reset()
 {
     m_init = false;
-    m_ptr  = nullptr;
     m_size = 0;
+    m_ptr  = nullptr;
     m_read_count.store(0);
     m_write_count.store(0);
 }
