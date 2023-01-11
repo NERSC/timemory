@@ -299,6 +299,20 @@ direxists(std::string _fname)
     return false;
 #endif
 }
+
+TIMEMORY_UTILITY_INLINE
+const char*
+basename(std::string_view _fname)
+{
+#if defined(TIMEMORY_UNIX)
+    return ::basename(_fname.data());
+#else
+    auto _pos = _fname.find_last_of("/\\");
+    if(_pos < _fname.length())
+        return _fname.data() + _pos + 1;
+    return _fname.data();
+#endif
+}
 }  // namespace filepath
 }  // namespace tim
 

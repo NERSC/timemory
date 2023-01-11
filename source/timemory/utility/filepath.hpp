@@ -112,6 +112,9 @@ exists(std::string _fname);
 bool
 direxists(std::string _fname);
 
+const char*
+basename(std::string_view _fname);
+
 //--------------------------------------------------------------------------------------//
 
 template <typename... Args>
