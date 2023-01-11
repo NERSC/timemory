@@ -236,11 +236,6 @@ base_units<Tp>::base_units_display_impl()
 {
     if constexpr(concepts::is_string_type<units_display_type>::value)
     {
-        constexpr bool _is_std_string =
-            std::is_same<units_display_type, std::string>::value;
-        constexpr bool _is_std_string_view =
-            std::is_same<units_display_type, std::string_view>::value;
-
         static std::string _init = []() {
             std::string _value = {};
             if(_value.empty())
@@ -269,11 +264,11 @@ base_units<Tp>::base_units_display_impl()
             return _value;
         }();
 
-        if constexpr(_is_std_string)
+        if constexpr(std::is_same<units_display_type, std::string>::value)
         {
             return _init;
         }
-        else if constexpr(_is_std_string_view)
+        else if constexpr(std::is_same<units_display_type, std::string_view>::value)
         {
             static auto _v = units_display_type{ _init };
             return _v;
