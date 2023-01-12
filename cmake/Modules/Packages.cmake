@@ -611,7 +611,7 @@ if(TIMEMORY_USE_YAML)
         target_include_directories(
             timemory-yaml
             INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/yaml-cpp/include>
-                      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/tpls>)
+                      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/timemory/tpls>)
     endif()
 endif()
 
