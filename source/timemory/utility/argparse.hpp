@@ -404,7 +404,8 @@ struct argument_parser
     //
     struct argument
     {
-        using callback_t = std::function<void(void*&)>;
+        using callback_t             = std::function<void(void*&)>;
+        using choice_alias_mapping_t = std::map<std::string, std::vector<std::string>>;
 
         enum Position : int
         {
@@ -421,14 +422,14 @@ struct argument_parser
 
         argument& name(const std::string& name)
         {
-            m_names.push_back(name);
+            m_names.emplace_back(name);
             return *this;
         }
 
         argument& names(const std::vector<std::string>& names)
         {
             for(const auto& itr : names)
-                m_names.push_back(itr);
+                m_names.emplace_back(itr);
             return *this;
         }
 
@@ -538,6 +539,11 @@ struct argument_parser
             return *this;
         }
 
+        argument& choice_aliases(const std::map<std::string, std::vector<std::string>>&);
+
+        argument& choice_alias(const std::string&,
+                               const std::initializer_list<std::string>&);
+
         template <typename Tp>
         argument& choices(const Tp& _v)
         {
@@ -582,7 +588,7 @@ struct argument_parser
         template <typename ActionFuncT>
         argument& action(ActionFuncT&& _func)
         {
-            m_actions.push_back(std::forward<ActionFuncT>(_func));
+            m_actions.emplace_back(std::forward<ActionFuncT>(_func));
             return *this;
         }
 
@@ -660,6 +666,7 @@ struct argument_parser
             ar(cereal::make_nvp("group", m_group));
             ar(cereal::make_nvp("required", m_required));
             ar(cereal::make_nvp("choices", m_choices));
+            ar(cereal::make_nvp("choice_aliases", m_choice_aliases));
             ar(cereal::make_nvp("values", m_values));
         }
 
@@ -668,26 +675,12 @@ struct argument_parser
         : m_desc(std::move(desc))
         , m_required(required)
         {
-            m_names.push_back(name);
+            m_names.emplace_back(name);
         }
 
         argument() = default;
 
-        arg_result check_choice(const std::string& value)
-        {
-            if(!m_choices.empty())
-            {
-                if(m_choices.find(value) == m_choices.end())
-                {
-                    std::stringstream ss;
-                    ss << "Invalid choice: '" << value << "'. Valid choices: ";
-                    for(const auto& itr : m_choices)
-                        ss << "'" << itr << "' ";
-                    return arg_result(ss.str());
-                }
-            }
-            return arg_result{};
-        }
+        arg_result check_choice(std::string& value) const;
 
         void execute_actions(argument_parser& p)
         {
@@ -695,21 +688,11 @@ struct argument_parser
                 itr(p);
         }
 
+        std::string as_string() const;
+
         friend std::ostream& operator<<(std::ostream& os, const argument& arg)
         {
-            std::stringstream ss;
-            ss << "names: ";
-            for(const auto& itr : arg.m_names)
-                ss << itr << " ";
-            ss << ", index: " << arg.m_index << ", count: " << arg.m_count
-               << ", min count: " << arg.m_min_count << ", max count: " << arg.m_max_count
-               << ", found: " << std::boolalpha << arg.m_found
-               << ", required: " << std::boolalpha << arg.m_required
-               << ", position: " << arg.m_position << ", values: ";
-            for(const auto& itr : arg.m_values)
-                ss << itr << " ";
-            os << ss.str();
-            return os;
+            return (os << arg.as_string());
         }
 
         template <typename TargetT, typename Tp>
@@ -725,48 +708,32 @@ struct argument_parser
             }
         }
 
-        bool is_separator() const
-        {
-            int32_t _v = m_count + m_min_count + m_max_count;
-            int32_t _l = m_desc.length() + m_dtype.length() + m_choices.size() +
-                         m_values.size() + m_actions.size();
-            if((_v + _l) == -3)
-            {
-                if(m_names.empty())
-                    return true;
-                else if(m_names.size() == 1)
-                {
-                    if(m_names.at(0).empty() ||
-                       (m_names.at(0).front() == '[' && m_names.at(0).back() == ']'))
-                        return true;
-                }
-            }
-            return false;
-        }
+        bool is_separator() const;
 
         friend struct argument_parser;
-        bool                       m_is_default   = false;
-        int                        m_position     = Position::IgnoreArgument;
-        int                        m_count        = Count::ANY;
-        int                        m_min_count    = Count::ANY;
-        int                        m_max_count    = Count::ANY;
-        std::string                m_color        = {};
-        std::string                m_desc         = {};
-        std::string                m_dtype        = {};
-        std::string                m_group        = {};
-        bool                       m_found        = false;
-        bool                       m_required     = false;
-        int                        m_index        = -1;
-        std::type_index            m_default_tidx = std::type_index{ typeid(void) };
-        void*                      m_default      = nullptr;
-        callback_t                 m_callback     = [](void*&) {};
-        callback_t                 m_destroy      = [](void*&) {};
-        std::set<std::string>      m_choices      = {};
-        std::set<std::string>      m_conflicts    = {};
-        std::set<std::string>      m_requires     = {};
-        std::vector<std::string>   m_names        = {};
-        std::vector<std::string>   m_values       = {};
-        std::vector<action_func_t> m_actions      = {};
+        bool                       m_is_default     = false;
+        int                        m_position       = Position::IgnoreArgument;
+        int                        m_count          = Count::ANY;
+        int                        m_min_count      = Count::ANY;
+        int                        m_max_count      = Count::ANY;
+        std::string                m_color          = {};
+        std::string                m_desc           = {};
+        std::string                m_dtype          = {};
+        std::string                m_group          = {};
+        bool                       m_found          = false;
+        bool                       m_required       = false;
+        int                        m_index          = -1;
+        std::type_index            m_default_tidx   = std::type_index{ typeid(void) };
+        void*                      m_default        = nullptr;
+        callback_t                 m_callback       = [](void*&) {};
+        callback_t                 m_destroy        = [](void*&) {};
+        std::set<std::string>      m_choices        = {};
+        std::set<std::string>      m_conflicts      = {};
+        std::set<std::string>      m_requires       = {};
+        std::vector<std::string>   m_names          = {};
+        std::vector<std::string>   m_values         = {};
+        std::vector<action_func_t> m_actions        = {};
+        choice_alias_mapping_t     m_choice_aliases = {};
     };
     //
     //----------------------------------------------------------------------------------//
@@ -780,7 +747,7 @@ struct argument_parser
     //
     argument& add_argument()
     {
-        m_arguments.push_back({});
+        m_arguments.emplace_back(argument{});
         m_arguments.back().m_index = static_cast<int>(m_arguments.size()) - 1;
         if(!m_group.empty())
             m_arguments.back().group(m_group);
@@ -807,7 +774,7 @@ struct argument_parser
     //
     argument& add_positional_argument(const std::string& _name)
     {
-        m_positional_arguments.push_back({});
+        m_positional_arguments.emplace_back(argument{});
         auto& _entry = m_positional_arguments.back();
         _entry.name(_name);
         _entry.count(1);
@@ -903,7 +870,7 @@ struct argument_parser
     template <typename BoolFuncT, typename ActionFuncT>
     this_type& add_action(BoolFuncT&& _b, ActionFuncT& _act)
     {
-        m_actions.push_back(
+        m_actions.emplace_back(
             { std::forward<BoolFuncT>(_b), std::forward<ActionFuncT>(_act) });
         return *this;
     }
@@ -914,7 +881,7 @@ struct argument_parser
     this_type& add_action(const std::string& _name, ActionFuncT& _act)
     {
         auto _b = [=](this_type& p) { return p.exists(_name); };
-        m_actions.push_back({ _b, std::forward<ActionFuncT>(_act) });
+        m_actions.emplace_back({ _b, std::forward<ActionFuncT>(_act) });
         return *this;
     }
     //
@@ -1351,7 +1318,7 @@ private:
     //----------------------------------------------------------------------------------//
     //
     arg_result begin_argument(const std::string& arg, bool longarg, int position);
-    arg_result add_value(const std::string& value, int location);
+    arg_result add_value(std::string& value, int location);
     arg_result end_argument();
     //
     //----------------------------------------------------------------------------------//

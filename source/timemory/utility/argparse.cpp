@@ -54,7 +54,7 @@ argument_vector::argument_vector(int& argc, char**& argv)
 {
     reserve(argc);
     for(int i = 0; i < argc; ++i)
-        push_back(argv[i]);
+        emplace_back(argv[i]);
 }
 
 TIMEMORY_UTILITY_INLINE
@@ -63,7 +63,7 @@ argument_vector::argument_vector(int& argc, const char**& argv)
 {
     reserve(argc);
     for(int i = 0; i < argc; ++i)
-        push_back(argv[i]);
+        emplace_back(argv[i]);
 }
 
 TIMEMORY_UTILITY_INLINE
@@ -71,7 +71,7 @@ argument_vector::argument_vector(int& argc, const char* const*& argv)
 {
     reserve(argc);
     for(int i = 0; i < argc; ++i)
-        push_back(argv[i]);
+        emplace_back(argv[i]);
 }
 
 TIMEMORY_UTILITY_INLINE argument_vector::cargs_t
@@ -116,6 +116,136 @@ TIMEMORY_UTILITY_INLINE argument_vector::cargs_t
                         argument_vector::get_execv(size_t _beg, size_t _end) const
 {
     return get_execv(base_type{}, _beg, _end);
+}
+
+TIMEMORY_UTILITY_INLINE
+argument_parser::argument&
+argument_parser::argument::choice_aliases(
+    const std::map<std::string, std::vector<std::string>>& _v)
+{
+    for(const auto& itr : _v)
+    {
+        TIMEMORY_REQUIRE(m_choices.find(itr.first) != m_choices.end())
+            << "Error! provided choice aliases for choice which does not exist: "
+            << itr.first << " for command line argument "
+            << ((m_names.empty() ? "unknown" : m_names.back())) << "\n";
+
+        for(const auto& vitr : itr.second)
+        {
+            m_choice_aliases[itr.first].emplace_back(vitr);
+        }
+    }
+    return *this;
+}
+
+TIMEMORY_UTILITY_INLINE
+argument_parser::argument&
+argument_parser::argument::choice_alias(
+    const std::string& _choice, const std::initializer_list<std::string>& _aliases)
+{
+    for(const auto& itr : _aliases)
+    {
+        TIMEMORY_REQUIRE(m_choices.find(_choice) != m_choices.end())
+            << "Error! provided choice aliases for choice which does not exist: "
+            << _choice << " for command line argument "
+            << ((m_names.empty() ? "unknown" : m_names.back())) << "\n";
+
+        m_choice_aliases[_choice].emplace_back(itr);
+    }
+    return *this;
+}
+
+TIMEMORY_UTILITY_INLINE argument_parser::arg_result
+                        argument_parser::argument::check_choice(std::string& value) const
+{
+    if(!m_choices.empty())
+    {
+        auto citr = m_choices.find(value);
+
+        // if value not initially found, check aliases. if value aliases a choice,
+        // re-assign value to the name of the choice that it aliases
+        if(citr == m_choices.end())
+        {
+            auto used_alias = std::string{};
+            auto init_value = value;
+            for(const auto& aitr : m_choice_aliases)
+            {
+                for(const auto& itr : aitr.second)
+                {
+                    if(value == itr)
+                    {
+                        TIMEMORY_REQUIRE(citr == m_choices.end() &&
+                                         used_alias != aitr.first)
+                            << "Error! " << init_value << " was already aliased to "
+                            << value << " via alias for " << used_alias
+                            << ". argument parser specifed the same alias for difference "
+                               "choices\n";
+                        value      = aitr.first;
+                        used_alias = aitr.first;
+                        citr       = m_choices.find(value);
+                        break;  // break out of alias loop for this choice only
+                    }
+                }
+            }
+        }
+
+        if(citr == m_choices.end())
+        {
+            std::stringstream ss;
+            ss << "Invalid choice: '" << value << "'. Valid choices: ";
+            for(const auto& itr : m_choices)
+            {
+                ss << "'" << itr << "' ";
+                if(m_choice_aliases.find(itr) != m_choice_aliases.end())
+                {
+                    ss << "(aliases: ";
+                    for(const auto& aitr : m_choice_aliases.at(itr))
+                        ss << "'" << aitr << "' ";
+                    ss << ")";
+                }
+            }
+            return arg_result(ss.str());
+        }
+    }
+    return arg_result{};
+}
+
+TIMEMORY_UTILITY_INLINE
+std::string
+argument_parser::argument::as_string() const
+{
+    std::stringstream ss;
+    ss << "names: ";
+    for(const auto& itr : m_names)
+        ss << itr << " ";
+    ss << ", index: " << m_index << ", count: " << m_count
+       << ", min count: " << m_min_count << ", max count: " << m_max_count
+       << ", found: " << std::boolalpha << m_found << ", required: " << std::boolalpha
+       << m_required << ", position: " << m_position << ", values: ";
+    for(const auto& itr : m_values)
+        ss << itr << " ";
+    return ss.str();
+}
+
+TIMEMORY_UTILITY_INLINE
+bool
+argument_parser::argument::is_separator() const
+{
+    int32_t _v = m_count + m_min_count + m_max_count;
+    int32_t _l = m_desc.length() + m_dtype.length() + m_choices.size() + m_values.size() +
+                 m_actions.size();
+    if((_v + _l) == -3)
+    {
+        if(m_names.empty())
+            return true;
+        else if(m_names.size() == 1)
+        {
+            if(m_names.at(0).empty() ||
+               (m_names.at(0).front() == '[' && m_names.at(0).back() == ']'))
+                return true;
+        }
+    }
+    return false;
 }
 
 TIMEMORY_UTILITY_INLINE void
@@ -257,8 +387,20 @@ argument_parser::print_help(const std::string& _extra)
 
         if(!a.m_choices.empty())
         {
+            auto _choice_names = std::vector<std::string>{};
+            for(const auto& itr : a.m_choices)
+            {
+                std::string _choice = itr;
+                if(a.m_choice_aliases.find(itr) != a.m_choice_aliases.end())
+                {
+                    _choice += " " + timemory::join::join(
+                                         timemory::join::array_config{ "|", "(", ")" },
+                                         a.m_choice_aliases.at(itr));
+                }
+                _choice_names.emplace_back(_choice);
+            }
             auto _choices = timemory::join::join(
-                timemory::join::array_config{ " | ", "[ ", " ]" }, a.m_choices);
+                timemory::join::array_config{ " | ", "[ ", " ]" }, _choice_names);
             _width += _choices.length();
             ss << " " << _choices;
         }
@@ -401,7 +543,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::known_args
     if(argc > 0)
     {
         m_bin = std::string((const char*) argv[0]);
-        _args.push_back(std::string((const char*) argv[0]));
+        _args.emplace_back(std::string((const char*) argv[0]));
     }
 
     for(int i = 1; i < argc; ++i)
@@ -420,7 +562,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::known_args
         }
         else
         {
-            _args.push_back(std::string((const char*) argv[i]));
+            _args.emplace_back(std::string((const char*) argv[i]));
         }
     }
 
@@ -690,7 +832,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     {
         arg_result err = end_argument();
         argument&  a   = m_arguments[static_cast<size_t>(it->second)];
-        a.m_values.push_back(arg);
+        a.m_values.emplace_back(arg);
         a.m_found = true;
         return err;
     }
@@ -754,14 +896,14 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
 }
 
 TIMEMORY_UTILITY_INLINE argument_parser::arg_result
-                        argument_parser::add_value(const std::string& value, int location)
+                        argument_parser::add_value(std::string& value, int location)
 {
     auto unnamed = [&]() {
         auto itr = m_positional_map.find(location);
         if(itr != m_positional_map.end())
         {
             argument& a = m_arguments[static_cast<size_t>(itr->second)];
-            a.m_values.push_back(value);
+            a.m_values.emplace_back(value);
             a.m_found = true;
         }
         else
@@ -775,7 +917,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
                 auto err  = a.check_choice(value);
                 if(err)
                     return err;
-                a.m_values.push_back(value);
+                a.m_values.emplace_back(value);
                 a.execute_actions(*this);
             }
         }
@@ -805,7 +947,7 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
             return unnamed();
         }
 
-        a.m_values.push_back(value);
+        a.m_values.emplace_back(value);
 
         // check {m_count, m_max_count} > COUNT::ANY && m_values.size() >= {value}
         if((a.m_count >= 0 && num_values() >= a.m_count) ||
