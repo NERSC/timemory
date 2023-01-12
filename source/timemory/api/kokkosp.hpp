@@ -336,6 +336,18 @@ destroy_profiler(uint64_t kernid)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Tail>
+inline profiler_t<Tail...>*
+get_profiler(uint64_t kernid)
+{
+    if(get_profiler_index_map<Tail...>().find(kernid) !=
+       get_profiler_index_map<Tail...>().end())
+        return &get_profiler_index_map<Tail...>().at(kernid);
+    return nullptr;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Tail>
 inline void
 start_profiler(uint64_t kernid)
 {
