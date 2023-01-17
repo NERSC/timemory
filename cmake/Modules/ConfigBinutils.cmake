@@ -33,18 +33,41 @@ endif()
 
 timemory_message(STATUS "Attempting to build binutils as external project")
 
+set(_TIMEMORY_BINUTILS_BUILD_BYPRODUCTS
+    ${PROJECT_BINARY_DIR}/external/binutils/src/binutils-external
+    ${PROJECT_BINARY_DIR}/external/binutils/src/binutils-external/include
+    ${PROJECT_BINARY_DIR}/external/binutils/src/binutils-external/bfd
+    ${PROJECT_BINARY_DIR}/external/binutils/src/binutils-external/opcodes
+    ${PROJECT_BINARY_DIR}/external/binutils/src/binutils-external/libsframe
+    ${PROJECT_BINARY_DIR}/external/binutils/src/binutils-external/libiberty
+    ${PROJECT_BINARY_DIR}/external/tpls/lib/libbfd.a
+    ${PROJECT_BINARY_DIR}/external/tpls/lib/libopcodes.a
+    ${PROJECT_BINARY_DIR}/external/tpls/lib/libiberty.a
+    ${PROJECT_BINARY_DIR}/external/tpls/lib/libsframe.a)
+
+foreach(_NAME bfd opcodes iberty)
+    list(APPEND _TIMEMORY_BINUTILS_BUILD_BYPRODUCTS ${_FILE})
+endforeach()
+
+find_program(
+    MAKE_COMMAND
+    NAMES make gmake
+    PATH_SUFFIXES bin REQUIRED)
+
 include(ExternalProject)
 externalproject_add(
     binutils-external
     PREFIX ${PROJECT_BINARY_DIR}/external/binutils
-    URL http://ftp.gnu.org/gnu/binutils/binutils-2.39.tar.gz
+    URL http://ftp.gnu.org/gnu/binutils/binutils-2.40.tar.gz
     BUILD_IN_SOURCE 1
     CONFIGURE_COMMAND
-        ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER} CFLAGS=-fPIC\ -O2\ -g
-        CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=-fPIC\ -O2\ -g <SOURCE_DIR>/configure
+        ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER} CFLAGS=-fPIC\ -O3
+        CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=-fPIC\ -O3 <SOURCE_DIR>/configure
         --prefix=${TPL_STAGING_PREFIX}
-    BUILD_COMMAND make all-libiberty all-bfd all-opcodes all-libelf
-    INSTALL_COMMAND "")
+    BUILD_COMMAND ${MAKE_COMMAND} all-libiberty all-bfd all-opcodes all-libelf
+                  all-libsframe
+    INSTALL_COMMAND ""
+    BUILD_BYPRODUCTS "${_TIMEMORY_BINUTILS_BUILD_BYPRODUCTS}")
 
 add_custom_command(
     TARGET binutils-external
@@ -55,16 +78,15 @@ add_custom_command(
         ${PROJECT_BINARY_DIR}/external/binutils/src/binutils-external/bfd/libbfd.a
         ${PROJECT_BINARY_DIR}/external/binutils/src/binutils-external/opcodes/libopcodes.a
         ${PROJECT_BINARY_DIR}/external/binutils/src/binutils-external/libiberty/libiberty.a
+        ${PROJECT_BINARY_DIR}/external/binutils/src/binutils-external/libsframe/.libs/libsframe.a
         ${TPL_STAGING_PREFIX}/lib/
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/external/binutils/src/binutils-external
     COMMENT "Installing binutils...")
 
-foreach(_NAME bfd opcodes iberty)
+foreach(_NAME bfd opcodes iberty sframe)
     set(_FILE
         ${TPL_STAGING_PREFIX}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}
         )
-    if(NOT EXISTS ${_FILE})
-        execute_process(COMMAND ${CMAKE_COMMAND} -E touch ${_FILE})
-    endif()
 
     add_library(binutils::${_NAME}-library STATIC IMPORTED)
     set_property(TARGET binutils::${_NAME}-library PROPERTY IMPORTED_LOCATION ${_FILE})
@@ -87,5 +109,8 @@ target_link_libraries(
     INTERFACE $<BUILD_INTERFACE:binutils::bfd-library>
               $<BUILD_INTERFACE:binutils::iberty-library>
               $<BUILD_INTERFACE:binutils::opcodes-library>
+              $<BUILD_INTERFACE:binutils::sframe-library>
               $<BUILD_INTERFACE:$<IF:$<TARGET_EXISTS:ZLIB::ZLIB>,ZLIB::ZLIB,z>>
               $<BUILD_INTERFACE:${CMAKE_DL_LIBS}>)
+
+unset(_TIMEMORY_BINUTILS_BUILD_BYPRODUCTS)
