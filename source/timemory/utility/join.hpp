@@ -25,6 +25,7 @@
 #pragma once
 
 #include <array>
+#include <cstring>
 #include <initializer_list>
 #include <ios>
 #include <sstream>
@@ -245,6 +246,18 @@ is_iterable(long)
     return false;
 }
 
+template <typename ArgT>
+inline bool
+is_empty(ArgT&& _v)
+{
+    using arg_type = basic_identity_t<ArgT>;
+    if constexpr(is_string<arg_type>::value)
+    {
+        return std::string_view{ std::forward<ArgT>(_v) }.empty();
+    }
+    return false;
+}
+
 template <int TraitT, typename ArgT>
 inline decltype(auto)
 join_arg(config _cfg, ArgT&& _v)
@@ -340,13 +353,18 @@ join(config _cfg, Args&&... _args)
 
     std::stringstream _ss{};
     _ss.setf(_cfg.flags);
-    TIMEMORY_FOLD_EXPRESSION(_ss << _cfg.delimiter
+    TIMEMORY_FOLD_EXPRESSION(_ss << ((impl::is_empty(_args))
+                                         ? std::string_view{}
+                                         : std::string_view{ _cfg.delimiter })
                                  << impl::join_arg<TraitT>(_cfg, _args));
     auto   _ret = _ss.str();
     auto&& _len = _cfg.delimiter.length();
-    return (_ret.length() > _len) ? (std::string{ _cfg.prefix } + _ret.substr(_len) +
-                                     std::string{ _cfg.suffix })
-                                  : std::string{};
+    auto   _cmp = strncmp(std::string_view{ _ret }.data(),
+                        std::string_view{ _cfg.delimiter }.data(), _len) == 0;
+    return (_ret.length() > _len)
+               ? (std::string{ _cfg.prefix } + ((_cmp) ? _ret.substr(_len) : _ret) +
+                  std::string{ _cfg.suffix })
+               : std::string{};
 }
 
 template <int TraitT = NoQuoteStrings, typename... Args>
