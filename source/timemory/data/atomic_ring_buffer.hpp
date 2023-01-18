@@ -182,11 +182,11 @@ atomic_ring_buffer::write(Tp* in, std::enable_if_t<std::is_class<Tp>::value, int
     if(_out_p == nullptr)
         return { 0, nullptr };
 
+    // Copy in.
+    new(_out_p) Tp{ std::move(*in) };
+
     // pointer in buffer
     Tp* _out = reinterpret_cast<Tp*>(_out_p);
-
-    // Copy in.
-    new((void*) _out) Tp{ std::move(*in) };
 
     return { _length, _out };
 }
@@ -204,11 +204,11 @@ atomic_ring_buffer::write(Tp* in, std::enable_if_t<!std::is_class<Tp>::value, in
     if(_out_p == nullptr)
         return { 0, nullptr };
 
+    // Copy in.
+    memcpy(_out_p, in, _length);
+
     // pointer in buffer
     Tp* _out = reinterpret_cast<Tp*>(_out_p);
-
-    // Copy in.
-    memcpy((void*) _out, in, _length);
 
     return { _length, _out };
 }
