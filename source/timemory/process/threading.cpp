@@ -27,6 +27,8 @@
 
 #include "timemory/process/defines.hpp"
 
+#include <bits/stdint-intn.h>
+
 #if !defined(TIMEMORY_PROCESS_THREADING_HPP_)
 #    include "timemory/process/threading.hpp"
 #endif
@@ -185,20 +187,54 @@ get_id(thread_id_manager* _manager, bool _debug)
     // disable the ability to offset the thread id
     _offset.is_mutable = false;
 
+    // below is used to avoid using a mutex for synchronization
+    // when the thread is being destroyed.
+    static auto _offset_lk = std::atomic<int64_t>{ 0 };
+    static auto _avail_lk  = std::atomic<int64_t>{ 0 };
+    static auto _get_lock  = [](std::atomic<int64_t>& _lk) {
+        // this function increments an even atomic and returns.
+        // all other threads have to wait that thread increments
+        // the atomic back to an even number
+        int64_t _targ = 1;
+        while(_targ % 2 == 1)
+        {
+            _targ = _lk.load(std::memory_order_relaxed);
+            if(_targ % 2 == 0)
+            {
+                if(_lk.compare_exchange_strong(_targ, _targ + 1,
+                                               std::memory_order_relaxed))
+                    return true;
+                else
+                    _targ = 1;
+            }
+        }
+        return false;
+    };
+
     auto&& _dtor = [_id, _offset]() {
+        // skip for main thread
+        if(_id == 0)
+            return;
         auto* _manager_v = get_manager();
         if(!_manager_v)
             return;
         if(_offset.is_offset)
         {
-            auto_lock_t _lk{ type_mutex<internal::recycle_ids>(1) };
-            _manager_v->offset.emplace_back(_id);
+            if(_get_lock(_offset_lk))
+            {
+                _manager_v->offset.emplace_back(_id);
+                ++_offset_lk;
+                return;
+            }
         }
         else
         {
-            auto_lock_t _lk{ type_mutex<internal::recycle_ids>() };
-            if(_manager_v->reserved.count(_id) == 0)
+            if(_manager_v->reserved.count(_id) == 0 && _get_lock(_avail_lk))
+            {
                 _manager_v->available.emplace_back(_id);
+                ++_avail_lk;
+                return;
+            }
         }
     };
 
