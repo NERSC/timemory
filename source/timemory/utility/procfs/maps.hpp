@@ -76,14 +76,11 @@ struct maps
     bool   is_contiguous_with(const maps&) const;
     bool   contains(size_t) const;
 
-    maps& operator+=(const maps& rhs);
+    explicit operator bool() const { return !is_empty(); }
+    maps&    operator+=(const maps& rhs);
 
-    friend bool operator<(const maps& _lhs, const maps& _rhs)
-    {
-        return std::tie(_lhs.load_address, _lhs.last_address, _lhs.offset, _lhs.inode,
-                        _lhs.pathname) < std::tie(_rhs.load_address, _rhs.last_address,
-                                                  _rhs.offset, _rhs.inode, _rhs.pathname);
-    }
+    bool operator<(const maps& _rhs) const;
+    bool operator==(const maps& _rhs) const;
 
 private:
     static std::vector<maps> iterate_program_headers();

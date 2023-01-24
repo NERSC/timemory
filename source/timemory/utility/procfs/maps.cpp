@@ -197,6 +197,28 @@ maps::operator+=(const maps& _v)
 
 // clang-format off
 TIMEMORY_UTILITY_PROCFS_MAPS_INLINE
+bool
+maps::operator<(const maps& _rhs) const
+// clang-format on
+{
+    return std::tie(load_address, last_address, offset, inode, pathname) <
+           std::tie(_rhs.load_address, _rhs.last_address, _rhs.offset, _rhs.inode,
+                    _rhs.pathname);
+}
+
+// clang-format off
+TIMEMORY_UTILITY_PROCFS_MAPS_INLINE
+bool
+maps::operator==(const maps& _rhs) const
+// clang-format on
+{
+    return std::tie(load_address, last_address, offset, inode, pathname) ==
+           std::tie(_rhs.load_address, _rhs.last_address, _rhs.offset, _rhs.inode,
+                    _rhs.pathname);
+}
+
+// clang-format off
+TIMEMORY_UTILITY_PROCFS_MAPS_INLINE
 std::vector<maps>
 read_maps(pid_t _pid)
 // clang-format on
