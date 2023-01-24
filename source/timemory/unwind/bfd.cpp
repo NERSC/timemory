@@ -27,6 +27,7 @@
 #include "timemory/backends/process.hpp"
 #include "timemory/backends/threading.hpp"
 #include "timemory/log/macros.hpp"
+#include "timemory/settings/macros.hpp"
 #include "timemory/settings/settings.hpp"
 
 #include <cstdarg>
@@ -34,7 +35,9 @@
 #include <mutex>
 
 #if defined(TIMEMORY_USE_BFD)
-#    define PACKAGE "timemory-bfd"
+#    if !defined(PACKAGE)
+#        define PACKAGE TIMEMORY_PROJECT_NAME
+#    endif
 #    include <bfd.h>
 #    include <elf-bfd.h>
 #endif

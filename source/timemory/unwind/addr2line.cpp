@@ -26,6 +26,7 @@
 
 #include "timemory/log/macros.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/settings/macros.hpp"
 #include "timemory/utility/filepath.hpp"
 
 #if defined(TIMEMORY_LINUX)
@@ -35,7 +36,9 @@
 #include <thread>
 
 #if defined(TIMEMORY_USE_BFD)
-#    define PACKAGE "timemory-bfd"
+#    if !defined(PACKAGE)
+#        define PACKAGE TIMEMORY_PROJECT_NAME
+#    endif
 #    include <bfd.h>
 #endif
 
