@@ -54,6 +54,14 @@ find_program(
     NAMES make gmake
     PATH_SUFFIXES bin REQUIRED)
 
+set(binutils_CONFIG_FLAGS
+    "--with-system-zlib=yes --without-zstd"
+    CACHE STRING "Extra config flags for binutils")
+mark_as_advanced(binutils_CONFIG_FLAGS)
+
+# needed for configure command
+string(REPLACE " " ";" _binutils_CONFIG_FLAGS "${binutils_CONFIG_FLAGS}")
+
 include(ExternalProject)
 externalproject_add(
     binutils-external
@@ -63,7 +71,7 @@ externalproject_add(
     CONFIGURE_COMMAND
         ${CMAKE_COMMAND} -E env CC=${CMAKE_C_COMPILER} CFLAGS=-fPIC\ -O3
         CXX=${CMAKE_CXX_COMPILER} CXXFLAGS=-fPIC\ -O3 <SOURCE_DIR>/configure
-        --prefix=${TPL_STAGING_PREFIX}
+        --prefix=${TPL_STAGING_PREFIX} ${_binutils_CONFIG_FLAGS}
     BUILD_COMMAND ${MAKE_COMMAND} all-libiberty all-bfd all-opcodes all-libelf
                   all-libsframe
     INSTALL_COMMAND ""
