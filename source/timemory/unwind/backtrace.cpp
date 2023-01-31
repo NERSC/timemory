@@ -182,6 +182,22 @@ detailed_backtrace(std::ostream& os, bool force_color)
         }
     }
 
+    {
+        auto _maps_file = TIMEMORY_JOIN("/", "/proc", process::get_id(), "maps");
+        auto _ifs       = std::ifstream{ _maps_file };
+        if(_ifs)
+        {
+            message << "\n" << _maps_file << ":\n";
+            while(_ifs)
+            {
+                std::string _line{};
+                getline(_ifs, _line);
+                if(!_line.empty())
+                    message << "    " << _line << "\n";
+            }
+        }
+    }
+
 #if defined(TIMEMORY_USE_LIBUNWIND)
     {
         message << "\nBacktrace (demangled):\n";
