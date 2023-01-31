@@ -1226,11 +1226,12 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
     // if first instance
     if(!has_head || (m_is_master && m_node_ids.empty()))
     {
+        m_node_ids.emplace(hash_depth, id_hash_map_t{});
         auto itr = m_data->append_child(graph_node_t{ hash_id, obj,
                                                       static_cast<int64_t>(hash_depth),
                                                       static_cast<uint32_t>(_tid) });
-        m_node_ids[hash_depth][_uniq_hash] = itr;
-        return itr;
+        m_node_ids.at(hash_depth).emplace(_uniq_hash, itr);
+        return m_node_ids.at(hash_depth).at(_uniq_hash);
     }
 
     // lambda for updating settings
@@ -1239,8 +1240,12 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
         return (m_data->current() = itr);
     };
 
-    auto _nitr = m_node_ids[hash_depth].find(_uniq_hash);
-    if(_nitr != m_node_ids[hash_depth].end() && _nitr->second->depth() == m_data->depth())
+    if(m_node_ids.find(hash_depth) == m_node_ids.end())
+        m_node_ids.emplace(hash_depth, id_hash_map_t{});
+
+    auto _nitr = m_node_ids.at(hash_depth).find(_uniq_hash);
+    if(_nitr != m_node_ids.at(hash_depth).end() &&
+       _nitr->second->depth() == m_data->depth())
     {
         return _update(_nitr->second);
     }
@@ -1254,10 +1259,10 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
         auto itr     = m_data->append_child(std::move(node));
         auto ditr    = m_node_ids.find(hash_depth);
         if(ditr == m_node_ids.end())
-            m_node_ids.insert({ hash_depth, id_hash_map_t{} });
+            m_node_ids.emplace(hash_depth, id_hash_map_t{});
         auto hitr = m_node_ids.at(hash_depth).find(_uniq_hash);
         if(hitr == m_node_ids.at(hash_depth).end())
-            m_node_ids.at(hash_depth).insert({ _uniq_hash, iterator{} });
+            m_node_ids.at(hash_depth).emplace(_uniq_hash, iterator{});
         m_node_ids.at(hash_depth).at(_uniq_hash) = itr;
         return itr;
     };
