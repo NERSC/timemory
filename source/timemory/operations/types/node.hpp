@@ -354,7 +354,7 @@ private:
             type&  targ  = itr->data();
             auto&  stats = itr->stats();
 
-            if(settings::debug() && settings::verbose() >= 3)
+            if(settings::debug() && settings::verbose() >= 5)
             {
                 TIMEMORY_PRINTF(stderr, "\n");
                 TIMEMORY_PRINTF(stderr, "[START][TARG][%i][%li]> %s\n", process::get_id(),
@@ -369,7 +369,7 @@ private:
             // add measurement to target in storage
             operation::plus<type>(targ, _obj);
             //
-            if(settings::debug() && settings::verbose() >= 3)
+            if(settings::debug() && settings::verbose() >= 5)
             {
                 TIMEMORY_PRINTF(stderr, "[AFTER][TARG][%i][%li]> %s\n", process::get_id(),
                                 threading::get_id(), TIMEMORY_JOIN("", targ).data());
