@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/log/color.hpp"
 #include "timemory/mpl/concepts.hpp"
 #include "timemory/tpls/cereal/cereal/cereal.hpp"
 #include "timemory/utility/backtrace.hpp"
@@ -784,29 +785,9 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
-    argument_parser& start_group(std::string _v)
-    {
-        m_group           = _v;
-        std::string _name = "[";
-        for(auto& itr : _v)
-            itr = toupper(itr);
-        _name += _v + std::string{ " OPTIONS]" };
-
-        if(!m_arguments.back().is_separator())
-            add_argument({ "" }, "");
-
-        add_argument({ _name }, "");
-        add_argument({ "" }, "");
-
-        return *this;
-    }
+    argument_parser& start_group(std::string _v, const std::string& _desc = {});
     //
-    argument_parser& end_group()
-    {
-        add_argument({ "" }, "");
-        m_group = std::string{};
-        return *this;
-    }
+    argument_parser& end_group();
     //
     //----------------------------------------------------------------------------------//
     //
@@ -1202,6 +1183,9 @@ struct argument_parser
     void set_use_color(bool _v) { m_use_color = _v; }
     bool get_use_color() const { return m_use_color; }
 
+    void set_color(const char* _v) { m_color = _v; }
+    auto get_color() const { return m_color; }
+
     template <typename ArchiveT>
     void serialize(ArchiveT& ar, const unsigned) const
     {
@@ -1335,6 +1319,7 @@ private:
     std::string                m_long_desc         = {};
     std::string                m_bin               = {};
     std::string                m_group             = {};
+    std::string                m_color             = log::color::info();
     error_func_t               m_error_func     = [](this_type&, const result_type&) {};
     std::vector<argument>      m_arguments      = {};
     std::map<int, int>         m_positional_map = {};

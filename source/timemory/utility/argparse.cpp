@@ -38,6 +38,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #if !defined(TIMEMORY_UTILITY_HEADER_MODE)
@@ -251,6 +252,8 @@ argument_parser::argument::is_separator() const
 TIMEMORY_UTILITY_INLINE void
 argument_parser::print_help(const std::string& _extra)
 {
+    end_group();
+
     std::stringstream _usage;
     if(!m_desc.empty())
         _usage << "[" << m_desc << "] ";
@@ -401,7 +404,25 @@ argument_parser::print_help(const std::string& _extra)
             }
             auto _choices = timemory::join::join(
                 timemory::join::array_config{ " | ", "[ ", " ]" }, _choice_names);
-            _width += _choices.length();
+
+            if(_width + _choices.length() <
+               static_cast<size_t>(m_width + m_desc_width + 8))
+                _width += _choices.length();
+            else
+            {
+                auto _spacer = std::stringstream{};
+                // 5 == four spaces + space after option name(s)
+                _spacer << std::setw(_width + 5) << "";
+                _choices = timemory::join::join(
+                    timemory::join::array_config{ std::string{ "\n" } + _spacer.str(),
+                                                  "[ ", " ]" },
+                    _choice_names);
+                _spacer = std::stringstream{};
+                _spacer << "\n"
+                        << std::setw(m_width) << ""
+                        << "    ";
+                _choices += _spacer.str();
+            }
             ss << " " << _choices;
         }
 
@@ -993,6 +1014,39 @@ TIMEMORY_UTILITY_INLINE std::ostream&
     return os;
 }
 
+TIMEMORY_UTILITY_INLINE
+argument_parser&
+argument_parser::start_group(std::string _v, const std::string& _desc)
+{
+    if(!m_group.empty())
+        end_group();
+    m_group           = _v;
+    std::string _name = "[";
+    for(auto& itr : _v)
+        itr = toupper(itr);
+    bool _has_options = (_v.find(" OPTIONS") != std::string::npos);
+    _name += _v + ((_has_options) ? std::string{ "]" } : std::string{ " OPTIONS]" });
+
+    if(!m_arguments.back().is_separator())
+        add_argument({ "" }, "");
+
+    add_argument({ _name }, _desc).color((m_use_color) ? m_color : "");
+    add_argument({ "" }, "");
+
+    return *this;
+}
+
+TIMEMORY_UTILITY_INLINE
+argument_parser&
+argument_parser::end_group()
+{
+    if(!m_group.empty())
+    {
+        add_argument({ "" }, "");
+        m_group = std::string{};
+    }
+    return *this;
+}
 }  // namespace argparse
 }  // namespace tim
 
