@@ -115,7 +115,7 @@ template <typename Tp>
 inline auto
 push_color_hist(Tp* _v, const char* _c)
 {
-    if(colorized())
+    if(!monochrome())
         get_color_hist<Tp>().emplace_back(_v, _c);
     return _c;
 }
@@ -124,7 +124,7 @@ template <typename Tp>
 inline std::string
 pop_color_hist(Tp* _v)
 {
-    if(!colorized())
+    if(monochrome())
         return std::string{};
 
     auto& _hist = get_color_hist<Tp>();

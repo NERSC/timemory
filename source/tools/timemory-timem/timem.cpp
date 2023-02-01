@@ -153,10 +153,10 @@ main(int argc, char** argv)
                 verbose() = p.get<int>("verbose");
             }
         });
-    parser.add_argument({ "-N", "--no-color" }, "Disable colorized output")
+    parser.add_argument({ "-N", "--monochrome" }, "Disable colorized output")
         .max_count(1)
         .dtype("bool")
-        .action([](parser_t& p) { tim::log::colorized() = !p.get<bool>("no-color"); });
+        .action([](parser_t& p) { tim::log::monochrome() = p.get<bool>("monochrome"); });
     parser.add_argument({ "-q", "--quiet" }, "Suppress as much reporting as possible")
         .count(0)
         .action([](parser_t&) {

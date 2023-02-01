@@ -39,27 +39,27 @@ namespace tim
 namespace log
 {
 bool&
-colorized() TIMEMORY_VISIBILITY("default");
+monochrome() TIMEMORY_VISIBILITY("default");
 
 inline bool&
-colorized()
+monochrome()
 {
     static bool _v = []() {
-        auto        _val      = true;
+        auto        _val      = false;
         const char* _env_cstr = nullptr;
 #if defined(TIMEMORY_LOG_COLORS_ENV)
         _env_cstr = std::getenv(TIMEMORY_LOG_COLORS_ENV);
 #elif defined(TIMEMORY_PROJECT_NAME)
-        auto _env_name = std::string{ TIMEMORY_PROJECT_NAME } + "_COLORIZED_LOG";
+        auto _env_name = std::string{ TIMEMORY_PROJECT_NAME } + "_MONOCHROME";
         for(auto& itr : _env_name)
             itr = toupper(itr);
         _env_cstr = std::getenv(_env_name.c_str());
 #else
-        _env_cstr = std::getenv("TIMEMORY_COLORIZED_LOG");
+        _env_cstr = std::getenv("TIMEMORY_MONOCHROME");
 #endif
 
         if(!_env_cstr)
-            _env_cstr = std::getenv("COLORIZED_LOG");
+            _env_cstr = std::getenv("MONOCHROME");
 
         if(_env_cstr)
         {
@@ -106,31 +106,31 @@ static constexpr auto end_value     = "\033[0m";
 inline const char*
 info()
 {
-    return (log::colorized()) ? info_value : "";
+    return (log::monochrome()) ? "" : info_value;
 }
 
 inline const char*
 warning()
 {
-    return (log::colorized()) ? warning_value : "";
+    return (log::monochrome()) ? "" : warning_value;
 }
 
 inline const char*
 fatal()
 {
-    return (log::colorized()) ? fatal_value : "";
+    return (log::monochrome()) ? "" : fatal_value;
 }
 
 inline const char*
 source()
 {
-    return (log::colorized()) ? source_value : "";
+    return (log::monochrome()) ? "" : source_value;
 }
 
 inline const char*
 end()
 {
-    return (log::colorized()) ? end_value : "";
+    return (log::monochrome()) ? "" : end_value;
 }
 }  // namespace color
 }  // namespace log
