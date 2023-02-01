@@ -489,6 +489,38 @@ struct is_tuple<Tp*> : is_tuple<Tp>
 {};
 
 //--------------------------------------------------------------------------------------//
+/// \struct tim::concepts::is_type_listing
+/// \brief concept that specifies that a type is a timemory type_list. Use "type_listing"
+/// instead of "type_list" because the latter causes namespacing problems during full or
+/// partial specialization
+///
+TIMEMORY_IMPL_IS_CONCEPT(type_listing)
+
+template <typename... Tp>
+struct is_type_listing<type_list<Tp...>> : true_type
+{};
+
+template <typename Tp>
+struct is_type_listing<const Tp> : is_type_listing<Tp>
+{};
+
+template <typename Tp>
+struct is_type_listing<volatile Tp> : is_type_listing<Tp>
+{};
+
+template <typename Tp>
+struct is_type_listing<const volatile Tp> : is_type_listing<Tp>
+{};
+
+template <typename Tp>
+struct is_type_listing<Tp&> : is_type_listing<Tp>
+{};
+
+template <typename Tp>
+struct is_type_listing<Tp*> : is_type_listing<Tp>
+{};
+
+//--------------------------------------------------------------------------------------//
 /// \struct tim::concepts::is_vector
 /// \brief concept that specifies that a type is a C++ vector
 ///
