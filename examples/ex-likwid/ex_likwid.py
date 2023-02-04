@@ -23,7 +23,6 @@ def run_fib(n):
 
 
 if __name__ == "__main__":
-
     nfib = int(sys.argv[1]) if len(sys.argv) > 1 else 34
 
     with auto_tuple(get_tools(), "%s(%i)" % (sys.argv[0], nfib)):

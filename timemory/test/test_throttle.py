@@ -54,6 +54,7 @@ from timemory import settings as settings
 
 # --------------------------- helper functions ----------------------------------------- #
 
+
 # check availability of a component
 def check_available(component):
     return inspect.isclass(component)
@@ -208,7 +209,6 @@ class TimemoryThrottleTests(unittest.TestCase):
 
         # _run function
         def _run(name, idx):
-
             _name = "{}_{}".format(name, idx)
             _hash = tim.add_hash_id(_name)
             n = 2 * settings.throttle_count

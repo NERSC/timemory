@@ -259,7 +259,7 @@ def which(exe):
             from distutils.spawn import find_executable
 
             return find_executable(exe)
-        except (ImportError):
+        except ImportError:
             import os
 
             _path = os.getenv("PATH")

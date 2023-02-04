@@ -45,7 +45,6 @@ def execute(
     generate=["text", "cum", "dot"],
     dot_args=[],
 ):
-
     os.environ["CPUPROFILE_FREQUENCY"] = "{}".format(freq)
     os.environ["MALLOCSTATS"] = "{}".format(malloc_stats)
     os.environ["CPUPROFILE_REALTIME"] = "{}".format(realtime)

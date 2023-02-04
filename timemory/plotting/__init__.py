@@ -357,7 +357,6 @@ def embedded_plot(
 
                     rdata = _json["ranks"]
                     for j in range(0, len(rdata)):
-
                         _data = read(rdata[j], **_dict)
                         _rtag = "" if len(rdata) == 1 else "_{}".format(j)
                         _rtitle = (

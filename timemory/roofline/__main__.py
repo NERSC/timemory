@@ -206,7 +206,6 @@ Examples:
 
 
 def plot(args):
-
     try:
         fai = open(args.arithmetic_intensity, "r")
         fop = open(args.operations, "r")
@@ -269,7 +268,6 @@ def plot(args):
 
 
 def plot_impl(args, ai_data, op_data, rank=None, label=None):
-
     fname = os.path.basename(args.output_file)
     fdir = os.path.realpath(args.output_dir)
 

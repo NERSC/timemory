@@ -57,7 +57,6 @@ def run_marker(n):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-n", "--nfib", type=int, default=10, help="Fibonacci depth"

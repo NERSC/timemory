@@ -83,7 +83,6 @@ def bar():
 #   EXECUTE
 #
 if __name__ == "__main__":
-
     # do some work
     foo()
     bar()

@@ -635,7 +635,6 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
 
 # -------------------------------------------------------------------------------------- #
 def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
-
     #
     if _matplotlib_backend is None:
         try:

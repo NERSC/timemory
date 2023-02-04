@@ -113,7 +113,6 @@ def allocate():
 
 # read and write to file
 def read_write():
-
     rb.start()
     wb.start()
 

@@ -414,7 +414,7 @@ def get_peak_bandwidth(roof_data, band_labels):
     peak_bandwidths = []
     band_info_list = [e for e in band_info_list if e in band_labels]
 
-    for (band, band_info) in zip(band_list, band_info_list):
+    for band, band_info in zip(band_list, band_info_list):
         band_info = band_info + " GB/s"
         peak_bandwidths.append([float(band[0] / band[1]), band_info])
 
@@ -424,7 +424,6 @@ def get_peak_bandwidth(roof_data, band_labels):
 # -------------------------------------------------------------------------------------- #
 #
 def get_theo_bandwidth_txns(txn_bandwidth):
-
     peak_bandwidths = []
     peak_bandwidths.append([float(txn_bandwidth[0]), "L1 GTXNs/s"])
     peak_bandwidths.append([float(txn_bandwidth[1]), "L2 GTXNs/s"])
@@ -736,7 +735,6 @@ def get_hotspots_integer(op_data, ai_data, index=None):
         all_runtime[ai_graph_data[i]["hash"]] = get_runtime(ai_repr)
 
     for i in range(0, len(op_graph_data)):
-
         Iops = None
         HBM_transactions = None
         L1_transactions = None
@@ -833,7 +831,6 @@ def get_color(proportion):
 #
 class plot_parameters:
     def __init__(self, peak_flops, hotspots, _inst_roofline):
-
         _peak = peak_flops[0]
         if isinstance(_peak, list):
             _peak = max(_peak)

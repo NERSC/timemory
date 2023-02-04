@@ -76,7 +76,6 @@ def set_environ(field, default_val):
 #   Main execution
 #
 if __name__ == "__main__":
-
     ret = 0
     try:
         # ----------------------------------------------------------------------#
@@ -188,7 +187,6 @@ if __name__ == "__main__":
         #   handler
         #
         if args.enable_handler:
-
             try:
                 import timemory_json_handler
 

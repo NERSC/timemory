@@ -39,7 +39,6 @@ from . import utils as _utils
 
 
 def parse_args():
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-e",
@@ -142,7 +141,6 @@ def parse_args():
 
 
 def post_process(args):
-
     try:
         if args.type == "cpu_profiler":
             if args.input is None:
@@ -167,7 +165,6 @@ def post_process(args):
 
 
 def run(args, cmd):
-
     try:
         if args.type == "cpu_profiler":
             _cpu.execute(
@@ -194,7 +191,6 @@ def run(args, cmd):
 
 
 if __name__ == "__main__":
-
     try:
         # look for "--" and interpret anything after that
         # to be a command to execute

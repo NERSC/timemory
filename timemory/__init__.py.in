@@ -121,7 +121,6 @@ _no_bindings = __str2bool(
     os.environ.get("TIMEMORY_CXX_PLOT_MODE", "0")
 ) or not __str2bool(os.environ.get("TIMEMORY_PYTHON_BINDINGS", "1"))
 if _no_bindings:
-
     from . import mpi_support
     from . import mpi
     from . import roofline
@@ -371,7 +370,7 @@ try:
     sys.modules["timemory.hatchet"] = local_hatchet
     sys.modules["timemory.hatchet_reader"] = hatchet_reader
     __all__ += ["graphframe"]
-except (ImportError) as e:
+except ImportError as e:
     pass
 
 # try to import real hatchet
@@ -380,12 +379,12 @@ try:
         import hatchet as global_hatchet
 
         sys.modules["hatchet"] = global_hatchet
-except (ImportError):
+except ImportError:
     pass
 
 # if real hatchet doesn't exist, set the local one as the global
 try:
     if "hatchet" not in sys.modules and "timemory.hatchet" in sys.modules:
         sys.modules["hatchet"] = sys.modules["timemory.hatchet"]
-except (KeyError):
+except KeyError:
     pass

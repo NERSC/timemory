@@ -37,7 +37,6 @@ def run_profile(nitr=100, nsize=1000000):
 
 
 def run_mpi(nitr=100, nsize=1000000):
-
     if use_mpi is False:
         _sum = 0.0
         for i in range(nitr):
@@ -83,7 +82,6 @@ def main(args):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i",

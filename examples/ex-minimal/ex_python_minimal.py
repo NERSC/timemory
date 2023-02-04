@@ -11,7 +11,6 @@ def fib(n):
 
 @auto_timer("total", mode="full")
 def main(nfib):
-
     ans = fib(nfib)
     with auto_timer("nested"):
         ans += fib(nfib + 1)

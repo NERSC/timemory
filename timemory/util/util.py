@@ -113,7 +113,6 @@ class base_decorator(object):
     # ---------------------------------------------------------------------------------- #
     #
     def parse_wrapped(self, func, args, kwargs):
-
         if (
             len(args) > 0
             and args[0] is not None

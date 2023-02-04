@@ -129,7 +129,6 @@ def install_compile_time_perf(_dir):
 
 
 def configure():
-
     # Get pyctest argument parser that include PyCTest arguments
     parser = helpers.ArgumentParser(
         project_name="timemory",
@@ -487,7 +486,6 @@ def configure():
 
 
 def run_pyctest():
-
     # run argparse, checkout source, copy over files
     #
     args = configure()
@@ -1280,7 +1278,6 @@ def run_pyctest():
             )
 
     if not args.quick and not args.coverage and not args.minimal:
-
         if "compiler" in args.tools:
             pyct.test(
                 construct_name("ex-compiler-instrument"),
@@ -1821,9 +1818,7 @@ def run_pyctest():
 
 #
 if __name__ == "__main__":
-
     try:
-
         run_pyctest()
 
     except Exception as e:

@@ -55,6 +55,7 @@ from timemory.bundle import marker
 
 # --------------------------- helper functions ----------------------------------------- #
 
+
 # check availability of a component
 def check_available(component):
     return inspect.isclass(component)

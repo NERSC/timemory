@@ -192,7 +192,6 @@ def post_process(
     generate=["text", "cum", "dot"],
     dot_args=[],
 ):
-
     linked = get_linked_libraries(exe)
     libs = []
     if linked is not None:
