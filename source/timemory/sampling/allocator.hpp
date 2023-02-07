@@ -465,22 +465,24 @@ allocator<Tp>::execute(allocator* _alloc)
     bool          _completed         = false;
     bool          _clean_exit        = true;
     size_t        _swap_count        = 0;
-    const int64_t _local_buffer_size = 10;
+    const int64_t _local_buffer_size = 5;
     auto          _local_buffer      = buffer_vec_t{};
     auto          _pending           = std::atomic<int64_t>{ 0 };
-    auto          _wait              = std::atomic<bool>{ false };
     semaphore_t*  _sem               = &_alloc->m_sem;
+    auto          _buffer_mutex      = locking::spin_mutex{};
 
     TIMEMORY_SEMAPHORE_CHECK(sem_init(_sem, 0, 0));
     _local_buffer.reserve(_local_buffer_size);
 
     auto _swap_buffer = [&](buffer_vec_t& _new_buffer) {
-        if(_local_buffer.empty() || _pending.load() == 0)
-            return;
-        _wait.store(true);
-        std::swap(_local_buffer, _new_buffer);
-        auto _n = _new_buffer.size();
-        _wait.store(false);
+        size_t _n = 0;
+        {
+            locking::spin_lock _lk{ _buffer_mutex };
+            if(_local_buffer.empty())
+                return;
+            std::swap(_local_buffer, _new_buffer);
+            _n = _new_buffer.size();
+        }
         _pending -= _n;
         for(auto& itr : _new_buffer)
         {
@@ -511,12 +513,11 @@ allocator<Tp>::execute(allocator* _alloc)
         });
 
         _alloc->set_move([&](Tp* _inst, buffer_type&& _buffer) {
-            ++_pending;
-            if(_pending.load() >= _local_buffer_size)
-                _notify(_sem);
-            while(_wait.load() || _pending.load() >= _local_buffer_size)
-                std::this_thread::yield();
-            _local_buffer.emplace_back(_inst, std::move(_buffer));
+            {
+                locking::spin_lock _lk{ _buffer_mutex };
+                _local_buffer.emplace_back(_inst, std::move(_buffer));
+                ++_pending;
+            }
             _notify(_sem);
         });
 

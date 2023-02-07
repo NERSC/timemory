@@ -28,6 +28,7 @@
 #include "timemory/macros/attributes.hpp"
 
 #include <array>
+#include <atomic>
 #include <chrono>
 #include <mutex>
 #include <system_error>
@@ -121,6 +122,133 @@ try_lock_for_n(std::unique_lock<MutexT>&                   _lk,
                 __LINE__, _e.what(), _e.code().message().c_str());
     }
     return _lk.owns_lock();
+}
+
+///
+/// simple mutex which spins on an atomic while trying to lock.
+/// Provided for internal use for when there is low contention
+/// but we want to avoid using pthread mutexes since those
+/// are wrapped by library
+///
+struct spin_mutex
+{
+    spin_mutex()  = default;
+    ~spin_mutex() = default;
+
+    spin_mutex(const spin_mutex&)     = delete;
+    spin_mutex(spin_mutex&&) noexcept = delete;
+
+    spin_mutex& operator=(const spin_mutex&) = delete;
+    spin_mutex& operator=(spin_mutex&&) noexcept = delete;
+
+    void lock();
+    void unlock();
+    bool try_lock();
+
+private:
+    std::atomic<int64_t> m_value = {};
+};
+
+inline void
+spin_mutex::lock()
+{
+    while(!try_lock())
+    {
+        std::this_thread::yield();
+    }
+}
+
+inline void
+spin_mutex::unlock()
+{
+    if((m_value.load() & 1) == 1)
+        ++m_value;
+}
+
+inline bool
+spin_mutex::try_lock()
+{
+    auto _targ = m_value.load(std::memory_order_relaxed);
+    if((_targ & 1) == 0)
+    {
+        return (
+            m_value.compare_exchange_strong(_targ, _targ + 1, std::memory_order_relaxed));
+    }
+    return false;
+}
+
+///
+/// RAII wrapper for spin_mutex
+///
+struct spin_lock
+{
+    spin_lock(spin_mutex&);
+    spin_lock(spin_mutex&, std::defer_lock_t);
+    ~spin_lock();
+
+    spin_lock(const spin_lock&)     = delete;
+    spin_lock(spin_lock&&) noexcept = delete;
+
+    spin_lock& operator=(const spin_lock&) = delete;
+    spin_lock& operator=(spin_lock&&) noexcept = delete;
+
+    bool owns_lock() const;
+
+    void lock();
+    void unlock();
+    bool try_lock();
+
+private:
+    bool        m_owns = false;
+    spin_mutex& m_mutex;
+};
+
+inline spin_lock::spin_lock(spin_mutex& _v)
+: m_mutex{ _v }
+{
+    lock();
+}
+
+inline spin_lock::spin_lock(spin_mutex& _v, std::defer_lock_t)
+: m_mutex{ _v }
+{}
+
+inline spin_lock::~spin_lock() { unlock(); }
+
+inline bool
+spin_lock::owns_lock() const
+{
+    return m_owns;
+}
+
+inline void
+spin_lock::lock()
+{
+    if(!owns_lock())
+    {
+        m_mutex.lock();
+        m_owns = true;
+    }
+}
+
+inline void
+spin_lock::unlock()
+{
+    if(owns_lock())
+    {
+        m_mutex.unlock();
+        m_owns = false;
+    }
+}
+
+inline bool
+spin_lock::try_lock()
+{
+    if(!owns_lock())
+    {
+        m_owns = m_mutex.try_lock();
+    }
+    return m_owns;
 }
 }  // namespace locking
 }  // namespace tim
