@@ -575,8 +575,9 @@ if(TIMEMORY_BUILD_YAML)
     add_library(timemory-yaml-cpp STATIC)
     add_library(timemory::timemory-yaml-cpp ALIAS timemory-yaml-cpp)
     file(GLOB yaml_cpp_sources ${PROJECT_SOURCE_DIR}/external/yaml-cpp/src/*.cpp)
-    file(GLOB yaml_cpp_headers ${PROJECT_SOURCE_DIR}/external/yaml-cpp/include/*.h
-         ${PROJECT_SOURCE_DIR}/external/yaml-cpp/include/node/*.h)
+    file(GLOB yaml_cpp_headers
+         ${PROJECT_SOURCE_DIR}/external/yaml-cpp/include/yaml-cpp/*.h
+         ${PROJECT_SOURCE_DIR}/external/yaml-cpp/include/yaml-cpp/node/*.h)
     target_sources(timemory-yaml-cpp PRIVATE ${yaml_cpp_sources} ${yaml_cpp_headers})
     target_compile_definitions(timemory-yaml-cpp PUBLIC YAML_CPP_STATIC_DEFINE=1)
     target_include_directories(
@@ -590,15 +591,10 @@ if(TIMEMORY_BUILD_YAML)
         EXPORT ${PROJECT_NAME}-library-depends
         OPTIONAL)
 
-    foreach(_header ${yaml_cpp_headers})
-        file(RELATIVE_PATH _relative ${PROJECT_SOURCE_DIR}/external/yaml-cpp/include
-             ${_header})
-        get_filename_component(_destpath ${_relative} DIRECTORY)
-        install(
-            FILES ${_header}
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory/tpls/${_destpath}
-            OPTIONAL)
-    endforeach()
+    install(
+        DIRECTORY ${PROJECT_SOURCE_DIR}/external/yaml-cpp/include/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory/tpls/
+        OPTIONAL)
 endif()
 
 if(TIMEMORY_USE_YAML)
