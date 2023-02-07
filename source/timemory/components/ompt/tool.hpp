@@ -52,14 +52,38 @@ namespace openmp
 //
 //--------------------------------------------------------------------------------------//
 //
-static const char* ompt_thread_type_labels[] = { nullptr, "ompt_thread_initial",
-                                                 "ompt_thread_worker",
-                                                 "ompt_thread_other" };
+#define TIMEMORY_OMPT_ENUM_LABEL(TYPE)                                                   \
+    {                                                                                    \
+        TYPE, #TYPE                                                                      \
+    }
 //
 //--------------------------------------------------------------------------------------//
 //
-static const char* ompt_dispatch_type_labels[] = { nullptr, "ompt_dispatch_iteration",
-                                                   "ompt_dispatch_section" };
+static const char* ompt_thread_type_labels[] = { nullptr,
+                                                 "ompt_thread_initial",
+                                                 "ompt_thread_worker",
+                                                 "ompt_thread_other",
+                                                 "unsupported_ompt_thread_type",
+                                                 "unsupported_ompt_thread_type",
+                                                 "unsupported_ompt_thread_type",
+                                                 "unsupported_ompt_thread_type",
+                                                 "unsupported_ompt_thread_type",
+                                                 "unsupported_ompt_thread_type" };
+//
+//--------------------------------------------------------------------------------------//
+//
+static const char* ompt_dispatch_type_labels[] = { nullptr,
+                                                   "ompt_dispatch_iteration",
+                                                   "ompt_dispatch_section",
+                                                   "ompt_dispatch_ws_loop_chunk",
+                                                   "ompt_dispatch_taskloop_chunk",
+                                                   "ompt_dispatch_distribute_chunk",
+                                                   "unsupported_ompt_dispatch_type",
+                                                   "unsupported_ompt_dispatch_type",
+                                                   "unsupported_ompt_dispatch_type",
+                                                   "unsupported_ompt_dispatch_type",
+                                                   "unsupported_ompt_dispatch_type",
+                                                   "unsupported_ompt_dispatch_type" };
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -71,15 +95,35 @@ static const char* ompt_sync_region_type_labels[] = {
     "ompt_sync_region_barrier_implementation",
     "ompt_sync_region_taskwait",
     "ompt_sync_region_taskgroup",
-    "ompt_sync_region_reduction"
+    "ompt_sync_region_reduction",
+    "ompt_sync_region_barrier_implicit_workshare",
+    "ompt_sync_region_barrier_implicit_parallel",
+    "ompt_sync_region_barrier_teams",
+    "unsupported_ompt_sync_region_type",
+    "unsupported_ompt_sync_region_type",
+    "unsupported_ompt_sync_region_type",
+    "unsupported_ompt_sync_region_type",
+    "unsupported_ompt_sync_region_type",
+    "unsupported_ompt_sync_region_type"
 };
 //
 //--------------------------------------------------------------------------------------//
 //
-static const char* ompt_target_type_labels[] = { nullptr, "ompt_target",
+static const char* ompt_target_type_labels[] = { nullptr,
+                                                 "ompt_target",
                                                  "ompt_target_enter_data",
                                                  "ompt_target_exit_data",
-                                                 "ompt_target_update" };
+                                                 "ompt_target_update",
+                                                 "ompt_target_nowait",
+                                                 "ompt_target_enter_data_nowait",
+                                                 "ompt_target_exit_data_nowait",
+                                                 "ompt_target_update_nowait",
+                                                 "unsupported_ompt_target_type",
+                                                 "unsupported_ompt_target_type",
+                                                 "unsupported_ompt_target_type",
+                                                 "unsupported_ompt_target_type",
+                                                 "unsupported_ompt_target_type",
+                                                 "unsupported_ompt_target_type" };
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -90,14 +134,34 @@ static const char* ompt_work_labels[] = { nullptr,
                                           "ompt_work_single_other",
                                           "ompt_work_workshare",
                                           "ompt_work_distribute",
-                                          "ompt_work_taskloop" };
+                                          "ompt_work_taskloop",
+                                          "ompt_work_scope",
+                                          "ompt_work_loop_static",
+                                          "ompt_work_loop_dynamic",
+                                          "ompt_work_loop_guided",
+                                          "ompt_work_loop_other",
+                                          "unsupported_ompt_work_type",
+                                          "unsupported_ompt_work_type",
+                                          "unsupported_ompt_work_type",
+                                          "unsupported_ompt_work_type",
+                                          "unsupported_ompt_work_type",
+                                          "unsupported_ompt_work_type" };
 //
 //--------------------------------------------------------------------------------------//
 //
-static const char* ompt_target_data_op_labels[] = { nullptr, "ompt_target_data_alloc",
-                                                    "ompt_target_data_transfer_to_dev",
-                                                    "ompt_target_data_transfer_from_dev",
-                                                    "ompt_target_data_delete" };
+static const char* ompt_target_data_op_labels[] = {
+    nullptr,
+    "ompt_target_data_alloc",
+    "ompt_target_data_transfer_to_dev",
+    "ompt_target_data_transfer_from_dev",
+    "ompt_target_data_delete",
+    "unsupported_ompt_target_data_op_type",
+    "unsupported_ompt_target_data_op_type",
+    "unsupported_ompt_target_data_op_type",
+    "unsupported_ompt_target_data_op_type",
+    "unsupported_ompt_target_data_op_type",
+    "unsupported_ompt_target_data_op_type"
+};
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -108,51 +172,52 @@ static const char* ompt_task_status_labels[] = { nullptr,
                                                  "ompt_task_detach",
                                                  "ompt_task_early_fulfill",
                                                  "ompt_task_late_fulfill",
-                                                 "ompt_task_switch" };
+                                                 "ompt_task_switch",
+                                                 "ompt_taskwait_complete",
+                                                 "unsupported_ompt_task_status_type",
+                                                 "unsupported_ompt_task_status_type",
+                                                 "unsupported_ompt_task_status_type",
+                                                 "unsupported_ompt_task_status_type",
+                                                 "unsupported_ompt_task_status_type",
+                                                 "unsupported_ompt_task_status_type" };
 //
 //--------------------------------------------------------------------------------------//
 //
 static std::map<ompt_mutex_t, const char*> ompt_mutex_type_labels = {
-    { ompt_mutex_lock, "ompt_mutex_lock" },
-    { ompt_mutex_test_lock, "ompt_mutex_test_lock" },
-    { ompt_mutex_nest_lock, "ompt_mutex_nest_lock" },
-    { ompt_mutex_test_nest_lock, "ompt_mutex_test_nest_lock" },
-    { ompt_mutex_critical, "ompt_mutex_critical" },
-    { ompt_mutex_atomic, "ompt_mutex_atomic" },
-    { ompt_mutex_ordered, "ompt_mutex_ordered" }
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_mutex_lock),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_mutex_test_lock),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_mutex_nest_lock),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_mutex_test_nest_lock),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_mutex_critical),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_mutex_atomic),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_mutex_ordered)
 };
 //
 //--------------------------------------------------------------------------------------//
 //
 static std::map<ompt_task_flag_t, const char*> ompt_task_type_labels = {
-    { ompt_task_initial, "ompt_task_initial" },
-    { ompt_task_implicit, "ompt_task_implicit" },
-    { ompt_task_explicit, "ompt_task_explicit" },
-    { ompt_task_target, "ompt_task_target" },
-    { ompt_task_undeferred, "ompt_task_undeferred" },
-    { ompt_task_untied, "ompt_task_untied" },
-    { ompt_task_final, "ompt_task_final" },
-    { ompt_task_mergeable, "ompt_task_mergeable" },
-    { ompt_task_merged, "ompt_task_merged" }
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_task_initial),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_task_implicit),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_task_explicit),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_task_target),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_task_taskwait),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_task_undeferred),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_task_untied),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_task_final),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_task_mergeable),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_task_merged)
 };
 //
 //--------------------------------------------------------------------------------------//
 //
 static std::map<ompt_target_map_flag_t, const char*> ompt_target_map_labels = {
-    { ompt_target_map_flag_to, "ompt_target_map_flag_to" },
-    { ompt_target_map_flag_from, "ompt_target_map_flag_from" },
-    { ompt_target_map_flag_alloc, "ompt_target_map_flag_alloc" },
-    { ompt_target_map_flag_release, "ompt_target_map_flag_release" },
-    { ompt_target_map_flag_delete, "ompt_target_map_flag_delete" },
-    { ompt_target_map_flag_implicit, "ompt_target_map_flag_implicit" }
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_target_map_flag_to),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_target_map_flag_from),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_target_map_flag_alloc),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_target_map_flag_release),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_target_map_flag_delete),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_target_map_flag_implicit)
 };
-//
-//--------------------------------------------------------------------------------------//
-//
-#define TIMEMORY_OMPT_ENUM_LABEL(TYPE)                                                   \
-    {                                                                                    \
-        TYPE, #TYPE                                                                      \
-    }
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -162,7 +227,8 @@ static std::map<ompt_dependence_type_t, const char*> ompt_dependence_type_labels
     TIMEMORY_OMPT_ENUM_LABEL(ompt_dependence_type_inout),
     TIMEMORY_OMPT_ENUM_LABEL(ompt_dependence_type_mutexinoutset),
     TIMEMORY_OMPT_ENUM_LABEL(ompt_dependence_type_source),
-    TIMEMORY_OMPT_ENUM_LABEL(ompt_dependence_type_sink)
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_dependence_type_sink),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_dependence_type_inoutset),
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -211,7 +277,12 @@ static std::map<ompt_callbacks_t, const char*> ompt_callback_labels = {
     TIMEMORY_OMPT_ENUM_LABEL(ompt_callback_flush),
     TIMEMORY_OMPT_ENUM_LABEL(ompt_callback_cancel),
     TIMEMORY_OMPT_ENUM_LABEL(ompt_callback_reduction),
-    TIMEMORY_OMPT_ENUM_LABEL(ompt_callback_dispatch)
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_callback_dispatch),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_callback_target_emi),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_callback_target_data_op_emi),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_callback_target_submit_emi),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_callback_target_map_emi),
+    TIMEMORY_OMPT_ENUM_LABEL(ompt_callback_error)
 };
 //
 //--------------------------------------------------------------------------------------//
@@ -379,7 +450,7 @@ public:
     //----------------------------------------------------------------------------------//
     // callback work
     //----------------------------------------------------------------------------------//
-    void operator()(ompt_work_t wstype, ompt_scope_endpoint_t endpoint,
+    void operator()(ompt_work_t work_type, ompt_scope_endpoint_t endpoint,
                     ompt_data_t* parallel_data, ompt_data_t* task_data, uint64_t count,
                     const void* codeptr);
 

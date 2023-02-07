@@ -314,14 +314,15 @@ context_handler<ApiT>::operator()(ompt_data_t* parallel_data, ompt_data_t* task_
 //----------------------------------------------------------------------------------//
 template <typename ApiT>
 void
-context_handler<ApiT>::operator()(ompt_work_t wstype, ompt_scope_endpoint_t endpoint,
+context_handler<ApiT>::operator()(ompt_work_t work_type, ompt_scope_endpoint_t endpoint,
                                   ompt_data_t* parallel_data, ompt_data_t* task_data,
                                   uint64_t count, const void* codeptr)
 {
     if(!m_enabled)
         return;
-    context_endpoint(ompt_work_labels[wstype], get_data<work_tag>(), endpoint, task_data,
-                     wstype, endpoint, parallel_data, task_data, count, codeptr);
+    context_endpoint(ompt_work_labels[work_type], get_data<work_tag>(), endpoint,
+                     task_data, work_type, endpoint, parallel_data, task_data, count,
+                     codeptr);
 }
 
 //----------------------------------------------------------------------------------//
