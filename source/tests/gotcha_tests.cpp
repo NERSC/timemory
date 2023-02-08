@@ -993,6 +993,8 @@ TEST_F(gotcha_tests, member_functions)
             printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
         }
 
+        auto _mfg = memfun_gotcha_t{};
+        _mfg.start();
         float  fsum2 = 0.0;
         double dsum2 = 0.0;
         for(int64_t i = 0; i < ntot; ++i)
@@ -1002,6 +1004,7 @@ TEST_F(gotcha_tests, member_functions)
             fsum2 += std::get<0>(ret);
             dsum2 += std::get<1>(ret);
         }
+        _mfg.stop();
 
         if(rank == 0)
         {
@@ -1066,6 +1069,14 @@ TEST_F(gotcha_tests, member_functions)
         EXPECT_LE(itr->data().get_laps(), 2000) << itr->prefix();
         ++itr;
         EXPECT_LE(itr->data().get_laps(), 2000) << itr->prefix();
+    }
+    {
+        int64_t _nlaps = 0;
+        auto    bitr   = real_data.begin() + real_init_size;
+        auto    eitr   = bitr + 5;
+        for(auto itr = bitr; itr != real_data.end() && itr != eitr; ++itr)
+            _nlaps += itr->data().get_laps();
+        EXPECT_EQ(_nlaps, 5001);
     }
 }
 
