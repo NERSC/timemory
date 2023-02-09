@@ -285,6 +285,20 @@ namespace scope
 //
 //--------------------------------------------------------------------------------------//
 //
+/// \struct tim::scope::process_scope
+/// \brief Dummy struct to designates global static storage.
+struct process_scope : std::integral_constant<int, 0>
+{};
+//
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \struct tim::scope::thread_scope
+/// \brief Dummy struct to designates thread-local static storage.
+struct thread_scope : std::integral_constant<int, 1>
+{};
+//--------------------------------------------------------------------------------------//
+//
 /// \struct tim::scope::tree
 /// \brief Dummy struct to designates tree (hierarchical) storage. This scope (default)
 /// maintains nesting in the call-graph storage. In this scoping mode, the results
