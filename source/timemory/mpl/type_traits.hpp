@@ -210,6 +210,7 @@ struct runtime_enabled
         else
         {
             return is_available<T>::value && default_runtime_enabled<T>::value;
+            (void) val;
         }
     }
 
@@ -239,6 +240,7 @@ struct runtime_enabled
         else
         {
             return is_available<T>::value && default_runtime_enabled<T>::value;
+            (void) val;
         }
     }
 
@@ -256,13 +258,30 @@ private:
         return _v;
     }
 
+#if defined(__GNUG__) && __GNUG__ < 8
+    // using the form/style similar to above but with a thread-local value results in
+    // an internal compiler error for GCC <= v7:
+    //      internal compiler error: output_operand: '%&' used without
+    //      any local dynamic TLS references
+    static TIMEMORY_HOT bool& get_thread_value() { return thread_value; }
+    static thread_local bool  thread_value;
+#else
     static TIMEMORY_HOT bool& get_thread_value()
     {
         static thread_local bool _v =
             is_available<T>::value && default_runtime_enabled<T>::value;
         return _v;
     }
+#endif
 };
+
+#if defined(__GNUG__) && __GNUG__ < 8
+// compiler bug workaround
+template <typename T>
+thread_local bool            runtime_enabled<T>::thread_value =
+    is_available<T>::value&& default_runtime_enabled<T>::value;
+
+#endif
 
 //--------------------------------------------------------------------------------------//
 /// \struct tim::trait::custom_label_printing
