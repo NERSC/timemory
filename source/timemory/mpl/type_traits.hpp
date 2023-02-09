@@ -38,6 +38,7 @@
 #include "timemory/mpl/available.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/tpls/cereal/archives.hpp"
+#include "timemory/utility/types.hpp"
 //
 #include <type_traits>
 
@@ -140,17 +141,26 @@ struct runtime_enabled<void>
 {
     static constexpr bool value = supports_runtime_enabled<void>::value;
 
-    // GET specialization if component is available
-    static TIMEMORY_HOT TIMEMORY_INLINE bool get() { return get_runtime_value(); }
+    static TIMEMORY_INLINE bool get() { return get_global_value(); }
+    static TIMEMORY_INLINE void set(bool val) { get_global_value() = val; }
 
-    // SET specialization if component is available
-    static void set(bool val) { get_runtime_value() = val; }
+    static TIMEMORY_INLINE bool get(scope::thread_scope) { return get_thread_value(); }
+    static TIMEMORY_INLINE void set(scope::thread_scope, bool val)
+    {
+        get_thread_value() = val;
+    }
 
 private:
-    static TIMEMORY_HOT TIMEMORY_INLINE bool& get_runtime_value()
+    static TIMEMORY_HOT bool& get_global_value()
     {
-        static bool _instance = TIMEMORY_DEFAULT_ENABLED;
-        return _instance;
+        static bool _v = TIMEMORY_DEFAULT_ENABLED;
+        return _v;
+    }
+
+    static TIMEMORY_HOT bool& get_thread_value()
+    {
+        static thread_local bool _v = TIMEMORY_DEFAULT_ENABLED;
+        return _v;
     }
 };
 
@@ -172,59 +182,85 @@ struct default_runtime_enabled : true_type
 template <typename T>
 struct runtime_enabled
 {
-private:
-    template <typename U>
-    static constexpr bool get_value()
-    {
-        return supports_runtime_enabled<U>::value;
-    }
-
-public:
     static constexpr bool value = supports_runtime_enabled<T>::value;
 
     /// type-list of APIs that are runtime configurable
-    using api_type_list =
+    using category_type_list =
         mpl::get_true_types_t<concepts::is_runtime_configurable, component_apis_t<T>>;
 
-    /// GET specialization if component is available
-    template <typename U = T>
-    static TIMEMORY_INLINE bool get(
-        enable_if_t<is_available<U>::value && get_value<U>(), int> = 0)
+    static TIMEMORY_INLINE bool get()
     {
-        return (runtime_enabled<void>::get() && get_runtime_value() &&
-                apply<runtime_enabled>{}(api_type_list{}));
+        if constexpr(is_available<T>::value && supports_runtime_enabled<T>::value)
+        {
+            return (get(scope::thread_scope{}) && get_global_value() &&
+                    get_category_value());
+        }
+        else
+        {
+            return is_available<T>::value && default_runtime_enabled<T>::value;
+        }
     }
 
-    /// SET specialization if component is available
-    template <typename U = T>
-    static TIMEMORY_INLINE bool set(
-        bool val, enable_if_t<is_available<U>::value && get_value<U>(), int> = 0)
+    static TIMEMORY_INLINE bool set(bool val)
     {
-        return (get_runtime_value() = val);
+        if constexpr(is_available<T>::value && supports_runtime_enabled<T>::value)
+        {
+            return (get_global_value() = val);
+        }
+        else
+        {
+            return is_available<T>::value && default_runtime_enabled<T>::value;
+        }
     }
 
-    /// GET specialization if component is NOT available
-    template <typename U = T>
-    static TIMEMORY_INLINE bool get(
-        enable_if_t<!is_available<U>::value || !get_value<U>(), long> = 0)
+    //
+    //
+    //  thread section
+    //
+    //
+    static TIMEMORY_INLINE bool get(scope::thread_scope)
     {
-        return is_available<T>::value && default_runtime_enabled<T>::value;
+        if constexpr(is_available<T>::value && supports_runtime_enabled<T>::value)
+        {
+            return (get_thread_value() && get_category_value(scope::thread_scope{}));
+        }
+        else
+        {
+            return is_available<T>::value && default_runtime_enabled<T>::value;
+        }
     }
 
-    /// SET specialization if component is NOT available
-    template <typename U = T>
-    static TIMEMORY_INLINE bool set(
-        bool, enable_if_t<!is_available<U>::value || !get_value<U>(), long> = 0)
+    static TIMEMORY_INLINE bool set(scope::thread_scope, bool val)
     {
-        return is_available<T>::value && default_runtime_enabled<T>::value;
+        if constexpr(is_available<T>::value && supports_runtime_enabled<T>::value)
+        {
+            return (get_thread_value() = val);
+        }
+        else
+        {
+            return is_available<T>::value && default_runtime_enabled<T>::value;
+        }
     }
 
 private:
-    static TIMEMORY_HOT bool& get_runtime_value()
+    template <typename... Args>
+    static TIMEMORY_HOT bool get_category_value(Args... _args)
     {
-        static bool _instance =
+        return runtime_enabled<void>::get(_args...) &&
+               apply<runtime_enabled>{}(category_type_list{}, _args...);
+    }
+
+    static TIMEMORY_HOT bool& get_global_value()
+    {
+        static bool _v = is_available<T>::value && default_runtime_enabled<T>::value;
+        return _v;
+    }
+
+    static TIMEMORY_HOT bool& get_thread_value()
+    {
+        static thread_local bool _v =
             is_available<T>::value && default_runtime_enabled<T>::value;
-        return _instance;
+        return _v;
     }
 };
 
@@ -780,7 +816,7 @@ struct report
 private:
     static value_type& get_runtime_value()
     {
-        static value_type _instance{
+        static value_type _v{
             { report_count<T>::value, (report_depth<T>::value && !flat_storage<T>::value),
               report_metric_name<T>::value, report_units<T>::value, report_sum<T>::value,
               report_mean<T>::value && !timeline_storage<T>::value,
@@ -788,7 +824,7 @@ private:
               report_statistics<T>::value, report_statistics<T>::value,
               report_statistics<T>::value, report_statistics<T>::value }
         };
-        return _instance;
+        return _v;
     }
 
     static value_type get_runtime_env()

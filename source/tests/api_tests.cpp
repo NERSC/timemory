@@ -214,7 +214,7 @@ TEST_F(api_tests, category)
     using wc_api_t   = trait::component_apis_t<wall_clock>;
     using wc_true_t  = tim::mpl::get_true_types_t<trait::runtime_configurable, wc_api_t>;
     using wc_false_t = tim::mpl::get_false_types_t<trait::runtime_configurable, wc_api_t>;
-    using apitypes_t = typename trait::runtime_enabled<wall_clock>::api_type_list;
+    using apitypes_t = typename trait::runtime_enabled<wall_clock>::category_type_list;
 
     puts("");
     TIMEMORY_PRINT_HERE("component-apis : %s", tim::demangle<wc_api_t>().c_str());
