@@ -125,11 +125,11 @@ struct apply
             TraitT<Types, CommonT...>::get(std::forward<Args>(args)...)...);
     }
     //
-    template <typename... Types>
-    inline bool operator()(type_list<Types...>)
+    template <typename... Types, typename... Args>
+    inline bool operator()(type_list<Types...>, Args... _args)
     {
         bool _ret = true;
-        TIMEMORY_FOLD_EXPRESSION(_ret = _ret && TraitT<Types>::get());
+        TIMEMORY_FOLD_EXPRESSION(_ret = _ret && TraitT<Types>::get(_args...));
         return _ret;
     }
 };  //
