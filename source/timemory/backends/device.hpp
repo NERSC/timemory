@@ -310,12 +310,12 @@ struct range
     TIMEMORY_HOST_DEVICE_FUNCTION Intp& stride() { return m_stride; }
     TIMEMORY_HOST_DEVICE_FUNCTION Intp  stride() const { return m_stride; }
 
-    TIMEMORY_HOST_DEVICE_FUNCTION const char* c_str() const
+    TIMEMORY_HOST_FUNCTION const char* c_str() const
     {
         using llu = long long unsigned;
-        char desc[512];
+        static thread_local char desc[512];
         sprintf(desc, "(%llu,%llu,%llu)", (llu) m_begin, (llu) m_end, (llu) m_stride);
-        return std::move(desc);  // NOLINT
+        return desc;
     }
 
 private:
