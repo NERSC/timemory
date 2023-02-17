@@ -24,8 +24,6 @@
 
 #include "test_macros.hpp"
 
-#include <bits/stdint-uintn.h>
-
 TIMEMORY_TEST_DEFAULT_MAIN
 
 #include "timemory/library.h"
