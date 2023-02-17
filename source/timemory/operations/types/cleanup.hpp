@@ -47,23 +47,18 @@ struct cleanup
 {
     using type = Tp;
 
-    TIMEMORY_COLD cleanup() { sfinae(0, 0); }
+    TIMEMORY_COLD      cleanup() { sfinae(0); }
+    TIMEMORY_COLD auto operator()() const { return sfinae(0); }
 
 private:
     template <typename Up = Tp>
-    TIMEMORY_COLD auto sfinae(int, int) -> decltype(Up::cleanup(), void())
-    {
-        Up::cleanup();
-    }
-
-    template <typename Up = typename Tp::base_type>
-    TIMEMORY_COLD auto sfinae(int, long) -> decltype(Up::cleanup(), void())
+    static TIMEMORY_COLD auto sfinae(int) -> decltype(Up::cleanup())
     {
         Up::cleanup();
     }
 
     template <typename Up = Tp>
-    void sfinae(long, long)
+    static TIMEMORY_INLINE void sfinae(long)
     {}
 };
 //
