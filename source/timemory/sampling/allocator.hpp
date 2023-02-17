@@ -464,7 +464,6 @@ allocator<Tp>::execute(allocator* _alloc)
 
     bool          _completed         = false;
     bool          _clean_exit        = true;
-    size_t        _swap_count        = 0;
     const int64_t _local_buffer_size = 5;
     auto          _local_buffer      = buffer_vec_t{};
     auto          _pending           = std::atomic<int64_t>{ 0 };
@@ -489,7 +488,6 @@ allocator<Tp>::execute(allocator* _alloc)
             if(!itr.second.is_empty())
             {
                 _alloc->emplace(itr.first, std::move(itr.second));
-                ++_swap_count;
             }
         }
     };
@@ -514,8 +512,9 @@ allocator<Tp>::execute(allocator* _alloc)
 
         _alloc->set_move([&](Tp* _inst, buffer_type&& _buffer) {
             {
+                buffer_type        _buffer_v = std::move(_buffer);
                 locking::spin_lock _lk{ _buffer_mutex };
-                _local_buffer.emplace_back(_inst, std::move(_buffer));
+                _local_buffer.emplace_back(_inst, std::move(_buffer_v));
                 ++_pending;
             }
             _notify(_sem);
@@ -563,15 +562,6 @@ allocator<Tp>::execute(allocator* _alloc)
         _swap_buffer(_new_buffer);
 
         _alloc->update_data();
-
-        /*if(_alloc->m_verbose >= 1)
-        {
-            log::stream(std::cerr, log::color::info())
-                << "[" << TIMEMORY_PROJECT_NAME << "][pid=" << process::get_id()
-                << "][tid=" << _alloc->m_tid << "] Sampler allocator performed "
-                << _swap_count << " swaps and has " << _alloc->m_data.size()
-                << " entries\n";
-        }*/
     }
     _sem = nullptr;
 

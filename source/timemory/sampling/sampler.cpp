@@ -26,6 +26,7 @@
 #define TIMEMORY_SAMPLING_SAMPLER_CPP_
 
 #include "timemory/mpl/type_traits.hpp"
+#include "timemory/utility/locking.hpp"
 #include "timemory/utility/types.hpp"
 
 #if !defined(TIMEMORY_SAMPLING_SAMPLER_HPP_)
@@ -146,7 +147,11 @@ sampler<CompT<Types...>, N>::sampler(std::shared_ptr<allocator_t> _alloc,
 , m_label{ std::move(_label) }
 {
     if(m_alloc)
+    {
+        static auto        _mutex = locking::spin_mutex{};
+        locking::spin_lock _lk{ _mutex };
         m_alloc->allocate(this);
+    }
     _init_sampler();
 }
 //
@@ -377,6 +382,8 @@ sampler<CompT<Types...>, N>::execute(int signum)
     if(!trait::runtime_enabled<this_type>::get())
         return;
 
+    // save errno
+    auto _err = errno;
     for(auto& itr : get_samplers(threading::get_id()))
     {
         if(!itr)
@@ -393,6 +400,8 @@ sampler<CompT<Types...>, N>::execute(int signum)
 
         IF_CONSTEXPR(trait::prevent_reentry<this_type>::value) { itr->m_sig_lock = 0; }
     }
+    // restore errno
+    errno = _err;
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -404,6 +413,8 @@ sampler<CompT<Types...>, N>::execute(int signum, siginfo_t* _info, void* _data)
     if(!trait::runtime_enabled<this_type>::get())
         return;
 
+    // save errno
+    auto _err = errno;
     for(auto& itr : get_samplers(threading::get_id()))
     {
         if(!itr)
@@ -420,6 +431,8 @@ sampler<CompT<Types...>, N>::execute(int signum, siginfo_t* _info, void* _data)
 
         IF_CONSTEXPR(trait::prevent_reentry<this_type>::value) { itr->m_sig_lock = 0; }
     }
+    // restore errno
+    errno = _err;
 }
 //
 //--------------------------------------------------------------------------------------//
