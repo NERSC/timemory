@@ -581,7 +581,7 @@ if(TIMEMORY_BUILD_YAML)
     target_sources(timemory-yaml-cpp PRIVATE ${yaml_cpp_sources} ${yaml_cpp_headers})
     target_compile_definitions(timemory-yaml-cpp PUBLIC YAML_CPP_STATIC_DEFINE=1)
     target_include_directories(
-        timemory-yaml-cpp
+        timemory-yaml-cpp SYSTEM
         PUBLIC $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/yaml-cpp/include>
                $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/tpls>)
 
@@ -605,7 +605,7 @@ if(TIMEMORY_USE_YAML)
         target_link_libraries(timemory-yaml INTERFACE yaml-cpp)
     else()
         target_include_directories(
-            timemory-yaml
+            timemory-yaml SYSTEM
             INTERFACE $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/yaml-cpp/include>
                       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/timemory/tpls>)
     endif()
@@ -1392,7 +1392,8 @@ if(TIMEMORY_USE_GOTCHA AND gotcha_FOUND)
                                        $<INSTALL_INTERFACE:${CMAKE_INSTALL_LIBDIR}>)
     else()
         if(gotcha_INCLUDE_DIRS)
-            target_include_directories(timemory-gotcha INTERFACE ${gotcha_INCLUDE_DIRS})
+            target_include_directories(timemory-gotcha SYSTEM
+                                       INTERFACE ${gotcha_INCLUDE_DIRS})
         endif()
     endif()
 else()
@@ -1568,7 +1569,7 @@ if(TIMEMORY_USE_PERFETTO)
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS})
     target_link_libraries(timemory-perfetto-static PRIVATE timemory::timemory-threading)
     target_include_directories(
-        timemory-perfetto-static
+        timemory-perfetto-static SYSTEM
         PUBLIC $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/perfetto/sdk>)
     timemory_restore_variables(IPO VARIABLES CMAKE_INTERPROCEDURAL_OPTIMIZATION)
 
