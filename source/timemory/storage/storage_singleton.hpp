@@ -41,8 +41,6 @@ get_storage_singleton()
     static auto _instance = (trait::runtime_enabled<component_type>::get())
                                 ? std::make_unique<singleton_type>()
                                 : std::unique_ptr<singleton_type>{};
-    static auto _dtor = scope::destructor{ []() { _instance.reset(); } };
     return _instance.get();
-    consume_parameters(_dtor);
 }
 }  // namespace tim

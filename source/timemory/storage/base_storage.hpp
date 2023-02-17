@@ -46,7 +46,7 @@ namespace tim
 {
 namespace base
 {
-class storage
+class storage : public data_cleanup
 {
 public:
     using string_t       = std::string;
@@ -56,7 +56,7 @@ public:
 public:
     storage(bool _is_master, int64_t _instance_id, std::string _label);
     storage(standalone_storage, int64_t _instance_id, std::string _label);
-    virtual ~storage();
+    ~storage() override = default;
 
     explicit storage(const storage&) = delete;
     explicit storage(storage&&)      = delete;
@@ -73,6 +73,8 @@ public:
     virtual bool global_init() { return false; }
     virtual bool thread_init() { return false; }
     virtual bool data_init() { return false; }
+    void         destroy() override    = 0;
+    void         deregister() override = 0;
 
     template <typename Tp, typename Vp>
     static this_type* base_instance();

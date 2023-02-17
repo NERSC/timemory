@@ -39,6 +39,7 @@
 #include "timemory/mpl/available.hpp"
 #include "timemory/mpl/policy.hpp"
 #include "timemory/settings/settings.hpp"
+#include "timemory/storage/types.hpp"
 #include "timemory/tpls/cereal/cereal.hpp"
 #include "timemory/utility/demangle.hpp"
 #include "timemory/utility/types.hpp"
@@ -82,9 +83,10 @@ public:
     using initializer_func_t = std::function<bool()>;
     using initializer_list_t = std::deque<initializer_func_t>;
     using finalizer_func_t   = std::function<void()>;
-    using finalizer_pair_t   = std::pair<std::string, finalizer_func_t>;
-    using finalizer_list_t   = std::deque<finalizer_pair_t>;
-    using finalizer_pmap_t   = std::map<int32_t, finalizer_list_t>;
+    using finalizer_plist_t  = std::deque<std::pair<std::string, finalizer_func_t>>;
+    using finalizer_slist_t  = std::deque<std::pair<std::string, base::data_cleanup*>>;
+    using finalizer_pmap_t   = std::map<int32_t, finalizer_plist_t>;
+    using finalizer_smap_t   = std::map<int32_t, finalizer_slist_t>;
     using synchronize_list_t = uomap_t<string_t, uomap_t<int64_t, std::function<void()>>>;
     using finalizer_void_t   = std::multimap<void*, finalizer_func_t>;
     using settings_ptr_t     = std::weak_ptr<settings>;
@@ -112,18 +114,17 @@ public:
     /// add functors to destroy instances based on a string key
     template <typename Func>
     void add_cleanup(const std::string&, Func&&);
-    /// this is used by storage classes for finalization.
+    /// this is used for initialization
     template <typename InitFuncT>
     void add_initializer(InitFuncT&&);
     /// this is used by storage classes for finalization.
-    template <typename StackFuncT, typename FinalFuncT>
-    void add_finalizer(const std::string&, StackFuncT&&, FinalFuncT&&, bool, int32_t = 0);
+    void add_finalizer(const std::string&, base::data_cleanup*, bool, int32_t = 0);
     /// remove a cleanup functor
     void remove_cleanup(void*);
     /// remove a cleanup functor
     void remove_cleanup(const std::string&);
     /// remove a finalizer functor
-    void remove_finalizer(const std::string&);
+    std::vector<finalizer_func_t> remove_finalizer(const std::string&);
     /// execute a cleanup based on a key
     void cleanup(const std::string&);
     void cleanup();
@@ -338,11 +339,11 @@ private:
     hash_map_ptr_t     m_hash_ids           = get_hash_ids();
     hash_alias_ptr_t   m_hash_aliases       = get_hash_aliases();
     initializer_list_t m_initializers       = {};
-    finalizer_list_t   m_finalizer_cleanups = {};
+    finalizer_plist_t  m_finalizer_cleanups = {};
     finalizer_pmap_t   m_master_cleanup     = {};
     finalizer_pmap_t   m_worker_cleanup     = {};
-    finalizer_pmap_t   m_master_finalizers  = {};
-    finalizer_pmap_t   m_worker_finalizers  = {};
+    finalizer_smap_t   m_master_finalizers  = {};
+    finalizer_smap_t   m_worker_finalizers  = {};
     finalizer_void_t   m_pointer_fini       = {};
     synchronize_list_t m_synchronize        = {};
     filemap_t          m_output_files       = {};
@@ -435,24 +436,18 @@ manager::add_initializer(InitFuncT&& _init_func)
 //
 //----------------------------------------------------------------------------------//
 //
-template <typename StackFuncT, typename FinalFuncT>
-void
-manager::add_finalizer(const std::string& _key, StackFuncT&& _stack_func,
-                       FinalFuncT&& _inst_func, bool _is_master, int32_t _priority)
+inline void
+manager::add_finalizer(const std::string& _key, base::data_cleanup* _storage,
+                       bool _is_master, int32_t _priority)
 {
-    // ensure there are no duplicates
-    remove_finalizer(_key);
-
     m_metadata_prefix = settings::get_global_output_prefix();
 
     if(m_write_metadata == 0)
         m_write_metadata = 1;
 
-    auto& _cleanup_target   = (_is_master) ? m_master_cleanup : m_worker_cleanup;
     auto& _finalizer_target = (_is_master) ? m_master_finalizers : m_worker_finalizers;
 
-    _cleanup_target[_priority].emplace_back(_key, std::forward<StackFuncT>(_stack_func));
-    _finalizer_target[_priority].emplace_back(_key, std::forward<FinalFuncT>(_inst_func));
+    _finalizer_target[_priority].emplace_back(_key, _storage);
 }
 //
 //--------------------------------------------------------------------------------------//

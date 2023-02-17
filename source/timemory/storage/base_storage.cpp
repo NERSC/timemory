@@ -76,10 +76,6 @@ storage::storage(bool _is_master, int64_t _instance_id, std::string _label)
                             "Warning! base::storage is not master but is zero instance",
                             _id, m_label.c_str());
     }
-
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "%s: %i (%s)",
-                                    "base::storage instance created", (int) m_instance_id,
-                                    m_label.c_str());
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -91,20 +87,7 @@ storage::storage(standalone_storage, int64_t _instance_id, std::string _label)
 , m_label(std::move(_label))
 , m_manager(::tim::manager::instance())
 , m_settings(::tim::settings::shared_instance())
-{
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "%s: %i (%s)",
-                                    "base::storage instance created (standalone)",
-                                    (int) m_instance_id, m_label.c_str());
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-TIMEMORY_STORAGE_INLINE storage::~storage()
-{
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(),
-                                    "base::storage instance %i deleted for %s",
-                                    (int) m_instance_id, m_label.c_str());
-}
+{}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -234,9 +217,9 @@ TIMEMORY_STORAGE_INLINE std::set<storage*>
 
     // if no tid is specified, return all the children
     std::set<storage*> _v{};
-    for(auto itr : m_children)
+    for(const auto& itr : m_children)
     {
-        for(auto iitr : itr.second)
+        for(auto* iitr : itr.second)
         {
             if(iitr)
                 _v.emplace(iitr);

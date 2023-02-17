@@ -34,6 +34,7 @@
 #include "timemory/manager/macros.hpp"
 #include "timemory/manager/types.hpp"
 #include "timemory/operations/types/decode.hpp"
+#include "timemory/process/threading.hpp"
 #include "timemory/settings/settings.hpp"
 #include "timemory/utility/delimit.hpp"
 #include "timemory/utility/filepath.hpp"
@@ -149,10 +150,6 @@ manager::manager()
 
     if(settings::cpu_affinity())
         threading::affinity::set();
-
-    auto _settings = m_settings.lock();
-    if(_settings && _settings->get_initialized())
-        initialize();
 }
 //
 //----------------------------------------------------------------------------------//
@@ -161,7 +158,7 @@ TIMEMORY_MANAGER_INLINE
 manager::~manager()
 {
     auto _remain = --f_manager_instance_count();
-    bool _last   = ((get_shared_ptr_pair<this_type, TIMEMORY_API>() &&
+    bool _last   = ((get_shared_ptr_pair<this_type, TIMEMORY_API>() != nullptr &&
                    this == get_shared_ptr_pair<this_type, TIMEMORY_API>()->first.get()) ||
                   _remain == 0 || m_instance_count == 0);
 
@@ -214,7 +211,7 @@ manager::cleanup()
                             (int) m_finalizer_cleanups.size());
     }
 
-    auto _cleanup = [](finalizer_list_t& _functors) {
+    auto _cleanup = [](finalizer_plist_t& _functors) {
         // reverse to delete the most recent additions first
         std::reverse(_functors.begin(), _functors.end());
         // invoke all the functions
@@ -244,6 +241,12 @@ manager::initialize()
     auto_lock_t _lk{ m_mutex, std::defer_lock };
     if(!_lk.owns_lock())
         _lk.lock();
+
+    // if no initializers on child thread, then copy from main instance
+    if(m_initializers.empty() && threading::get_id() > 0 && master_instance() &&
+       this != master_instance().get())
+        m_initializers = master_instance()->m_initializers;
+
     m_initializers.erase(std::remove_if(m_initializers.begin(), m_initializers.end(),
                                         [](auto& itr) { return itr(); }),
                          m_initializers.end());
@@ -254,6 +257,10 @@ manager::initialize()
 TIMEMORY_MANAGER_INLINE void
 manager::finalize()
 {
+    auto _settings = m_settings.lock();
+    if(!_settings || _settings->get_finalized())
+        return;
+
     auto _print_size = [&](const char* _msg) {
         if(f_debug())
         {
@@ -270,7 +277,7 @@ manager::finalize()
         }
     };
 
-    auto _finalize = [](finalizer_pmap_t& _pdata) {
+    auto _cleanup = [](finalizer_pmap_t& _pdata) {
         for(auto& _functors : _pdata)
         {
             // reverse to delete the most recent additions first
@@ -278,6 +285,22 @@ manager::finalize()
             // invoke all the functions
             for(auto& itr : _functors.second)
                 itr.second();
+            // remove all these finalizers
+            _functors.second.clear();
+        }
+    };
+
+    auto _finalize = [](finalizer_smap_t& _pdata) {
+        for(auto& _functors : _pdata)
+        {
+            // reverse to delete the most recent additions first
+            std::reverse(_functors.second.begin(), _functors.second.end());
+            // invoke all the functions
+            for(auto& itr : _functors.second)
+            {
+                itr.second->destroy();
+                delete itr.second;
+            }
             // remove all these finalizers
             _functors.second.clear();
         }
@@ -297,9 +320,9 @@ manager::finalize()
     //  these clear the stack before outputting
     //
     // finalize workers first
-    _finalize(m_worker_cleanup);
+    _cleanup(m_worker_cleanup);
     // finalize masters second
-    _finalize(m_master_cleanup);
+    _cleanup(m_master_cleanup);
 
     _print_size("finalizing (pre-storage-finalization)");
 
@@ -690,7 +713,7 @@ manager::remove_cleanup(void* _key)
 TIMEMORY_MANAGER_INLINE void
 manager::remove_cleanup(const std::string& _key)
 {
-    auto _remove_functor = [&](finalizer_list_t& _functors) {
+    auto _remove_functor = [&](finalizer_plist_t& _functors) {
         for(auto itr = _functors.begin(); itr != _functors.end(); ++itr)
         {
             if(itr->first == _key)
@@ -706,27 +729,46 @@ manager::remove_cleanup(const std::string& _key)
 //
 //----------------------------------------------------------------------------------//
 //
-TIMEMORY_MANAGER_INLINE void
-manager::remove_finalizer(const std::string& _key)
+TIMEMORY_MANAGER_INLINE std::vector<manager::finalizer_func_t>
+                        manager::remove_finalizer(const std::string& _key)
 {
-    auto _remove_finalizer = [&](finalizer_pmap_t& _pdata) {
+    auto _finalizers = std::vector<manager::finalizer_func_t>{};
+
+    auto _remove_cleanup = [&](finalizer_pmap_t& _pdata) {
         for(auto& _functors : _pdata)
         {
             for(auto itr = _functors.second.begin(); itr != _functors.second.end(); ++itr)
             {
                 if(itr->first == _key)
                 {
+                    _finalizers.emplace_back(itr->second);
                     _functors.second.erase(itr);
-                    return;
                 }
             }
         }
     };
 
-    _remove_finalizer(m_master_cleanup);
-    _remove_finalizer(m_worker_cleanup);
+    auto _remove_finalizer = [&](finalizer_smap_t& _pdata) {
+        for(auto& _functors : _pdata)
+        {
+            for(auto itr = _functors.second.begin(); itr != _functors.second.end(); ++itr)
+            {
+                if(itr->first == _key)
+                {
+                    auto* _obj = itr->second;
+                    _finalizers.emplace_back([_obj]() { _obj->destroy(); });
+                    _functors.second.erase(itr);
+                }
+            }
+        }
+    };
+
+    _remove_cleanup(m_master_cleanup);
+    _remove_cleanup(m_worker_cleanup);
     _remove_finalizer(m_master_finalizers);
     _remove_finalizer(m_worker_finalizers);
+
+    return _finalizers;
 }
 //
 //----------------------------------------------------------------------------------//
@@ -805,9 +847,18 @@ TIMEMORY_MANAGER_INLINE manager::persistent_data&
 TIMEMORY_MANAGER_INLINE manager::pointer_t
                         manager::instance()
 {
-    return get_shared_ptr_pair<manager, TIMEMORY_API>()
-               ? get_shared_ptr_pair<manager, TIMEMORY_API>()->second
-               : pointer_t{};
+    static thread_local auto _v =
+        get_shared_ptr_pair<manager, TIMEMORY_API>()
+            ? get_shared_ptr_pair<manager, TIMEMORY_API>()->second
+            : pointer_t{};
+
+    static thread_local auto _dtor = scope::destructor{ []() {
+        auto*                _settings= settings::instance();
+        if(_v && _settings && !_settings->get_finalized())
+            _v->finalize();
+    } };
+
+    return _v;
 }
 //
 //----------------------------------------------------------------------------------//

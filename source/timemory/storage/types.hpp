@@ -81,6 +81,16 @@ struct tree;
 namespace base
 {
 //
+class TIMEMORY_VISIBILITY("default") data_cleanup
+{
+public:
+    data_cleanup()          = default;
+    virtual ~data_cleanup() = default;
+
+    virtual void deregister() = 0;
+    virtual void destroy()    = 0;
+};
+//
 class TIMEMORY_VISIBILITY("default") storage;
 //
 }  // namespace base

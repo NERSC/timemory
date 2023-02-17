@@ -41,6 +41,7 @@
 #include "timemory/operations/types/start.hpp"
 #include "timemory/operations/types/stop.hpp"
 #include "timemory/plotting/declaration.hpp"
+#include "timemory/process/threading.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/settings/macros.hpp"
 #include "timemory/storage/declaration.hpp"
@@ -161,30 +162,20 @@ storage<Type, true>::~storage()
             auto _main_instance = singleton_t::master_instance();
             if(_main_instance && _main_instance != this)
             {
-                TIMEMORY_CONDITIONAL_PRINT_HERE(_debug,
-                                                "[%s|%li]> merging into primary instance",
-                                                m_label.c_str(), (long) m_instance_id);
                 _main_instance->merge(this);
                 _main_instance->remove_child(this);
             }
             else
             {
-                TIMEMORY_CONDITIONAL_PRINT_HERE(
-                    _debug,
-                    "[%s|%li]> skipping merge into non-existent primary "
-                    "instance",
-                    m_label.c_str(), (long) m_instance_id);
+                TIMEMORY_CONDITIONAL_PRINT_HERE(_debug,
+                                                "[%s][instance=%li] skipping merge into "
+                                                "non-existent primary instance",
+                                                m_label.c_str(), (long) m_instance_id);
             }
         }
     }
 
-    if(m_graph_data_instance)
-    {
-        TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> deleting graph data",
-                                        m_label.c_str(), (long) m_instance_id);
-        delete m_graph_data_instance;
-    }
-
+    delete m_graph_data_instance;
     m_graph_data_instance = nullptr;
 
     TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> storage destroyed",
@@ -202,10 +193,6 @@ storage<Type, true>::initialize()
 {
     if(m_initialized)
         return;
-    TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "initializing %s",
-                                    m_label.c_str());
-    TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
-        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
     m_initialized = true;
 }
 //
@@ -276,9 +263,6 @@ storage<Type, true>::global_init()
 {
     if(!m_global_init)
     {
-        TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(),
-                                        "[%s|%i]> invoking global_init",
-                                        demangle<Type>().c_str(), (int) m_thread_idx);
         if(!m_is_master && master_instance())
             master_instance()->global_init();
         m_global_init = true;
@@ -296,9 +280,6 @@ storage<Type, true>::thread_init()
     if(!m_thread_init)
     {
         global_init();
-        TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(),
-                                        "[%s|%i]> invoking thread_init",
-                                        demangle<Type>().c_str(), (int) m_thread_idx);
         if(!m_is_master && master_instance())
             master_instance()->thread_init();
         m_thread_init = true;
@@ -317,13 +298,9 @@ storage<Type, true>::data_init()
     {
         global_init();
         thread_init();
-        TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(),
-                                        "[%s|%i]> invoking data_init",
-                                        demangle<Type>().c_str(), (int) m_thread_idx);
         if(!m_is_master && master_instance())
             master_instance()->data_init();
         m_data_init = true;
-        check_consistency();
     }
     return m_data_init;
 }
@@ -439,20 +416,6 @@ storage<Type, true>::stack_pop(Type* obj)
 //
 template <typename Type>
 void
-storage<Type, true>::check_consistency()
-{
-    auto* ptr = &_data();
-    if(ptr != m_graph_data_instance)
-    {
-        fprintf(stderr, "[%s]> mismatched graph data on master thread: %p vs. %p\n",
-                m_label.c_str(), (void*) ptr, static_cast<void*>(m_graph_data_instance));
-    }
-}
-//
-//--------------------------------------------------------------------------------------//
-//
-template <typename Type>
-void
 storage<Type, true>::ensure_init()
 {
     global_init();
@@ -527,30 +490,29 @@ storage<Type, true>::_data()
 {
     if(m_graph_data_instance == nullptr)
     {
-        auto_lock_t lk(singleton_t::get_mutex(), std::defer_lock);
-
         if(!m_is_master && master_instance())
         {
             static thread_local bool _data_init = master_instance()->data_init();
-            auto&                    m          = master_instance()->data();
+            (void) master_instance()->data();
             consume_parameters(_data_init);
+        }
 
-            if(!lk.owns_lock())
-                lk.lock();
+        auto_lock_t _lk{ singleton_t::get_mutex() };
 
-            TIMEMORY_CONDITIONAL_PRINT_HERE(
-                m_settings->get_debug(), "[%s]> Worker: %i, master ptr: %p",
-                demangle<Type>().c_str(), (int) m_thread_idx, (void*) &m);
-            TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
-                m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
+        if(!m_is_master && master_instance())
+        {
+            auto& m = master_instance()->data();
             if(m.current())
             {
-                auto         _current = m.current();
-                auto         _id      = _current->id();
-                auto         _depth   = _current->depth();
-                graph_node_t node(_id, operation::dummy<Type>{}(), _depth, m_thread_idx);
+                auto _current = m.current();
+                auto _id      = _current->id();
+                auto _depth   = _current->depth();
                 if(!m_graph_data_instance)
-                    m_graph_data_instance = new graph_data_t(node, _depth, &m);
+                {
+                    auto _node = graph_node_t{ _id, operation::dummy<Type>{}(), _depth,
+                                               m_thread_idx };
+                    m_graph_data_instance = new graph_data_t{ _node, _depth, &m };
+                }
                 m_graph_data_instance->depth()     = _depth;
                 m_graph_data_instance->sea_level() = _depth;
             }
@@ -558,8 +520,9 @@ storage<Type, true>::_data()
             {
                 if(!m_graph_data_instance)
                 {
-                    graph_node_t node(0, operation::dummy<Type>{}(), 1, m_thread_idx);
-                    m_graph_data_instance = new graph_data_t(node, 1, &m);
+                    auto _node =
+                        graph_node_t{ 0, operation::dummy<Type>{}(), 1, m_thread_idx };
+                    m_graph_data_instance = new graph_data_t{ _node, 1, &m };
                 }
                 m_graph_data_instance->depth()     = 1;
                 m_graph_data_instance->sea_level() = 1;
@@ -568,22 +531,10 @@ storage<Type, true>::_data()
         }
         else
         {
-            if(!lk.owns_lock())
-                lk.lock();
-
-            std::string _prefix = "> [tot] total";
-            add_hash_id(_prefix);
-            graph_node_t node(0, operation::dummy<Type>{}(), 0, m_thread_idx);
-            if(!m_graph_data_instance)
-                m_graph_data_instance = new graph_data_t(node, 0, nullptr);
+            auto _node = graph_node_t{ 0, operation::dummy<Type>{}(), 0, m_thread_idx };
+            m_graph_data_instance              = new graph_data_t{ _node, 0, nullptr };
             m_graph_data_instance->depth()     = 0;
             m_graph_data_instance->sea_level() = 0;
-            TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(),
-                                            "[%s]> Master: %i, master ptr: %p",
-                                            demangle<Type>().c_str(), (int) m_thread_idx,
-                                            (void*) m_graph_data_instance);
-            TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
-                m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
         }
 
         if(m_node_ids.empty() && m_graph_data_instance)
@@ -818,8 +769,6 @@ template <typename Type>
 void
 storage<Type, true>::get_shared_manager()
 {
-    using func_t = std::function<void()>;
-
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
@@ -846,70 +795,82 @@ storage<Type, true>::get_shared_manager()
         std::stringstream env_var;
         env_var << TIMEMORY_SETTINGS_PREFIX << _label << "_ENABLED";
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
-        trait::runtime_enabled<Type>::set(_enabled);
+        if(_enabled != trait::runtime_enabled<Type>::get())
+            trait::runtime_enabled<Type>::set(_enabled);
 
-        auto _instance_id = m_instance_id;
-        bool _is_master   = m_is_master;
-        auto _settings    = m_settings;
-        auto _this_ptr    = this;
-        auto _sync        = [&]() {
+        auto _sync = [&]() {
             if(m_graph_data_instance)
                 this->data().sync_sea_level();
-        };
-        auto _cleanup = [_is_master, _instance_id]() {
-            if(_is_master)
-                return;
-            if(manager::master_instance())
-                manager::master_instance()->remove_synchronization(demangle<Type>(),
-                                                                   _instance_id);
-            if(manager::instance())
-                manager::instance()->remove_synchronization(demangle<Type>(),
-                                                            _instance_id);
-        };
-        func_t _finalize = [_settings, _is_master, _this_ptr]() {
-            auto _instance = this_type::get_singleton();
-            if(_instance)
-            {
-                auto _debug_v = _settings->get_debug();
-                auto _verb_v  = _settings->get_verbose();
-                if(_debug_v || _verb_v >= 3)
-                {
-                    TIMEMORY_PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                                        "calling singleton::reset(this)");
-                }
-                _instance->reset(_this_ptr);
-                _instance = this_type::get_singleton();
-                if((_is_master || common_singleton::is_main_thread()) && _instance)
-                {
-                    if(_debug_v || _verb_v >= 3)
-                    {
-                        TIMEMORY_PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                                            "calling singleton::reset()");
-                    }
-                    _instance->reset();
-                }
-            }
-            else
-            {
-                TIMEMORY_DEBUG_PRINT_HERE("[%s]> %p", demangle<Type>().c_str(),
-                                          (void*) _instance);
-            }
-            if(_is_master)
-                trait::runtime_enabled<Type>::set(false);
         };
 
         if(!m_is_master)
         {
-            manager::master_instance()->add_synchronization(
-                demangle<Type>(), m_instance_id, std::move(_sync));
-            m_manager->add_synchronization(demangle<Type>(), m_instance_id,
-                                           std::move(_sync));
+            manager::master_instance()->add_synchronization(demangle<Type>(),
+                                                            m_instance_id, _sync);
+            m_manager->add_synchronization(demangle<Type>(), m_instance_id, _sync);
         }
 
-        m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),
-                                 std::move(_finalize), m_is_master,
+        m_manager->add_finalizer(demangle<Type>(), this, m_is_master,
                                  trait::fini_priority<Type>::value);
     }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+void
+storage<Type, true>::deregister()
+{
+    // if the finalizer has not run yet, remove them from the manager and invoke them
+    if(m_manager)
+    {
+        auto _finalizers = m_manager->remove_finalizer(demangle<Type>());
+        for(auto& itr : _finalizers)
+            itr();
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+void
+storage<Type, true>::destroy()
+{
+    auto _debug_v = (m_settings) ? m_settings->get_debug() : false;
+    auto _verb_v  = (m_settings) ? m_settings->get_verbose() : 0;
+    if(_debug_v || _verb_v >= 3)
+        TIMEMORY_PRINT_HERE("[TID=%li] Destroying storage #%zi for %s (size: %zu)",
+                            threading::get_id(), m_instance_id, demangle<Type>().c_str(),
+                            size());
+
+    operation::cleanup<Type>{};
+
+    if(!m_is_master)
+    {
+        if(manager::master_instance())
+            manager::master_instance()->remove_synchronization(demangle<Type>(),
+                                                               m_instance_id);
+        if(manager::instance())
+            manager::instance()->remove_synchronization(demangle<Type>(), m_instance_id);
+    }
+
+    if(!m_is_master)
+    {
+        auto _main_instance = master_instance();
+        if(_main_instance)
+            _main_instance->merge(this);
+    }
+    else
+    {
+        stack_clear();
+        print();
+    }
+
+    if(m_is_master)
+        trait::runtime_enabled<Type>::set(false);
+
+    if(_debug_v || _verb_v >= 3)
+        TIMEMORY_PRINT_HERE("Storage destroyed for %s", demangle<Type>().c_str());
 }
 //
 //--------------------------------------------------------------------------------------//

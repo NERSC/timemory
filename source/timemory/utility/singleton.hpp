@@ -328,8 +328,8 @@ singleton<Type, PointerT, TagT>::singleton()
 template <typename Type, typename PointerT, typename TagT>
 singleton<Type, PointerT, TagT>::~singleton()
 {
-    if(std::this_thread::get_id() == f_master_thread())
-        reset();
+    // if(std::this_thread::get_id() == f_master_thread())
+    //    reset();
     if(f_this() == this)
         f_this() = nullptr;
 }

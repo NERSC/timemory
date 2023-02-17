@@ -152,6 +152,8 @@ public:
     bool global_init() final;
     bool thread_init() final;
     bool data_init() final;
+    void destroy() final;
+    void deregister() final;
 
     const graph_data_t& data() const;
     const graph_t&      graph() const;
@@ -238,8 +240,6 @@ protected:
     string_t get_prefix(const uint64_t& _id);
 
 private:
-    void check_consistency();
-
     template <typename Archive>
     void do_serialize(Archive& ar);
 

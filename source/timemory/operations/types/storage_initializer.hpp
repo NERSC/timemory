@@ -30,6 +30,7 @@
 #pragma once
 
 #include "timemory/components/properties.hpp"
+#include "timemory/manager/manager.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
@@ -112,7 +113,17 @@ enable_if_t<trait::uses_storage<T>::value, storage_initializer> storage_initiali
 
     using storage_type = storage<T, typename T::value_type>;
 
-    static auto _master = (storage_type::master_instance(), storage_initializer{});
+    auto _main_init = []() {
+        auto _manager = manager::master_instance();
+        if(_manager)
+            _manager->add_initializer([]() {
+                (void) storage_type::instance();
+                return false;
+            });
+        (void) storage_type::master_instance();
+        return storage_initializer{};
+    };
+    static auto              _master = _main_init();
     static thread_local auto _worker = (storage_type::instance(), storage_initializer{});
     consume_parameters(_master);
 

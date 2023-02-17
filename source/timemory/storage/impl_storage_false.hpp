@@ -127,6 +127,8 @@ public:
 
     void initialize() final;
     void finalize() final;
+    void destroy() final;
+    void deregister() final;
 
     void                             reset() {}
     TIMEMORY_NODISCARD bool          empty() const { return true; }

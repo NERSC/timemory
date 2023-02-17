@@ -269,8 +269,6 @@ template <typename Type>
 void
 storage<Type, false>::get_shared_manager()
 {
-    using func_t = std::function<void()>;
-
     // only perform this operation when not finalizing
     if(!this_type::is_finalizing())
     {
@@ -299,48 +297,59 @@ storage<Type, false>::get_shared_manager()
         std::stringstream env_var;
         env_var << TIMEMORY_SETTINGS_PREFIX << _label << "_ENABLED";
         auto _enabled = tim::get_env<bool>(env_var.str(), true);
-        trait::runtime_enabled<Type>::set(_enabled);
+        if(_enabled != trait::runtime_enabled<Type>::get())
+            trait::runtime_enabled<Type>::set(_enabled);
 
-        auto   _is_master = m_is_master;
-        auto   _settings  = m_settings;
-        auto   _this_ptr  = this;
-        auto   _cleanup   = []() {};
-        func_t _finalize  = [_settings, _is_master, _this_ptr]() {
-            auto _instance = this_type::get_singleton();
-            if(_instance)
-            {
-                auto _debug_v = _settings->get_debug();
-                auto _verb_v  = _settings->get_verbose();
-                if(_debug_v || _verb_v >= 3)
-                {
-                    TIMEMORY_PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                                        "calling singleton::reset(this)");
-                }
-                _instance->reset(_this_ptr);
-                _instance = this_type::get_singleton();
-                if((_is_master || common_singleton::is_main_thread()) && _instance)
-                {
-                    if(_debug_v || _verb_v >= 3)
-                    {
-                        TIMEMORY_PRINT_HERE("[%s] %s", demangle<Type>().c_str(),
-                                            "calling singleton::reset()");
-                    }
-                    _instance->reset();
-                }
-            }
-            else
-            {
-                TIMEMORY_DEBUG_PRINT_HERE("[%s]> %p", demangle<Type>().c_str(),
-                                          (void*) _instance);
-            }
-            if(_is_master)
-                trait::runtime_enabled<Type>::set(false);
-        };
-
-        m_manager->add_finalizer(demangle<Type>(), std::move(_cleanup),
-                                 std::move(_finalize), m_is_master,
+        m_manager->add_finalizer(demangle<Type>(), this, m_is_master,
                                  trait::fini_priority<Type>::value);
     }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+void
+storage<Type, false>::deregister()
+{
+    // if the finalizer has not run yet, remove it and invoke directly
+    if(m_manager)
+    {
+        auto _finalizers = m_manager->remove_finalizer(demangle<Type>());
+        for(auto& itr : _finalizers)
+            itr();
+    }
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename Type>
+void
+storage<Type, false>::destroy()
+{
+    auto _debug_v = (m_settings) ? m_settings->get_debug() : false;
+    auto _verb_v  = (m_settings) ? m_settings->get_verbose() : 0;
+    if(_debug_v || _verb_v >= 3)
+        TIMEMORY_PRINT_HERE("Destroying storage for %s", demangle<Type>().c_str());
+
+    operation::cleanup<Type>{};
+
+    if(!m_is_master)
+    {
+        auto _main_instance = master_instance();
+        if(_main_instance)
+            _main_instance->merge(this);
+    }
+    else
+    {
+        stack_clear();
+        print();
+    }
+
+    if(m_is_master)
+        trait::runtime_enabled<Type>::set(false);
+
+    if(_debug_v || _verb_v >= 3)
+        TIMEMORY_PRINT_HERE("Storage destroyed for  %s", demangle<Type>().c_str());
 }
 //
 //--------------------------------------------------------------------------------------//
