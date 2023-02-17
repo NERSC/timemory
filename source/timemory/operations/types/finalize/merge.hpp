@@ -94,9 +94,9 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
     if(_settings && _settings->get_stack_clearing())
         rhs.stack_clear();
 
-    auto _copy_hash_ids = [&lhs, &rhs, _debug]() {
+    auto _copy_hash_ids = [&rhs, _debug]() {
         // copy over mapping of hashes to strings
-        if(rhs.get_hash_ids() && lhs.get_hash_ids())
+        if(rhs.get_hash_ids() && get_main_hash_ids())
         {
             auto_lock_t _lk{ type_mutex<hash_map_t>(), std::defer_lock };
             if(!_lk.owns_lock())
@@ -105,17 +105,17 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
             TIMEMORY_CONDITIONAL_PRINT_HERE(
                 _debug, "[%s]> merging %lu hash-ids into existing set of %lu hash-ids!",
                 Type::get_label().c_str(), (unsigned long) rhs.get_hash_ids()->size(),
-                (unsigned long) lhs.get_hash_ids()->size());
+                (unsigned long) get_main_hash_ids()->size());
 
             auto _hash_ids = *rhs.get_hash_ids();
             for(const auto& itr : _hash_ids)
             {
-                if(lhs.m_hash_ids->find(itr.first) == lhs.m_hash_ids->end())
-                    lhs.m_hash_ids->emplace(itr.first, itr.second);
+                if(get_main_hash_ids()->find(itr.first) == get_main_hash_ids()->end())
+                    get_main_hash_ids()->emplace(itr.first, itr.second);
             }
         }
         // copy over aliases
-        if(rhs.get_hash_aliases() && lhs.get_hash_aliases())
+        if(rhs.get_hash_aliases() && get_main_hash_aliases())
         {
             auto_lock_t _lk{ type_mutex<hash_alias_map_t>(), std::defer_lock };
             if(!_lk.owns_lock())
@@ -126,13 +126,14 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
                 "[%s]> merging %lu hash-aliases into existing set of "
                 "%lu hash-aliases!",
                 Type::get_label().c_str(), (unsigned long) rhs.get_hash_aliases()->size(),
-                (unsigned long) lhs.get_hash_aliases()->size());
+                (unsigned long) get_main_hash_aliases()->size());
 
             auto _hash_aliases = *rhs.get_hash_aliases();
             for(const auto& itr : _hash_aliases)
             {
-                if(lhs.m_hash_aliases->find(itr.first) == lhs.m_hash_aliases->end())
-                    lhs.m_hash_aliases->emplace(itr.first, itr.second);
+                if(get_main_hash_aliases()->find(itr.first) ==
+                   get_main_hash_aliases()->end())
+                    get_main_hash_aliases()->emplace(itr.first, itr.second);
             }
         }
     };
@@ -612,7 +613,7 @@ merge<Type, true>::operator()(GraphT& _g, ItrT _root, ItrT _rhs)
 //--------------------------------------------------------------------------------------//
 //
 template <typename Type>
-merge<Type, false>::merge(storage_type& lhs, storage_type& rhs)
+merge<Type, false>::merge(storage_type&, storage_type& rhs)
 {
     if(rhs.m_settings && rhs.m_settings->get_stack_clearing())
         rhs.stack_clear();
@@ -624,13 +625,13 @@ merge<Type, false>::merge(storage_type& lhs, storage_type& rhs)
 
     for(const auto& itr : *rhs.get_hash_ids())
     {
-        if(lhs.m_hash_ids->find(itr.first) == lhs.m_hash_ids->end())
-            (*lhs.m_hash_ids)[itr.first] = itr.second;
+        if(get_main_hash_ids()->find(itr.first) == get_main_hash_ids()->end())
+            (*get_main_hash_ids())[itr.first] = itr.second;
     }
     for(const auto& itr : (*rhs.get_hash_aliases()))
     {
-        if(lhs.m_hash_aliases->find(itr.first) == lhs.m_hash_aliases->end())
-            (*lhs.m_hash_aliases)[itr.first] = itr.second;
+        if(get_main_hash_aliases()->find(itr.first) == get_main_hash_aliases()->end())
+            (*get_main_hash_aliases())[itr.first] = itr.second;
     }
 }
 //
