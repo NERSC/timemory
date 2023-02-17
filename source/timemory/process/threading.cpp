@@ -27,8 +27,6 @@
 
 #include "timemory/process/defines.hpp"
 
-#include <bits/stdint-intn.h>
-
 #if !defined(TIMEMORY_PROCESS_THREADING_HPP_)
 #    include "timemory/process/threading.hpp"
 #endif
@@ -198,11 +196,11 @@ get_id(thread_id_manager* _manager, bool _debug)
         int64_t _targ = 1;
         while(_targ % 2 == 1)
         {
-            _targ = _lk.load(std::memory_order_relaxed);
+            _targ = _lk.load(std::memory_order_acq_rel);
             if(_targ % 2 == 0)
             {
                 if(_lk.compare_exchange_strong(_targ, _targ + 1,
-                                               std::memory_order_relaxed))
+                                               std::memory_order_acq_rel))
                     return true;
                 else
                     _targ = 1;
@@ -256,10 +254,10 @@ add_callback(bool (*_func)(bool, int64_t, int64_t))
     for(; _idx < _manager->callbacks.size(); ++_idx)
     {
         auto& itr   = _manager->callbacks.at(_idx);
-        auto  _targ = itr.load(std::memory_order_relaxed);
+        auto  _targ = itr.load(std::memory_order_acq_rel);
         if(!_targ && _func)
         {
-            if(itr.compare_exchange_strong(_targ, _func, std::memory_order_relaxed) &&
+            if(itr.compare_exchange_strong(_targ, _func, std::memory_order_acq_rel) &&
                itr.load() == _func)
                 return static_cast<int>(_idx);
         }
@@ -285,7 +283,7 @@ remove_callback(bool (*_func)(bool, int64_t, int64_t))
     for(; _idx < _manager->callbacks.size(); ++_idx)
     {
         auto& itr   = _manager->callbacks.at(_idx);
-        auto  _targ = itr.load(std::memory_order_relaxed);
+        auto  _targ = itr.load(std::memory_order_acq_rel);
         if(_targ == _func)
         {
             itr.store(nullptr);
