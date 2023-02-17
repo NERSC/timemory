@@ -72,6 +72,16 @@ get_hash_ids()
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_HASH_LINKAGE(hash_map_ptr_t&)
+get_main_hash_ids()
+{
+    static thread_local auto _inst =
+        get_shared_ptr_pair_main_instance<hash_map_t, TIMEMORY_API>();
+    return _inst;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 TIMEMORY_HASH_LINKAGE(hash_alias_ptr_t&)
 get_hash_aliases()
 {
@@ -96,6 +106,16 @@ get_hash_aliases()
 //
 //--------------------------------------------------------------------------------------//
 //
+TIMEMORY_HASH_LINKAGE(hash_alias_ptr_t&)
+get_main_hash_aliases()
+{
+    static thread_local auto _inst =
+        get_shared_ptr_pair_main_instance<hash_alias_map_t, TIMEMORY_API>();
+    return _inst;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
 TIMEMORY_HASH_LINKAGE(std::shared_ptr<hash_resolver_vec_t>&)
 get_hash_resolvers()
 {
@@ -116,6 +136,17 @@ get_hash_id(const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id)
     auto _alias_itr = _hash_alias->find(_hash_id);
     if(_alias_itr != _hash_alias->end())
         return _alias_itr->second;
+    return _hash_id;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(hash_value_t)
+add_hash_id(hash_map_ptr_t& _hash_map, string_view_cref_t _prefix)
+{
+    hash_value_t _hash_id = std::hash<std::string_view>{}(_prefix);
+    if(_hash_map && _hash_map->count(_hash_id) == 0)
+        _hash_map->emplace(_hash_id, std::string{ _prefix });
     return _hash_id;
 }
 //
@@ -394,8 +425,58 @@ get_hash_identifier(const hash_map_ptr_t& _hash_map, const hash_alias_ptr_t& _ha
     std::string* _ret = nullptr;
     if(get_hash_identifier(_hash_map, _hash_alias, _hash_id, _ret))
         return *_ret;
+    else if(get_hash_identifier(get_main_hash_ids(), get_main_hash_aliases(), _hash_id,
+                                _ret))
+        return *_ret;
     hash_identifier_error(_hash_map, _hash_alias, _hash_id);
     return std::string("unknown-hash=") + std::to_string(_hash_id);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(string_view_t)
+get_hash_identifier_fast(hash_value_t _hash)
+{
+    auto& _hash_ids = get_hash_ids();
+    if(_hash_ids)
+    {
+        auto itr = _hash_ids->find(_hash);
+        if(itr == _hash_ids->end())
+            return string_view_t{};
+        return _hash_ids->at(_hash);
+    }
+    return string_view_t{};
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(bool)
+get_hash_identifier_fast(hash_value_t _hash, std::string*& _v)
+{
+    auto& _hash_ids = get_hash_ids();
+    if(_hash_ids)
+    {
+        auto itr = _hash_ids->find(_hash);
+        if(itr == _hash_ids->end())
+            return false;
+        return (_v = &_hash_ids->at(_hash), true);
+    }
+    return false;
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+TIMEMORY_HASH_LINKAGE(bool)
+get_hash_identifier_fast(hash_value_t _hash, const char*& _v)
+{
+    auto& _hash_ids = get_hash_ids();
+    if(_hash_ids)
+    {
+        auto itr = _hash_ids->find(_hash);
+        if(itr != _hash_ids->end())
+            return (_v = itr->second.c_str(), true);
+    }
+    return false;
 }
 //
 //--------------------------------------------------------------------------------------//

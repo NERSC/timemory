@@ -168,10 +168,16 @@ struct hasher
 hash_map_ptr_t&
 get_hash_ids() TIMEMORY_HOT TIMEMORY_VISIBLE;
 //
+hash_map_ptr_t&
+get_main_hash_ids() TIMEMORY_HOT TIMEMORY_VISIBLE;
+//
 //--------------------------------------------------------------------------------------//
 //
 hash_alias_ptr_t&
 get_hash_aliases() TIMEMORY_HOT TIMEMORY_VISIBLE;
+//
+hash_alias_ptr_t&
+get_main_hash_aliases() TIMEMORY_HOT TIMEMORY_VISIBLE;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -286,15 +292,6 @@ get_hash_id(const hash_alias_ptr_t& _hash_alias, hash_value_t _hash_id) TIMEMORY
 hash_value_t
 add_hash_id(hash_map_ptr_t& _hash_map, string_view_cref_t _prefix) TIMEMORY_HOT;
 //
-inline hash_value_t
-add_hash_id(hash_map_ptr_t& _hash_map, string_view_cref_t _prefix)
-{
-    hash_value_t _hash_id = get_hash_id(_prefix);
-    if(_hash_map && _hash_map->count(_hash_id) == 0)
-        _hash_map->emplace(_hash_id, std::string{ _prefix });
-    return _hash_id;
-}
-//
 //--------------------------------------------------------------------------------------//
 //
 /// \fn hash_value_t add_hash_id(string_view_cref_t)
@@ -345,36 +342,6 @@ get_hash_identifier_fast(hash_value_t _hash, std::string*& _v) TIMEMORY_HOT;
 //
 bool
 get_hash_identifier_fast(hash_value_t _hash, const char*& _v) TIMEMORY_HOT;
-//
-inline string_view_t
-get_hash_identifier_fast(hash_value_t _hash)
-{
-    auto& _hash_ids = get_hash_ids();
-    auto  itr       = _hash_ids->find(_hash);
-    if(itr != _hash_ids->end())
-        return itr->second;
-    return string_view_t{};
-}
-//
-inline bool
-get_hash_identifier_fast(hash_value_t _hash, std::string*& _v)
-{
-    auto& _hash_ids = get_hash_ids();
-    auto  itr       = _hash_ids->find(_hash);
-    if(itr != _hash_ids->end())
-        return (_v = &itr->second, true);
-    return false;
-}
-//
-inline bool
-get_hash_identifier_fast(hash_value_t _hash, const char*& _v)
-{
-    auto& _hash_ids = get_hash_ids();
-    auto  itr       = _hash_ids->find(_hash);
-    if(itr != _hash_ids->end())
-        return (_v = itr->second.c_str(), true);
-    return false;
-}
 //
 //--------------------------------------------------------------------------------------//
 //

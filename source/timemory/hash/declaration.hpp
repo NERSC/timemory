@@ -35,6 +35,7 @@
 
 namespace tim
 {
+class manager;
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -54,15 +55,28 @@ get_shared_ptr_pair()
     static auto              _count = std::atomic<int64_t>{ 0 };
     static auto              _main  = std::make_shared<Tp>();
     static thread_local auto _n     = _count++;
-    static thread_local auto _local =
-        new PairT(_main, (_n == 0) ? _main : std::make_shared<Tp>());
-    static thread_local auto _dtor = scope::destructor{ []() {
-        if(get_shared_ptr_pair_callback())
-            (*get_shared_ptr_pair_callback())(_n);
-        if(_n > 0)
+    if constexpr(std::is_same<Tp, manager>::value)
+    {
+        static thread_local auto _local =
+            new PairT(_main, (_n == 0) ? _main : std::make_shared<Tp>());
+        static thread_local auto _dtor = scope::destructor{ []() {
+            if(get_shared_ptr_pair_callback())
+                (*get_shared_ptr_pair_callback())(_n);
+            if(_n > 0)
+                delete _local;
+        } };
+        return _local;
+    }
+    else
+    {
+        static thread_local auto _local = new PairT{ _main, std::make_shared<Tp>() };
+        static thread_local auto _dtor  = scope::destructor{ []() {
+            if(get_shared_ptr_pair_callback())
+                (*get_shared_ptr_pair_callback())(_n);
             delete _local;
-    } };
-    return _local;
+        } };
+        return _local;
+    }
 }
 //
 //--------------------------------------------------------------------------------------//
