@@ -440,7 +440,7 @@ available_events_info()
 
         auto numcmp = PAPI_num_components();
 
-        auto num_events    = 0;
+        // auto num_events    = 0;
         auto enum_modifier = PAPI_ENUM_EVENTS;
 
         auto parse_event_qualifiers = [](PAPI_event_info_t* info) {
@@ -529,7 +529,7 @@ available_events_info()
 #    endif
 
             // show this component has not found any events yet
-            int num_cmp_events = 0;
+            // int num_cmp_events = 0;
 
             // Always ASK FOR the first event
             // Don't just assume it'll be the first numeric value
@@ -570,8 +570,8 @@ available_events_info()
                     //    continue;
 
                     // count only events that are actually processed
-                    num_events++;
-                    num_cmp_events++;
+                    // num_events++;
+                    // num_cmp_events++;
 
                     if(_check)
                     {
