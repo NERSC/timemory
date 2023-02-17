@@ -168,11 +168,11 @@ spin_mutex::unlock()
 inline bool
 spin_mutex::try_lock()
 {
-    auto _targ = m_value.load(std::memory_order_relaxed);
+    auto _targ = m_value.load(std::memory_order_acq_rel);
     if((_targ & 1) == 0)
     {
         return (
-            m_value.compare_exchange_strong(_targ, _targ + 1, std::memory_order_relaxed));
+            m_value.compare_exchange_strong(_targ, _targ + 1, std::memory_order_acq_rel));
     }
     return false;
 }
