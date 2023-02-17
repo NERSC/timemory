@@ -421,6 +421,8 @@ timemory_finalize(manager* _manager, settings* _settings, bool _lookup)
 
         if(_settings->get_debug())
             TIMEMORY_PRINT_HERE("%s", "timemory finalized");
+
+        _settings->set_finalized(true);
     }
 }
 //

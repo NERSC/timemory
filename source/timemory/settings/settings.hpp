@@ -255,6 +255,7 @@ struct TIMEMORY_VISIBILITY("default") settings
 
     /// returns whether timemory_init has been invoked
     bool get_initialized() const { return m_initialized; }
+    bool get_finalized() const { return m_finalized; }
 
     //==================================================================================//
     //
@@ -695,6 +696,7 @@ private:
 
 private:
     bool                   m_initialized     = false;
+    bool                   m_finalized       = false;
     std::string            m_tag             = {};
     std::set<std::string>  m_read_configs    = {};
     strvector_t            m_config_stack    = {};
@@ -706,6 +708,7 @@ private:
 
     /// This is set by timemory_init
     void set_initialized(bool _v) { m_initialized = _v; }
+    void set_finalized(bool _v) { m_finalized = _v; }
 
 private:
     void initialize_core() TIMEMORY_VISIBILITY("hidden");
