@@ -88,13 +88,13 @@ struct vsettings
     vsettings& operator=(const vsettings&) = default;
     vsettings& operator=(vsettings&&) = default;
 
-    virtual std::string as_string() const                                          = 0;
-    virtual bool        reset()                                                    = 0;
-    virtual bool        parse()                                                    = 0;
-    virtual bool parse(const std::string&, update_type = update_type::unspecified) = 0;
-    virtual bool is_updated()                                                      = 0;
-    virtual void add_argument(argparse::argument_parser&)                          = 0;
-    virtual shared_pointer_t clone()                                               = 0;
+    virtual std::string as_string() const                                           = 0;
+    virtual bool        reset()                                                     = 0;
+    virtual bool        parse()                                                     = 0;
+    virtual bool  parse(const std::string&, update_type = update_type::unspecified) = 0;
+    virtual bool  is_updated()                                                      = 0;
+    virtual void* add_argument(argparse::argument_parser&)                          = 0;
+    virtual shared_pointer_t clone()                                                = 0;
     virtual void             clone(const shared_pointer_t& rhs);
 
     virtual display_map_t get_display(std::ios::fmtflags fmt = {}, int _w = -1,
@@ -112,6 +112,7 @@ struct vsettings
     void set_hidden(bool _v) { m_hidden = _v; }
     void set_count(int32_t v) { m_count = v; }
     void set_max_count(int32_t v) { m_max_count = v; }
+    void set_description(const std::string& v) { m_description = v; }
     void set_choices(const std::vector<std::string>& v) { m_choices = v; }
     void set_command_line(const std::vector<std::string>& v) { m_cmdline = v; }
     void set_categories(const std::set<std::string>& v) { m_categories = v; }

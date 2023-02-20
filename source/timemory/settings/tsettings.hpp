@@ -109,13 +109,13 @@ public:
     Tp          get_value(const std::string& val) const;
     std::string as_string() const override;
 
-    bool set(Tp, update_type = update_type::unspecified);
-    bool reset() final;
-    bool parse() final;
-    bool parse(const std::string& v, update_type = update_type::unspecified) final;
-    bool is_updated() final { return (m_value != m_init); }
-    void add_argument(argparse::argument_parser& p) final;
-    void clone(const std::shared_ptr<vsettings>& rhs) final;
+    bool  set(Tp, update_type = update_type::unspecified);
+    bool  reset() final;
+    bool  parse() final;
+    bool  parse(const std::string& v, update_type = update_type::unspecified) final;
+    bool  is_updated() final { return (m_value != m_init); }
+    void* add_argument(argparse::argument_parser& p) final;
+    void  clone(const std::shared_ptr<vsettings>& rhs) final;
 
     vpointer_t    clone() final;
     parser_func_t get_action(TIMEMORY_API) override;
@@ -272,19 +272,20 @@ tsettings<Tp, Vp>::parse(const std::string& v, update_type _upd)
 }
 //
 template <typename Tp, typename Vp>
-void
+void*
 tsettings<Tp, Vp>::add_argument(argparse::argument_parser& p)
 {
     if(!m_cmdline.empty() && m_enabled)
     {
         if(std::is_same<Tp, bool>::value)
             m_max_count = 1;
-        p.add_argument(m_cmdline, m_description)
-            .action(get_action(TIMEMORY_API{}))
-            .count(m_count)
-            .max_count(m_max_count)
-            .choices(m_choices);
+        return &p.add_argument(m_cmdline, m_description)
+                    .action(get_action(TIMEMORY_API{}))
+                    .count(m_count)
+                    .max_count(m_max_count)
+                    .choices(m_choices);
     }
+    return nullptr;
 }
 //
 template <typename Tp, typename Vp>
