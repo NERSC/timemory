@@ -146,7 +146,8 @@ struct spin_mutex
     bool try_lock();
 
 private:
-    std::atomic<int64_t> m_value = {};
+    bool             m_holds = false;
+    std::atomic_flag m_value = ATOMIC_FLAG_INIT;
 };
 
 inline void
@@ -161,20 +162,17 @@ spin_mutex::lock()
 inline void
 spin_mutex::unlock()
 {
-    if((m_value.load() & 1) == 1)
-        ++m_value;
+    if(m_holds)
+        m_value.clear(std::memory_order_release);
 }
 
 inline bool
 spin_mutex::try_lock()
 {
-    auto _targ = m_value.load(std::memory_order_acq_rel);
-    if((_targ & 1) == 0)
-    {
-        return (
-            m_value.compare_exchange_strong(_targ, _targ + 1, std::memory_order_acq_rel));
-    }
-    return false;
+    auto _result = !m_value.test_and_set(std::memory_order_acquire);
+    if(_result)
+        m_holds = true;
+    return _result;
 }
 
 ///

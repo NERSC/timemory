@@ -187,27 +187,8 @@ get_id(thread_id_manager* _manager, bool _debug)
 
     // below is used to avoid using a mutex for synchronization
     // when the thread is being destroyed.
-    static auto _offset_lk = std::atomic<int64_t>{ 0 };
-    static auto _avail_lk  = std::atomic<int64_t>{ 0 };
-    static auto _get_lock  = [](std::atomic<int64_t>& _lk) {
-        // this function increments an even atomic and returns.
-        // all other threads have to wait that thread increments
-        // the atomic back to an even number
-        int64_t _targ = 1;
-        while(_targ % 2 == 1)
-        {
-            _targ = _lk.load(std::memory_order_acq_rel);
-            if(_targ % 2 == 0)
-            {
-                if(_lk.compare_exchange_strong(_targ, _targ + 1,
-                                               std::memory_order_acq_rel))
-                    return true;
-                else
-                    _targ = 1;
-            }
-        }
-        return false;
-    };
+    static auto _offset_lk = locking::spin_mutex{};
+    static auto _avail_lk  = locking::spin_mutex{};
 
     auto&& _dtor = [_id, _offset]() {
         // skip for main thread
@@ -218,20 +199,15 @@ get_id(thread_id_manager* _manager, bool _debug)
             return;
         if(_offset.is_offset)
         {
-            if(_get_lock(_offset_lk))
-            {
-                _manager_v->offset.emplace_back(_id);
-                ++_offset_lk;
-                return;
-            }
+            locking::spin_lock _lk{ _offset_lk };
+            _manager_v->offset.emplace_back(_id);
         }
         else
         {
-            if(_manager_v->reserved.count(_id) == 0 && _get_lock(_avail_lk))
+            if(_manager_v->reserved.count(_id) == 0)
             {
+                locking::spin_lock _lk{ _avail_lk };
                 _manager_v->available.emplace_back(_id);
-                ++_avail_lk;
-                return;
             }
         }
     };
@@ -254,11 +230,10 @@ add_callback(bool (*_func)(bool, int64_t, int64_t))
     for(; _idx < _manager->callbacks.size(); ++_idx)
     {
         auto& itr   = _manager->callbacks.at(_idx);
-        auto  _targ = itr.load(std::memory_order_acq_rel);
+        auto  _targ = itr.load();
         if(!_targ && _func)
         {
-            if(itr.compare_exchange_strong(_targ, _func, std::memory_order_acq_rel) &&
-               itr.load() == _func)
+            if(itr.compare_exchange_strong(_targ, _func) && itr.load() == _func)
                 return static_cast<int>(_idx);
         }
         else if(_targ && _func && _targ == _func)
@@ -283,7 +258,7 @@ remove_callback(bool (*_func)(bool, int64_t, int64_t))
     for(; _idx < _manager->callbacks.size(); ++_idx)
     {
         auto& itr   = _manager->callbacks.at(_idx);
-        auto  _targ = itr.load(std::memory_order_acq_rel);
+        auto  _targ = itr.load();
         if(_targ == _func)
         {
             itr.store(nullptr);
