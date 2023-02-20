@@ -513,7 +513,11 @@ manager::write_metadata(const std::string& _output_dir, const char* context,
     // if there were no hashes generated, writing metadata is optional and the user
     // did not add to metadata -> return
     if(_hashes.empty() && m_write_metadata < 1 &&
-       f_manager_persistent_data().metadata_count == 0)
+       (f_manager_persistent_data().metadata_count == 0 || m_output_files.empty()))
+        return;
+
+    // if file output is disabled, return
+    if(!f_settings()->file_output())
         return;
 
     {
