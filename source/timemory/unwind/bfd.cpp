@@ -72,8 +72,8 @@ timemory_bfd_error_handler(const char* _format, va_list _arglist)
     {
         char _buffer[TIMEMORY_BFD_ERROR_MESSAGE_MAX];
         vsnprintf(_buffer, TIMEMORY_BFD_ERROR_MESSAGE_MAX, _format, _arglist);
-        TIMEMORY_PRINTF_WARNING(stderr, "[%i][%li] BFD error: %s\n", process::get_id(),
-                                threading::get_id(), _buffer);
+        TIMEMORY_PRINTF_WARNING(stderr, "[%li] BFD error: %s\n", threading::get_id(),
+                                _buffer);
     }
 }
 
@@ -92,16 +92,19 @@ int
 bfd_error(const char* string)
 {
     const auto& _instance = settings::shared_instance();
-    if(_instance && _instance->get_verbose() >= get_bfd_verbose())
+    auto        _verbose  = get_bfd_verbose();
+    auto        _err      = bfd_get_error();
+    if(_err == bfd_error_file_not_recognized && _verbose == 1)
+        _verbose = 2;
+    if(_err > 0 && _instance && _instance->get_verbose() >= _verbose)
     {
-        const char* errmsg = bfd_errmsg(bfd_get_error());
+        const char* errmsg = bfd_errmsg(_err);
         if(string)
-            TIMEMORY_PRINTF_WARNING(stderr, "[%i][%li] BFD error: %s: %s\n",
-                                    process::get_id(), threading::get_id(), string,
-                                    errmsg);
+            TIMEMORY_PRINTF_WARNING(stderr, "[%li] BFD error %i: %s: %s\n",
+                                    threading::get_id(), (int) _err, string, errmsg);
         else
-            TIMEMORY_PRINTF_WARNING(stderr, "[%i][%li] BFD error: %s\n",
-                                    process::get_id(), threading::get_id(), errmsg);
+            TIMEMORY_PRINTF_WARNING(stderr, "[%li] BFD error %i: %s\n",
+                                    threading::get_id(), (int) _err, errmsg);
     }
     return -1;
 }
