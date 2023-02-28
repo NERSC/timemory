@@ -152,9 +152,6 @@ storage<Type, true>::~storage()
 
     auto _debug = (m_settings) ? m_settings->get_debug() : true;
 
-    TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> destroying storage",
-                                    m_label.c_str(), (long) m_instance_id);
-
     if(!m_standalone)
     {
         if(!m_is_master)
@@ -177,9 +174,6 @@ storage<Type, true>::~storage()
 
     delete m_graph_data_instance;
     m_graph_data_instance = nullptr;
-
-    TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> storage destroyed",
-                                    m_label.c_str(), (long) m_instance_id);
 
     if(operation::get_storage<Type>{}(m_thread_idx) == this)
         operation::set_storage<Type>{}(nullptr, m_thread_idx);
@@ -839,9 +833,8 @@ storage<Type, true>::destroy()
     auto _debug_v = (m_settings) ? m_settings->get_debug() : false;
     auto _verb_v  = (m_settings) ? m_settings->get_verbose() : 0;
     if(_debug_v || _verb_v >= 3)
-        TIMEMORY_PRINT_HERE("[TID=%li] Destroying storage #%zi for %s (size: %zu)",
-                            threading::get_id(), m_instance_id, demangle<Type>().c_str(),
-                            size());
+        TIMEMORY_PRINT_HERE("Destroying storage #%zi for %s (size: %zu)", m_instance_id,
+                            demangle<Type>().c_str(), size());
 
     operation::cleanup<Type>{};
 

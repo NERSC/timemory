@@ -110,9 +110,6 @@ storage<Type, false>::~storage()
 
     auto _debug = (m_settings) ? m_settings->get_debug() : true;
 
-    TIMEMORY_CONDITIONAL_PRINT_HERE(_debug, "[%s|%li]> destroying storage",
-                                    m_label.c_str(), (long) m_instance_id);
-
     if(!m_standalone)
     {
         if(!m_is_master)

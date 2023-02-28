@@ -340,8 +340,6 @@ public:
             idx = _obj.size();
             _obj.resize(_obj.size() + 1);
             _obj[idx].first = _val;
-            if(settings::debug())
-                printf("[%s]> inserted '%s'...\n", demangle<Tp>().c_str(), _val.c_str());
         }
         return idx;
     }

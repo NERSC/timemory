@@ -101,8 +101,6 @@ stream::insert(const string_t& _val, std::vector<string_t>& _obj)
     {
         idx = _obj.size();
         _obj.push_back(_val);
-        if(settings::debug())
-            printf("> inserted '%s'...\n", _val.c_str());
     }
     return idx;
 }
@@ -261,9 +259,6 @@ stream::write(std::ostream& os) const
                 ss << delim() << ' ' << _ss.str() << ' ';
             }
 
-            // printf("column: %i, order size: %i, count: %i\n", col,
-            // m_order.size(),
-            //       m_break.count(col));
             if(col < (int64_t) m_order.size() && m_break.count(col) > 0)
             {
                 ss << m_delim << '\n';

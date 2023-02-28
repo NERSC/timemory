@@ -263,10 +263,10 @@ mpi_get<Type, true>::operator()(distrib_type& results)
                                     "%s\n\t%s",
                                     demangle<Type>().c_str(), e.what(), _msg.c_str());
             }
-            if(m_debug)
+            if(m_debug && m_verbose >= 3)
             {
-                printf("[RECV: %i] data size: %lli\n", comm_rank,
-                       (long long int) ret.size());
+                TIMEMORY_PRINTF(stderr, "[RECV: %i] data size: %lli\n", comm_rank,
+                                (long long int) ret.size());
             }
         }
         return ret;
@@ -295,11 +295,11 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         for(int i = 1; i < comm_size; ++i)
         {
             std::string str;
-            if(m_debug)
-                printf("[RECV: %i] starting %i\n", comm_rank, i);
+            if(m_debug && m_verbose >= 3)
+                TIMEMORY_PRINTF(stderr, "[RECV: %i] starting %i\n", comm_rank, i);
             mpi::recv(str, i, 0, m_comm);
-            if(m_debug)
-                printf("[RECV: %i] completed %i\n", comm_rank, i);
+            if(m_debug && m_verbose >= 3)
+                TIMEMORY_PRINTF(stderr, "[RECV: %i] completed %i\n", comm_rank, i);
             results[i] = recv_serialize(str);
         }
         results[comm_rank] = std::move(ret);
@@ -309,11 +309,11 @@ mpi_get<Type, true>::operator()(distrib_type& results)
         //
         //  The non-root rank sends its data to the root rank and only reports own data
         //
-        if(m_debug)
-            printf("[SEND: %i] starting\n", comm_rank);
+        if(m_debug && m_verbose >= 3)
+            TIMEMORY_PRINTF(stderr, "[SEND: %i] starting\n", comm_rank);
         mpi::send(str_ret, 0, 0, m_comm);
-        if(m_debug)
-            printf("[SEND: %i] completed\n", comm_rank);
+        if(m_debug && m_verbose >= 3)
+            TIMEMORY_PRINTF(stderr, "[SEND: %i] completed\n", comm_rank);
         results = distrib_type{};
         results.emplace_back(std::move(ret));
     }
