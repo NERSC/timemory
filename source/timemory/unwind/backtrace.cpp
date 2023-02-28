@@ -72,7 +72,7 @@ update_file_maps()
                     _msg << "Reading '" << _val << "'...";
                     unwind::bfd_message(2, _msg.str());
                     _files.emplace(_val, std::make_shared<unwind::bfd_file>(_val));
-                    auto _val_real = filepath::realpath(_val);
+                    auto _val_real = filepath::realpath(_val, nullptr, false);
                     if(_val != _val_real)
                         _files.emplace(_val_real, _files.at(_val));
                 }

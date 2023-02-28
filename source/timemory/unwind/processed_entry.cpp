@@ -41,7 +41,8 @@ processed_entry::construct(processed_entry& _v, file_map_t* _files, bool _prefer
     auto _dlinfo_update = [&](bool _realpath) {
         if(_realpath)
         {
-            _v.location = filepath::realpath(std::string{ _v.info.location.name });
+            _v.location =
+                filepath::realpath(std::string{ _v.info.location.name }, nullptr, false);
             _v.line_address =
                 (_v.info.symbol.address() - _v.info.location.address()) + _v.offset;
         }
@@ -81,7 +82,7 @@ processed_entry::construct(processed_entry& _v, file_map_t* _files, bool _prefer
     if(_files != nullptr && !_v.location.empty() && filepath::exists(_v.location))
     {
         auto _get_file = [&_files](const auto& _val) {
-            auto _val_real = filepath::realpath(_val);
+            auto _val_real = filepath::realpath(_val, nullptr, false);
             if(_files->find(_val) == _files->end())
                 _files->emplace(_val, std::make_shared<bfd_file>(_val));
             return _files->at(_val);
