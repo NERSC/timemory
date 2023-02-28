@@ -43,6 +43,7 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/locking.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/types.hpp"
 #include "timemory/variadic/types.hpp"
@@ -271,9 +272,9 @@ struct gotcha
     template <size_t N>
     static bool revert();
 
-    static bool&       is_configured() { return get_persistent_data().m_is_configured; }
-    static std::mutex& get_mutex() { return get_persistent_data().m_mutex; }
-    static auto        get_info();
+    static bool& is_configured() { return get_persistent_data().m_is_configured; }
+    static locking::spin_mutex& get_mutex() { return get_persistent_data().m_mutex; }
+    static auto                 get_info();
 
     static void configure();
     static void enable() { configure(); }
@@ -336,7 +337,7 @@ private:
         int                   m_verbose       = -1;
         std::atomic<int64_t>  m_started{ 0 };
         array_t<gotcha_data>  m_data;
-        std::mutex            m_mutex;
+        locking::spin_mutex   m_mutex;
         std::set<std::string> m_suppress    = { "malloc", "calloc", "free" };
         get_initializer_t     m_initializer = []() {
             for(const auto& itr : get_data())

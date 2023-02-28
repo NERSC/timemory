@@ -337,7 +337,7 @@ void
 gotcha<Nt, BundleT, DiffT>::configure()
 {
     // do not release lock until fully constructed
-    std::unique_lock<std::mutex> lk(get_mutex(), std::defer_lock);
+    locking::spin_lock lk(get_mutex(), std::defer_lock);
     if(!lk.owns_lock())
         lk.lock();
 
@@ -366,7 +366,7 @@ void
 gotcha<Nt, BundleT, DiffT>::disable()
 {
     // do not release lock until fully destroyed
-    std::unique_lock<std::mutex> lk(get_mutex(), std::defer_lock);
+    locking::spin_lock lk(get_mutex(), std::defer_lock);
     if(!lk.owns_lock())
         lk.lock();
 
