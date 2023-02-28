@@ -209,8 +209,6 @@ add_statistics<T>::operator()(const U& rhs, StatsT& stats, bool _last,
                   "implicit conversion, set trait::permissive_statistics "
                   "to true_type for component");
     using stats_policy_type = policy::record_statistics<U>;
-    TIMEMORY_DEBUG_PRINT_HERE("%s :: updating %s (accum: %s)", demangle<U>().c_str(),
-                              demangle<StatsT>().c_str(), (_last) ? "y" : "n");
     stats_policy_type{}(stats, rhs, _last);
 }
 //
