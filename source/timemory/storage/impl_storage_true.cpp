@@ -71,7 +71,7 @@ storage<Type, true>::storage()
     TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "constructing %s",
                                     m_label.c_str());
     TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
-        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
+        m_settings->get_debug() && m_settings->get_verbose() >= 4, 16);
 
     component::state<Type>::has_storage() = true;
 
@@ -119,7 +119,7 @@ storage<Type, true>::storage(standalone_storage, int64_t _instance_id, std::stri
     TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "constructing %s",
                                     m_label.c_str());
     TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
-        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
+        m_settings->get_debug() && m_settings->get_verbose() >= 4, 16);
 
     // make sure all worker instances have a copy of the hash id and aliases
     auto _master = singleton_t::master_instance();
@@ -211,7 +211,7 @@ storage<Type, true>::finalize()
     TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "finalizing %s",
                                     m_label.c_str());
     TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
-        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
+        m_settings->get_debug() && m_settings->get_verbose() >= 4, 16);
 
     m_finalized            = true;
     worker_is_finalizing() = true;

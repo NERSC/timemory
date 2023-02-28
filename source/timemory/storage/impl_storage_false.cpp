@@ -72,7 +72,7 @@ storage<Type, false>::storage()
     TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "constructing %s",
                                     m_label.c_str());
     TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
-        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
+        m_settings->get_debug() && m_settings->get_verbose() >= 4, 16);
     get_shared_manager();
     component::state<Type>::has_storage() = true;
 
@@ -97,7 +97,7 @@ storage<Type, false>::storage(standalone_storage, int64_t _instance_id,
     TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "constructing %s",
                                     m_label.c_str());
     TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
-        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
+        m_settings->get_debug() && m_settings->get_verbose() >= 4, 16);
 }
 //
 //--------------------------------------------------------------------------------------//
@@ -168,7 +168,7 @@ storage<Type, false>::initialize()
     TIMEMORY_CONDITIONAL_PRINT_HERE(m_settings->get_debug(), "initializing %s",
                                     m_label.c_str());
     TIMEMORY_CONDITIONAL_DEMANGLED_BACKTRACE(
-        m_settings->get_debug() && m_settings->get_verbose() > 1, 16);
+        m_settings->get_debug() && m_settings->get_verbose() >= 4, 16);
 
     m_initialized = true;
 
