@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "timemory/hash/types.hpp"
 #include "timemory/operations/declaration.hpp"
 #include "timemory/operations/macros.hpp"
 #include "timemory/operations/types.hpp"
@@ -623,15 +624,28 @@ merge<Type, false>::merge(storage_type&, storage_type& rhs)
     if(!l.owns_lock())
         l.lock();
 
-    for(const auto& itr : *rhs.get_hash_ids())
+    if(get_main_hash_ids() && rhs.get_hash_ids())
     {
-        if(get_main_hash_ids()->find(itr.first) == get_main_hash_ids()->end())
-            (*get_main_hash_ids())[itr.first] = itr.second;
+        auto_lock_t _lk{ type_mutex<hash_map_t>(), std::defer_lock };
+        if(!_lk.owns_lock())
+            _lk.lock();
+
+        for(const auto& itr : *rhs.get_hash_ids())
+        {
+            get_main_hash_ids()->emplace(itr.first, itr.second);
+        }
     }
-    for(const auto& itr : (*rhs.get_hash_aliases()))
+
+    if(get_main_hash_aliases() && rhs.get_hash_aliases())
     {
-        if(get_main_hash_aliases()->find(itr.first) == get_main_hash_aliases()->end())
-            (*get_main_hash_aliases())[itr.first] = itr.second;
+        auto_lock_t _lk{ type_mutex<hash_alias_map_t>(), std::defer_lock };
+        if(!_lk.owns_lock())
+            _lk.lock();
+
+        for(const auto& itr : *rhs.get_hash_aliases())
+        {
+            get_main_hash_aliases()->emplace(itr.first, itr.second);
+        }
     }
 }
 //
