@@ -277,11 +277,40 @@ tsettings<Tp, Vp>::add_argument(argparse::argument_parser& p)
 {
     if(!m_cmdline.empty() && m_enabled)
     {
-        if(std::is_same<Tp, bool>::value)
-            m_max_count = 1;
+        auto _dtype     = std::string{};
+        auto _min_count = 0;
+        if constexpr(std::is_same<Tp, bool>::value || std::is_integral<Tp>::value ||
+                     std::is_floating_point<Tp>::value)
+        {
+            if(m_max_count < 0 && m_count < 0)
+                m_max_count = 1;
+
+            if constexpr(!std::is_same<Tp, bool>::value)
+                _min_count = 1;
+
+            if constexpr(std::is_same<Tp, bool>::value)
+                _dtype = "boolean";
+            else if constexpr(std::is_integral<Tp>::value)
+                _dtype = "integral";
+            else if constexpr(std::is_floating_point<Tp>::value)
+                _dtype = "floating-point";
+        }
+        else if(std::is_same<Tp, std::string>::value)
+        {
+            _dtype = "string";
+        }
+
+        if(m_max_count < 0 && m_count < 0 && !m_choices.empty())
+        {
+            _min_count  = 1;
+            m_max_count = m_choices.size();
+        }
+
         return &p.add_argument(m_cmdline, m_description)
                     .action(get_action(TIMEMORY_API{}))
+                    .dtype(_dtype)
                     .count(m_count)
+                    .min_count(_min_count)
                     .max_count(m_max_count)
                     .choices(m_choices);
     }
