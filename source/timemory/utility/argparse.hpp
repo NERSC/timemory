@@ -1133,12 +1133,19 @@ struct argument_parser
     template <typename T>
     T get(const std::string& name)
     {
+        if(name.empty())
+        {
+            timemory_print_demangled_backtrace<8>(std::cerr, "",
+                                                  "no argument name requested");
+            throw std::runtime_error("argparser::get requested with no name");
+        }
+
         auto itr = m_name_map.find(name);
         if(itr != m_name_map.end())
             return m_arguments[static_cast<size_t>(itr->second)].get<T>();
 
         construct_error("No argument option found with name: \"", name,
-                        "\" (ignoring leading dashes)");
+                        "\" [type: ", demangle<T>(), "] (ignoring leading dashes)");
         return T{};
     }
     //

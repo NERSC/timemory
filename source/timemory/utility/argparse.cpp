@@ -261,6 +261,26 @@ argument_parser::print_help(const std::string& _extra)
 
     std::cerr << _usage.str();
 
+    auto _get_usage_desc = [](const argument& _arg) {
+        auto _usage_desc = std::stringstream{};
+        _usage_desc << " (";
+        if(_arg.m_count != argument::Count::ANY)
+            _usage_desc << "count: " << _arg.m_count;
+        else if(_arg.m_min_count != argument::Count::ANY)
+            _usage_desc << "min: " << _arg.m_min_count;
+        else if(_arg.m_max_count != argument::Count::ANY)
+            _usage_desc << "max: " << _arg.m_max_count;
+        else
+            _usage_desc << "count: unlimited";
+        if(!_arg.m_dtype.empty())
+            _usage_desc << ", dtype: " << _arg.m_dtype;
+        else if(_arg.m_count == 0 ||
+                (_arg.m_count == argument::Count::ANY && _arg.m_max_count == 1))
+            _usage_desc << ", dtype: bool" << _arg.m_dtype;
+        _usage_desc << ")";
+        return _usage_desc.str();
+    };
+
     std::stringstream _sshort_desc;
     auto              _indent = _usage.str().length() + 2;
     size_t            _ncnt   = 0;
@@ -287,21 +307,8 @@ argument_parser::print_help(const std::string& _extra)
             else
                 _sshort_desc << " " << name;
 
-            _sshort_desc << " (";
-            if(a.m_count != argument::Count::ANY)
-                _sshort_desc << "count: " << a.m_count;
-            else if(a.m_min_count != argument::Count::ANY)
-                _sshort_desc << "min: " << a.m_min_count;
-            else if(a.m_max_count != argument::Count::ANY)
-                _sshort_desc << "max: " << a.m_max_count;
-            else
-                _sshort_desc << "count: unlimited";
-            if(!a.m_dtype.empty())
-                _sshort_desc << ", dtype: " << a.m_dtype;
-            else if(a.m_count == 0 ||
-                    (a.m_count == argument::Count::ANY && a.m_max_count == 1))
-                _sshort_desc << ", dtype: bool" << a.m_dtype;
-            _sshort_desc << ")";
+            _sshort_desc << _get_usage_desc(a);
+            a.m_desc += _get_usage_desc(a);
         }
     }
 
