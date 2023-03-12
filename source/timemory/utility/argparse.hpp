@@ -458,9 +458,11 @@ struct argument_parser
             return *this;
         }
 
-        argument& required(bool req)
+        argument& required(bool req, std::string _msg = "")
         {
             m_required = req;
+            m_required_info =
+                (_msg.empty()) ? "" : std::string{ " :: " } + std::move(_msg);
             return *this;
         }
 
@@ -721,6 +723,7 @@ struct argument_parser
         std::string                m_desc           = {};
         std::string                m_dtype          = {};
         std::string                m_group          = {};
+        std::string                m_required_info  = {};
         bool                       m_found          = false;
         bool                       m_required       = false;
         int                        m_index          = -1;
@@ -868,7 +871,7 @@ struct argument_parser
     //
     //----------------------------------------------------------------------------------//
     //
-    void print_help(const std::string& _extra = "");
+    void print_help(const std::string& _extra = {}, const std::string& _epilogue = {});
     //
     //----------------------------------------------------------------------------------//
     //
@@ -1006,6 +1009,24 @@ struct argument_parser
             .names({ "-h", "-?", "--help" })
             .description("Shows this page")
             .count(0);
+    }
+    //
+    //----------------------------------------------------------------------------------//
+    //
+    /// \fn argument& enable_help()
+    /// \brief Add a help command
+    argument& enable_help(const std::string& _extra, const std::string& _epilogue = {},
+                          int _exit_code = EXIT_SUCCESS)
+    {
+        m_help_enabled = true;
+        return add_argument()
+            .names({ "-h", "-?", "--help" })
+            .description("Shows this page")
+            .count(0)
+            .action([_exit_code, _extra, _epilogue](argument_parser& _p) {
+                _p.print_help(_extra, _epilogue);
+                exit(_exit_code);
+            });
     }
     //----------------------------------------------------------------------------------//
     //

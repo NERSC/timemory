@@ -250,7 +250,7 @@ argument_parser::argument::is_separator() const
 }
 
 TIMEMORY_UTILITY_INLINE void
-argument_parser::print_help(const std::string& _extra)
+argument_parser::print_help(const std::string& _extra, const std::string& _epilogue)
 {
     end_group();
 
@@ -510,7 +510,7 @@ argument_parser::print_help(const std::string& _extra)
 
         std::cerr << std::endl;
     }
-    std::cerr << '\n';
+    std::cerr << _epilogue << std::endl;
 }
 
 TIMEMORY_UTILITY_INLINE argument_parser::arg_result
@@ -731,26 +731,31 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     if(err)
         return (m_error_func(*this, err), err);
 
-    // check requirements
-    for(auto& a : m_arguments)
+    if(!exists("help"))
     {
-        if(a.m_required && !a.m_found)
+        // check requirements
+        for(auto& a : m_arguments)
         {
-            return construct_error("Required argument not found: " + a.m_names.at(0));
+            if(a.m_required && !a.m_found)
+            {
+                return construct_error("Required argument not found: " + a.m_names.at(0) +
+                                       a.m_required_info);
+            }
+            if(a.m_position >= 0 && argc >= a.m_position && !a.m_found)
+            {
+                return construct_error("argument " + a.m_names.at(0) +
+                                       " expected in position " +
+                                       std::to_string(a.m_position) + a.m_required_info);
+            }
         }
-        if(a.m_position >= 0 && argc >= a.m_position && !a.m_found)
-        {
-            return construct_error("argument " + a.m_names.at(0) +
-                                   " expected in position " +
-                                   std::to_string(a.m_position));
-        }
-    }
 
-    // check requirements
-    for(auto& a : m_positional_arguments)
-    {
-        if(a.m_required && !a.m_found)
-            return construct_error("Required argument not found: " + a.m_names.at(0));
+        // check requirements
+        for(auto& a : m_positional_arguments)
+        {
+            if(a.m_required && !a.m_found)
+                return construct_error("Required argument not found: " + a.m_names.at(0) +
+                                       a.m_required_info);
+        }
     }
 
     // check all the counts have been satisfied
