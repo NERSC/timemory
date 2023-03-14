@@ -246,10 +246,45 @@ TIMEMORY_UTILITY_INLINE std::string
 }
 
 TIMEMORY_UTILITY_INLINE std::string
+                        canonicalize(std::string _path)
+{
+    replace(_path, '\\', "/");
+    replace(_path, "//", "/");
+
+    if(_path.find("./") == 0)
+        _path = _path.replace(0, 1, get_cwd());
+    else if(_path.find("../") == 0)
+        _path = _path.insert(0, get_cwd() + "/");
+
+    auto _leading_dash = (_path.find('/') == 0);
+    auto _pieces       = delimit(_path, "/");
+    std::reverse(_pieces.begin(), _pieces.end());
+    auto _tree = std::vector<std::string>{};
+    for(size_t i = 0; i < _pieces.size(); ++i)
+    {
+        const auto& itr = _pieces.at(i);
+        if(itr == ".")
+        {
+            continue;
+        }
+        else if(itr == "..")
+            ++i;
+        else
+            _tree.emplace_back(itr);
+    }
+    std::reverse(_tree.begin(), _tree.end());
+    auto _cpath = std::string{ (_leading_dash) ? "/" : "" };
+    for(size_t i = 0; i < _tree.size() - 1; ++i)
+        _cpath += _tree.at(i) + "/";
+    _cpath += _tree.back();
+    return _cpath;
+}
+
+TIMEMORY_UTILITY_INLINE std::string
                         dirname(std::string _fname)
 {
 #if defined(TIMEMORY_UNIX)
-    _fname = realpath(_fname);
+    // _fname = realpath(_fname, nullptr, false);
     while(_fname.find("\\\\") != std::string::npos)
         _fname.replace(_fname.find("\\\\"), 2, "/");
     while(_fname.find('\\') != std::string::npos)

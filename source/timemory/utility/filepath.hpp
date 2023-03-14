@@ -246,6 +246,48 @@ realpath(const std::string& _relpath, std::string* _resolved = nullptr,
 
     return (_resolved) ? *_resolved : std::string{ _result };
 }
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_UNIX)
+inline bool
+is_link(const std::string& _path)
+{
+    struct stat _buffer;
+    if(lstat(_path.c_str(), &_buffer) == 0)
+        return (S_ISLNK(_buffer.st_mode) != 0);
+    return false;
+}
+
+template <size_t MaxLen = TIMEMORY_PATH_MAX>
+inline std::string
+readlink(const std::string& _path)
+{
+    // if not a symbolic link, just return the path
+    if(!is_link(_path))
+        return _path;
+
+    char    _buffer[MaxLen];
+    ssize_t _buffer_len = MaxLen;
+    _buffer_len         = ::readlink(_path.c_str(), _buffer, _buffer_len);
+    if(_buffer_len < 0 || _buffer_len == (MaxLen))
+    {
+        auto* _path_rp = ::realpath(_path.c_str(), nullptr);
+        if(_path_rp)
+        {
+            auto _ret = std::string{ _path_rp };
+            free(_path_rp);
+            return _ret;
+        }
+    }
+    else
+    {
+        _buffer[_buffer_len] = '\0';
+        return _buffer;
+    }
+    return _path;
+}
+#endif
 }  // namespace filepath
 }  // namespace tim
 
