@@ -304,11 +304,11 @@ get_contiguous_maps(pid_t _pid, utility::transient_function<bool(const maps&)>&&
     auto _orig = get_maps(_pid, std::move(_filter), _update);
     for(const auto& itr : _orig)
     {
-        auto iitr = _find_contiguous(itr, _data.begin(), _data.end());
-        if(iitr == _data.end())
+        auto citr = _find_contiguous(itr, _data.begin(), _data.end());
+        if(citr == _data.end())
             _data.emplace_back(itr);
         else
-            *iitr += itr;
+            *citr += itr;
     }
 
     return _data;
