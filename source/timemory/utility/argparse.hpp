@@ -901,9 +901,7 @@ struct argument_parser
         strvec_t args{};
         return parse_known_args(argc, argv, args, _delim, verbose_level);
     }
-    //
-    //----------------------------------------------------------------------------------//
-    //
+
     /// \fn arg_result parse_known_args(int* argc, char*** argv, const std::string& delim,
     ///                                 int verb)
     /// \param[in,out] argc Pointer to number of arguments (i.e. # of command-line args)
@@ -918,9 +916,7 @@ struct argument_parser
     ///
     arg_result parse_known_args(int* argc, char*** argv, strvec_t& _args,
                                 const std::string& _delim = "--", int verbose_level = 0);
-    //
-    //----------------------------------------------------------------------------------//
-    //
+
     /// \fn arg_result parse_known_args(int argc, char** argv, strvec_t& args, const
     ///                                 std::string& delim, int verb)
     /// \param[in,out] argc Number of arguments (i.e. # of command-line args)
@@ -938,17 +934,17 @@ struct argument_parser
     /// not remove the arguments that it recognizes.
     /// To distinguish this parsers options from user arguments, use the syntax:
     ///
-    ///    ./<CMD> <PARSER_OPTIONS> -- <USER_ARGS>
+    ///    ./<CMD> <PARSER_OPTIONS> -- <APP> <USER_ARGS>
     ///
     /// And std::get<1>(...) on the return value will be the new argc.
     /// and std::get<2>(...) on the return value will be the new argv.
     /// Other valid usages:
     ///
-    ///    ./<CMD> --help       (will report this parser's help message)
-    ///    ./<CMD> -- --help    (will report the applications help message, if supported)
+    ///    ./<CMD> --help           (will report this parser's help message)
+    ///    ./<CMD> -- <APP> --help  (will report the applications help message)
     ///    ./<CMD> <USER_ARGS>
     ///    ./<CMD> <PARSER_OPTIONS>
-    ///    ./<CMD> <PARSER_OPTIONS> <USER_ARGS> (intermixed)
+    ///    ./<CMD> <PARSER_OPTIONS> <APP> <USER_ARGS> (intermixed)
     ///
     /// will not remove any of the known options.
     /// In other words, this will remove all arguments after <CMD> until the first "--" if
@@ -956,39 +952,17 @@ struct argument_parser
     ///
     known_args parse_known_args(int argc, char** argv, strvec_t& _args,
                                 const std::string& _delim = "--", int verbose_level = 0);
-    //
-    //----------------------------------------------------------------------------------//
-    //
+
+    arg_result parse(int argc, char** argv, std::string_view _delim = "--",
+                     int verbose_level = 0);
+    arg_result parse(int argc, char** argv, int verbose_level,
+                     std::string_view _delim = "--");
     template <typename... Args>
     arg_result parse_args(Args&&... args)
     {
         return parse(std::forward<Args>(args)...);
     }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    arg_result parse(int argc, char** argv, std::string_view _delim = "--",
-                     int verbose_level = 0)
-    {
-        std::vector<std::string> _args;
-        _args.reserve(argc);
-        for(int i = 0; i < argc; ++i)
-        {
-            if(std::string_view{ argv[i] } == _delim)
-                break;
-            _args.emplace_back((const char*) argv[i]);
-        }
-        return parse(_args, verbose_level);
-    }
-    //
-    arg_result parse(int argc, char** argv, int verbose_level,
-                     std::string_view _delim = "--")
-    {
-        return parse(argc, argv, _delim, verbose_level);
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
+
     /// \fn arg_result parse(const std::vector<std::string>& args, int verb)
     /// \param[in] args Array of strings (i.e. command-line arguments)
     /// \param[in] verb Verbosity
@@ -997,93 +971,28 @@ struct argument_parser
     /// This is where the map of the options is built and the loop over the
     /// arguments is performed.
     arg_result parse(const std::vector<std::string>& _args, int verbose_level = 0);
-    //
-    //----------------------------------------------------------------------------------//
-    //
+
     /// \fn argument& enable_help()
     /// \brief Add a help command
-    argument& enable_help()
-    {
-        m_help_enabled = true;
-        return add_argument()
-            .names({ "-h", "-?", "--help" })
-            .description("Shows this page")
-            .count(0);
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
+    argument& enable_help();
+
     /// \fn argument& enable_help()
     /// \brief Add a help command
     argument& enable_help(const std::string& _extra, const std::string& _epilogue = {},
-                          int _exit_code = EXIT_SUCCESS)
-    {
-        m_help_enabled = true;
-        return add_argument()
-            .names({ "-h", "-?", "--help" })
-            .description("Shows this page")
-            .count(0)
-            .action([_exit_code, _extra, _epilogue](argument_parser& _p) {
-                _p.print_help(_extra, _epilogue);
-                exit(_exit_code);
-            });
-    }
-    //----------------------------------------------------------------------------------//
-    //
-    /// \brief Add a command printing the version
+                          int _exit_code = EXIT_SUCCESS);
+
+    /// \brief Add a command printing the version from a version string
     argument& enable_version(const std::string& _name, const std::string& _version,
-                             const std::string& _tag = {}, const std::string& _rev = {})
-    {
-        return add_argument()
-            .names({ "--version" })
-            .description("Prints the version and exit")
-            .count(0)
-            .action([_name, _version, _tag, _rev](argument_parser&) {
-                std::cerr << _name << " " << _version;
-                if(!_tag.empty() || !_rev.empty())
-                {
-                    std::cerr << " (";
-                    if(!_tag.empty())
-                    {
-                        std::cerr << "tag: " << _tag;
-                        if(!_rev.empty())
-                            std::cerr << ", ";
-                    }
-                    if(!_rev.empty())
-                        std::cerr << "rev: " << _rev;
-                    std::cerr << ")";
-                }
-                std::cerr << std::endl;
-                exit(EXIT_SUCCESS);
-            });
-    }
-    //----------------------------------------------------------------------------------//
-    //
-    /// \brief Add a command printing the version
+                             const std::string& _tag = {}, const std::string& _rev = {});
+
+    /// \brief Add a command printing the version from a vector of version numbers
     argument& enable_version(const std::string& _name, std::vector<int> _versions,
-                             const std::string& _tag = {}, const std::string& _rev = {})
-    {
-        return enable_version(
-            _name, timemory::join::join(timemory::join::array_config{ "." }, _versions),
-            _tag, _rev);
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    /// \fn argument& enable_help()
-    /// \brief Add a help command
-    argument& enable_serialize()
-    {
-        m_serialize_enabled = true;
-        return add_argument()
-            .names({ "--serialize-argparser" })
-            .description("Serializes the instance to provided JSON")
-            .dtype("filepath")
-            .count(1);
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
+                             const std::string& _tag = {}, const std::string& _rev = {});
+
+    /// \fn argument& enable_serialize()
+    /// \brief Add a serializer-argparser command
+    argument& enable_serialize();
+
     /// \fn bool exists(const std::string& name) const
     /// \brief Returns whether or not an option was found in the arguments. Only
     /// useful after a call to \ref parse or \ref parse_known_args.
@@ -1114,133 +1023,30 @@ struct argument_parser
     ///     // ...
     /// }
     /// \endcode
-    bool exists(const std::string& name) const
-    {
-        std::string n = helpers::ltrim(
-            name, [](int c) -> bool { return c != static_cast<int>('-'); });
-        auto itr = m_name_map.find(n);
-        if(itr != m_name_map.end())
-            return m_arguments[static_cast<size_t>(itr->second)].m_found;
-        return false;
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    /// \fn T get(const std::string& name)
-    /// \tparam T Data type to convert the argument into
-    /// \param[in] name An identifier of the option
-    ///
-    /// \brief Get the value(s) associated with an argument. If option, it should
-    /// be used in conjunction with \ref exists(name). Only useful after a call to \ref
-    /// parse or \ref parse_known_args.
-    ///
-    /// \code{.cpp}
-    ///
-    /// int main(int argc, char** argv)
-    /// {
-    ///     argument_parser p{ argv[0] };
-    ///     p.add_argument()
-    ///         .names({ "-n", "--iterations"})
-    ///         .description("Number of iterations")
-    ///         .count(1);
-    ///
-    ///     // ... etc.
-    ///
-    ///     auto nitr = p.get<size_t>("iteration");
-    ///
-    ///     // ... etc.
-    /// }
-    /// \endcode
+    bool exists(const std::string& name) const;
+
     template <typename T>
-    T get(const std::string& name)
-    {
-        if(name.empty())
-        {
-            timemory_print_demangled_backtrace<8>(std::cerr, "",
-                                                  "no argument name requested");
-            throw std::runtime_error("argparser::get requested with no name");
-        }
+    T get(const std::string& name);
 
-        auto itr = m_name_map.find(name);
-        if(itr != m_name_map.end())
-            return m_arguments[static_cast<size_t>(itr->second)].get<T>();
-
-        construct_error("No argument option found with name: \"", name,
-                        "\" [type: ", demangle<T>(), "] (ignoring leading dashes)");
-        return T{};
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    int64_t get_count(const std::string& name)
-    {
-        auto itr = m_name_map.find(name);
-        if(itr != m_name_map.end())
-            return m_arguments[static_cast<size_t>(itr->second)].size();
-        return 0;
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    int64_t get_positional_count() const { return m_positional_values.size(); }
-    //
-    //----------------------------------------------------------------------------------//
-    //
     static int64_t get_count(argument& a) { return a.m_values.size(); }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    template <typename ErrorFuncT>
-    void on_error(ErrorFuncT&& _func)
-    {
-        on_error_sfinae(std::forward<ErrorFuncT>(_func), 0);
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    void set_help_width(int _v) { m_width = _v; }
-    int  get_help_width() const { return m_width; }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    void set_description_width(int _v) { m_desc_width = _v; }
-    int  get_description_width() const { return m_desc_width; }
-    //
-    //----------------------------------------------------------------------------------//
-    //
-    void set_use_color(bool _v) { m_use_color = _v; }
-    bool get_use_color() const { return m_use_color; }
+    int64_t        get_count(const std::string& name);
+    int64_t        get_positional_count() const { return m_positional_values.size(); }
+    int            get_help_width() const { return m_width; }
+    int            get_description_width() const { return m_desc_width; }
+    bool           get_use_color() const { return m_use_color; }
+    auto           get_color() const { return m_color; }
 
-    void set_color(const char* _v) { m_color = _v; }
-    auto get_color() const { return m_color; }
+    void          set_help_width(int _v) { m_width = _v; }
+    void          set_description_width(int _v) { m_desc_width = _v; }
+    void          set_use_color(bool _v) { m_use_color = _v; }
+    void          set_color(const char* _v) { m_color = _v; }
+    std::ostream* set_ostream(std::ostream*);
 
     template <typename ArchiveT>
-    void serialize(ArchiveT& ar, const unsigned) const
-    {
-        ar(cereal::make_nvp("help_enabled", m_help_enabled));
-        ar(cereal::make_nvp("width", m_width));
-        ar(cereal::make_nvp("description_width", m_desc_width));
-        ar(cereal::make_nvp("description", m_desc));
-        ar(cereal::make_nvp("long_description", m_long_desc));
-        ar(cereal::make_nvp("bin", m_bin));
-        ar(cereal::make_nvp("positional_map", m_positional_map));
-        ar(cereal::make_nvp("name_map", m_name_map));
-        if constexpr(concepts::is_output_archive<ArchiveT>::value)
-        {
-            auto _arguments = std::vector<argument>{};
-            _arguments.reserve(m_arguments.size());
-            for(const auto& itr : m_arguments)
-                if(!itr.is_separator())
-                    _arguments.emplace_back(itr);
-            ar(cereal::make_nvp("arguments", _arguments));
-        }
-        else
-        {
-            ar(cereal::make_nvp("arguments", m_arguments));
-        }
-        ar(cereal::make_nvp("positional_arguments", m_positional_arguments));
-        ar(cereal::make_nvp("positional_values", m_positional_values));
-    }
+    void serialize(ArchiveT& ar, const unsigned) const;
+
+    template <typename ErrorFuncT>
+    void on_error(ErrorFuncT&&);
 
 private:
     template <typename... Args>
@@ -1249,66 +1055,15 @@ private:
         auto _err = arg_result{ timemory::join::join("", std::forward<Args>(args)...) };
         return (m_error_func(*this, _err), _err);
     }
-    //
-    //----------------------------------------------------------------------------------//
-    //
+
     template <typename FuncT = std::function<bool(int, int)>>
     arg_result check_count(argument& a, const std::string& _do_str = "111",
-                           const FuncT& _func = std::not_equal_to<int>{})
-    {
-        int _sz  = static_cast<int>(a.m_values.size());
-        int _cnt = a.m_count;
-        int _max = a.m_max_count;
-        int _min = a.m_min_count;
+                           const FuncT& _func = std::not_equal_to<int>{});
 
-        std::bitset<3> _do{ _do_str };
-        std::bitset<3> _checks;
-        _checks.reset();  // set all to false
-        // if <val> > ANY AND <val does not satisfies condition> -> true
-        _checks.set(0, _do.test(0) && _cnt > argument::Count::ANY && _func(_sz, _cnt));
-        _checks.set(1, _do.test(1) && _max > argument::Count::ANY && _sz > _max);
-        _checks.set(2, _do.test(2) && _min > argument::Count::ANY && _sz < _min);
-        // if no checks failed, return non-error
-        if(_checks.none())
-            return arg_result{};
-        // otherwise, compose an error message
-        std::stringstream msg;
-        msg << "Argument: " << a.get_name() << " failed to satisfy its argument count "
-            << "requirements. Number of arguments: " << _sz << ".";
-        if(_checks.test(0))
-        {
-            msg << "\n[" << a.get_name() << "]> Requires exactly " << _cnt << " values.";
-        }
-        else
-        {
-            if(_checks.test(1))
-            {
-                msg << "\n[" << a.get_name() << "]> Requires less than " << _max + 1
-                    << " values.";
-            }
-            if(_checks.test(2))
-            {
-                msg << "\n[" << a.get_name() << "]> Requires more than " << _min - 1
-                    << " values.";
-            }
-        }
-        return arg_result(msg.str());
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
     template <typename FuncT = std::function<bool(int, int)>>
     arg_result check_count(const std::string& name, const std::string& _do = "111",
-                           const FuncT& _func = std::not_equal_to<int>{})
-    {
-        auto itr = m_name_map.find(name);
-        if(itr != m_name_map.end())
-            return check_count(m_arguments[static_cast<size_t>(itr->second)], _do, _func);
-        return arg_result{};
-    }
-    //
-    //----------------------------------------------------------------------------------//
-    //
+                           const FuncT& _func = std::not_equal_to<int>{});
+
     template <typename ErrorFuncT>
     auto on_error_sfinae(ErrorFuncT&& _func, int)
         -> decltype(_func(std::declval<this_type&>(), std::declval<result_type>()),
@@ -1316,9 +1071,7 @@ private:
     {
         m_error_func = std::forward<ErrorFuncT>(_func);
     }
-    //
-    //----------------------------------------------------------------------------------//
-    //
+
     template <typename ErrorFuncT>
     auto on_error_sfinae(ErrorFuncT&& _func, long)
         -> decltype(_func(std::declval<result_type>()), void())
@@ -1326,15 +1079,10 @@ private:
         auto _wrap_func = [=](this_type&, result_type ret) { _func(ret); };
         m_error_func    = _wrap_func;
     }
-    //
-    //----------------------------------------------------------------------------------//
-    //
+
     arg_result begin_argument(const std::string& arg, bool longarg, int position);
     arg_result add_value(std::string& value, int location);
     arg_result end_argument();
-    //
-    //----------------------------------------------------------------------------------//
-    //
 
 private:
     bool                       m_help_enabled      = false;
@@ -1343,6 +1091,7 @@ private:
     int                        m_current           = -1;
     int                        m_width             = 30;
     size_t                     m_desc_width        = 90;
+    std::ostream*              m_clog              = &std::cout;
     std::string                m_desc              = {};
     std::string                m_long_desc         = {};
     std::string                m_bin               = {};
@@ -1356,6 +1105,53 @@ private:
     std::vector<argument>      m_positional_arguments = {};
     std::map<int, std::string> m_positional_values    = {};
 };
+//
+//--------------------------------------------------------------------------------------//
+//
+/// \fn T get(const std::string& name)
+/// \tparam T Data type to convert the argument into
+/// \param[in] name An identifier of the option
+///
+/// \brief Get the value(s) associated with an argument. If option, it should
+/// be used in conjunction with \ref exists(name). Only useful after a call to \ref
+/// parse or \ref parse_known_args.
+///
+/// \code{.cpp}
+///
+/// int main(int argc, char** argv)
+/// {
+///     argument_parser p{ argv[0] };
+///     p.add_argument()
+///         .names({ "-n", "--iterations"})
+///         .description("Number of iterations")
+///         .count(1);
+///
+///     // ... etc.
+///
+///     auto nitr = p.get<size_t>("iteration");
+///
+///     // ... etc.
+/// }
+/// \endcode
+template <typename Tp>
+Tp
+argument_parser::get(const std::string& name)
+{
+    if(name.empty())
+    {
+        timemory_print_demangled_backtrace<8>(std::cerr, "",
+                                              "no argument name requested");
+        throw std::runtime_error("argparser::get requested with no name");
+    }
+
+    auto itr = m_name_map.find(name);
+    if(itr != m_name_map.end())
+        return m_arguments[static_cast<size_t>(itr->second)].get<Tp>();
+
+    construct_error("No argument option found with name: \"", name,
+                    "\" [type: ", demangle<Tp>(), "] (ignoring leading dashes)");
+    return Tp{};
+}
 //
 //--------------------------------------------------------------------------------------//
 //
@@ -1385,6 +1181,102 @@ argument_parser::argument::get<std::vector<std::string>>()
 //
 //--------------------------------------------------------------------------------------//
 //
+template <typename ArchiveT>
+void
+argument_parser::serialize(ArchiveT& ar, const unsigned) const
+{
+    ar(cereal::make_nvp("help_enabled", m_help_enabled));
+    ar(cereal::make_nvp("width", m_width));
+    ar(cereal::make_nvp("description_width", m_desc_width));
+    ar(cereal::make_nvp("description", m_desc));
+    ar(cereal::make_nvp("long_description", m_long_desc));
+    ar(cereal::make_nvp("bin", m_bin));
+    ar(cereal::make_nvp("positional_map", m_positional_map));
+    ar(cereal::make_nvp("name_map", m_name_map));
+    if constexpr(concepts::is_output_archive<ArchiveT>::value)
+    {
+        auto _arguments = std::vector<argument>{};
+        _arguments.reserve(m_arguments.size());
+        for(const auto& itr : m_arguments)
+            if(!itr.is_separator())
+                _arguments.emplace_back(itr);
+        ar(cereal::make_nvp("arguments", _arguments));
+    }
+    else
+    {
+        ar(cereal::make_nvp("arguments", m_arguments));
+    }
+    ar(cereal::make_nvp("positional_arguments", m_positional_arguments));
+    ar(cereal::make_nvp("positional_values", m_positional_values));
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename ErrorFuncT>
+void
+argument_parser::on_error(ErrorFuncT&& _func)
+{
+    on_error_sfinae(std::forward<ErrorFuncT>(_func), 0);
+}
+//
+//--------------------------------------------------------------------------------------//
+//
+template <typename FuncT>
+argument_parser::arg_result
+argument_parser::check_count(argument& a, const std::string& _do_str, const FuncT& _func)
+{
+    int _sz  = static_cast<int>(a.m_values.size());
+    int _cnt = a.m_count;
+    int _max = a.m_max_count;
+    int _min = a.m_min_count;
+
+    std::bitset<3> _do{ _do_str };
+    std::bitset<3> _checks;
+    _checks.reset();  // set all to false
+    // if <val> > ANY AND <val does not satisfies condition> -> true
+    _checks.set(0, _do.test(0) && _cnt > argument::Count::ANY && _func(_sz, _cnt));
+    _checks.set(1, _do.test(1) && _max > argument::Count::ANY && _sz > _max);
+    _checks.set(2, _do.test(2) && _min > argument::Count::ANY && _sz < _min);
+    // if no checks failed, return non-error
+    if(_checks.none())
+        return arg_result{};
+    // otherwise, compose an error message
+    std::stringstream msg;
+    msg << "Argument: " << a.get_name() << " failed to satisfy its argument count "
+        << "requirements. Number of arguments: " << _sz << ".";
+    if(_checks.test(0))
+    {
+        msg << "\n[" << a.get_name() << "]> Requires exactly " << _cnt << " values.";
+    }
+    else
+    {
+        if(_checks.test(1))
+        {
+            msg << "\n[" << a.get_name() << "]> Requires less than " << _max + 1
+                << " values.";
+        }
+        if(_checks.test(2))
+        {
+            msg << "\n[" << a.get_name() << "]> Requires more than " << _min - 1
+                << " values.";
+        }
+    }
+    return arg_result(msg.str());
+}
+//
+//----------------------------------------------------------------------------------//
+//
+template <typename FuncT>
+argument_parser::arg_result
+argument_parser::check_count(const std::string& name, const std::string& _do,
+                             const FuncT& _func)
+{
+    auto itr = m_name_map.find(name);
+    if(itr != m_name_map.end())
+        return check_count(m_arguments[static_cast<size_t>(itr->second)], _do, _func);
+    return arg_result{};
+}
+
 }  // namespace argparse
 }  // namespace tim
 

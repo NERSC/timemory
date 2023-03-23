@@ -75,8 +75,11 @@ argument_vector::argument_vector(int& argc, const char* const*& argv)
         emplace_back(argv[i]);
 }
 
-TIMEMORY_UTILITY_INLINE argument_vector::cargs_t
-                        argument_vector::get_execv(const base_type& _prepend, size_t _beg, size_t _end) const
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_vector::cargs_t
+argument_vector::get_execv(const base_type& _prepend, size_t _beg, size_t _end) const
 {
     std::stringstream cmdss;
     // find the end if not specified
@@ -113,8 +116,11 @@ TIMEMORY_UTILITY_INLINE argument_vector::cargs_t
     return cargs_t(_argc - 1, _argv, cmd);
 }
 
-TIMEMORY_UTILITY_INLINE argument_vector::cargs_t
-                        argument_vector::get_execv(size_t _beg, size_t _end) const
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_vector::cargs_t
+argument_vector::get_execv(size_t _beg, size_t _end) const
 {
     return get_execv(base_type{}, _beg, _end);
 }
@@ -156,8 +162,11 @@ argument_parser::argument::choice_alias(
     return *this;
 }
 
-TIMEMORY_UTILITY_INLINE argument_parser::arg_result
-                        argument_parser::argument::check_choice(std::string& value) const
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::arg_result
+argument_parser::argument::check_choice(std::string& value) const
 {
     if(!m_choices.empty())
     {
@@ -211,7 +220,9 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     return arg_result{};
 }
 
+// clang-format off
 TIMEMORY_UTILITY_INLINE
+// clang-format on
 std::string
 argument_parser::argument::as_string() const
 {
@@ -228,7 +239,9 @@ argument_parser::argument::as_string() const
     return ss.str();
 }
 
+// clang-format off
 TIMEMORY_UTILITY_INLINE
+// clang-format on
 bool
 argument_parser::argument::is_separator() const
 {
@@ -249,7 +262,139 @@ argument_parser::argument::is_separator() const
     return false;
 }
 
-TIMEMORY_UTILITY_INLINE void
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+std::ostream*
+argument_parser::set_ostream(std::ostream* _v)
+{
+    std::swap(m_clog, _v);
+    return _v;
+}
+
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::argument&
+argument_parser::enable_help()
+{
+    m_help_enabled = true;
+    return add_argument()
+        .names({ "-h", "-?", "--help" })
+        .description("Shows this page")
+        .count(0);
+}
+
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::argument&
+argument_parser::enable_help(const std::string& _extra, const std::string& _epilogue,
+                             int _exit_code)
+{
+    m_help_enabled = true;
+    return add_argument()
+        .names({ "-h", "-?", "--help" })
+        .description("Shows this page")
+        .count(0)
+        .action([_exit_code, _extra, _epilogue](argument_parser& _p) {
+            _p.print_help(_extra, _epilogue);
+            exit(_exit_code);
+        });
+}
+
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::argument&
+argument_parser::enable_version(const std::string& _name, std::vector<int> _versions,
+                                const std::string& _tag, const std::string& _rev)
+{
+    return enable_version(
+        _name, timemory::join::join(timemory::join::array_config{ "." }, _versions), _tag,
+        _rev);
+}
+
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::argument&
+argument_parser::enable_serialize()
+{
+    m_serialize_enabled = true;
+    return add_argument()
+        .names({ "--serialize-argparser" })
+        .description("Serializes the instance to provided JSON")
+        .dtype("filepath")
+        .count(1);
+}
+
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+bool
+argument_parser::exists(const std::string& name) const
+{
+    std::string n =
+        helpers::ltrim(name, [](int c) -> bool { return c != static_cast<int>('-'); });
+    auto itr = m_name_map.find(n);
+    if(itr != m_name_map.end())
+        return m_arguments[static_cast<size_t>(itr->second)].m_found;
+    return false;
+}
+
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+int64_t
+argument_parser::get_count(const std::string& name)
+{
+    auto itr = m_name_map.find(name);
+    if(itr != m_name_map.end())
+        return m_arguments[static_cast<size_t>(itr->second)].size();
+    return 0;
+}
+
+/// \brief Add a command printing the version
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::argument&
+argument_parser::enable_version(const std::string& _name, const std::string& _version,
+                                const std::string& _tag, const std::string& _rev)
+{
+    auto** _cout_v = &m_clog;
+    return add_argument()
+        .names({ "--version" })
+        .description("Prints the version and exit")
+        .count(0)
+        .action([_name, _version, _tag, _rev, &_cout_v](argument_parser&) {
+            auto* _cout = *_cout_v;
+            if(!_cout)
+                _cout = &std::clog;
+            (*_cout) << _name << " " << _version;
+            if(!_tag.empty() || !_rev.empty())
+            {
+                (*_cout) << " (";
+                if(!_tag.empty())
+                {
+                    (*_cout) << "tag: " << _tag;
+                    if(!_rev.empty())
+                        (*_cout) << ", ";
+                }
+                if(!_rev.empty())
+                    (*_cout) << "rev: " << _rev;
+                (*_cout) << ")";
+            }
+            (*_cout) << std::endl;
+            exit(EXIT_SUCCESS);
+        });
+}
+
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+void
 argument_parser::print_help(const std::string& _extra, const std::string& _epilogue)
 {
     end_group();
@@ -259,7 +404,10 @@ argument_parser::print_help(const std::string& _extra, const std::string& _epilo
         _usage << "[" << m_desc << "] ";
     _usage << "Usage: " << m_bin;
 
-    std::cerr << _usage.str();
+    if(!m_clog)
+        m_clog = &std::clog;
+
+    (*m_clog) << _usage.str();
 
     auto _get_usage_desc = [](const argument& _arg) {
         auto _usage_desc = std::stringstream{};
@@ -323,16 +471,16 @@ argument_parser::print_help(const std::string& _extra, const std::string& _epilo
 
     if(m_positional_arguments.empty())
     {
-        std::cerr << " " << _short_desc << " " << _extra << std::endl;
+        (*m_clog) << " " << _short_desc << " " << _extra << std::endl;
     }
     else
     {
-        std::cerr << " " << _short_desc;
+        (*m_clog) << " " << _short_desc;
         if(!_short_desc.empty())
-            std::cerr << "\n" << std::setw(_indent - 2) << " ";
+            (*m_clog) << "\n" << std::setw(_indent - 2) << " ";
         for(auto& itr : m_positional_arguments)
         {
-            std::cerr << " " << helpers::ltrim(itr.m_names.at(0), [](int c) -> bool {
+            (*m_clog) << " " << helpers::ltrim(itr.m_names.at(0), [](int c) -> bool {
                 return c != static_cast<int>('-');
             });
         }
@@ -343,8 +491,8 @@ argument_parser::print_help(const std::string& _extra, const std::string& _epilo
             if(v.first != argument::Position::LastArgument)
             {
                 for(; current < v.first; ++current)
-                    std::cerr << " [" << current << "]";
-                std::cerr << " ["
+                    (*m_clog) << " [" << current << "]";
+                (*m_clog) << " ["
                           << helpers::ltrim(
                                  m_arguments[static_cast<size_t>(v.second)].m_names.at(0),
                                  [](int c) -> bool { return c != static_cast<int>('-'); })
@@ -352,20 +500,20 @@ argument_parser::print_help(const std::string& _extra, const std::string& _epilo
             }
             else
             {
-                std::cerr << " ... ["
+                (*m_clog) << " ... ["
                           << helpers::ltrim(
                                  m_arguments[static_cast<size_t>(v.second)].m_names.at(0),
                                  [](int c) -> bool { return c != static_cast<int>('-'); })
                           << "]";
             }
         }
-        std::cerr << " " << _extra << std::endl;
+        (*m_clog) << " " << _extra << std::endl;
     }
 
     if(!m_long_desc.empty())
-        std::cerr << m_long_desc << std::endl;
+        (*m_clog) << m_long_desc << std::endl;
 
-    std::cerr << "\nOptions:" << std::endl;
+    (*m_clog) << "\nOptions:" << std::endl;
     size_t _arguments_idx = 0;
     for(auto& a : m_arguments)
     {
@@ -435,10 +583,10 @@ argument_parser::print_help(const std::string& _extra, const std::string& _epilo
 
         std::stringstream prefix;
         prefix << "    " << std::setw(m_width) << std::left << ss.str();
-        std::cerr << std::left << prefix.str();
+        (*m_clog) << std::left << prefix.str();
 
         if(static_cast<int64_t>(_width) >= static_cast<int64_t>(m_width))
-            std::cerr << "\n" << std::setw(m_width + 4) << "";
+            (*m_clog) << "\n" << std::setw(m_width + 4) << "";
 
         bool _autoformat = a.m_desc.find("%{NEWLINE}%") == std::string::npos &&
                            a.m_desc.find("%{INDENT}%") == std::string::npos;
@@ -470,7 +618,7 @@ argument_parser::print_help(const std::string& _extra, const std::string& _epilo
             _replace(desc, "%{INDENT}%", _indent_opt.str());
             _replace(desc, "%{NEWLINE}%", _newline.str());
 
-            std::cerr << " " << std::setw(m_width) << desc;
+            (*m_clog) << " " << std::setw(m_width) << desc;
         }
         else
         {
@@ -505,16 +653,19 @@ argument_parser::print_help(const std::string& _extra, const std::string& _epilo
             }
             desc = _desc_ss.str();
 
-            std::cerr << " " << std::setw(m_width) << desc;
+            (*m_clog) << " " << std::setw(m_width) << desc;
         }
 
-        std::cerr << std::endl;
+        (*m_clog) << std::endl;
     }
-    std::cerr << _epilogue << std::endl;
+    (*m_clog) << _epilogue << std::endl;
 }
 
-TIMEMORY_UTILITY_INLINE argument_parser::arg_result
-                        argument_parser::parse_known_args(int* argc, char*** argv, strvec_t& _args,
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::arg_result
+argument_parser::parse_known_args(int* argc, char*** argv, strvec_t& _args,
                                   const std::string& _delim, int verbose_level)
 {
     // check for help flag
@@ -560,8 +711,11 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     return _perrc;
 }
 
-TIMEMORY_UTILITY_INLINE argument_parser::known_args
-                        argument_parser::parse_known_args(int argc, char** argv, strvec_t& _args,
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::known_args
+argument_parser::parse_known_args(int argc, char** argv, strvec_t& _args,
                                   const std::string& _delim, int verbose_level)
 {
     int    _cmdc = argc;  // the argc after known args removed
@@ -617,8 +771,37 @@ TIMEMORY_UTILITY_INLINE argument_parser::known_args
     return known_args{ parse(_args, verbose_level), _cmdc, _cmdv };
 }
 
-TIMEMORY_UTILITY_INLINE argument_parser::arg_result
-                        argument_parser::parse(const std::vector<std::string>& _args, int verbose_level)
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::arg_result
+argument_parser::parse(int argc, char** argv, std::string_view _delim, int verbose_level)
+{
+    std::vector<std::string> _args;
+    _args.reserve(argc);
+    for(int i = 0; i < argc; ++i)
+    {
+        if(std::string_view{ argv[i] } == _delim)
+            break;
+        _args.emplace_back((const char*) argv[i]);
+    }
+    return parse(_args, verbose_level);
+}
+
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::arg_result
+argument_parser::parse(int argc, char** argv, int verbose_level, std::string_view _delim)
+{
+    return parse(argc, argv, _delim, verbose_level);
+}
+
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::arg_result
+argument_parser::parse(const std::vector<std::string>& _args, int verbose_level)
 {
     if(verbose_level > 0)
     {
@@ -630,8 +813,12 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
         {
             _cmd = _cmd.substr(1);
             if(verbose_level >= 2)
-                log::stream(std::cerr, log::color::info())
+            {
+                if(!m_clog)
+                    m_clog = &std::clog;
+                log::stream(*m_clog, log::color::info())
                     << "[argparse::parse]> parsing '" << _cmd << "'...\n";
+            }
         }
     }
 
@@ -855,8 +1042,11 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     return arg_result{};
 }
 
-TIMEMORY_UTILITY_INLINE argument_parser::arg_result
-                        argument_parser::begin_argument(const std::string& arg, bool longarg, int position)
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::arg_result
+argument_parser::begin_argument(const std::string& arg, bool longarg, int position)
 {
     auto it = m_positional_map.find(position);
     if(it != m_positional_map.end())
@@ -926,8 +1116,11 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     return arg_result{};
 }
 
-TIMEMORY_UTILITY_INLINE argument_parser::arg_result
-                        argument_parser::add_value(std::string& value, int location)
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::arg_result
+argument_parser::add_value(std::string& value, int location)
 {
     auto unnamed = [&]() {
         auto itr = m_positional_map.find(location);
@@ -994,8 +1187,11 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     return unnamed();
 }
 
-TIMEMORY_UTILITY_INLINE argument_parser::arg_result
-                        argument_parser::end_argument()
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::arg_result
+argument_parser::end_argument()
 {
     if(m_current >= 0)
     {
@@ -1017,14 +1213,19 @@ TIMEMORY_UTILITY_INLINE argument_parser::arg_result
     return arg_result{};
 }
 
-TIMEMORY_UTILITY_INLINE std::ostream&
-                        operator<<(std::ostream& os, const argument_parser::arg_result& r)
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+std::ostream&
+operator<<(std::ostream& os, const argument_parser::arg_result& r)
 {
     os << r.what();
     return os;
 }
 
+// clang-format off
 TIMEMORY_UTILITY_INLINE
+// clang-format on
 argument_parser&
 argument_parser::start_group(std::string _v, const std::string& _desc)
 {
@@ -1046,7 +1247,9 @@ argument_parser::start_group(std::string _v, const std::string& _desc)
     return *this;
 }
 
+// clang-format off
 TIMEMORY_UTILITY_INLINE
+// clang-format on
 argument_parser&
 argument_parser::end_group()
 {
