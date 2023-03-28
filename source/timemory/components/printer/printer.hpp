@@ -40,9 +40,7 @@ namespace component
 /// via store(...). The stored messages are returned via the get() member function. If
 /// bundled alongside the timestamp component, the timestamp will be added to the stored
 /// message
-struct printer
-: empty_base
-, concepts::component
+struct printer : empty_base
 {
     using value_type = void;
 

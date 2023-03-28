@@ -63,7 +63,7 @@ struct empty_storage
 };
 /// \struct tim::component::empty_base
 /// \brief A very lightweight base which provides no storage
-struct empty_base
+struct empty_base : public concepts::component
 {
     using storage_type = empty_storage;
     using base_type    = void;
@@ -93,8 +93,7 @@ struct empty_base
 ///
 template <typename Tp, typename Value>
 struct base
-: public concepts::component
-, public trait::dynamic_base<Tp>::type
+: public trait::dynamic_base<Tp>::type
 , private base_state
 , private base_laps<Tp>
 , private base_iterator<Tp>
@@ -328,8 +327,7 @@ public:
 //
 template <typename Tp>
 struct base<Tp, void>
-: public concepts::component
-, public trait::dynamic_base<Tp>::type
+: public trait::dynamic_base<Tp>::type
 , private base_state
 {
     using EmptyT = null_type;
