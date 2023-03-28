@@ -923,7 +923,7 @@ gotcha<Nt, BundleT, DiffT>::replace_func(Args... _args)
 
 template <size_t Nt, typename BundleT, typename DiffT>
 template <size_t N, typename Ret, typename... Args>
-TIMEMORY_INLINE Ret
+Ret
 gotcha<Nt, BundleT, DiffT>::fast_func(Args... _args)
 {
     static_assert(N < Nt, "Error! N must be less than Nt!");
@@ -933,17 +933,25 @@ gotcha<Nt, BundleT, DiffT>::fast_func(Args... _args)
     using func_t = Ret (*)(Args...);
     constexpr bool _static_data =
         trait::gotcha_trait<trait::static_data, this_type, N>::value;
+    constexpr bool _prevent_reentry =
+        trait::gotcha_trait<trait::prevent_reentry, this_type, N>::value;
+
+    static auto _func =
+        reinterpret_cast<func_t>(gotcha_get_wrappee(get_data()[N].wrappee));
+
+    if constexpr(_prevent_reentry)
+    {
+        static auto& _data = get_data()[N];
+        if(!_data.is_active)
+            return (*_func)(_args...);
+    }
 
     if constexpr(_static_data)
     {
         using static_data_type = policy::static_data<operator_type, this_type>;
 
-        static auto& _data = get_data()[N];
-        static auto  _func = reinterpret_cast<func_t>(gotcha_get_wrappee(_data.wrappee));
-        if(!_data.is_active)
-            return (*_func)(_args...);
         decltype(auto) _v =
-            static_data_type{}(std::integral_constant<size_t, N>{}, _data);
+            static_data_type{}(std::integral_constant<size_t, N>{}, get_data()[N]);
         return std::invoke(_v, _func, _args...);
     }
     else
@@ -951,16 +959,17 @@ gotcha<Nt, BundleT, DiffT>::fast_func(Args... _args)
         if constexpr(std::is_invocable<operator_type, gotcha_data, func_t,
                                        Args...>::value)
         {
-            auto&& _data = get_data()[N];
-            auto&& _func = reinterpret_cast<func_t>(gotcha_get_wrappee(_data.wrappee));
-            return operator_type{}(_data, _func, _args...);
+            return operator_type{}(get_data()[N], _func, _args...);
+        }
+        else if constexpr(std::is_invocable<operator_type,
+                                            std::integral_constant<size_t, N>, func_t,
+                                            Args...>::value)
+        {
+            return operator_type{}(std::integral_constant<size_t, N>{}, _func, _args...);
         }
         else
         {
-            auto&& _func =
-                reinterpret_cast<func_t>(gotcha_get_wrappee(get_data()[N].wrappee));
-            return (get_data()[N].is_active) ? operator_type{}(_func, _args...)
-                                             : (*_func)(_args...);
+            return operator_type{}(_func, _args...);
         }
     }
 #else
