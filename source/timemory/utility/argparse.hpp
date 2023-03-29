@@ -981,13 +981,33 @@ struct argument_parser
     argument& enable_help(const std::string& _extra, const std::string& _epilogue = {},
                           int _exit_code = EXIT_SUCCESS);
 
-    /// \brief Add a command printing the version from a version string
-    argument& enable_version(const std::string& _name, const std::string& _version,
-                             const std::string& _tag = {}, const std::string& _rev = {});
+    /// \fn argument& enable_version(
+    ///         const std::string& name,
+    ///         const std::string& version,
+    ///         const std::string& tag,
+    ///         const std::string& revision,
+    ///         const std::vector<std::pair<std::string, std::string>>& properties)
+    /// \param name [in] Name of the exe/project (e.g. timemory)
+    /// \param version [in] Version of the project (e.g. 1.0.0)
+    /// \param tag [in] git tag (e.g. output from `git describe --tags`)
+    /// \param revision [in] git revision (e.g. output from `git rev-parse HEAD`)
+    /// \param properties [in] list of pairs of descriptor + value; produces
+    ///     "<descriptor>: <value>" (i.e. adds colon + space) if value is not an empty
+    ///     string, e.g. { { "compiler", "GCC 9.2" }, { "linker", "BFD" }, { "backends",
+    ///     "" } } would produce "compiler: GCC 9.2, linker: BFD"
+    ///
+    /// \brief Add a command printing the version + optional properties
+    argument& enable_version(
+        const std::string& _name, const std::string& _version,
+        const std::string& _tag = {}, const std::string& _rev = {},
+        const std::vector<std::pair<std::string, std::string>>& = {});
 
-    /// \brief Add a command printing the version from a vector of version numbers
-    argument& enable_version(const std::string& _name, std::vector<int> _versions,
-                             const std::string& _tag = {}, const std::string& _rev = {});
+    /// \brief Add a command printing the version (from a vector of version numbers) +
+    /// optional properties
+    argument& enable_version(
+        const std::string& _name, std::vector<int> _versions,
+        const std::string& _tag = {}, const std::string& _rev = {},
+        const std::vector<std::pair<std::string, std::string>>& = {});
 
     /// \fn argument& enable_serialize()
     /// \brief Add a serializer-argparser command

@@ -307,18 +307,6 @@ argument_parser::enable_help(const std::string& _extra, const std::string& _epil
 TIMEMORY_UTILITY_INLINE
 // clang-format on
 argument_parser::argument&
-argument_parser::enable_version(const std::string& _name, std::vector<int> _versions,
-                                const std::string& _tag, const std::string& _rev)
-{
-    return enable_version(
-        _name, timemory::join::join(timemory::join::array_config{ "." }, _versions), _tag,
-        _rev);
-}
-
-// clang-format off
-TIMEMORY_UTILITY_INLINE
-// clang-format on
-argument_parser::argument&
 argument_parser::enable_serialize()
 {
     m_serialize_enabled = true;
@@ -355,37 +343,68 @@ argument_parser::get_count(const std::string& name)
     return 0;
 }
 
-/// \brief Add a command printing the version
 // clang-format off
 TIMEMORY_UTILITY_INLINE
 // clang-format on
 argument_parser::argument&
-argument_parser::enable_version(const std::string& _name, const std::string& _version,
-                                const std::string& _tag, const std::string& _rev)
+argument_parser::enable_version(
+    const std::string& _name, std::vector<int> _versions, const std::string& _tag,
+    const std::string&                                      _rev,
+    const std::vector<std::pair<std::string, std::string>>& _properties)
+{
+    return enable_version(
+        _name, timemory::join::join(timemory::join::array_config{ "." }, _versions), _tag,
+        _rev, _properties);
+}
+
+// clang-format off
+TIMEMORY_UTILITY_INLINE
+// clang-format on
+argument_parser::argument&
+argument_parser::enable_version(
+    const std::string& _name, const std::string& _version, const std::string& _tag,
+    const std::string&                                      _rev,
+    const std::vector<std::pair<std::string, std::string>>& _properties)
 {
     auto** _cout_v = &m_clog;
     return add_argument()
         .names({ "--version" })
         .description("Prints the version and exit")
         .count(0)
-        .action([_name, _version, _tag, _rev, &_cout_v](argument_parser&) {
+        .action([_name, _version, _tag, _rev, _properties, _cout_v](argument_parser&) {
+            namespace join  = ::timemory::join;
+            using strpair_t = std::pair<std::string, std::string>;
+
             auto* _cout = *_cout_v;
             if(!_cout)
-                _cout = &std::clog;
-            (*_cout) << _name << " " << _version;
-            if(!_tag.empty() || !_rev.empty())
-            {
-                (*_cout) << " (";
-                if(!_tag.empty())
+                _cout = &std::cout;
+
+            // <NAME> <VERSION>
+            (*_cout) << _name << " " << _version << std::flush;
+
+            // assemble the list of properties
+            auto _property_info  = std::vector<std::string>{};
+            auto _add_properties = [&_property_info](
+                                       const std::vector<strpair_t>& _data) {
+                for(const auto& itr : _data)
                 {
-                    (*_cout) << "tag: " << _tag;
-                    if(!_rev.empty())
-                        (*_cout) << ", ";
+                    if(!itr.second.empty())
+                        _property_info.emplace_back(
+                            itr.first.empty() ? itr.second
+                                              : join::join(": ", itr.first, itr.second));
                 }
-                if(!_rev.empty())
-                    (*_cout) << "rev: " << _rev;
-                (*_cout) << ")";
+            };
+            _add_properties({ { "rev", _rev }, { "tag", _tag } });
+            _add_properties(_properties);
+
+            if(!_property_info.empty())
+            {
+                // <NAME> <VERSION> (<PROPERTIES>)
+                (*_cout) << join::join(join::array_config{ ", ", " (", ")" },
+                                       _property_info);
             }
+
+            // end the line and exit
             (*_cout) << std::endl;
             exit(EXIT_SUCCESS);
         });
