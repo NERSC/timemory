@@ -28,6 +28,8 @@
 #include "timemory/backends/threading.hpp"
 #include "timemory/log/logger.hpp"
 #include "timemory/macros/os.hpp"
+#include "timemory/process/process.hpp"
+#include "timemory/sampling/trigger.hpp"
 #include "timemory/units.hpp"
 
 #include <cerrno>
@@ -49,7 +51,6 @@ namespace tim
 namespace sampling
 {
 using itimerval_t = struct itimerval;
-using sigaction_t = struct sigaction;
 
 #if defined(TIMEMORY_MACOS)
 struct timemory_timeval
@@ -203,13 +204,13 @@ get_frequency(const itimerspec_t& _itimer, int64_t units = units::sec)
     return 1.0 / get_period(_itimer, units);
 }
 
-struct timer
+struct timer : public trigger
 {
-    timer() = default;
     timer(int _signum, int _clock_type, int _notify, double _freq, double _delay,
-          int64_t _tim_tid = threading::get_id(), long _sys_tid = -1);
+          int64_t _tim_tid = threading::get_id(),
+          long    _sys_tid = threading::get_sys_tid());
 
-    ~timer() { stop(); }
+    ~timer() override { stop(); }
 
     timer(const timer&) = delete;
     timer& operator=(const timer&) = delete;
@@ -217,30 +218,22 @@ struct timer
     timer(timer&& rhs) noexcept;
     timer& operator=(timer&& rhs) noexcept;
 
-    bool initialize();
-    bool start();
-    bool stop();
+    bool initialize() override;
+    bool start() override;
+    bool stop() override;
 
-    bool is_active() const { return m_is_active; }
-    bool is_initialized() const { return m_initialized; }
-
-    auto signal() const { return m_signal; }
     auto clock_id() const { return m_clock_id; }
     auto notify_id() const { return m_notify_id; }
     auto frequency() const { return m_freq; }
     auto delay() const { return m_wait; }
-    auto get_tid() const { return m_tim_tid; }
-    auto get_sys_tid() const { return m_sys_tid; }
 
     auto get_timerspec() const;
     auto get_frequency(int64_t _units) const;
     auto get_period(int64_t _units) const;
     auto get_delay(int64_t _units) const;
 
-    void set_signal(int);
     void set_clock_id(int);
     void set_notify_id(int);
-    void set_tid(int64_t _timemory_tid, long _system_tid);
 
     friend std::ostream& operator<<(std::ostream& _os, const timer& _v)
     {
@@ -267,23 +260,16 @@ private:
     std::string as_string() const;
 
 private:
-    mutable bool m_initialized = false;
-    mutable bool m_is_active   = false;
 #if defined(TIMEMORY_LINUX)
-    int m_signal    = SIGRTMAX - 1;
     int m_clock_id  = CLOCK_PROCESS_CPUTIME_ID;
     int m_notify_id = SIGEV_SIGNAL;
 #else
-    int m_signal    = SIGPROF;
     int m_clock_id  = 0;
     int m_notify_id = 0;
 #endif
-    int          m_pid     = process::get_id();
-    long         m_sys_tid = -1;
-    int64_t      m_tim_tid = threading::get_id();
-    double       m_freq    = 50.0;
-    double       m_wait    = 0.005;
-    itimerspec_t m_spec    = {};
+    double       m_freq = 50.0;
+    double       m_wait = 0.005;
+    itimerspec_t m_spec = {};
 #if defined(TIMEMORY_LINUX)
     timer_t m_timer = {};
 #else
@@ -293,62 +279,19 @@ private:
 //
 inline timer::timer(int _signum, int _clock_type, int _notify, double _freq,
                     double _delay, int64_t _tim_tid, long _sys_tid)
-: m_signal{ _signum }
+: trigger{ _signum, process::get_id(), _tim_tid, _sys_tid }
 , m_clock_id{ _clock_type }
 , m_notify_id{ _notify }
-, m_sys_tid{ _sys_tid }
-, m_tim_tid{ _tim_tid }
 , m_freq{ _freq }
 , m_wait{ _delay }
 {
     memset(&m_spec, 0, sizeof(m_spec));
 }
-/*
-inline timer::timer(const timer& rhs)
-: m_initialized{ rhs.m_initialized }
-, m_is_active{ rhs.m_is_active }
-, m_signal{ rhs.m_signal }
-, m_clock_id{ rhs.m_clock_id }
-, m_notify_id{ rhs.m_notify_id }
-, m_sys_tid{ rhs.m_sys_tid }
-, m_tim_tid{ rhs.m_tim_tid }
-, m_freq{ rhs.m_freq }
-, m_wait{ rhs.m_wait }
-, m_spec{ rhs.m_spec }
-, m_timer{ rhs.m_timer }
-{
-    rhs.m_initialized = false;
-    rhs.m_is_active   = false;
-}
 
-inline timer&
-timer::operator=(const timer& rhs)
-{
-    m_initialized     = rhs.m_initialized;
-    m_is_active       = rhs.m_is_active;
-    m_signal          = rhs.m_signal;
-    m_clock_id        = rhs.m_clock_id;
-    m_notify_id       = rhs.m_notify_id;
-    m_sys_tid         = rhs.m_sys_tid;
-    m_tim_tid         = rhs.m_tim_tid;
-    m_freq            = rhs.m_freq;
-    m_wait            = rhs.m_wait;
-    m_spec            = rhs.m_spec;
-    m_timer           = rhs.m_timer;
-    rhs.m_initialized = false;
-    rhs.m_is_active   = false;
-    return *this;
-}
-*/
 inline timer::timer(timer&& rhs) noexcept
-: m_initialized{ rhs.m_initialized }
-, m_is_active{ rhs.m_is_active }
-, m_signal{ rhs.m_signal }
+: trigger{ std::move(rhs) }
 , m_clock_id{ rhs.m_clock_id }
 , m_notify_id{ rhs.m_notify_id }
-, m_pid{ rhs.m_pid }
-, m_sys_tid{ rhs.m_sys_tid }
-, m_tim_tid{ rhs.m_tim_tid }
 , m_freq{ rhs.m_freq }
 , m_wait{ rhs.m_wait }
 , m_spec{ rhs.m_spec }
@@ -361,20 +304,17 @@ inline timer::timer(timer&& rhs) noexcept
 inline timer&
 timer::operator=(timer&& rhs) noexcept
 {
-    m_initialized     = rhs.m_initialized;
-    m_is_active       = rhs.m_is_active;
-    m_signal          = rhs.m_signal;
-    m_clock_id        = rhs.m_clock_id;
-    m_notify_id       = rhs.m_notify_id;
-    m_pid             = rhs.m_pid;
-    m_sys_tid         = rhs.m_sys_tid;
-    m_tim_tid         = rhs.m_tim_tid;
-    m_freq            = rhs.m_freq;
-    m_wait            = rhs.m_wait;
-    m_spec            = rhs.m_spec;
-    m_timer           = rhs.m_timer;
-    rhs.m_initialized = false;
-    rhs.m_is_active   = false;
+    if(this == &rhs)
+        return *this;
+
+    trigger::operator=(std::move(rhs));
+    m_clock_id       = rhs.m_clock_id;
+    m_notify_id      = rhs.m_notify_id;
+    m_freq           = rhs.m_freq;
+    m_wait           = rhs.m_wait;
+    m_spec           = rhs.m_spec;
+    m_timer          = rhs.m_timer;
+
     return *this;
 }
 //
@@ -514,15 +454,6 @@ timer::stop()
     }
     return false;
 }
-//
-inline void
-timer::set_signal(int _v)
-{
-    if(!m_is_active)
-        m_signal = _v;
-    TIMEMORY_PREFER(!m_is_active)
-        << "timer::" << __FUNCTION__ << " ignored. timer already active\n";
-}
 
 inline void
 timer::set_clock_id(int _v)
@@ -542,29 +473,18 @@ timer::set_notify_id(int _v)
         << "timer::" << __FUNCTION__ << " ignored. timer already active\n";
 }
 
-inline void
-timer::set_tid(int64_t _tim, long _sys)
-{
-    if(!m_is_active)
-    {
-        m_tim_tid = _tim;
-        m_sys_tid = _sys;
-    }
-    TIMEMORY_PREFER(!m_is_active)
-        << "timer::" << __FUNCTION__ << " ignored. timer already active\n";
-}
-//
 inline std::string
 timer::as_string() const
 {
     std::stringstream _os;
     _os << std::boolalpha;
-    _os << "tid=" << m_tim_tid << ", sys_tid=" << m_sys_tid << ", init=" << m_initialized
-        << ", is_active=" << m_is_active << ", signal=" << m_signal
-        << ", clock_id=" << m_clock_id << ", notify_id=" << m_notify_id
-        << ", freq=" << std::fixed << std::setprecision(3) << m_freq
-        << " interrupts/sec, period=" << std::scientific << std::setprecision(3)
-        << (1.0 / m_freq) << " sec, wait=" << std::setprecision(3) << m_wait << " sec";
+    _os << "pid=" << m_pid << ", tid=" << m_tim_tid << ", sys_tid=" << m_sys_tid
+        << ", signal=" << m_signal << ", init=" << m_initialized
+        << ", is_active=" << m_is_active << ", clock_id=" << m_clock_id
+        << ", notify_id=" << m_notify_id << ", freq=" << std::fixed
+        << std::setprecision(3) << m_freq << " interrupts/sec, period=" << std::scientific
+        << std::setprecision(3) << (1.0 / m_freq) << " sec, wait=" << std::setprecision(3)
+        << m_wait << " sec";
     return _os.str();
 }
 }  // namespace sampling

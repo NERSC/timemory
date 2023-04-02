@@ -25,10 +25,6 @@
 #ifndef TIMEMORY_SAMPLING_SAMPLER_CPP_
 #define TIMEMORY_SAMPLING_SAMPLER_CPP_
 
-#include "timemory/mpl/type_traits.hpp"
-#include "timemory/utility/locking.hpp"
-#include "timemory/utility/types.hpp"
-
 #if !defined(TIMEMORY_SAMPLING_SAMPLER_HPP_)
 #    include "timemory/sampling/sampler.hpp"
 #endif
@@ -39,6 +35,9 @@
 #include "timemory/log/macros.hpp"
 #include "timemory/macros/language.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/concepts.hpp"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/operations/types/sample.hpp"
 #include "timemory/sampling/allocator.hpp"
 #include "timemory/sampling/timer.hpp"
@@ -48,7 +47,9 @@
 #include "timemory/units.hpp"
 #include "timemory/utility/backtrace.hpp"
 #include "timemory/utility/demangle.hpp"
+#include "timemory/utility/locking.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/types.hpp"
 #include "timemory/variadic/macros.hpp"
 
 // C++ includes
@@ -285,7 +286,7 @@ sampler<CompT<Types...>, N>::start()
         base_type::set_started();
         for(auto& itr : get_data())
             itr.start();
-        for(auto& itr : m_timers)
+        for(auto& itr : m_triggers)
             itr->start();
     }
 }
@@ -302,7 +303,7 @@ sampler<CompT<Types...>, N>::stop()
         TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "stopping (index: %zu)", m_idx);
         tracker_type::stop();
         base_type::set_stopped();
-        for(auto& itr : m_timers)
+        for(auto& itr : m_triggers)
             itr->stop();
         for(auto& itr : get_data())
             itr.stop();
@@ -321,7 +322,7 @@ sampler<CompT<Types...>, N>::start()
         TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "starting (index: %zu)", m_idx);
         tracker_type::start();
         base_type::set_started();
-        for(auto& itr : m_timers)
+        for(auto& itr : m_triggers)
             itr->start();
     }
 }
@@ -338,7 +339,7 @@ sampler<CompT<Types...>, N>::stop()
         TIMEMORY_CONDITIONAL_PRINT_HERE(m_verbose >= 2, "stopping (index: %zu)", m_idx);
         tracker_type::stop();
         base_type::set_stopped();
-        for(auto& itr : m_timers)
+        for(auto& itr : m_triggers)
             itr->stop();
     }
     auto _alloc_emplace = [&](buffer_t& itr) {
@@ -438,15 +439,21 @@ sampler<CompT<Types...>, N>::execute(int signum, siginfo_t* _info, void* _data)
 //--------------------------------------------------------------------------------------//
 //
 template <template <typename...> class CompT, size_t N, typename... Types>
+template <typename Tp>
 void
-sampler<CompT<Types...>, N>::configure(timer&& _v)
+sampler<CompT<Types...>, N>::configure(Tp&& _v)
 {
+    using config_type = concepts::unqualified_type_t<Tp>;
+
+    static_assert(std::is_base_of<trigger, config_type>::value,
+                  "Error! configure type must be derived from sampling::trigger");
+
     auto _verbose = m_verbose;
 
     TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose >= 3, "configuring sampler (index: %zu)",
                                     m_idx);
 
-    auto _t      = std::make_unique<timer>(std::move(_v));
+    auto _t      = std::make_unique<config_type>(std::move(_v));
     auto _signum = _t->signal();
 
     TIMEMORY_CONDITIONAL_PRINT_HERE(
@@ -475,7 +482,7 @@ sampler<CompT<Types...>, N>::configure(timer&& _v)
     {
         if(!_t->is_initialized())
             _t->initialize();
-        m_timers.emplace_back(std::move(_t));
+        m_triggers.emplace_back(std::move(_t));
     }
     else
     {
@@ -492,30 +499,30 @@ sampler<CompT<Types...>, N>::configure(timer&& _v)
 //
 template <template <typename...> class CompT, size_t N, typename... Types>
 void
-sampler<CompT<Types...>, N>::reset(std::vector<timer_pointer_t>&& _timers)
+sampler<CompT<Types...>, N>::reset(std::vector<trigger_ptr_t>&& _triggers)
 {
     auto _verbose = m_verbose;
 
-    if(_timers.empty())
-        _timers = std::move(m_timers);
+    if(_triggers.empty())
+        _triggers = std::move(m_triggers);
 
     auto _signals = std::set<int>{};
-    for(auto& itr : _timers)
+    for(auto& itr : _triggers)
         _signals.emplace(itr->signal());
 
     TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose >= 3, "resetting sampler (index: %zu)",
                                     m_idx);
 
-    if(!_timers.empty())
+    if(!_triggers.empty())
     {
         TIMEMORY_CONDITIONAL_PRINT_HERE(_verbose >= 3,
                                         "Resetting %zu signal handlers (index: %zu)",
-                                        _timers.size(), m_idx);
+                                        _triggers.size(), m_idx);
         // block signals on thread while resetting
         signals::block_signals(_signals, signals::sigmask_scope::thread);
 
         // stop the interval timer
-        for(auto& itr : _timers)
+        for(auto& itr : _triggers)
             itr->stop();
 
         // unblock signals on thread after resetting
@@ -535,7 +542,7 @@ sampler<CompT<Types...>, N>::ignore(std::set<int> _signals)
     if(_signals.empty())
     {
         // if specified by set_signals(...)
-        for(const auto& itr : m_timers)
+        for(const auto& itr : m_triggers)
             _signals.emplace(itr->signal());
     }
 
@@ -548,7 +555,7 @@ template <template <typename...> class CompT, size_t N, typename... Types>
 template <typename Func>
 int
 sampler<CompT<Types...>, N>::wait(const pid_t wait_pid, int _verbose, bool _debug,
-                                  Func&& _callback)
+                                  Func&& _callback, int64_t _freq_ns)
 {
     _verbose = std::max<int>(_verbose, m_verbose);
     if(_debug)
@@ -557,10 +564,6 @@ sampler<CompT<Types...>, N>::wait(const pid_t wait_pid, int _verbose, bool _debu
     if(_verbose >= 4)
         TIMEMORY_PRINTF(stderr, "[%i]> waiting for pid %i...\n", process::get_id(),
                         wait_pid);
-
-    int64_t _freq = 10 * units::msec;
-    for(auto& itr : m_timers)
-        _freq = std::min<int64_t>(_freq, itr->frequency() * units::sec);
 
     //----------------------------------------------------------------------------------//
     //
@@ -678,7 +681,7 @@ sampler<CompT<Types...>, N>::wait(const pid_t wait_pid, int _verbose, bool _debu
                 // print_info(_pid, status, errval, retval);
                 if(errval == ESRCH || retval == -1)
                     break;
-                std::this_thread::sleep_for(std::chrono::nanoseconds{ _freq });
+                std::this_thread::sleep_for(std::chrono::nanoseconds{ _freq_ns });
             } while(true);
         }
 
@@ -690,7 +693,8 @@ sampler<CompT<Types...>, N>::wait(const pid_t wait_pid, int _verbose, bool _debu
     int  status   = 0;
     int  errval   = 0;
     auto _signals = std::set<int>{};
-    for(auto& itr : m_timers)
+
+    for(auto& itr : m_triggers)
         _signals.emplace(itr->signal());
 
     // do not wait on self to exit so execute callback until
@@ -698,7 +702,7 @@ sampler<CompT<Types...>, N>::wait(const pid_t wait_pid, int _verbose, bool _debu
     {
         do
         {
-            std::this_thread::sleep_for(std::chrono::nanoseconds{ _freq });
+            std::this_thread::sleep_for(std::chrono::nanoseconds{ _freq_ns });
         } while(_callback(wait_pid, status, errval));
         return diagnose_status(wait_pid, status);
     }

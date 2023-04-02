@@ -36,7 +36,7 @@
 #include "timemory/mpl/types.hpp"
 #include "timemory/operations/types/sample.hpp"
 #include "timemory/sampling/allocator.hpp"
-#include "timemory/sampling/timer.hpp"
+#include "timemory/sampling/trigger.hpp"
 #include "timemory/settings/declaration.hpp"
 #include "timemory/settings/settings.hpp"
 #include "timemory/units.hpp"
@@ -241,9 +241,9 @@ struct sampler<CompT<Types...>, N>
     using allocator_t =
         conditional_t<fixed_size_t<N>::value, allocator<void>, allocator<this_type>>;
 
-    using array_type      = array_t;
-    using tracker_type    = policy::instance_tracker<this_type, true>;
-    using timer_pointer_t = std::unique_ptr<timer>;
+    using array_type    = array_t;
+    using tracker_type  = policy::instance_tracker<this_type, true>;
+    using trigger_ptr_t = std::unique_ptr<trigger>;
 
     friend struct allocator<this_type>;
 
@@ -298,7 +298,7 @@ public:
     void stop();
 
 public:
-    auto count() const { return m_timers.size(); }
+    auto count() const { return m_triggers.size(); }
 
     bundle_type*& get_last() { return m_last; }
     bundle_type*  get_last() const { return m_last; }
@@ -330,13 +330,14 @@ public:
     }
 
 public:
-    /// \fn void configure(timer&& _timer)
-    /// \param[in] _timer \ref tim::sampling::timer
+    /// \fn void configure(Tp&& _v)
+    /// \param[in] _v \ref tim::sampling::timer or \ref tim::sampling::overflow
     ///
     /// \brief Set up the sampler
-    void configure(timer&& _timer);
+    template <typename Tp>
+    void configure(Tp&& _overflow);
 
-    void reset(std::vector<timer_pointer_t>&& _timers = {});
+    void reset(std::vector<trigger_ptr_t>&& = {});
 
     /// \fn void ignore(std::set<int> _signals)
     /// \param[in] _signals Set of signals
@@ -347,13 +348,13 @@ public:
     /// \fn void clear()
     /// \brief Clear all signals. Recommended to call ignore() prior to clearing all the
     /// signals
-    void clear() { m_timers.clear(); }
+    void clear() { m_triggers.clear(); }
 
     /// \fn void pause()
     /// \brief Pause until a signal is delivered
     TIMEMORY_INLINE void pause()
     {
-        if(!m_timers.empty())
+        if(!m_triggers.empty())
             ::pause();
     }
 
@@ -371,7 +372,8 @@ public:
     /// where 'a' is the status, 'b' is the error value, and returns true if waiting
     /// should continue
     template <typename Func = pid_cb_t>
-    int wait(pid_t _pid, int _verbose, bool _debug, Func&& _callback = pid_callback());
+    int wait(pid_t _pid, int _verbose, bool _debug, Func&& _callback = pid_callback(),
+             int64_t _freq_ns = 10 * units::msec);
 
     template <typename Func = pid_cb_t>
     int wait(int _verbose = settings::verbose(), bool _debug = settings::debug(),
@@ -419,30 +421,30 @@ public:
             m_alloc->set_offload(std::forward<FuncT>(_v));
     }
 
-    /// \fn void remove_timer(int)
-    /// \brief Remove from set of timers
-    void remove_timer(int _v)
+    /// \fn void remove_trigger(int)
+    /// \brief Remove from set of triggers
+    void remove_trigger(int _v)
     {
-        m_timers.erase(std::remove_if(
-            m_timers.begin(), m_timers.end(),
-            [_v](const timer_pointer_t& itr) { return itr->signal() == _v; },
-            m_timers.end()));
+        m_triggers.erase(std::remove_if(
+            m_triggers.begin(), m_triggers.end(),
+            [_v](const trigger_ptr_t& itr) { return itr->signal() == _v; },
+            m_triggers.end()));
     }
 
     /// \fn size_t get_id() const
     /// \brief Get the unique global identifier
     size_t get_id() const { return m_idx; }
 
-    /// \fn const std::vector<timer>& get_timers() const
-    /// \brief Get timers handled by the sampler
-    const std::vector<timer_pointer_t>& get_timers() const { return m_timers; }
+    /// \fn const std::vector<trigger_ptr_t>& get_triggers() const
+    /// \brief Get triggers handled by the sampler
+    const std::vector<trigger_ptr_t>& get_triggers() const { return m_triggers; }
 
-    /// \fn const timer* get_timer(int signal) const
-    /// \param signal[in] signal for desired timer
-    /// \brief Find the timer handling this provided signal
-    const timer* get_timer(int _signal) const
+    /// \fn const trigger* get_trigger(int signal) const
+    /// \param signal[in] signal for desired trigger
+    /// \brief Find the trigger providing this signal
+    const trigger* get_trigger(int _signal) const
     {
-        for(const auto& itr : m_timers)
+        for(const auto& itr : m_triggers)
         {
             if(itr->signal() == _signal)
                 return itr.get();
@@ -500,14 +502,14 @@ protected:
     move_func_t                  m_move               = [](this_type*, buffer_t&&) {};
     buffer_t                     m_buffer             = {};
     std::shared_ptr<allocator_t> m_alloc              = {};
-    std::vector<timer_pointer_t> m_timers             = {};
+    std::vector<trigger_ptr_t>   m_triggers           = {};
     std::string                  m_label              = {};
 
 private:
-    struct timer_data
+    struct instance_data
     {};
 
-    struct persistent_data : timer_data
+    struct persistent_data : instance_data
     {
         std::map<int64_t, std::deque<this_type*>> m_thread_instances = {};
     };
@@ -543,9 +545,9 @@ private:
     void _init_sampler();
 
 public:
-    static timer_data& get_default_config()
+    static instance_data& get_default_config()
     {
-        return static_cast<timer_data&>(get_persistent_data());
+        return static_cast<instance_data&>(get_persistent_data());
     }
 };
 }  // namespace sampling
