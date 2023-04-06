@@ -46,9 +46,9 @@ struct processed_entry
 
     int            error        = 0;
     unsigned int   lineno       = 0;
-    unw_word_t     address      = 0;
-    unw_word_t     offset       = 0;
-    unw_word_t     line_address = 0;   // line address in file
+    uintptr_t      address      = 0;
+    uintptr_t      offset       = 0;
+    uintptr_t      line_address = 0;   // line address in file
     std::string    name         = {};  // function name
     std::string    location     = {};  // file location
     dlinfo         info         = {};  // dynamic library info
