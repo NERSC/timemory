@@ -44,6 +44,9 @@
 #        include <link.h>
 #    endif
 
+#    include <string>
+#    include <vector>
+
 namespace tim
 {
 namespace procfs
@@ -66,8 +69,10 @@ dl_iterate_callback(dl_phdr_info* _info, size_t, void* _pdata)
         return (_cmd.empty()) ? std::string{} : _cmd.front();
     }();
 
-    auto _name = std::string{ (_info->dlpi_name) ? _info->dlpi_name : "" };
-    if(_name.empty())
+    auto _name = std::string{};
+    if(_info->dlpi_name)
+        _name = _info->dlpi_name;
+    else
         _name = _exe_name;
 
     if(!filepath::exists(_name))
@@ -81,6 +86,7 @@ dl_iterate_callback(dl_phdr_info* _info, size_t, void* _pdata)
         if(_hdr.p_type == PT_LOAD)
         {
             auto _v         = maps{};
+            _v.pathname     = _name;
             _v.offset       = _hdr.p_offset;
             _v.load_address = _base_addr + _hdr.p_vaddr;
             _v.last_address =
@@ -89,9 +95,9 @@ dl_iterate_callback(dl_phdr_info* _info, size_t, void* _pdata)
             if((_hdr.p_flags & PF_R) == PF_R)
                 _v.permissions.at(0) = 'r';
             if((_hdr.p_flags & PF_W) == PF_W)
-                _v.permissions.at(0) = 'w';
+                _v.permissions.at(1) = 'w';
             if((_hdr.p_flags & PF_X) == PF_X)
-                _v.permissions.at(0) = 'x';
+                _v.permissions.at(2) = 'x';
             _data->emplace_back(_v);
         }
     }
@@ -106,6 +112,11 @@ maps::iterate_program_headers()
 {
     auto _data = std::vector<maps>{};
     dl_iterate_phdr(dl_iterate_callback, static_cast<void*>(&_data));
+
+    // filter out duplicates
+    std::sort(_data.begin(), _data.end());
+    _data.erase(std::unique(_data.begin(), _data.end()), _data.end());
+
     return _data;
 }
 
@@ -201,9 +212,8 @@ bool
 maps::operator<(const maps& _rhs) const
 // clang-format on
 {
-    return std::tie(load_address, last_address, offset, inode, pathname) <
-           std::tie(_rhs.load_address, _rhs.last_address, _rhs.offset, _rhs.inode,
-                    _rhs.pathname);
+    return std::tie(load_address, last_address, offset, pathname) <
+           std::tie(_rhs.load_address, _rhs.last_address, _rhs.offset, _rhs.pathname);
 }
 
 // clang-format off
@@ -212,9 +222,24 @@ bool
 maps::operator==(const maps& _rhs) const
 // clang-format on
 {
-    return std::tie(load_address, last_address, offset, inode, pathname) ==
-           std::tie(_rhs.load_address, _rhs.last_address, _rhs.offset, _rhs.inode,
-                    _rhs.pathname);
+    return std::tie(load_address, last_address, offset, pathname) ==
+           std::tie(_rhs.load_address, _rhs.last_address, _rhs.offset, _rhs.pathname);
+}
+
+// clang-format off
+TIMEMORY_UTILITY_PROCFS_MAPS_INLINE
+std::string
+maps::as_string() const
+// clang-format on
+{
+    auto _ss = std::stringstream{};
+    _ss << utility::as_hex(load_address) << "-" << utility::as_hex(last_address) << " ";
+    for(auto itr : permissions)
+        _ss << itr;
+    _ss << " " << utility::as_hex(offset) << " " << device << " " << inode;
+    if(!pathname.empty())
+        _ss << " " << pathname;
+    return _ss.str();
 }
 
 // clang-format off

@@ -42,11 +42,32 @@
 #include <cstddef>
 #include <fstream>
 #include <mutex>
+#include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 namespace tim
 {
+namespace utility
+{
+template <typename Tp>
+std::string
+as_hex(Tp _v, size_t _width = 16)
+{
+    uintptr_t _vp = 0;
+    if constexpr(std::is_pointer<Tp>::value)
+        _vp = reinterpret_cast<uintptr_t>(_v);
+    else
+        _vp = _v;
+
+    std::stringstream _ss;
+    _ss.fill('0');
+    _ss << "0x" << std::hex << std::setw(_width) << _vp;
+    return _ss.str();
+}
+}  // namespace utility
+
 namespace procfs
 {
 struct maps
@@ -62,6 +83,8 @@ struct maps
     std::string         device       = {};
     size_t              inode        = {};
     std::string         pathname     = {};
+
+    static std::vector<maps> iterate_program_headers();
 
     template <typename ArchiveT>
     void serialize(ArchiveT&, const unsigned);
@@ -82,9 +105,14 @@ struct maps
     bool operator<(const maps& _rhs) const;
     bool operator==(const maps& _rhs) const;
 
-private:
-    static std::vector<maps> iterate_program_headers();
+    std::string as_string() const;
 
+    friend std::ostream& operator<<(std::ostream& _os, const maps& _v)
+    {
+        return (_os << _v.as_string());
+    }
+
+private:
     friend std::vector<maps> read_maps(pid_t _pid);
 };
 
