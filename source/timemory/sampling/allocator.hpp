@@ -160,6 +160,7 @@ struct allocator
     /// return the number of allocated sampler data instances
     auto size() const { return m_data.size(); }
 
+    void flush();
     void reset();
     void allocate(Tp*);
     void deallocate(Tp*);
@@ -167,6 +168,7 @@ struct allocator
 private:
     using atomic_offload_func_t = std::atomic<offload_func_type>;
     using data_map_t    = std::unordered_map<const Tp*, std::shared_ptr<sampler_data>>;
+    using flush_func_t  = std::function<void()>;
     using exit_func_t   = std::function<void()>;
     using notify_func_t = std::function<void(bool*)>;
     using move_func_t   = std::function<void(sampler_type*, buffer_type&&)>;
@@ -191,6 +193,9 @@ private:
     template <typename FuncT>
     void set_exit(FuncT&& _v);
 
+    template <typename FuncT>
+    void set_flush(FuncT&& _v);
+
     std::shared_ptr<sampler_data> get(const Tp*) const;
 
     std::atomic<bool>            m_alive{ false };
@@ -203,6 +208,7 @@ private:
     std::set<int>      m_block_signals_pending   = { SIGALRM, SIGVTALRM, SIGPROF };
     std::set<int>      m_block_signals_completed = {};
     std::exception_ptr m_thread_exception        = {};
+    flush_func_t       m_flush                   = []() {};
     exit_func_t        m_exit                    = []() {};
     notify_func_t      m_notify                  = &default_notify;
     move_func_t        m_move                    = [](Tp*, buffer_type&&) {};
@@ -298,6 +304,14 @@ allocator<Tp>::set_exit(FuncT&& _v)
 }
 
 template <typename Tp>
+template <typename FuncT>
+void
+allocator<Tp>::set_flush(FuncT&& _v)
+{
+    m_flush = std::forward<FuncT>(_v);
+}
+
+template <typename Tp>
 std::shared_ptr<typename allocator<Tp>::sampler_data>
 allocator<Tp>::get(const Tp* _v) const
 {
@@ -324,6 +338,13 @@ allocator<Tp>::emplace(const Tp* _inst, buffer_type&& _v)
         lock_type _lk{ _data->buffer_mutex };
         _data->buffers.emplace_back(std::move(_v));
     }
+}
+
+template <typename Tp>
+void
+allocator<Tp>::flush()
+{
+    m_flush();
 }
 
 template <typename Tp>
@@ -501,6 +522,17 @@ allocator<Tp>::execute(allocator* _alloc)
         _completed = true;
         TIMEMORY_SEMAPHORE_CHECK(sem_post(_sem));
     };
+    auto _flush = [&]() {
+        int _val = 0;
+        do {
+            TIMEMORY_SEMAPHORE_CHECK(sem_getvalue(_sem, &_val));
+            if(_val > 0)
+            {
+                std::this_thread::yield();
+                std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
+            }
+        } while(_val > 0);
+    };
 
     try
     {
@@ -519,6 +551,8 @@ allocator<Tp>::execute(allocator* _alloc)
             }
             _notify(_sem);
         });
+
+        _alloc->set_flush(_flush);
 
         _alloc->set_exit(_exit);
 
@@ -567,6 +601,7 @@ allocator<Tp>::execute(allocator* _alloc)
 
     // disable communication with allocator
     _alloc->reset();
+    _alloc->set_flush([]() {});
     _alloc->m_alive.store(false);
 }
 
@@ -590,6 +625,7 @@ struct allocator<void>
     static constexpr void   set_verbose(int) {}
     static constexpr void   reserve(size_t) {}
     static constexpr size_t size() { return 0; }
+    static constexpr void   flush() {}
     static constexpr void   reset() {}
 
     template <typename... Args>
