@@ -524,7 +524,8 @@ allocator<Tp>::execute(allocator* _alloc)
     };
     auto _flush = [&]() {
         int _val = 0;
-        do {
+        do
+        {
             TIMEMORY_SEMAPHORE_CHECK(sem_getvalue(_sem, &_val));
             if(_val > 0)
             {
