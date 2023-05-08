@@ -52,10 +52,26 @@ library_file_maps();
 void
 update_file_maps();
 
+struct detailed_backtrace_config
+{
+    bool force_color      = false;
+    bool native_mangled   = true;
+    bool native_demangled = true;
+    bool proc_pid_maps    = true;
+    bool unwind_demangled = true;
+    bool unwind_lineinfo  = true;
+};
+
+template <size_t OffsetV, size_t DepthV = 64>
+void
+detailed_backtrace(std::ostream&             os,
+                   detailed_backtrace_config cfg = {}) TIMEMORY_INTERNAL;
+
 // only instantiates offsets 0-3 and depths 8, 16, 32, 64
 template <size_t OffsetV, size_t DepthV = 64>
 void
-detailed_backtrace(std::ostream& os, bool force_color = false) TIMEMORY_INTERNAL;
+detailed_backtrace(std::ostream& os, bool&& force_color,
+                   detailed_backtrace_config cfg = {}) TIMEMORY_INTERNAL;
 }  // namespace unwind
 }  // namespace tim
 

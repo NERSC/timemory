@@ -86,7 +86,7 @@ update_file_maps()
 
 template <size_t OffsetV, size_t DepthV>
 TIMEMORY_UNWIND_INLINE void
-detailed_backtrace(std::ostream& os, bool force_color)
+detailed_backtrace(std::ostream& os, detailed_backtrace_config cfg)
 {
     static_assert(OffsetV >= 0 && OffsetV < 4,
                   "Error! detailed_backtrace only supports offset >= 0 and < 4");
@@ -94,9 +94,9 @@ detailed_backtrace(std::ostream& os, bool force_color)
     constexpr size_t buffer_size = bt_max_length;
 
     const auto* _src_color =
-        (&os == &std::cerr || force_color) ? log::color::source() : "";
+        (&os == &std::cerr || cfg.force_color) ? log::color::source() : "";
     const auto* _fatal_color =
-        (&os == &std::cerr || force_color) ? log::color::fatal() : "";
+        (&os == &std::cerr || cfg.force_color) ? log::color::fatal() : "";
     auto message = log::stream(os, _fatal_color);
 
     (void) _src_color;
@@ -131,6 +131,7 @@ detailed_backtrace(std::ostream& os, bool force_color)
         return _v;
     };
 
+    if(cfg.native_mangled)
     {
         message << "\nBacktrace:\n";
         message.flush();
@@ -156,6 +157,7 @@ detailed_backtrace(std::ostream& os, bool force_color)
         }
     }
 
+    if(cfg.native_demangled)
     {
         message << "\nBacktrace (demangled):\n";
         message.flush();
@@ -182,6 +184,7 @@ detailed_backtrace(std::ostream& os, bool force_color)
         }
     }
 
+    if(cfg.proc_pid_maps)
     {
         auto _maps_file = TIMEMORY_JOIN("/", "/proc", process::get_id(), "maps");
         auto _ifs       = std::ifstream{ _maps_file };
@@ -199,6 +202,7 @@ detailed_backtrace(std::ostream& os, bool force_color)
     }
 
 #if defined(TIMEMORY_USE_LIBUNWIND)
+    if(cfg.unwind_demangled)
     {
         message << "\nBacktrace (demangled):\n";
         message.flush();
@@ -229,6 +233,7 @@ detailed_backtrace(std::ostream& os, bool force_color)
         }
     }
 #    if defined(TIMEMORY_USE_BFD)
+    if(cfg.unwind_lineinfo)
     {
         message << "\nBacktrace (lineinfo):\n";
         message.flush();
@@ -300,16 +305,33 @@ detailed_backtrace(std::ostream& os, bool force_color)
 #endif
 }
 
+template <size_t OffsetV, size_t DepthV>
+void
+detailed_backtrace(std::ostream& os, bool&& force_color, detailed_backtrace_config cfg)
+{
+    cfg.force_color = force_color;
+    detailed_backtrace<OffsetV, DepthV>(os, cfg);
+}
+
 #if defined(TIMEMORY_UNWIND_SOURCE) && TIMEMORY_UNWIND_SOURCE > 0
+#    define TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE_IMPL(OFFSET, DEPTH)           \
+        template void detailed_backtrace<OFFSET, DEPTH>(std::ostream&,                   \
+                                                        detailed_backtrace_config);      \
+        template void detailed_backtrace<OFFSET, DEPTH>(std::ostream&, bool&&,           \
+                                                        detailed_backtrace_config);
+
 #    define TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE(DEPTH)                        \
-        template void detailed_backtrace<0, DEPTH>(std::ostream & os, bool);             \
-        template void detailed_backtrace<1, DEPTH>(std::ostream & os, bool);             \
-        template void detailed_backtrace<2, DEPTH>(std::ostream & os, bool);             \
-        template void detailed_backtrace<3, DEPTH>(std::ostream & os, bool);
+        TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE_IMPL(0, DEPTH)                    \
+        TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE_IMPL(1, DEPTH)                    \
+        TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE_IMPL(2, DEPTH)                    \
+        TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE_IMPL(3, DEPTH)
+
 TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE(8)
 TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE(16)
 TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE(32)
 TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE(64)
+
+#    undef TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE_IMPL
 #    undef TIMEMORY_UNWIND_DETAILED_BACKTRACE_INSTANTIATE
 #endif
 
