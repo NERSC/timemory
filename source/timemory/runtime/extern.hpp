@@ -37,7 +37,6 @@
 #include "timemory/backends/types/mpi/extern.hpp"
 #include "timemory/components/extern.hpp"
 #include "timemory/components/user_bundle/extern.hpp"
-#include "timemory/environment/extern.hpp"
 #include "timemory/hash/extern.hpp"
 #include "timemory/manager/extern.hpp"
 #include "timemory/operations/extern.hpp"

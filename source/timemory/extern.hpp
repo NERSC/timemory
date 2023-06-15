@@ -28,7 +28,6 @@
 #if defined(TIMEMORY_USE_CORE_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 // clang-format off
 #    include "timemory/hash/extern.hpp"
-#    include "timemory/environment/extern.hpp"
 #    include "timemory/settings/extern.hpp"
 #    include "timemory/plotting/extern.hpp"
 // clang-format on

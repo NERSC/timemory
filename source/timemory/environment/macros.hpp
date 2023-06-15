@@ -24,8 +24,6 @@
 
 #pragma once
 
-#include "timemory/utility/macros.hpp"
-
 #if defined(TIMEMORY_CORE_SOURCE)
 #    define TIMEMORY_ENVIRONMENT_SOURCE
 #elif defined(TIMEMORY_USE_CORE_EXTERN)
@@ -39,7 +37,7 @@
 #if defined(TIMEMORY_ENVIRONMENT_SOURCE)
 #    define TIMEMORY_ENVIRONMENT_LINKAGE(...) __VA_ARGS__
 #elif defined(TIMEMORY_USE_ENVIRONMENT_EXTERN)
-#    define TIMEMORY_ENVIRONMENT_LINKAGE(...) extern __VA_ARGS__
+#    define TIMEMORY_ENVIRONMENT_LINKAGE(...) __VA_ARGS__
 #else
 #    define TIMEMORY_ENVIRONMENT_LINKAGE(...) inline __VA_ARGS__
 #endif
