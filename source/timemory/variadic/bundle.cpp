@@ -25,9 +25,12 @@
 #ifndef TIMEMORY_VARIADIC_BUNDLE_CPP_
 #define TIMEMORY_VARIADIC_BUNDLE_CPP_
 
-#include "timemory/variadic/bundle.hpp"
+#if !defined(TIMEMORY_VARIADIC_BUNDLE_HPP_)
+#    include "timemory/variadic/bundle.hpp"
+#endif
 
 #include "timemory/backends/dmp.hpp"
+#include "timemory/components/properties.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/operations/types/set.hpp"
 #include "timemory/settings/declaration.hpp"
@@ -875,6 +878,38 @@ bundle<Tag, BundleT, TupleT>::invoke(mpl::piecewise_ignore<Tp...>, Args&&... _ar
     invoke_piecewise<OpT>(
         mpl::subtract_t<mpl::available_t<type_list_type>, type_list<Tp...>>{},
         std::forward<Args>(_args)...);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <template <typename> class OpT, typename... Tp, typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::invoke_with(type_list<Tp...>&&, Args&&... _args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    auto _data = std::make_tuple(this->get<Tp>()...);
+    invoke::invoke<OpT, Tag>(_data, std::forward<Args>(_args)...);
+    return get_this_type();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//
+template <typename Tag, typename BundleT, typename TupleT>
+template <template <typename> class OpT, size_t... Idx, typename... Args>
+typename bundle<Tag, BundleT, TupleT>::this_type&
+bundle<Tag, BundleT, TupleT>::invoke_with(std::index_sequence<Idx...>&&, Args&&... _args)
+{
+    if(!m_enabled())
+        return get_this_type();
+
+    auto _data = std::make_tuple(this->get<component::enumerator_t<Idx>>()...);
+    invoke::invoke<OpT, Tag>(_data, std::forward<Args>(_args)...);
     return get_this_type();
 }
 

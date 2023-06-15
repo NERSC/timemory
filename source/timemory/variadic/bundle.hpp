@@ -25,6 +25,10 @@
 
 #pragma once
 
+#ifndef TIMEMORY_VARIADIC_BUNDLE_HPP_
+#    define TIMEMORY_VARIADIC_BUNDLE_HPP_
+#endif
+
 #include "timemory/general/source_location.hpp"
 #include "timemory/hash/types.hpp"
 #include "timemory/mpl/apply.hpp"
@@ -565,6 +569,12 @@ public:
     template <template <typename> class OpT, typename... Tp, typename... Args>
     this_type& invoke(mpl::piecewise_ignore<Tp...>, Args&&... _args);
 
+    template <template <typename> class OpT, typename... Tp, typename... Args>
+    this_type& invoke_with(type_list<Tp...>&&, Args&&... _args);
+
+    template <template <typename> class OpT, size_t... Idx, typename... Args>
+    this_type& invoke_with(std::index_sequence<Idx...>&&, Args&&... _args);
+
     template <bool PrintPrefix = true, bool PrintLaps = true>
     this_type& print(std::ostream& os, bool _endl = false) const;
 
@@ -1069,4 +1079,6 @@ bundle<Tag, BundleT, TupleT>::rekey(uint64_t _hash)
 }
 }  // namespace tim
 
-#include "timemory/variadic/bundle.cpp"
+#ifndef TIMEMORY_VARIADIC_BUNDLE_CPP_
+#    include "timemory/variadic/bundle.cpp"
+#endif
