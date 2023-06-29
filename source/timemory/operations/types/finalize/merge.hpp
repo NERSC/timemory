@@ -201,9 +201,13 @@ merge<Type, true>::merge(storage_type& lhs, storage_type& rhs)
 
                     for(auto&& iitr : siblings)
                     {
+                        if(is_invalid_t{}(iitr->data()))
+                            continue;
                         TIMEMORY_CONDITIONAL_PRINT_HERE(
-                            (_debug && _verbose >= 2), "merging '%s'",
-                            tim::get_hash_identifier(iitr->hash()).c_str());
+                            (_debug && _verbose >= 2), "[%s] merging '%s' [%s]",
+                            Type::get_label().c_str(),
+                            tim::get_hash_identifier(iitr->hash()).c_str(),
+                            TIMEMORY_JOIN("", iitr->as_string()).c_str());
                         lhs.graph().append_child(pre_order_iterator{ _main_entry }, iitr);
                     }
                 }
