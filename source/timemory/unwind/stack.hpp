@@ -335,7 +335,7 @@ stack<N>::compute_hash(stack<N> _v, std::index_sequence<Idx...>, hash_value_t _i
     static_assert(std::is_trivially_copyable<stack<N>>::value,
                   "Error! Not trivially copyable");
     auto _access = [](auto&& _e) { return (_e) ? _e->address() : 0; };
-    return get_combined_hash_id(_init, TIMEMORY_FOLD_EXPRESSION(_access(_v[Idx])));
+    return get_hash_id(_init, TIMEMORY_FOLD_EXPRESSION(_access(_v[Idx])));
 }
 }  // namespace unwind
 }  // namespace tim

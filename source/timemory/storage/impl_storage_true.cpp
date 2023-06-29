@@ -32,6 +32,7 @@
 #include "timemory/data/stream.hpp"
 #include "timemory/hash/declaration.hpp"
 #include "timemory/hash/types.hpp"
+#include "timemory/log/macros.hpp"
 #include "timemory/manager/declaration.hpp"
 #include "timemory/operations/types.hpp"
 #include "timemory/operations/types/decode.hpp"
@@ -1020,9 +1021,9 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     auto _hash_id = add_hash_id(std::get<1>(_secondary));
     // compute hash w.r.t. parent iterator (so identical kernels from different
     // call-graph parents do not locate same iterator)
-    auto _hash = get_combined_hash_id(_hash_id, _itr->id());
+    auto _hash = get_hash_id(_hash_id, _itr->id());
     // unique thread-hash
-    auto _uniq_hash = get_combined_hash_id(_hash, _itr->tid());
+    auto _uniq_hash = get_hash_id(_hash, _itr->tid());
     // add the hash alias
     add_hash_id(_hash_id, _hash);
     // compute depth
@@ -1073,9 +1074,9 @@ storage<Type, true>::append(const secondary_data_t<Vp>& _secondary)
     auto _hash_id = add_hash_id(std::get<1>(_secondary));
     // compute hash w.r.t. parent iterator (so identical kernels from different
     // call-graph parents do not locate same iterator)
-    auto _hash = get_combined_hash_id(_hash_id, _itr->id(), _itr->tid());
+    auto _hash = get_hash_id(_hash_id, _itr->id(), _itr->tid());
     // unique thread-hash
-    auto _uniq_hash = get_combined_hash_id(_hash, _itr->tid());
+    auto _uniq_hash = get_hash_id(_hash, _itr->tid());
     // add the hash alias
     add_hash_id(_hash_id, _hash);
     // compute depth
@@ -1133,7 +1134,7 @@ storage<Type, true>::insert_flat(uint64_t hash_id, const Type& obj, uint64_t has
     static thread_local auto _current = _data().head();
     static thread_local bool _first   = true;
     // unique thread-hash
-    auto _uniq_hash = get_combined_hash_id(hash_id, _tid);
+    auto _uniq_hash = get_hash_id(hash_id, _tid);
     if(_first)
     {
         _first = false;
@@ -1175,7 +1176,7 @@ storage<Type, true>::insert_hierarchy(uint64_t hash_id, const Type& obj,
     auto& m_data = m_graph_data_instance;
 
     // unique thread-hash
-    auto _uniq_hash = get_combined_hash_id(hash_id, _tid);
+    auto _uniq_hash = get_hash_id(hash_id, _tid);
 
     // if first instance
     if(!has_head || (m_is_master && m_node_ids.empty()))

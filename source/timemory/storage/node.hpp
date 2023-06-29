@@ -219,7 +219,7 @@ public:
     auto&       obj() { return this->data(); }
     const auto& obj() const { return this->data(); }
 
-    hash_value_t uniq_hash() const { return get_combined_hash_id(id(), tid(), depth()); }
+    hash_value_t uniq_hash() const { return get_hash_id(id(), tid(), depth()); }
 
     std::string as_string() const
     {
