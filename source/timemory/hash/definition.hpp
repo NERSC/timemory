@@ -396,6 +396,21 @@ get_hash_identifier(hash_value_t _hash_id)
     std::string* _ret = nullptr;
     if(get_hash_identifier(get_hash_ids(), get_hash_aliases(), _hash_id, _ret))
         return *_ret;
+
+    // search the "main" (global) hash id and alias maps
+    // these are a shared resource so locking is necessary
+    {
+        auto_lock_t _mlk{ type_mutex<hash_map_t>(), std::defer_lock };
+        auto_lock_t _alk{ type_mutex<hash_alias_map_t>(), std::defer_lock };
+        if(!_mlk.owns_lock())
+            _mlk.lock();
+        if(!_alk.owns_lock())
+            _alk.lock();
+        if(get_hash_identifier(get_main_hash_ids(), get_main_hash_aliases(), _hash_id,
+                               _ret))
+            return *_ret;
+    }
+
     hash_identifier_error(get_hash_ids(), get_hash_aliases(), _hash_id);
     return std::string("unknown-hash=") + std::to_string(_hash_id);
 }
