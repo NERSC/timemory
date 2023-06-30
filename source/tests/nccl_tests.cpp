@@ -150,6 +150,7 @@ protected:
 
     virtual void SetUp() override
     {
+        TIMEMORY_TEST_CHECK_SKIP;
         EXPECT_EQ(_argc + 2, _test_argc);
         ASSERT_TRUE(_test_argv != nullptr);
 

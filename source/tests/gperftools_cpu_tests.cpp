@@ -140,6 +140,7 @@ protected:
 
     void SetUp() override
     {
+        TIMEMORY_TEST_CHECK_SKIP;
         list_t::get_initializer() = [](auto& obj) {
             obj.template initialize<wall_clock, gperftools_cpu_profiler,
                                     gperftools_heap_profiler>();

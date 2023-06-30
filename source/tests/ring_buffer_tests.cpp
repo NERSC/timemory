@@ -100,6 +100,7 @@ protected:
 
     void SetUp() override
     {
+        TIMEMORY_TEST_CHECK_SKIP;
         printf("[##########] Executing %s ... \n", details::get_test_name().c_str());
         if(buffer.is_initialized())
             buffer.destroy();

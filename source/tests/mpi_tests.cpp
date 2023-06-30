@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "test_macros.hpp"
+#include "timemory/environment/types.hpp"
 
 TIMEMORY_TEST_DEFAULT_MAIN
 
@@ -150,7 +151,11 @@ protected:
         tim::dmp::finalize();
     }
 
-    void SetUp() override { tim::mpi::barrier(); }
+    void SetUp() override
+    {
+        TIMEMORY_TEST_CHECK_SKIP;
+        tim::mpi::barrier();
+    }
     void TearDown() override { tim::mpi::barrier(); }
 };
 

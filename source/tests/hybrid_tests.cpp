@@ -184,6 +184,7 @@ protected:
 
     void SetUp() override
     {
+        TIMEMORY_TEST_CHECK_SKIP;
 #if defined(TIMEMORY_USE_PAPI)
         papi_array_t::get_initializer() = []() {
             return std::vector<std::string>{ "PAPI_TOT_CYC" };

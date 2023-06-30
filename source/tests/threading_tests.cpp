@@ -119,7 +119,11 @@ class threading_tests : public ::testing::Test
     TIMEMORY_TEST_DEFAULT_SUITE_SETUP
     TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN
 
-    void SetUp() override { tim::threading::affinity::set(); }
+    void SetUp() override
+    {
+        TIMEMORY_TEST_CHECK_SKIP;
+        tim::threading::affinity::set();
+    }
 };
 
 //--------------------------------------------------------------------------------------//

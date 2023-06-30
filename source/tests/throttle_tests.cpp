@@ -102,6 +102,7 @@ protected:
     // always disable debug
     void SetUp() override
     {
+        TIMEMORY_TEST_CHECK_SKIP;
         tim::settings::debug() = false;
         wc_init                = tim::storage<wc_t>::instance()->get();
         if(!wc_init.empty())

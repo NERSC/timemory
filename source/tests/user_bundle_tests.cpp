@@ -123,6 +123,7 @@ protected:
 
     void SetUp() override
     {
+        TIMEMORY_TEST_CHECK_SKIP;
         wc_size_orig = tim::storage<wall_clock>::instance()->size();
         cu_size_orig = tim::storage<cpu_util>::instance()->size();
         cc_size_orig = tim::storage<cpu_clock>::instance()->size();

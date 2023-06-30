@@ -157,6 +157,7 @@ protected:
 
     void SetUp() override
     {
+        TIMEMORY_TEST_CHECK_SKIP;
         priority_start_wc::get_label() = "priority-start-clock";
         priority_stop_wc::get_label()  = "priority-stop-clock";
     }

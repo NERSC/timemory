@@ -152,10 +152,22 @@ as_string(const Tp&)
 
 #define TIMEMORY_TEST_DEFAULT_SUITE_TEARDOWN TIMEMORY_TEST_SUITE_TEARDOWN({})
 
+#if !defined(DISABLE_TIMEMORY)
+#    define TIMEMORY_TEST_CHECK_SKIP                                                     \
+        if(tim::get_env<std::string>("TIMEMORY_TEST_SKIP", "")                           \
+               .find(details::get_test_name()) != std::string::npos)                     \
+        {                                                                                \
+            GTEST_SKIP();                                                                \
+        }
+#else
+#    define TIMEMORY_TEST_CHECK_SKIP
+#endif
+
 #define TIMEMORY_TEST_SETUP(...)                                                         \
 protected:                                                                               \
     void SetUp() override                                                                \
     {                                                                                    \
+        TIMEMORY_TEST_CHECK_SKIP;                                                        \
         printf("[##########] Executing %s ... \n", details::get_test_name().c_str());    \
         __VA_ARGS__;                                                                     \
     }
