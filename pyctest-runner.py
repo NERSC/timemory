@@ -117,6 +117,8 @@ def install_compile_time_perf(_dir):
             "build-ctp",
             "-D",
             f"CMAKE_INSTALL_PREFIX={_dir}",
+            "-D",
+            "TIMEMORY_USE_PAPI=OFF",
             "compile-time-perf",
         ]
     )
