@@ -196,7 +196,7 @@ jobs:
           cmake -B build-examples -DTIMEMORY_BUILD_C_EXAMPLES=ON -Dtimemory_DIR=${HOME}/timemory-install/share/cmake/timemory .
           cmake --build build-examples --target ex_array_of_bundles --parallel 2
 
-  macos-dev-build:
+  macos-ci:
     runs-on: macos-latest
     continue-on-error: false
     strategy:
@@ -212,7 +212,7 @@ jobs:
       - name: Setup Environment
         run: |
           echo "PATH=${HOME}/miniconda/bin:${PATH}" >> $GITHUB_ENV
-          echo "CMAKE_ARGS=-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install -DTIMEMORY_SOCKET_TESTS=OFF ${{ matrix.CONFIG_ARGS }}" >> $GITHUB_ENV
+          echo "CMAKE_ARGS=-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install -DTIMEMORY_SOCKET_TESTS=OFF -DCMAKE_CXX_FLAGS=-Wno-format ${{ matrix.CONFIG_ARGS }}" >> $GITHUB_ENV
           echo "PYCTEST_ARGS=-SF --pyctest-drop-site=my.cdash.org --pyctest-model=Continuous --pyctest-site=GitHub -j 1 --compile-time-perf ${HOME}/ctp --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}" >> $GITHUB_ENV
           env | sort
 
