@@ -244,7 +244,8 @@ get_value_callback(void* userdata, CUpti_CallbackDomain domain, CUpti_CallbackId
        (cbid != CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_ptsz_v7000))
     {
         char buf[512];
-        sprintf(buf, "%s:%d: Unexpected cbid %d\n", __FILE__, __LINE__, cbid);
+        snprintf(buf, sizeof(buff) - 1, "%s:%d: Unexpected cbid %d\n", __FILE__, __LINE__,
+                 cbid);
         throw std::runtime_error(buf);
     }
     // Skip execution if kernel name is NULL string
@@ -261,7 +262,8 @@ get_value_callback(void* userdata, CUpti_CallbackDomain domain, CUpti_CallbackId
     if(domain == CUPTI_CB_DOMAIN_INVALID)
     {
         char buf[512];
-        sprintf(buf, "%s:%d: Invalid callback domain\n", __FILE__, __LINE__);
+        snprintf(buf, sizeof(buf) - 1, "%s:%d: Invalid callback domain\n", __FILE__,
+                 __LINE__);
         throw std::runtime_error(buf);
     }
 
@@ -658,8 +660,9 @@ public:
                 if(_status != CUPTI_SUCCESS)
                 {
                     char buff[512];
-                    sprintf(buff, "Metric value retrieval failed for metric %s\n",
-                            m_metric_names[i].c_str());
+                    snprintf(buff, sizeof(buff) - 1,
+                             "Metric value retrieval failed for metric %s\n",
+                             m_metric_names[i].c_str());
                     throw std::runtime_error(buff);
                 }
                 k.second.m_metric_values.push_back(metric_value);

@@ -463,7 +463,7 @@ sampler<CompT<Types...>, N>::configure(Tp&& _v)
 
     memset(&_custom_sa, 0, sizeof(_custom_sa));
 
-    if((m_flags & (1 << SA_SIGINFO)) != 0)
+    if((m_flags & (1L << SA_SIGINFO)) != 0)
         _custom_sa.sa_sigaction = &this_type::execute;
     else
         _custom_sa.sa_handler = &this_type::execute;

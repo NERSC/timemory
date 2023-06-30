@@ -361,7 +361,7 @@ signal_settings::exit_action(int _signum, void* _siginfo, void* _context)
     if(itr != _entries.end())
     {
         auto& _former = itr->second.previous;
-        if((_former.sa_flags & (1 << SA_SIGINFO)) != 0)
+        if((_former.sa_flags & (1L << SA_SIGINFO)) != 0)
         {
             if(_former.sa_sigaction)
                 _former.sa_sigaction(_signum, reinterpret_cast<siginfo_t*>(_siginfo),

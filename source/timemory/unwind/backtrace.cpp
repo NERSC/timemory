@@ -104,8 +104,8 @@ detailed_backtrace(std::ostream& os, detailed_backtrace_config cfg)
 
     char prefix[buffer_size];
     memset(prefix, '\0', buffer_size * sizeof(char));
-    sprintf(prefix, "[PID=%i][TID=%i]", (int) process::get_id(),
-            (int) threading::get_id());
+    snprintf(prefix, buffer_size - 1, "[PID=%i][TID=%i]", (int) process::get_id(),
+             (int) threading::get_id());
 
     auto _replace = [](std::string _v, const std::string& _old, const std::string& _new) {
         // start at 1 to avoid replacing when it starts with string, e.g. do not replace:

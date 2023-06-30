@@ -312,9 +312,12 @@ struct range
 
     TIMEMORY_HOST_FUNCTION const char* c_str() const
     {
-        using llu = long long unsigned;
-        static thread_local char desc[512];
-        sprintf(desc, "(%llu,%llu,%llu)", (llu) m_begin, (llu) m_end, (llu) m_stride);
+        using llu                             = long long unsigned;
+        constexpr size_t         desc_max_len = 512;
+        static thread_local char desc[desc_max_len];
+        desc[desc_max_len - 1] = '\0';
+        snprintf(desc, desc_max_len, "(%llu,%llu,%llu)", (llu) m_begin, (llu) m_end,
+                 (llu) m_stride);
         return desc;
     }
 

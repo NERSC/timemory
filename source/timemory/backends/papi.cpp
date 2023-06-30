@@ -99,7 +99,8 @@ generate_component_info(bool _with_qualifiers, bool _force)
         PAPI_component_info_t _preset_component{};
         _preset_component.CmpIdx = -1;
         memset(&_preset_component, 0, sizeof(_preset_component));
-        sprintf(_preset_component.name, "%s", "preset");
+        snprintf(_preset_component.name, sizeof(_preset_component.name) - 1, "%s",
+                 "preset");
         _info_map->emplace(papi::component_info{ -1, _preset_component }, _preset_events);
     }
 

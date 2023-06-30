@@ -105,7 +105,6 @@ class socket_tests : public ::testing::Test
 protected:
     void SetUp() override
     {
-        TIMEMORY_TEST_CHECK_SKIP;
         if(!configured)
         {
             configured                   = true;

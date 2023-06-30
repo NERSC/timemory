@@ -364,7 +364,7 @@ md5sum::hexdigest() const
 
     char buf[33];
     for(int i = 0; i < 16; i++)
-        sprintf(buf + i * 2, "%02x", digest[i]);
+        snprintf(buf + i * 2, 3, "%02x", digest[i]);
     buf[32] = '\0';
 
     return std::string(buf);

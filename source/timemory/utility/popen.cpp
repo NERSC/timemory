@@ -311,7 +311,11 @@ popen(const char* path, char** argv, char** envp)
             dup2(stdout_pipe[1], 1);
             close(stdout_pipe[1]);
         }
+#    if defined(TIMEMORY_LINUX)
         execvpe(path, argv, envp);
+#    else
+        execve(path, argv, envp);
+#    endif
         exit(127);
     }
 

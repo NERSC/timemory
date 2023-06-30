@@ -371,10 +371,10 @@
                 if(err != ::tim::cuda::success_v && (int) err != 0)                      \
                 {                                                                        \
                     char errmsg[std::numeric_limits<uint16_t>::max()];                   \
-                    sprintf(errmsg,                                                      \
-                            "%s:%d: error: function '%s' failed with error: %s.\n",      \
-                            __FILE__, __LINE__, #apiFuncCall,                            \
-                            ::tim::cuda::get_error_string(err));                         \
+                    snprintf(errmsg, std::numeric_limits<uint16_t>::max() - 1,           \
+                             "%s:%d: error: function '%s' failed with error: %s.\n",     \
+                             __FILE__, __LINE__, #apiFuncCall,                           \
+                             ::tim::cuda::get_error_string(err));                        \
                     throw std::runtime_error(errmsg);                                    \
                 }                                                                        \
             }
@@ -477,10 +477,10 @@
                 if(err != ::tim::hip::success_v && (int) err != 0)                       \
                 {                                                                        \
                     char errmsg[std::numeric_limits<uint16_t>::max()];                   \
-                    sprintf(errmsg,                                                      \
-                            "%s:%d: error: function '%s' failed with error: %s.\n",      \
-                            __FILE__, __LINE__, #apiFuncCall,                            \
-                            ::tim::hip::get_error_string(err));                          \
+                    snprintf(errmsg, std::numeric_limits<uint16_t>::max() - 1,           \
+                             "%s:%d: error: function '%s' failed with error: %s.\n",     \
+                             __FILE__, __LINE__, #apiFuncCall,                           \
+                             ::tim::hip::get_error_string(err));                         \
                     throw std::runtime_error(errmsg);                                    \
                 }                                                                        \
             }

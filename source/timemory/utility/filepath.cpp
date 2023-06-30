@@ -34,6 +34,10 @@
 #    include <unistd.h>
 #endif
 
+#if defined(TIMEMORY_MACOS)
+#    include <libgen.h>
+#endif
+
 #if defined(TIMEMORY_USE_SHLWAPI)
 #    include <shlwapi.h>
 #endif
@@ -339,10 +343,14 @@ TIMEMORY_UTILITY_INLINE
 const char*
 basename(std::string_view _fname)
 {
-#if defined(TIMEMORY_UNIX)
+#if defined(TIMEMORY_LINUX)
     return ::basename(_fname.data());
 #else
+#    if defined(TIMEMORY_WINDOWS)
     auto _pos = _fname.find_last_of("/\\");
+#    else
+    auto _pos = _fname.find_last_of('/');
+#    endif
     if(_pos < _fname.length())
         return _fname.data() + _pos + 1;
     return _fname.data();
