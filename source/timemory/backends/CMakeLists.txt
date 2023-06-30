@@ -18,6 +18,12 @@ endif()
 list(REMOVE_ITEM header_files ${mpi_header_files})
 list(REMOVE_ITEM source_files ${mpi_source_files})
 
+if(WIN32 OR APPLE)
+    file(GLOB_RECURSE capability_files ${CMAKE_CURRENT_SOURCE_DIR}/capability.*)
+    list(REMOVE_ITEM header_files ${capability_files})
+    list(REMOVE_ITEM source_files ${capability_files})
+endif()
+
 timemory_build_intermediate_library(
     USE_INTERFACE INSTALL_SOURCES
     NAME backends
