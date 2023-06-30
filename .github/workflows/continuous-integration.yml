@@ -163,8 +163,10 @@ jobs:
         run: |
           source activate
           conda activate pyctest
-          ctest --rerun-failed -V -N
-          ctest --rerun-failed -V
+          if [ -n "$(find Testing | grep LastTestsFailed.log)" ]; then
+              ctest --rerun-failed -V -N;
+              ctest --rerun-failed -V;
+          fi
 
       - name: Test Python Build
         if: ${{ matrix.BUILD_TYPE != 'Debug' }}
