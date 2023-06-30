@@ -1070,7 +1070,7 @@ settings::initialize_io()
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
         bool, cout_output, TIMEMORY_SETTINGS_KEY("COUT_OUTPUT"), "Write output to stdout",
-        true, TIMEMORY_ESC(strset_t{ "native", "io", "console" }),
+        false, TIMEMORY_ESC(strset_t{ "native", "io", "console" }),
         strvector_t({ "--" TIMEMORY_PROJECT_NAME "-cout-output" }), -1, 1);
 
     TIMEMORY_SETTINGS_MEMBER_ARG_IMPL(
