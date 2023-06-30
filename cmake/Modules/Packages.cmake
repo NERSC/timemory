@@ -591,10 +591,12 @@ if(TIMEMORY_BUILD_YAML)
         EXPORT ${PROJECT_NAME}-library-depends
         OPTIONAL)
 
-    install(
-        DIRECTORY ${PROJECT_SOURCE_DIR}/external/yaml-cpp/include/
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory/tpls/
-        OPTIONAL)
+    if(TIMEMORY_INSTALL_HEADERS)
+        install(
+            DIRECTORY ${PROJECT_SOURCE_DIR}/external/yaml-cpp/include/
+            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory/tpls
+            OPTIONAL)
+    endif()
 endif()
 
 if(TIMEMORY_USE_YAML)
