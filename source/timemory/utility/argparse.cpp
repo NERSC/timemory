@@ -1105,7 +1105,7 @@ argument_parser::begin_argument(const std::string& arg, bool longarg, int positi
         else if(equal_pos > 0)
         {
             std::string arg_value = arg.substr(name_end + 1);
-            add_value(arg_value, position);
+            return add_value(arg_value, position);
         }
     }
     else
