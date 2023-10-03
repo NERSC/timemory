@@ -413,7 +413,7 @@ def dump_entity(data, functor, file=None, fext=None):
         return _functor(_data)
 
     files = []
-    if type(data) == type(file):
+    if type(data) is type(file):
         for ditr, fitr in zip(data, file):
             _ret = _dump_entity(functor(ditr), _get_filename(fitr, fext))
             if _ret is not None:
