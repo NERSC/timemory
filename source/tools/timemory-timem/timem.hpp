@@ -125,15 +125,15 @@ extern "C"
 
 // C++ includes
 #include <chrono>
+#include <condition_variable>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <mutex>
+#include <random>
 #include <thread>
 #include <vector>
-#include <random>
-#include <condition_variable>
-#include <mutex>
 
 template <typename Tp>
 using vector_t       = std::vector<Tp>;

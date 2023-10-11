@@ -33,8 +33,8 @@
 // clang-format on
 #endif
 //
-#include "timemory/ert/macros.hpp"
 #include "timemory/containers/macros.hpp"
+#include "timemory/ert/macros.hpp"
 //
 #if defined(TIMEMORY_USE_MANAGER_EXTERN) || defined(TIMEMORY_USE_EXTERN)
 #    include "timemory/manager/extern.hpp"
