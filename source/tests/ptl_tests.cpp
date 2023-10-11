@@ -123,7 +123,7 @@ protected:
         tim::settings::debug()             = false;
         tim::settings::json_output()       = false;
         tim::settings::flamegraph_output() = false;
-        tim::timemory_init(&_argc, &_argv);
+        tim::timemory_init(&test_argc, &test_argv);
         tim::settings::dart_output() = false;
         tim::settings::dart_count()  = 1;
 

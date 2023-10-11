@@ -28,8 +28,8 @@
 #include <chrono>
 #include <thread>
 
-static int    _argc = 0;
-static char** _argv = nullptr;
+static int    test_argc = 0;
+static char** test_argv = nullptr;
 
 //--------------------------------------------------------------------------------------//
 
@@ -65,7 +65,7 @@ TEST_F(warning_tests, enabled)
 
     tim::set_env(TIMEMORY_SETTINGS_PREFIX "SUPPRESS_PARSING", "ON", 1);
 
-    tim::timemory_init(_argc, _argv);
+    tim::timemory_init(test_argc, test_argv);
 
     auto _settings = tim::settings::instance();
     auto _rsuccess = _settings->read(ss);
@@ -143,8 +143,8 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
+    test_argc = argc;
+    test_argv = argv;
     return RUN_ALL_TESTS();
 }
 

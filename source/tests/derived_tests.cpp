@@ -121,7 +121,7 @@ protected:
 
 TEST_F(derived_tests, cpu_util_tuple_wc_cc)
 {
-    std::cout << '\n';
+    // std::cout << '\n';
     using toolset_t = tim::component_tuple<wall_clock, cpu_clock, cpu_util>;
 
     toolset_t obj(details::get_test_name());
@@ -129,57 +129,57 @@ TEST_F(derived_tests, cpu_util_tuple_wc_cc)
     details::consume(1000);
     obj.stop();
 
-    std::cout << obj << "\n";
+    // std::cout << obj << "\n";
 
     ASSERT_TRUE(obj.get<cpu_util>()->is_derived());
     auto manual_calc = 100. * obj.get<cpu_clock>()->get() / obj.get<wall_clock>()->get();
     ASSERT_NEAR(obj.get<cpu_util>()->get(), manual_calc, 1.0e-6);
-    std::cout << '\n';
+    // std::cout << '\n';
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(derived_tests, cpu_util_tuple_wc_uc_sc)
 {
-    std::cout << '\n';
+    // std::cout << '\n';
     using toolset_t = tim::auto_tuple<wall_clock, user_clock, system_clock, cpu_util>;
 
     toolset_t obj(details::get_test_name());
     details::consume(1000);
     obj.stop();
 
-    std::cout << obj << "\n";
+    // std::cout << obj << "\n";
 
     ASSERT_TRUE(obj.get<cpu_util>()->is_derived());
     auto manual_calc = 100. *
                        (obj.get<user_clock>()->get() + obj.get<system_clock>()->get()) /
                        obj.get<wall_clock>()->get();
     ASSERT_NEAR(obj.get<cpu_util>()->get(), manual_calc, 1.0e-6);
-    std::cout << '\n';
+    // std::cout << '\n';
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(derived_tests, cpu_util_tuple_wc)
 {
-    std::cout << '\n';
+    // std::cout << '\n';
     using toolset_t = tim::auto_tuple<wall_clock, cpu_util>;
 
     toolset_t obj(details::get_test_name());
     details::consume(1000);
     obj.stop();
 
-    std::cout << obj << "\n";
+    // std::cout << obj << "\n";
 
     ASSERT_FALSE(obj.get<cpu_util>()->is_derived());
-    std::cout << '\n';
+    // std::cout << '\n';
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(derived_tests, cpu_util_list_wc_cc)
 {
-    std::cout << '\n';
+    // std::cout << '\n';
     using toolset_t = tim::component_list<wall_clock, cpu_clock, cpu_util>;
 
     toolset_t::get_initializer() = [](toolset_t& cl) {
@@ -191,19 +191,19 @@ TEST_F(derived_tests, cpu_util_list_wc_cc)
     details::consume(1000);
     obj.stop();
 
-    std::cout << obj << "\n";
+    // std::cout << obj << "\n";
 
     ASSERT_TRUE(obj.get<cpu_util>()->is_derived());
     auto manual_calc = 100. * obj.get<cpu_clock>()->get() / obj.get<wall_clock>()->get();
     ASSERT_NEAR(obj.get<cpu_util>()->get(), manual_calc, 1.0e-6);
-    std::cout << '\n';
+    // std::cout << '\n';
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(derived_tests, cpu_util_list_wc_uc_sc)
 {
-    std::cout << '\n';
+    // std::cout << '\n';
     using toolset_t = tim::auto_list<wall_clock, user_clock, system_clock, cpu_util>;
 
     toolset_t::get_initializer() = [](toolset_t& cl) {
@@ -214,21 +214,21 @@ TEST_F(derived_tests, cpu_util_list_wc_uc_sc)
     details::consume(1000);
     obj.stop();
 
-    std::cout << obj << "\n";
+    // std::cout << obj << "\n";
 
     ASSERT_TRUE(obj.get<cpu_util>()->is_derived());
     auto manual_calc = 100. *
                        (obj.get<user_clock>()->get() + obj.get<system_clock>()->get()) /
                        obj.get<wall_clock>()->get();
     ASSERT_NEAR(obj.get<cpu_util>()->get(), manual_calc, 1.0e-6);
-    std::cout << '\n';
+    // std::cout << '\n';
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(derived_tests, cpu_util_list_wc)
 {
-    std::cout << '\n';
+    // std::cout << '\n';
     using toolset_t = tim::auto_list<wall_clock, cpu_util>;
 
     toolset_t::get_initializer() = [](toolset_t& cl) {
@@ -239,17 +239,17 @@ TEST_F(derived_tests, cpu_util_list_wc)
     details::consume(1000);
     obj.stop();
 
-    std::cout << obj << "\n";
+    // std::cout << obj << "\n";
 
     ASSERT_FALSE(obj.get<cpu_util>()->is_derived());
-    std::cout << '\n';
+    // std::cout << '\n';
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(derived_tests, cpu_util_bundle_wc_cc)
 {
-    std::cout << '\n';
+    // std::cout << '\n';
     using toolset_t =
         tim::component_bundle<TIMEMORY_API, wall_clock, cpu_clock*, cpu_util*>;
 
@@ -262,7 +262,7 @@ TEST_F(derived_tests, cpu_util_bundle_wc_cc)
     details::consume(1000);
     obj.stop();
 
-    std::cout << obj << "\n";
+    // std::cout << obj << "\n";
 
     ASSERT_TRUE(obj.get_component<cpu_clock>() != nullptr);
     ASSERT_TRUE(obj.get_component<cpu_util>() != nullptr);
@@ -270,14 +270,14 @@ TEST_F(derived_tests, cpu_util_bundle_wc_cc)
     auto manual_calc = 100. * obj.get_component<cpu_clock>()->get() /
                        obj.get_component<wall_clock>()->get();
     EXPECT_NEAR(obj.get_component<cpu_util>()->get(), manual_calc, 1.0e-6);
-    std::cout << '\n';
+    // std::cout << '\n';
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(derived_tests, cpu_util_bundle_wc_uc_sc)
 {
-    std::cout << '\n';
+    // std::cout << '\n';
     using toolset_t =
         tim::auto_bundle<TIMEMORY_API, wall_clock, user_clock, system_clock*, cpu_util*>;
 
@@ -289,7 +289,7 @@ TEST_F(derived_tests, cpu_util_bundle_wc_uc_sc)
     details::consume(1000);
     obj.stop();
 
-    std::cout << obj << "\n";
+    // std::cout << obj << "\n";
 
     ASSERT_TRUE(obj.get_component<cpu_util>()->is_derived());
     auto manual_calc = 100. *
@@ -297,14 +297,14 @@ TEST_F(derived_tests, cpu_util_bundle_wc_uc_sc)
                         obj.get_component<system_clock>()->get()) /
                        obj.get_component<wall_clock>()->get();
     ASSERT_NEAR(obj.get_component<cpu_util>()->get(), manual_calc, 1.0e-6);
-    std::cout << '\n';
+    // std::cout << '\n';
 }
 
 //--------------------------------------------------------------------------------------//
 
 TEST_F(derived_tests, cpu_util_bundle_wc)
 {
-    std::cout << '\n';
+    // std::cout << '\n';
     using toolset_t = tim::auto_bundle<tim::project::timemory, wall_clock, cpu_util*>;
 
     toolset_t::get_initializer() = [](toolset_t& cl) { cl.initialize<cpu_util>(); };
@@ -313,10 +313,10 @@ TEST_F(derived_tests, cpu_util_bundle_wc)
     details::consume(1000);
     obj.stop();
 
-    std::cout << obj << "\n";
+    // std::cout << obj << "\n";
 
     ASSERT_FALSE(obj.get_component<cpu_util>()->is_derived());
-    std::cout << '\n';
+    // std::cout << '\n';
 }
 
 //--------------------------------------------------------------------------------------//

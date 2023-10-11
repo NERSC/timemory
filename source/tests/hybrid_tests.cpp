@@ -161,22 +161,22 @@ allocate()
     printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
 }
 
-template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
-          typename FuncT = std::function<Vp(Vp)>>
-inline void
-print_info(
-    const Tp& obj, const Up& expected, const string_t& unit,
-    FuncT _func = [](const Vp& _obj) { return _obj; })
-{
-    std::cout << std::endl;
-    std::cout << "[" << get_test_name() << "]>  measured : " << obj << std::endl;
-    std::cout << "[" << get_test_name() << "]>  expected : " << expected << " " << unit
-              << std::endl;
-    std::cout << "[" << get_test_name() << "]>     value : " << _func(obj.get_value())
-              << std::endl;
-    std::cout << "[" << get_test_name() << "]>     accum : " << _func(obj.get_accum())
-              << std::endl;
-}
+// template <typename Tp, typename Up, typename Vp = typename Tp::value_type,
+//           typename FuncT = std::function<Vp(Vp)>>
+// inline void
+// print_info(
+//     const Tp& obj, const Up& expected, const string_t& unit,
+//     FuncT _func = [](const Vp& _obj) { return _obj; })
+// {
+//     std::cout << std::endl;
+//     std::cout << "[" << get_test_name() << "]>  measured : " << obj << std::endl;
+//     std::cout << "[" << get_test_name() << "]>  expected : " << expected << " " << unit
+//               << std::endl;
+//     std::cout << "[" << get_test_name() << "]>     value : " << _func(obj.get_value())
+//               << std::endl;
+//     std::cout << "[" << get_test_name() << "]>     accum : " << _func(obj.get_accum())
+//               << std::endl;
+// }
 
 }  // namespace details
 
@@ -256,20 +256,20 @@ TEST_F(hybrid_tests, hybrid)
     details::consume(1500);
     t.join();
     obj.stop();
-    std::cout << "\n" << obj << std::endl;
+    // std::cout << "\n" << obj << std::endl;
 
-    auto clock_convert    = [](const int64_t& _obj) { return _obj; };
-    auto cpu_util_convert = [](const std::pair<int64_t, int64_t>& val) {
-        return static_cast<double>(val.first) / val.second * 100.0;
-    };
+    // auto clock_convert    = [](const int64_t& _obj) { return _obj; };
+    // auto cpu_util_convert = [](const std::pair<int64_t, int64_t>& val) {
+    //     return static_cast<double>(val.first) / val.second * 100.0;
+    // };
 
     auto* t_rc   = obj.get<wall_clock>();
     auto* t_cpu  = obj.get<cpu_clock>();
     auto* t_util = obj.get<cpu_util>();
 
-    details::print_info(*t_rc, 2.0, "sec", clock_convert);
-    details::print_info(*t_cpu, 2.5, "sec", clock_convert);
-    details::print_info(*t_util, 125.0, "%", cpu_util_convert);
+    // details::print_info(*t_rc, 2.0, "sec", clock_convert);
+    // details::print_info(*t_cpu, 2.5, "sec", clock_convert);
+    // details::print_info(*t_util, 125.0, "%", cpu_util_convert);
 
     ASSERT_TRUE(t_rc != nullptr) << obj;
     ASSERT_TRUE(t_cpu != nullptr) << obj;
@@ -294,7 +294,7 @@ TEST_F(hybrid_tests, hybrid)
 
     auto page_size = tim::units::get_page_size();
 
-    details::print_info(*l_page, page_size, tim::settings::memory_units(), clock_convert);
+    // details::print_info(*l_page, page_size, tim::settings::memory_units(), clock_convert);
 
     EXPECT_NEAR(l_page->get(), page_size, 2.0 * page_size) << obj;
 }
@@ -309,20 +309,20 @@ TEST_F(hybrid_tests, auto_timer)
     details::consume(750);
     t.join();
     obj.stop();
-    std::cout << "\n" << obj << std::endl;
+    // std::cout << "\n" << obj << std::endl;
 
-    auto clock_convert    = [](const int64_t& _obj) { return _obj; };
-    auto cpu_util_convert = [](const std::pair<int64_t, int64_t>& val) {
-        return static_cast<double>(val.first) / val.second * 100.0;
-    };
+    // auto clock_convert    = [](const int64_t& _obj) { return _obj; };
+    // auto cpu_util_convert = [](const std::pair<int64_t, int64_t>& val) {
+    //     return static_cast<double>(val.first) / val.second * 100.0;
+    // };
 
     auto  _cpu  = *obj.get<cpu_clock>();
     auto& _rc   = *obj.get<wall_clock>();
     auto& _util = *obj.get<cpu_util>();
 
-    details::print_info(_rc, 1.0, "sec", clock_convert);
-    details::print_info(_cpu, 1.25, "sec", clock_convert);
-    details::print_info(_util, 125.0, "%", cpu_util_convert);
+    // details::print_info(_rc, 1.0, "sec", clock_convert);
+    // details::print_info(_cpu, 1.25, "sec", clock_convert);
+    // details::print_info(_util, 125.0, "%", cpu_util_convert);
 
     EXPECT_NEAR(1.0, _rc.get(), timer_tolerance);
     EXPECT_NEAR(1.25, _cpu.get(), 2.0 * timer_tolerance);
@@ -331,7 +331,7 @@ TEST_F(hybrid_tests, auto_timer)
     cpu_clock _cpu_obj = *obj.get<cpu_clock>();
     double    _cpu_val = obj.get<cpu_clock>()->get();
     EXPECT_NEAR(_cpu_obj.get(), _cpu_val, compose_tolerance);
-    details::print_info(_cpu_obj, _cpu_val, "sec");
+    // details::print_info(_cpu_obj, _cpu_val, "sec");
 
     auto _obj  = tim::get(obj);
     auto _cpu2 = std::get<1>(_obj);
@@ -351,13 +351,13 @@ TEST_F(hybrid_tests, compose)
     details::do_sleep(250);  // in millseconds
     details::consume(750);   // in millseconds
     obj.stop();
-    std::cout << "\n" << obj << std::endl;
+    // std::cout << "\n" << obj << std::endl;
 
     result_t  _cpu_ret = obj.get();
     cpu_clock _cpu_obj = *obj.get<user_clock>() + *obj.get<system_clock>();
     double    _cpu_val = obj.get<user_clock>()->get() + obj.get<system_clock>()->get();
 
-    details::print_info(_cpu_obj, 0.75, "sec");
+    // details::print_info(_cpu_obj, 0.75, "sec");
 
     EXPECT_NEAR(0.75, _cpu_val, 2.0 * timer_tolerance);
     EXPECT_NEAR(_cpu_obj.get(), _cpu_val, compose_tolerance);

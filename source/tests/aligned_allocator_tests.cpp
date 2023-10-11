@@ -195,14 +195,14 @@ TEST_F(aligned_allocator_tests, m128)
     });
 
     // print the solution and initial factors for record-keeping
-    std::cout << "\nsizeof(__m128) = " << sizeof(__m128) << std::endl;
-    details::print(std::cout, "initial factors", factors);
-    details::print(std::cout, "solution", solution);
+    // std::cout << "\nsizeof(__m128) = " << sizeof(__m128) << std::endl;
+    // details::print(std::cout, "initial factors", factors);
+    // details::print(std::cout, "solution", solution);
 
     for(std::size_t i = 0; i < niter; ++i)
     {
         // print current iteration
-        std::cout << "\niteration " << i << ":\n";
+        // std::cout << "\niteration " << i << ":\n";
 
         // create two __m128 packed vectors to add together
         lhs.push_back(_mm_set_ps(factors[3], factors[2], factors[1], factors[0]));
@@ -234,7 +234,7 @@ TEST_F(aligned_allocator_tests, m128)
         lhs.erase(lhs.begin());
         rhs.erase(rhs.begin());
     }
-    std::cout << std::endl;
+    // std::cout << std::endl;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -264,14 +264,14 @@ TEST_F(aligned_allocator_tests, m128d)
     });
 
     // print the solution and initial factors for record-keeping
-    std::cout << "\nsizeof(__m128d) = " << sizeof(__m128d) << std::endl;
-    details::print(std::cout, "initial factors", factors);
-    details::print(std::cout, "solution", solution);
+    // std::cout << "\nsizeof(__m128d) = " << sizeof(__m128d) << std::endl;
+    // details::print(std::cout, "initial factors", factors);
+    // details::print(std::cout, "solution", solution);
 
     for(std::size_t i = 0; i < niter; ++i)
     {
         // print current iteration
-        std::cout << "\niteration " << i << ":\n";
+        // std::cout << "\niteration " << i << ":\n";
 
         // create two __m128 packed vectors to add together
         lhs.push_back(_mm_set_pd(factors[1], factors[0]));
@@ -303,7 +303,7 @@ TEST_F(aligned_allocator_tests, m128d)
         lhs.erase(lhs.begin());
         rhs.erase(rhs.begin());
     }
-    std::cout << std::endl;
+    // std::cout << std::endl;
 }
 
 //--------------------------------------------------------------------------------------//

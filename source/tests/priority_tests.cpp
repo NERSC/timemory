@@ -167,9 +167,9 @@ protected:
 
 TEST_F(priority_tests, simple_check)
 {
-    std::cout << "plus  : " << tim::demangle<plus_t>() << "\n";
-    std::cout << "start : " << tim::demangle<start_t>() << "\n";
-    std::cout << "stop  : " << tim::demangle<stop_t>() << "\n";
+    // std::cout << "plus  : " << tim::demangle<plus_t>() << "\n";
+    // std::cout << "start : " << tim::demangle<start_t>() << "\n";
+    // std::cout << "stop  : " << tim::demangle<stop_t>() << "\n";
 
     tuple_t t(details::get_test_name(), true);
 
@@ -207,13 +207,13 @@ TEST_F(priority_tests, simple_check)
     auto& pstart_wc = *t.get<priority_start_wc>();
     auto& pstop_wc  = *t.get<priority_stop_wc>();
 
-    printf("\n");
-    std::cout << native_wc << std::endl;
-    std::cout << pstart_wc << std::endl;
-    std::cout << pstop_wc << std::endl;
-    printf("\n");
-    std::cout << t << std::endl;
-    printf("\n");
+    // printf("\n");
+    // std::cout << native_wc << std::endl;
+    // std::cout << pstart_wc << std::endl;
+    // std::cout << pstop_wc << std::endl;
+    // printf("\n");
+    // std::cout << t << std::endl;
+    // printf("\n");
 
     // each start()/stop() on tuple_t resets internal lap count to zero
     ASSERT_EQ(native_wc.get_laps(), 1);
@@ -227,9 +227,9 @@ TEST_F(priority_tests, simple_check)
 
 TEST_F(priority_tests, start_stop)
 {
-    std::cout << "plus  : " << tim::demangle<plus_t>() << "\n";
-    std::cout << "start : " << tim::demangle<start_t>() << "\n";
-    std::cout << "stop  : " << tim::demangle<stop_t>() << "\n";
+    // std::cout << "plus  : " << tim::demangle<plus_t>() << "\n";
+    // std::cout << "start : " << tim::demangle<start_t>() << "\n";
+    // std::cout << "stop  : " << tim::demangle<stop_t>() << "\n";
 
     tuple_t t(details::get_test_name(), true);
 
@@ -243,13 +243,13 @@ TEST_F(priority_tests, start_stop)
     auto& pstart_wc = *t.get<priority_start_wc>();
     auto& pstop_wc  = *t.get<priority_stop_wc>();
 
-    printf("\n");
-    std::cout << native_wc << std::endl;
-    std::cout << pstart_wc << std::endl;
-    std::cout << pstop_wc << std::endl;
-    printf("\n");
-    std::cout << t << std::endl;
-    printf("\n");
+    // printf("\n");
+    // std::cout << native_wc << std::endl;
+    // std::cout << pstart_wc << std::endl;
+    // std::cout << pstop_wc << std::endl;
+    // printf("\n");
+    // std::cout << t << std::endl;
+    // printf("\n");
 
     double native_exp = 1.0;
     double pstart_exp = 1.5;

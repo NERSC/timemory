@@ -37,8 +37,8 @@
 #include <thread>
 #include <vector>
 
-static int         _argc     = 0;
-static char**      _argv     = nullptr;
+static int         test_argc     = 0;
+static char**      test_argv     = nullptr;
 static int         _margc    = 0;
 static char**      _margv    = nullptr;
 static int         _log_once = 0;
@@ -96,11 +96,11 @@ parse_function()
 inline void
 cleanup()
 {
-    if(_argv)
+    if(test_argv)
     {
-        for(int i = 0; i < _argc; ++i)
-            free(_argv[i]);
-        delete[] _argv;
+        for(int i = 0; i < test_argc; ++i)
+            free(test_argv[i]);
+        delete[] test_argv;
     }
 }
 //
@@ -197,13 +197,13 @@ parse(argparse_t& parser, Args&&... args)
         .max_count(1);
     parser.add_argument({ "--load" }, "Extra libraries to load");
 
-    _argc    = sizeof...(Args) + 1;
-    _argv    = new char*[_argc];
-    _argv[0] = strdup(_arg0);
+    test_argc    = sizeof...(Args) + 1;
+    test_argv    = new char*[test_argc];
+    test_argv[0] = strdup(_arg0);
     int i    = 1;
-    TIMEMORY_FOLD_EXPRESSION((_argv[i] = strdup(std::forward<Args>(args)), ++i));
+    TIMEMORY_FOLD_EXPRESSION((test_argv[i] = strdup(std::forward<Args>(args)), ++i));
 
-    auto err = parse_function()(parser, _argc, _argv);
+    auto err = parse_function()(parser, test_argc, test_argv);
 
     // only log the help function once
     auto _log_id = _log_once++;
@@ -575,11 +575,11 @@ TEST_F(argparse_tests, parse_known_options)
     EXPECT_TRUE(arg.at(2) == "and");
     EXPECT_TRUE(arg.at(3) == "long");
 
-    EXPECT_EQ(_argc, 3);
-    EXPECT_EQ(std::string(_argv[0]), std::string(_arg0));
-    EXPECT_EQ(std::string(_argv[1]), std::string("10"));
-    EXPECT_EQ(std::string(_argv[2]), std::string("20"));
-    EXPECT_TRUE(_argv[3] == nullptr);
+    EXPECT_EQ(test_argc, 3);
+    EXPECT_EQ(std::string(test_argv[0]), std::string(_arg0));
+    EXPECT_EQ(std::string(test_argv[1]), std::string("10"));
+    EXPECT_EQ(std::string(test_argv[2]), std::string("20"));
+    EXPECT_TRUE(test_argv[3] == nullptr);
 
     details::parse_function() = orig;
 }
@@ -613,10 +613,10 @@ TEST_F(argparse_tests, parse_known_options_without_options)
     EXPECT_FALSE(parser.get<bool>("p"));
     EXPECT_FALSE(parser.get<bool>("pid"));
 
-    EXPECT_EQ(_argc, 3);
-    EXPECT_EQ(std::string(_argv[0]), std::string(_arg0));
-    EXPECT_EQ(std::string(_argv[1]), std::string("10"));
-    EXPECT_EQ(std::string(_argv[2]), std::string("20"));
+    EXPECT_EQ(test_argc, 3);
+    EXPECT_EQ(std::string(test_argv[0]), std::string(_arg0));
+    EXPECT_EQ(std::string(test_argv[1]), std::string("10"));
+    EXPECT_EQ(std::string(test_argv[2]), std::string("20"));
 
     details::parse_function() = orig;
 }

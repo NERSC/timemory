@@ -131,18 +131,18 @@ class nccl_tests : public ::testing::Test
 protected:
     static void setup_args()
     {
-        _test_argc = _argc + 2;
+        _test_argc = test_argc + 2;
         _test_argv = new char*[_test_argc];
-        for(int i = 0; i < _argc; ++i)
-            _test_argv[i] = _argv[i];
-        _test_argv[_argc + 0] = strdup("-c");
-        _test_argv[_argc + 1] = strdup("0");
+        for(int i = 0; i < test_argc; ++i)
+            _test_argv[i] = test_argv[i];
+        _test_argv[test_argc + 0] = strdup("-c");
+        _test_argv[test_argc + 1] = strdup("0");
     }
 
     static void cleanup_args()
     {
-        free(_test_argv[_argc + 0]);
-        free(_test_argv[_argc + 1]);
+        free(_test_argv[test_argc + 0]);
+        free(_test_argv[test_argc + 1]);
     }
 
     TIMEMORY_TEST_SUITE_SETUP(setup_args())
@@ -151,7 +151,7 @@ protected:
     virtual void SetUp() override
     {
         TIMEMORY_TEST_CHECK_SKIP;
-        EXPECT_EQ(_argc + 2, _test_argc);
+        EXPECT_EQ(test_argc + 2, _test_argc);
         ASSERT_TRUE(_test_argv != nullptr);
 
         tim::set_env("TIMEMORY_NCCLP_REJECT_LIST",

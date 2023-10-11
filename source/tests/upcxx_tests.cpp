@@ -168,48 +168,48 @@ TEST_F(upcxx_tests, general)
     auto upc_rank   = tim::upc::rank();
     auto upc_size   = tim::upc::size();
 
-    auto rc_print = [=](const decltype(rc_storage)& _storage) {
-        printf("\n");
-        size_t w = 0;
-        for(const auto& ritr : _storage)
-            for(const auto& itr : ritr)
-                w = std::max<size_t>(w, std::get<2>(itr).length());
-        int64_t idx = 0;
-        for(const auto& ritr : _storage)
-        {
-            printf("[%i]> idx: %i, size: %i\n", (int) upc_rank, (int) idx,
-                   (int) ritr.size());
-            for(const auto& itr : ritr)
-            {
-                std::cout << std::setw(w) << std::left << std::get<2>(itr) << " : "
-                          << std::get<1>(itr);
-                auto _hierarchy = std::get<5>(itr);
-                for(size_t i = 0; i < _hierarchy.size(); ++i)
-                {
-                    if(i == 0)
-                        std::cout << " :: ";
-                    std::cout << _hierarchy[i];
-                    if(i + 1 < _hierarchy.size())
-                        std::cout << "/";
-                }
-                std::cout << std::endl;
-            }
-            ++idx;
-        }
-        printf("\n");
-    };
+    // auto rc_print = [=](const decltype(rc_storage)& _storage) {
+    //     printf("\n");
+    //     size_t w = 0;
+    //     for(const auto& ritr : _storage)
+    //         for(const auto& itr : ritr)
+    //             w = std::max<size_t>(w, std::get<2>(itr).length());
+    //     int64_t idx = 0;
+    //     for(const auto& ritr : _storage)
+    //     {
+    //         printf("[%i]> idx: %i, size: %i\n", (int) upc_rank, (int) idx,
+    //                (int) ritr.size());
+    //         for(const auto& itr : ritr)
+    //         {
+    //             std::cout << std::setw(w) << std::left << std::get<2>(itr) << " : "
+    //                       << std::get<1>(itr);
+    //             auto _hierarchy = std::get<5>(itr);
+    //             for(size_t i = 0; i < _hierarchy.size(); ++i)
+    //             {
+    //                 if(i == 0)
+    //                     std::cout << " :: ";
+    //                 std::cout << _hierarchy[i];
+    //                 if(i + 1 < _hierarchy.size())
+    //                     std::cout << "/";
+    //             }
+    //             std::cout << std::endl;
+    //         }
+    //         ++idx;
+    //     }
+    //     printf("\n");
+    // };
 
     if(upc_rank == 0)
     {
         std::this_thread::sleep_for(std::chrono::seconds(upc_size - upc_rank - 1));
         EXPECT_EQ(rc_storage.size(), upc_size);
-        rc_print(rc_storage);
+        // rc_print(rc_storage);
     }
     else
     {
         std::this_thread::sleep_for(std::chrono::seconds(upc_size - upc_rank - 1));
         EXPECT_EQ(rc_storage.size(), 1);
-        rc_print(rc_storage);
+        // rc_print(rc_storage);
     }
 
     auto final_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);

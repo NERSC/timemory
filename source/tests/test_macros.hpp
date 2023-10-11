@@ -74,15 +74,15 @@ as_string(const Tp&)
 
 #if !defined(DISABLE_TIMEMORY)
 #    define TIMEMORY_TEST_ARGS                                                           \
-        static int    _argc = 0;                                                         \
-        static char** _argv = nullptr;
+        static int    test_argc = 0;                                                     \
+        static char** test_argv = nullptr;
 
 #    define TIMEMORY_TEST_MAIN                                                           \
         int main(int argc, char** argv)                                                  \
         {                                                                                \
             ::testing::InitGoogleTest(&argc, argv);                                      \
-            _argc = argc;                                                                \
-            _argv = argv;                                                                \
+            test_argc = argc;                                                            \
+            test_argv = argv;                                                            \
             return RUN_ALL_TESTS();                                                      \
         }
 
@@ -99,9 +99,9 @@ as_string(const Tp&)
             tim::settings::debug()       = false;                                        \
             tim::settings::json_output() = true;                                         \
             puts("[SetupTestSuite] initializing dmp");                                   \
-            tim::dmp::initialize(_argc, _argv);                                          \
+            tim::dmp::initialize(test_argc, test_argv);                                          \
             puts("[SetupTestSuite] initializing timemory");                              \
-            tim::timemory_init(_argc, _argv);                                            \
+            tim::timemory_init(test_argc, test_argv);                                            \
             puts("[SetupTestSuite] timemory initialized");                               \
             tim::settings::dart_output() = false;                                        \
             tim::settings::dart_count()  = 1;                                            \

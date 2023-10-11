@@ -648,14 +648,14 @@ TEST_F(cache_tests, io)
 
 TEST_F(cache_tests, validation)
 {
-    puts("\n>>> INITIAL CACHE <<<\n");
-    puts(print_rusage_cache(*cache.at(0)).c_str());
-    puts("\n>>> BUNDLE <<<\n");
-    std::cout << *bundle << std::endl;
-    puts("\n>>> CACHE BUNDLE <<<\n");
-    std::cout << *cache_bundle << std::endl;
-    puts("\n>>> FINAL CACHE <<<\n");
-    puts(print_rusage_cache(*cache.at(1)).c_str());
+    // puts("\n>>> INITIAL CACHE <<<\n");
+    // puts(print_rusage_cache(*cache.at(0)).c_str());
+    // puts("\n>>> BUNDLE <<<\n");
+    // std::cout << *bundle << std::endl;
+    // puts("\n>>> CACHE BUNDLE <<<\n");
+    // std::cout << *cache_bundle << std::endl;
+    // puts("\n>>> FINAL CACHE <<<\n");
+    // puts(print_rusage_cache(*cache.at(1)).c_str());
 
     EXPECT_NEAR(tot_size, bundle->get<peak_rss>()->get(), peak_tolerance);
     EXPECT_NEAR(std::get<0>(bundle->get<current_peak_rss>()->get()),
@@ -683,12 +683,12 @@ TEST_F(cache_tests, complete_tuple)
     _bundle.store(mpl::piecewise_ignore<perfetto_trace>{}, 1000.0);
     _bundle.stop(_ecache);
 
-    puts("\n>>> INITIAL CACHE <<<\n");
-    puts(print_rusage_cache(_bcache).c_str());
-    puts("\n>>> BUNDLE <<<\n");
-    std::cout << _bundle << std::endl;
-    puts("\n>>> FINAL CACHE <<<\n");
-    puts(print_rusage_cache(_ecache).c_str());
+    // puts("\n>>> INITIAL CACHE <<<\n");
+    // puts(print_rusage_cache(_bcache).c_str());
+    // puts("\n>>> BUNDLE <<<\n");
+    // std::cout << _bundle << std::endl;
+    // puts("\n>>> FINAL CACHE <<<\n");
+    // puts(print_rusage_cache(_ecache).c_str());
 
     _bundle.push(mpl::piecewise_select<data_tracker_floating, data_tracker_integer,
                                        data_tracker_unsigned>{});

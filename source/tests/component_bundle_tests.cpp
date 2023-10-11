@@ -162,10 +162,10 @@ TEST_F(component_bundle_tests, variadic)
         sizes[6] = bundle_t::size();
     }
 
-    std::cout << "\n";
-    for(size_t i = 0; i < nz; ++i)
-        std::cout << "size[" << i << "] = " << sizes[i] << std::endl;
-    std::cout << "\n";
+    // std::cout << "\n";
+    // for(size_t i = 0; i < nz; ++i)
+    //     std::cout << "size[" << i << "] = " << sizes[i] << std::endl;
+    // std::cout << "\n";
 
     EXPECT_EQ(sizes[0], sizes[1]);
 
@@ -184,8 +184,8 @@ TEST_F(component_bundle_tests, variadic)
     auto csize = tim::storage<cpu_clock>::instance()->size();
     auto psize = tim::storage<peak_rss>::instance()->size();
 
-    std::cout << "\nbundle        : " << tim::demangle<bundle_t>() << "\n";
-    std::cout << "\n";
+    // std::cout << "\nbundle        : " << tim::demangle<bundle_t>() << "\n";
+    // std::cout << "\n";
     long nfib = 30;
     long ival = 200;
     long nitr = 1000;
@@ -221,9 +221,9 @@ TEST_F(component_bundle_tests, get)
     using rhs_t = tim::auto_bundle_t<TIMEMORY_API, wall_clock*, cpu_clock*,
                                      cpu_roofline<float>*, gpu_roofline<double>>;
 
-    using lhs_data_t = typename lhs_t::data_type;
-    using rhs_data_t = typename rhs_t::data_type;
-    using rhs_comp_t = typename rhs_t::component_type;
+    // using lhs_data_t = typename lhs_t::data_type;
+    // using rhs_data_t = typename rhs_t::data_type;
+    // using rhs_comp_t = typename rhs_t::component_type;
 
     lhs_t::get_initializer() = [](auto& cl) {
         cl.template initialize<wall_clock, user_clock>();
@@ -247,20 +247,20 @@ TEST_F(component_bundle_tests, get)
     auto cb = lhs.get();
     auto ab = rhs.get();
 
-    std::cout << "\n" << std::flush;
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "rhs_t      = " << tim::demangle<rhs_t>() << "\n";
-    std::cout << "lhs_t      = " << tim::demangle<lhs_t>() << "\n";
-    std::cout << "rhs_comp_t = " << tim::demangle<rhs_comp_t>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "rhs_t      = " << tim::demangle<rhs_t>() << "\n";
+    // std::cout << "lhs_t      = " << tim::demangle<lhs_t>() << "\n";
+    // std::cout << "rhs_comp_t = " << tim::demangle<rhs_comp_t>() << "\n";
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "lhs_data_t = " << tim::demangle<lhs_data_t>() << "\n";
-    std::cout << "rhs_data_t = " << tim::demangle<rhs_data_t>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "lhs_data_t = " << tim::demangle<lhs_data_t>() << "\n";
+    // std::cout << "rhs_data_t = " << tim::demangle<rhs_data_t>() << "\n";
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "cb         = " << tim::demangle<decltype(cb)>() << "\n";
-    std::cout << "ab         = " << tim::demangle<decltype(ab)>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "cb         = " << tim::demangle<decltype(cb)>() << "\n";
+    // std::cout << "ab         = " << tim::demangle<decltype(ab)>() << "\n";
+    // std::cout << "\n" << std::flush;
 
     tim::invoke::print(std::cout, lhs, rhs);
 
@@ -719,9 +719,9 @@ run(Args&&... args)
 
     // this should have no effect
     foo.stop();
-    std::cout << tim::demangle<BundleT>() << std::endl;
-    std::cout << foo << std::endl;
-    std::cout << bar << std::endl;
+    // std::cout << tim::demangle<BundleT>() << std::endl;
+    // std::cout << foo << std::endl;
+    // std::cout << bar << std::endl;
 }
 //
 auto
@@ -930,8 +930,8 @@ rekey(const std::string& _initial)
     auto _other_srcloc =
         TIMEMORY_SOURCE_LOCATION(TIMEMORY_CAPTURE_MODE(blank), _other.c_str());
 
-    std::cout << "[" << tim::demangle<Tp>() << "] initial: " << _initial
-              << ", random: " << _other << std::endl;
+    // std::cout << "[" << tim::demangle<Tp>() << "] initial: " << _initial
+    //           << ", random: " << _other << std::endl;
 
     {
         Tp _obj{ _initial };
@@ -969,7 +969,7 @@ rekey(const std::string& _initial)
         EXPECT_NE(_obj.hash(), _init_hash) << "[" << tim::demangle<Tp>() << "] " << _obj;
     }
 
-    std::cout << std::endl;
+    // std::cout << std::endl;
 }
 
 template <typename BundleT>

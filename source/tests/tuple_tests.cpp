@@ -211,9 +211,9 @@ TEST_F(tuple_tests, usage)
     _use_delta.stop();
     _use_end.record();
 
-    std::cout << "usage (begin): " << _use_beg << std::endl;
-    std::cout << "usage (delta): " << _use_delta << std::endl;
-    std::cout << "usage (end):   " << _use_end << std::endl;
+    // std::cout << "usage (begin): " << _use_beg << std::endl;
+    // std::cout << "usage (delta): " << _use_delta << std::endl;
+    // std::cout << "usage (end):   " << _use_end << std::endl;
 
     std::vector<std::pair<std::string, full_measurement_t>> measurements = {
         { "begin", _use_beg },
@@ -286,42 +286,18 @@ TEST_F(tuple_tests, all_threads)
         runtime_printed.stop();
     }
 
-    std::cout << "\n" << lambda_ss.str() << std::endl;
-    std::cout << "total runtime: " << runtime << std::endl;
-    std::cout << "std::get: " << std::get<0>(runtime) << std::endl;
-    std::cout << "fibonacci total: " << ret.load() << "\n" << std::endl;
+    std::cout << "\n" << lambda_ss.str() << '\n';
+    std::cout << "total runtime: " << runtime << '\n';
+    std::cout << "std::get: " << std::get<0>(runtime) << '\n';
+    std::cout << "fibonacci total: " << ret.load() << "\n" << '\n';
     std::cout << "runtime process cpu time: " << runtime.get<process_cpu_clock>() << "\n";
-    std::cout << "measured data: " << runtime_printed.get() << std::endl;
+    std::cout << "measured data: " << runtime_printed.get() << '\n';
 
     measurements.insert(measurements.begin(), pair_t("run", runtime));
     // serialize("timing.json", "runtime", measurements);
 
     // auto _test = std::tuple<int, double, std::string>{ 0, 0.2, "test" };
     // std::cout << "\nVARIADIC TUPLE PRINT: " << _test << "\n" << std::endl;
-
-    auto rc_storage = tim::storage<wall_clock>::instance()->get();
-    {
-        printf("\n");
-        size_t w = 0;
-        for(const auto& itr : rc_storage)
-            w = std::max<size_t>(w, std::get<5>(itr).length());
-        for(const auto& itr : rc_storage)
-        {
-            std::cout << std::setw(w) << std::left << std::get<5>(itr) << " : "
-                      << std::get<7>(itr);
-            auto _hierarchy = std::get<6>(itr);
-            for(size_t i = 0; i < _hierarchy.size(); ++i)
-            {
-                if(i == 0)
-                    std::cout << " :: ";
-                std::cout << _hierarchy[i];
-                if(i + 1 < _hierarchy.size())
-                    std::cout << "/";
-            }
-            std::cout << std::endl;
-        }
-        printf("\n");
-    }
 
     auto final_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);
     auto expected           = (final_storage_size - starting_storage_size);
@@ -421,30 +397,6 @@ TEST_F(tuple_tests, collapsed_threads)
 
     std::cout << "\nfibonacci total: " << ret.load() << "\n" << std::endl;
 
-    auto rc_storage = tim::storage<wall_clock>::instance()->get();
-    {
-        printf("\n");
-        size_t w = 0;
-        for(const auto& itr : rc_storage)
-            w = std::max<size_t>(w, std::get<5>(itr).length());
-        for(const auto& itr : rc_storage)
-        {
-            std::cout << std::setw(w) << std::left << std::get<5>(itr) << " : "
-                      << std::get<7>(itr);
-            auto _hierarchy = std::get<6>(itr);
-            for(size_t i = 0; i < _hierarchy.size(); ++i)
-            {
-                if(i == 0)
-                    std::cout << " :: ";
-                std::cout << _hierarchy[i];
-                if(i + 1 < _hierarchy.size())
-                    std::cout << "/";
-            }
-            std::cout << std::endl;
-        }
-        printf("\n");
-    }
-
     auto final_storage_size = tim::manager::get_storage<auto_types_t>::size(manager);
     auto expected           = (final_storage_size - starting_storage_size);
 
@@ -541,14 +493,14 @@ TEST_F(tuple_tests, concat)
     using data_t1 = tim::mpl::remove_duplicates_t<
         typename tim::auto_list<lhs_l, rhs_l, user_clock>::data_type>;
 
-    std::cout << "\n" << std::flush;
-    std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";
-    std::cout << "comp_t1 = " << tim::demangle<comp_t1>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "\n" << std::flush;
+    // std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";
+    // std::cout << "comp_t1 = " << tim::demangle<comp_t1>() << "\n";
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "data_t0 = " << tim::demangle<data_t0>() << "\n";
-    std::cout << "data_t1 = " << tim::demangle<data_t1>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "data_t0 = " << tim::demangle<data_t0>() << "\n";
+    // std::cout << "data_t1 = " << tim::demangle<data_t1>() << "\n";
+    // std::cout << "\n" << std::flush;
 
     EXPECT_EQ(comp_t0::size(), 3);
     EXPECT_EQ(comp_t1::size(), 4);
@@ -581,12 +533,12 @@ TEST_F(tuple_tests, get)
     label_t cc_l;
     std::tie(wc_l, cc_l) = labels;
 
-    std::cout << "\n" << std::flush;
-    std::cout << std::fixed;
-    std::cout.precision(6);
-    std::cout << std::setw(12) << std::get<0>(wc_l) << " = " << wc_v << "\n";
-    std::cout << std::setw(12) << std::get<0>(cc_l) << " = " << cc_v << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "\n" << std::flush;
+    // std::cout << std::fixed;
+    // std::cout.precision(6);
+    // std::cout << std::setw(12) << std::get<0>(wc_l) << " = " << wc_v << "\n";
+    // std::cout << std::setw(12) << std::get<0>(cc_l) << " = " << cc_v << "\n";
+    // std::cout << "\n" << std::flush;
 
     ASSERT_TRUE(std::get<0>(wc_l) == "wall_clock");
     ASSERT_TRUE(std::get<0>(cc_l) == "cpu_clock");
@@ -629,9 +581,9 @@ TEST_F(tuple_tests, explicit_start)
         value[0] = obj.get<wall_clock>()->get();
         value[1] = obj.get<cpu_clock>()->get();
         value[2] = obj.get<cpu_util>()->get();
-        std::cout << "\n" << std::flush;
-        std::cout << obj << "\n";
-        std::cout << "\n" << std::flush;
+        // std::cout << "\n" << std::flush;
+        // std::cout << obj << "\n";
+        // std::cout << "\n" << std::flush;
     }
 
     EXPECT_EQ(ex_check_start_t, true);
@@ -670,9 +622,9 @@ TEST_F(tuple_tests, auto_start)
         value[0] = obj.get<wall_clock>()->get();
         value[1] = obj.get<cpu_clock>()->get();
         value[2] = obj.get<cpu_util>()->get();
-        std::cout << "\n" << std::flush;
-        std::cout << obj << "\n";
-        std::cout << "\n" << std::flush;
+        // std::cout << "\n" << std::flush;
+        // std::cout << obj << "\n";
+        // std::cout << "\n" << std::flush;
     }
 
     EXPECT_EQ(ex_check_start_t, true);
@@ -710,7 +662,7 @@ template <typename Tp>
 auto
 validate(const std::string& lbl, int n)
 {
-    std::cout << "\n##### " << lbl << " #####\n";
+    // std::cout << "\n##### " << lbl << " #####\n";
     std::shared_ptr<Tp> obj{};
     double              val = 0.0;
     {

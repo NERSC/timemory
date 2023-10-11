@@ -338,7 +338,7 @@ TEST_F(data_tracker_tests, convergence_test)
         tim::trait::runtime_enabled<err_tracker_type_d>::set(true);
 
     auto _run = [&err_diffs, &num_iters, nthreads](size_t i, auto lbl, size_t nitr,
-                                                   size_t modulo) {
+                                                   size_t  /*modulo*/) {
         details::get_rng().seed(1000 * i);
         auto _name = TIMEMORY_JOIN('/', details::get_test_name(), lbl);
 
@@ -382,16 +382,16 @@ TEST_F(data_tracker_tests, convergence_test)
             num_iters.at(i) += num_iter;
             _bundle.stop();
 
-            if(j % modulo == (modulo - 1))
-            {
-                tim::auto_lock_t _lk{ tim::type_mutex<decltype(std::cout)>() };
-                if(tim::settings::debug())
-                    std::cout << "\niteration " << i << "\n" << _tcout.str() << std::endl;
-                std::cout << "\niteration " << i << "\n\t" << _bundle
-                          << "\n\tnum_iter : " << num_iter << "\n\terror    : " << err
-                          << "\n"
-                          << std::endl;
-            }
+            // if(j % modulo == (modulo - 1))
+            // {
+            //     tim::auto_lock_t _lk{ tim::type_mutex<decltype(std::cout)>() };
+            //     if(tim::settings::debug())
+            //         std::cout << "\niteration " << i << "\n" << _tcout.str() << std::endl;
+            //     std::cout << "\niteration " << i << "\n\t" << _bundle
+            //               << "\n\tnum_iter : " << num_iter << "\n\terror    : " << err
+            //               << "\n"
+            //               << std::endl;
+            // }
         }
     };
 
@@ -418,11 +418,11 @@ TEST_F(data_tracker_tests, convergence_test)
     auto err_storage = tim::storage<err_tracker_type>::instance()->get();
     auto wc_storage  = tim::storage<wall_clock>::instance()->get();
 
-    for(auto& itr : itr_storage)
-        std::cout << itr.prefix() << " :: " << itr.data() << std::endl;
+    // for(auto& itr : itr_storage)
+    //     std::cout << itr.prefix() << " :: " << itr.data() << std::endl;
     for(auto& itr : wc_storage)
     {
-        std::cout << itr.prefix() << " :: " << itr.data() << std::endl;
+        // std::cout << itr.prefix() << " :: " << itr.data() << std::endl;
         ASSERT_EQ(itr.prefix().find("ignore"), std::string::npos)
             << itr.prefix() << " :: " << itr.data() << "\n";
     }
@@ -430,10 +430,10 @@ TEST_F(data_tracker_tests, convergence_test)
     ASSERT_EQ(itr_storage.size(), nthreads);
     ASSERT_EQ(err_storage.size(), nthreads);
 
-    for(size_t i = 0; i < nthreads; ++i)
-    {
-        std::cout << itr_storage.at(i).data() << std::endl;
-    }
+    // for(size_t i = 0; i < nthreads; ++i)
+    // {
+    //     std::cout << itr_storage.at(i).data() << std::endl;
+    // }
 
     std::sort(itr_storage.begin(), itr_storage.end(), _compare);
     std::sort(err_storage.begin(), err_storage.end(), _compare);

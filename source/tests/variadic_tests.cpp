@@ -165,10 +165,10 @@ TEST_F(variadic_tests, variadic)
         sizes[6]       = hybrid_t::size();
     }
 
-    std::cout << "\n";
-    for(size_t i = 0; i < nz; ++i)
-        std::cout << "size[" << i << "] = " << sizes[i] << std::endl;
-    std::cout << "\n";
+    // std::cout << "\n";
+    // for(size_t i = 0; i < nz; ++i)
+    //     std::cout << "size[" << i << "] = " << sizes[i] << std::endl;
+    // std::cout << "\n";
 
     EXPECT_EQ(sizes[0], sizes[1]);
     EXPECT_EQ(sizes[0], sizes[2]);
@@ -189,10 +189,10 @@ TEST_F(variadic_tests, variadic)
     // auto tsize = hybrid_t::tuple_t::size();
     // auto lsize = hybrid_t::list_t::size();
 
-    std::cout << "\nhybrid        : " << tim::demangle<hybrid_t>() << "\n";
+    // std::cout << "\nhybrid        : " << tim::demangle<hybrid_t>() << "\n";
     // std::cout << "\nhybrid tuple  : " << tim::demangle<typename hybrid_t::tuple_t>();
     // std::cout << "\nhybrid list   : " << tim::demangle<typename hybrid_t::list_t>();
-    std::cout << "\n";
+    // std::cout << "\n";
     {
         hybrid_t hybrid(details::get_test_name());
         auto     ret = details::fibonacci(41);
@@ -230,38 +230,38 @@ TEST_F(variadic_tests, concat)
 
     using data_t0 = tim::mpl::remove_duplicates_t<dbeg_t0>;
     using data_t1 = tim::mpl::remove_duplicates_t<dbeg_t1>;
-    using data_t2 = tim::mpl::remove_duplicates_t<dbeg_t2>;
+    // using data_t2 = tim::mpl::remove_duplicates_t<dbeg_t2>;
     using data_t3 = tim::mpl::remove_duplicates_t<dbeg_t3>;
 
-    std::cout << "\n" << std::flush;
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "lhs_t = " << tim::demangle<lhs_t>() << "\n";
-    std::cout << "rhs_t = " << tim::demangle<rhs_t>() << "\n";
-    std::cout << "lhs_l = " << tim::demangle<lhs_l>() << "\n";
-    std::cout << "rhs_l = " << tim::demangle<rhs_l>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "lhs_t = " << tim::demangle<lhs_t>() << "\n";
+    // std::cout << "rhs_t = " << tim::demangle<rhs_t>() << "\n";
+    // std::cout << "lhs_l = " << tim::demangle<lhs_l>() << "\n";
+    // std::cout << "rhs_l = " << tim::demangle<rhs_l>() << "\n";
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "join_t0 = " << tim::demangle<join_t0>() << "\n";
-    std::cout << "join_t1 = " << tim::demangle<join_t1>() << "\n";
-    std::cout << "join_t2 = " << tim::demangle<join_t2>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "join_t0 = " << tim::demangle<join_t0>() << "\n";
+    // std::cout << "join_t1 = " << tim::demangle<join_t1>() << "\n";
+    // std::cout << "join_t2 = " << tim::demangle<join_t2>() << "\n";
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";
-    std::cout << "comp_t1 = " << tim::demangle<comp_t1>() << "\n";
-    std::cout << "comp_t2 = " << tim::demangle<comp_t2>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";
+    // std::cout << "comp_t1 = " << tim::demangle<comp_t1>() << "\n";
+    // std::cout << "comp_t2 = " << tim::demangle<comp_t2>() << "\n";
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "dbeg_t0 = " << tim::demangle<dbeg_t0>() << "\n";
-    std::cout << "dbeg_t1 = " << tim::demangle<dbeg_t1>() << "\n";
-    std::cout << "dbeg_t2 = " << tim::demangle<dbeg_t2>() << "\n";
-    std::cout << "dbeg_t3 = " << tim::demangle<dbeg_t3>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "dbeg_t0 = " << tim::demangle<dbeg_t0>() << "\n";
+    // std::cout << "dbeg_t1 = " << tim::demangle<dbeg_t1>() << "\n";
+    // std::cout << "dbeg_t2 = " << tim::demangle<dbeg_t2>() << "\n";
+    // std::cout << "dbeg_t3 = " << tim::demangle<dbeg_t3>() << "\n";
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "data_t0 = " << tim::demangle<data_t0>() << "\n";
-    std::cout << "data_t1 = " << tim::demangle<data_t1>() << "\n";
-    std::cout << "data_t2 = " << tim::demangle<data_t2>() << "\n";
-    std::cout << "data_t3 = " << tim::demangle<data_t3>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "data_t0 = " << tim::demangle<data_t0>() << "\n";
+    // std::cout << "data_t1 = " << tim::demangle<data_t1>() << "\n";
+    // std::cout << "data_t2 = " << tim::demangle<data_t2>() << "\n";
+    // std::cout << "data_t3 = " << tim::demangle<data_t3>() << "\n";
+    // std::cout << "\n" << std::flush;
 
     EXPECT_EQ(comp_t0::size(), 3);
     EXPECT_EQ(comp_t1::size(), 4);
@@ -319,29 +319,29 @@ TEST_F(variadic_tests, get)
     using list_t2 = tim::mpl::remove_duplicates_t<tim::auto_list_t<rhs_l, user_clock>>;
     using list_t3 = tim::mpl::remove_duplicates_t<tim::auto_list_t<lhs_l, list_t2>>;
 
-    std::cout << "\n" << std::flush;
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "lhs_t = " << tim::demangle<lhs_t>() << "\n";
-    std::cout << "rhs_t = " << tim::demangle<rhs_t>() << "\n";
-    std::cout << "lhs_l = " << tim::demangle<lhs_l>() << "\n";
-    std::cout << "rhs_l = " << tim::demangle<rhs_l>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "lhs_t = " << tim::demangle<lhs_t>() << "\n";
+    // std::cout << "rhs_t = " << tim::demangle<rhs_t>() << "\n";
+    // std::cout << "lhs_l = " << tim::demangle<lhs_l>() << "\n";
+    // std::cout << "rhs_l = " << tim::demangle<rhs_l>() << "\n";
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "join_t0 = " << tim::demangle<join_t0>() << "\n";
-    std::cout << "join_t1 = " << tim::demangle<join_t1>() << "\n";
-    std::cout << "join_t2 = " << tim::demangle<join_t2>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "join_t0 = " << tim::demangle<join_t0>() << "\n";
+    // std::cout << "join_t1 = " << tim::demangle<join_t1>() << "\n";
+    // std::cout << "join_t2 = " << tim::demangle<join_t2>() << "\n";
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";
-    std::cout << "comp_t1 = " << tim::demangle<comp_t1>() << "\n";
-    std::cout << "comp_t2 = " << tim::demangle<comp_t2>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "comp_t0 = " << tim::demangle<comp_t0>() << "\n";
+    // std::cout << "comp_t1 = " << tim::demangle<comp_t1>() << "\n";
+    // std::cout << "comp_t2 = " << tim::demangle<comp_t2>() << "\n";
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "list_t0 = " << tim::demangle<list_t0>() << "\n";
-    std::cout << "list_t1 = " << tim::demangle<list_t1>() << "\n";
-    std::cout << "list_t2 = " << tim::demangle<list_t2>() << "\n";
-    std::cout << "list_t3 = " << tim::demangle<list_t3>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "list_t0 = " << tim::demangle<list_t0>() << "\n";
+    // std::cout << "list_t1 = " << tim::demangle<list_t1>() << "\n";
+    // std::cout << "list_t2 = " << tim::demangle<list_t2>() << "\n";
+    // std::cout << "list_t3 = " << tim::demangle<list_t3>() << "\n";
+    // std::cout << "\n" << std::flush;
 
     list_t0::get_initializer() = [](auto& cl) { cl.template initialize<wall_clock>(); };
     list_t1::get_initializer() = [](auto& cl) { cl.template initialize<wall_clock>(); };
@@ -385,24 +385,24 @@ TEST_F(variadic_tests, get)
     auto dl2 = cl2.get();
     auto dl3 = cl3.get();
 
-    std::cout << "dt0 = " << tim::demangle<decltype(dt0)>() << "\n";
-    std::cout << "dt1 = " << tim::demangle<decltype(dt1)>() << "\n";
-    std::cout << "dt2 = " << tim::demangle<decltype(dt2)>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "dt0 = " << tim::demangle<decltype(dt0)>() << "\n";
+    // std::cout << "dt1 = " << tim::demangle<decltype(dt1)>() << "\n";
+    // std::cout << "dt2 = " << tim::demangle<decltype(dt2)>() << "\n";
+    // std::cout << "\n" << std::flush;
 
-    std::cout << "dl0 = " << tim::demangle<decltype(dl0)>() << "\n";
-    std::cout << "dl1 = " << tim::demangle<decltype(dl1)>() << "\n";
-    std::cout << "dl2 = " << tim::demangle<decltype(dl2)>() << "\n";
-    std::cout << "dl3 = " << tim::demangle<decltype(dl3)>() << "\n";
-    std::cout << "\n" << std::flush;
+    // std::cout << "dl0 = " << tim::demangle<decltype(dl0)>() << "\n";
+    // std::cout << "dl1 = " << tim::demangle<decltype(dl1)>() << "\n";
+    // std::cout << "dl2 = " << tim::demangle<decltype(dl2)>() << "\n";
+    // std::cout << "dl3 = " << tim::demangle<decltype(dl3)>() << "\n";
+    // std::cout << "\n" << std::flush;
 
     tim::invoke::print(std::cout, ct0, ct1, ct2, cl0, cl1, cl2, cl3);
 
-    std::cout << '\n';
+    // std::cout << '\n';
     disjoint::invoke(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3),
                      [](auto& itr) { std::cout << itr << std::endl; });
 
-    std::cout << "\nCheck get<0>()" << std::endl;
+    // std::cout << "\nCheck get<0>()" << std::endl;
     EXPECT_NEAR(std::get<0>(dt0), 1.0, 0.1);
     EXPECT_NEAR(std::get<0>(dt1), 1.0, 0.1);
     EXPECT_NEAR(std::get<0>(dt2), 1.0, 0.1);
@@ -412,35 +412,35 @@ TEST_F(variadic_tests, get)
     EXPECT_NEAR(std::get<0>(dl2), 1.0, 0.1);
     EXPECT_NEAR(std::get<0>(dl3), 1.0, 0.1);
 
-    std::cout << "disjoint::reset" << std::endl;
+    // std::cout << "disjoint::reset" << std::endl;
     disjoint::reset(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
 
-    std::cout << "disjoint::set_prefix" << std::endl;
+    // std::cout << "disjoint::set_prefix" << std::endl;
     disjoint::set_prefix(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3), "set_prefix");
 
-    std::cout << "disjoint::set_scope" << std::endl;
+    // std::cout << "disjoint::set_scope" << std::endl;
     disjoint::set_scope(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3),
                         tim::scope::flat{} + tim::scope::timeline{});
 
-    std::cout << "disjoint::push" << std::endl;
+    // std::cout << "disjoint::push" << std::endl;
     disjoint::push(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
 
-    std::cout << "disjoint::assemble" << std::endl;
+    // std::cout << "disjoint::assemble" << std::endl;
     disjoint::assemble(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
 
-    std::cout << "disjoint::audit" << std::endl;
+    // std::cout << "disjoint::audit" << std::endl;
     disjoint::audit(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3), 10);
 
-    std::cout << "disjoint::derive" << std::endl;
+    // std::cout << "disjoint::derive" << std::endl;
     disjoint::derive(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
 
-    std::cout << "disjoint::add_secondary" << std::endl;
+    // std::cout << "disjoint::add_secondary" << std::endl;
     disjoint::add_secondary(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
 
-    std::cout << "disjoint::pop" << std::endl;
+    // std::cout << "disjoint::pop" << std::endl;
     disjoint::pop(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
 
-    std::cout << "\nCheck get()" << std::endl;
+    // std::cout << "\nCheck get()" << std::endl;
     dt0 = ct0.get();
     dt1 = ct1.get();
     dt2 = ct2.get();
@@ -459,7 +459,7 @@ TEST_F(variadic_tests, get)
     EXPECT_NEAR(std::get<0>(dl2), 0.0, 1.e-3);
     EXPECT_NEAR(std::get<0>(dl3), 0.0, 1.e-3);
 
-    std::cout << "Done" << std::endl;
+    // std::cout << "Done" << std::endl;
 }
 
 //--------------------------------------------------------------------------------------//

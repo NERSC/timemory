@@ -34,8 +34,8 @@
 #include <thread>
 #include <vector>
 
-static int    _argc = 0;
-static char** _argv = nullptr;
+static int    test_argc = 0;
+static char** test_argv = nullptr;
 
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
@@ -112,8 +112,8 @@ protected:
             tim::settings::debug()       = false;
             tim::settings::json_output() = true;
             tim::settings::mpi_thread()  = false;
-            tim::dmp::initialize(_argc, _argv);
-            tim::timemory_init(_argc, _argv);
+            tim::dmp::initialize(test_argc, test_argv);
+            tim::timemory_init(test_argc, test_argv);
             tim::settings::dart_output() = true;
             tim::settings::dart_count()  = 1;
             tim::settings::banner()      = false;
@@ -204,8 +204,8 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    _argc = argc;
-    _argv = argv;
+    test_argc = argc;
+    test_argv = argv;
 
     auto ret = RUN_ALL_TESTS();
 

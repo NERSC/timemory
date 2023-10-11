@@ -148,8 +148,8 @@ protected:
         tim::settings::cout_output()       = false;
         tim::settings::text_output()       = true;
         tim::settings::flamegraph_output() = false;
-        tim::dmp::initialize(_argc, _argv);
-        tim::timemory_init(_argc, _argv);
+        tim::dmp::initialize(test_argc, test_argv);
+        tim::timemory_init(test_argc, test_argv);
         tim::settings::dart_output() = true;
         tim::settings::dart_count()  = 1;
         tim::settings::banner()      = false;
@@ -159,14 +159,14 @@ protected:
             threads.emplace_back(std::thread(details::generate_history, 5, 2));
         for(auto& itr : threads)
             itr.join();
-        std::cout << "Configured" << std::endl;
+        // std::cout << "Configured" << std::endl;
     }
 
     static void TearDownTestSuite()
     {
         tim::timemory_finalize();
         tim::dmp::finalize();
-        std::cout << "Finalized" << std::endl;
+        // std::cout << "Finalized" << std::endl;
     }
 
     static std::map<std::string, std::string> f_results;

@@ -231,8 +231,8 @@ protected:
         tim::settings::mpi_thread()   = false;
         tim::settings::precision()    = 9;
         tim::settings::memory_units() = memory_unit.second;
-        tim::dmp::initialize(_argc, _argv);
-        tim::timemory_init(_argc, _argv);
+        tim::dmp::initialize(test_argc, test_argv);
+        tim::timemory_init(test_argc, test_argv);
         tim::settings::file_output() = false;
 
         // preform allocation only once here

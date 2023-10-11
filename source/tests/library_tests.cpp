@@ -65,8 +65,8 @@ get_sc_storage_size();  // gets system_clock storage size
 
 //--------------------------------------------------------------------------------------//
 
-static int    _argc = 0;
-static char** _argv = nullptr;
+static int    test_argc = 0;
+static char** test_argv = nullptr;
 
 namespace details
 {
@@ -128,7 +128,7 @@ protected:
         timemory_set_environ("TIMEMORY_DART_OUTPUT", "OFF", 1, 0);
 
         if(!timemory_library_is_initialized())
-            timemory_init_library(_argc, _argv);
+            timemory_init_library(test_argc, test_argv);
     }
 
     static void TearDownTestSuite()
