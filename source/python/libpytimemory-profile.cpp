@@ -34,11 +34,17 @@
 
 using namespace tim::component;
 
+#if !defined(TIMEMORY_PYTHON_VERSION)
+#    define TIMEMORY_PYTHON_VERSION                                                      \
+        ((10000 * PY_MAJOR_VERSION) + (100 * PY_MINOR_VERSION) + PY_MICRO_VERSION)
+#endif
+
 //======================================================================================//
 //
 namespace pyprofile
 {
 //
+using frame_object_t       = PyFrameObject;
 using profiler_t           = tim::component_bundle<TIMEMORY_API, user_profiler_bundle>;
 using profiler_vec_t       = std::vector<profiler_t>;
 using profiler_label_map_t = std::unordered_map<std::string, profiler_vec_t>;
@@ -106,10 +112,41 @@ get_config()
     return *_tl_instance;
 }
 //
+int
+get_frame_lineno(frame_object_t* frame)
+{
+#if TIMEMORY_PYTHON_VERSION >= 31100
+    return PyFrame_GetLineNumber(frame);
+#else
+    return frame->f_lineno;
+#endif
+}
+//
+auto
+get_frame_code(frame_object_t* frame)
+{
+#if TIMEMORY_PYTHON_VERSION >= 31100
+    return PyFrame_GetCode(frame);
+#else
+    return frame->f_code;
+#endif
+}
+//
+auto
+get_frame_back(frame_object_t* frame)
+{
+#if TIMEMORY_PYTHON_VERSION >= 31100
+    return PyFrame_GetBack(frame);
+#else
+    return frame->f_back;
+#endif
+}
+//
 int32_t
 get_depth(PyFrameObject* frame)
 {
-    return (frame->f_back) ? (get_depth(frame->f_back) + 1) : 0;
+    auto* frame_back = get_frame_back(frame);
+    return (frame_back) ? (get_depth(frame_back) + 1) : 0;
 }
 //
 void
@@ -183,12 +220,12 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
 
     // get the function name
     auto _get_funcname = [&]() -> std::string {
-        return py::cast<std::string>(frame->f_code->co_name);
+        return py::cast<std::string>(get_frame_code(frame)->co_name);
     };
 
     // get the filename
     auto _get_filename = [&]() -> std::string {
-        return py::cast<std::string>(frame->f_code->co_filename);
+        return py::cast<std::string>(get_frame_code(frame)->co_filename);
     };
 
     // get the basename of the filename
@@ -235,9 +272,9 @@ profiler_function(py::object pframe, const char* swhat, py::object arg)
         }
         // append the line number
         if(_config.include_line && _config.include_filename)
-            _func.append(TIMEMORY_JOIN("", ':', frame->f_lineno, ']'));
+            _func.append(TIMEMORY_JOIN("", ':', get_frame_lineno(frame), ']'));
         else if(_config.include_line)
-            _func.append(TIMEMORY_JOIN("", ':', frame->f_lineno));
+            _func.append(TIMEMORY_JOIN("", ':', get_frame_lineno(frame)));
         else if(_config.include_filename)
             _func += "]";
         return _func;

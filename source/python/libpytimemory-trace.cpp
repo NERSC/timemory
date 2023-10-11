@@ -34,6 +34,11 @@
 #include <locale>
 #include <unordered_set>
 
+#if !defined(TIMEMORY_PYTHON_VERSION)
+#    define TIMEMORY_PYTHON_VERSION                                                      \
+        ((10000 * PY_MAJOR_VERSION) + (100 * PY_MINOR_VERSION) + PY_MICRO_VERSION)
+#endif
+
 using namespace tim::component;
 
 namespace pytrace
@@ -113,10 +118,51 @@ get_config()
     return *_tl_instance;
 }
 //
+int
+get_frame_lineno(frame_object_t* frame)
+{
+#if TIMEMORY_PYTHON_VERSION >= 31100
+    return PyFrame_GetLineNumber(frame);
+#else
+    return frame->f_lineno;
+#endif
+}
+//
+int
+get_frame_lasti(frame_object_t* frame)
+{
+#if TIMEMORY_PYTHON_VERSION >= 31100
+    return PyFrame_GetLasti(frame);
+#else
+    return frame->f_lasti;
+#endif
+}
+//
+auto
+get_frame_code(frame_object_t* frame)
+{
+#if TIMEMORY_PYTHON_VERSION >= 31100
+    return PyFrame_GetCode(frame);
+#else
+    return frame->f_code;
+#endif
+}
+//
+auto
+get_frame_back(frame_object_t* frame)
+{
+#if TIMEMORY_PYTHON_VERSION >= 31100
+    return PyFrame_GetBack(frame);
+#else
+    return frame->f_back;
+#endif
+}
+//
 int32_t
 get_depth(frame_object_t* frame)
 {
-    return (frame->f_back) ? (get_depth(frame->f_back) + 1) : 0;
+    auto* frame_back = get_frame_back(frame);
+    return (frame_back) ? (get_depth(frame_back) + 1) : 0;
 }
 //
 py::function
@@ -190,8 +236,8 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
 
     //
     auto* frame = reinterpret_cast<frame_object_t*>(pframe.ptr());
-    auto  _code = frame->f_code;
-    auto  _line = frame->f_lineno;
+    auto _code = get_frame_code(frame);
+    auto _line = get_frame_lineno(frame);
     auto& _file = _code->co_filename;
     auto& _name = _code->co_name;
 
@@ -619,10 +665,10 @@ generate(py::module& _pymod)
                                       "C/C++/Fortran-compatible library "
                                       "functions (subject to throttling)");
 
-    py::class_<PyCodeObject>  _code_object(_pymod, "code_object", "PyCodeObject");
-    py::class_<PyFrameObject> _frame_object(_pymod, "frame_object", "PyFrameObject");
+    // py::class_<PyCodeObject>  _code_object(_pymod, "code_object", "PyCodeObject");
+    // py::class_<PyFrameObject> _frame_object(_pymod, "frame_object", "PyFrameObject");
 
-    tim::consume_parameters(_code_object, _frame_object);
+    // tim::consume_parameters(_code_object, _frame_object);
 
     static auto _set_scope = [](bool _flat, bool _timeline) {
         get_config().tracer_scope = tim::scope::config{ _flat, _timeline };
