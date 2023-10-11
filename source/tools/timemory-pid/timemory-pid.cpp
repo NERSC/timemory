@@ -93,7 +93,7 @@ main(int argc, char** argv)
     //    ofs.close();
 
     // ignore this signal so it doesn't cause this exe to exit
-    sigignore(TIMEM_PID_SIGNAL);
+    signal(TIMEM_PID_SIGNAL, SIG_IGN);
     // send signal to parent
     killpg(monitoring_pid, TIMEM_PID_SIGNAL);
     // make it the default again
