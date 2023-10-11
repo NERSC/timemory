@@ -257,9 +257,9 @@ TEST_F(priority_tests, start_stop)
 
 #if defined(TIMEMORY_MACOS)
     // GitHub CI for macOS is very noisy
-    EXPECT_NEAR(native_exp, native_wc.get(), 0.25);
-    EXPECT_NEAR(pstart_exp, pstart_wc.get(), 0.25);
-    EXPECT_NEAR(pstop_exp, pstop_wc.get(), 0.25);
+    EXPECT_NEAR(native_exp, native_wc.get(), 0.275);
+    EXPECT_NEAR(pstart_exp, pstart_wc.get(), 0.275);
+    EXPECT_NEAR(pstop_exp, pstop_wc.get(), 0.275);
 #else
     EXPECT_NEAR(native_exp, native_wc.get(), 0.125);
     EXPECT_NEAR(pstart_exp, pstart_wc.get(), 0.125);

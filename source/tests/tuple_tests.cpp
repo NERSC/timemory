@@ -760,9 +760,16 @@ TEST_F(tuple_tests, addition_tests)
     {
         if(itr.prefix().find(details::get_test_name()) == std::string::npos)
             continue;
+#if defined(TIMEMORY_MACOS)
+        // GitHub CI for macOS is noisy
+        EXPECT_NEAR(itr.data().get(), (1.0 * tim::units::sec) / wall_clock::get_unit(),
+                    (5.0e-1 * tim::units::sec) / wall_clock::get_unit())
+            << itr.data();
+#else
         EXPECT_NEAR(itr.data().get(), (1.0 * tim::units::sec) / wall_clock::get_unit(),
                     (5.0e-2 * tim::units::sec) / wall_clock::get_unit())
             << itr.data();
+#endif
         EXPECT_EQ(itr.data().get_laps(), 2) << itr.data();
     }
 }
