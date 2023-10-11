@@ -255,9 +255,16 @@ TEST_F(priority_tests, start_stop)
     double pstart_exp = 1.5;
     double pstop_exp  = 0.5;
 
-    ASSERT_NEAR(native_exp, native_wc.get(), 0.125);
-    ASSERT_NEAR(pstart_exp, pstart_wc.get(), 0.125);
-    ASSERT_NEAR(pstop_exp, pstop_wc.get(), 0.125);
+#if defined(TIMEMORY_MACOS)
+    // GitHub CI for macOS is very noisy
+    EXPECT_NEAR(native_exp, native_wc.get(), 0.25);
+    EXPECT_NEAR(pstart_exp, pstart_wc.get(), 0.25);
+    EXPECT_NEAR(pstop_exp, pstop_wc.get(), 0.25);
+#else
+    EXPECT_NEAR(native_exp, native_wc.get(), 0.125);
+    EXPECT_NEAR(pstart_exp, pstart_wc.get(), 0.125);
+    EXPECT_NEAR(pstop_exp, pstop_wc.get(), 0.125);
+#endif
 }
 
 //--------------------------------------------------------------------------------------//

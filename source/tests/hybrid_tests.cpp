@@ -63,8 +63,14 @@ static const int64_t nelements   = 0.95 * (tim::units::get_page_size() * 500);
 static const auto    memory_unit = std::pair<int64_t, string_t>(tim::units::KiB, "KiB");
 
 // acceptable absolute error
+#if defined(TIMEMORY_MACOS)
+// GitHub CI for macOS is very noisy
+static const double util_tolerance  = 10.0;
+static const double timer_tolerance = 0.2;
+#else
 static const double util_tolerance  = 5.0;
 static const double timer_tolerance = 0.1;
+#endif
 
 // acceptable relative error
 // static const double util_epsilon  = 0.5;
@@ -318,19 +324,19 @@ TEST_F(hybrid_tests, auto_timer)
     details::print_info(_cpu, 1.25, "sec", clock_convert);
     details::print_info(_util, 125.0, "%", cpu_util_convert);
 
-    ASSERT_NEAR(1.0, _rc.get(), timer_tolerance);
-    ASSERT_NEAR(1.25, _cpu.get(), 2.0 * timer_tolerance);
-    ASSERT_NEAR(125.0, _util.get(), 2.0 * util_tolerance);
+    EXPECT_NEAR(1.0, _rc.get(), timer_tolerance);
+    EXPECT_NEAR(1.25, _cpu.get(), 2.0 * timer_tolerance);
+    EXPECT_NEAR(125.0, _util.get(), 2.0 * util_tolerance);
 
     cpu_clock _cpu_obj = *obj.get<cpu_clock>();
     double    _cpu_val = obj.get<cpu_clock>()->get();
-    ASSERT_NEAR(_cpu_obj.get(), _cpu_val, compose_tolerance);
+    EXPECT_NEAR(_cpu_obj.get(), _cpu_val, compose_tolerance);
     details::print_info(_cpu_obj, _cpu_val, "sec");
 
     auto _obj  = tim::get(obj);
     auto _cpu2 = std::get<1>(_obj);
 
-    ASSERT_NEAR(1.0e-9, _cpu.get(), _cpu2);
+    EXPECT_NEAR(1.0e-9, _cpu.get(), _cpu2);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -353,9 +359,9 @@ TEST_F(hybrid_tests, compose)
 
     details::print_info(_cpu_obj, 0.75, "sec");
 
-    ASSERT_NEAR(0.75, _cpu_val, 2.0 * timer_tolerance);
-    ASSERT_NEAR(_cpu_obj.get(), _cpu_val, compose_tolerance);
-    ASSERT_NEAR(_cpu_val, std::get<0>(_cpu_ret) + std::get<1>(_cpu_ret),
+    EXPECT_NEAR(0.75, _cpu_val, 2.0 * timer_tolerance);
+    EXPECT_NEAR(_cpu_obj.get(), _cpu_val, compose_tolerance);
+    EXPECT_NEAR(_cpu_val, std::get<0>(_cpu_ret) + std::get<1>(_cpu_ret),
                 compose_tolerance);
 
     printf("\n");

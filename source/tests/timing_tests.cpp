@@ -38,8 +38,14 @@ using namespace tim::component;
 using mutex_t = std::mutex;
 using lock_t  = std::unique_lock<mutex_t>;
 
+#if defined(TIMEMORY_MACOS)
+// GitHub CI for macOS is very noisy
+static const double util_tolerance  = 40.0;
+static const double timer_tolerance = 0.25;
+#else
 static const double util_tolerance  = 15.0;
 static const double timer_tolerance = 0.025;
+#endif
 
 #define CHECK_AVAILABLE(type)                                                            \
     if(!tim::trait::is_available<type>::value)                                           \

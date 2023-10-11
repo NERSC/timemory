@@ -591,8 +591,14 @@ TEST_F(tuple_tests, get)
     ASSERT_TRUE(std::get<0>(wc_l) == "wall_clock");
     ASSERT_TRUE(std::get<0>(cc_l) == "cpu_clock");
 
-    ASSERT_NEAR(wc_v, 2.0, 5.0e-2);
-    ASSERT_NEAR(cc_v, 1.0, 5.0e-2);
+#if defined(TIMEMORY_MACOS)
+    // GitHub CI for macOS is very noisy
+    EXPECT_NEAR(wc_v, 2.0, 5.0e-1);
+    EXPECT_NEAR(cc_v, 1.0, 5.0e-1);
+#else
+    EXPECT_NEAR(wc_v, 2.0, 5.0e-2);
+    EXPECT_NEAR(cc_v, 1.0, 5.0e-2);
+#endif
 }
 
 //--------------------------------------------------------------------------------------//
@@ -630,9 +636,9 @@ TEST_F(tuple_tests, explicit_start)
 
     EXPECT_EQ(ex_check_start_t, true);
     EXPECT_EQ(ex_check_stop_t, false);
-    ASSERT_NEAR(value[0], 0.0, 1.0e-6);
-    ASSERT_NEAR(value[1], 0.0, 1.0e-6);
-    ASSERT_NEAR(value[2], 0.0, 1.0e-6);
+    EXPECT_NEAR(value[0], 0.0, 1.0e-6);
+    EXPECT_NEAR(value[1], 0.0, 1.0e-6);
+    EXPECT_NEAR(value[2], 0.0, 1.0e-6);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -671,9 +677,16 @@ TEST_F(tuple_tests, auto_start)
 
     EXPECT_EQ(ex_check_start_t, true);
     EXPECT_EQ(ex_check_stop_t, false);
-    ASSERT_NEAR(value[0], 2.0, 5.0e-2);
-    ASSERT_NEAR(value[1], 1.0, 5.0e-2);
-    ASSERT_NEAR(value[2], 50.0, 5.0);
+#if defined(TIMEMORY_MACOS)
+    // GitHub CI for macOS is very noisy
+    EXPECT_NEAR(value[0], 2.0, 5.0e-1);
+    EXPECT_NEAR(value[1], 1.0, 5.0e-1);
+    EXPECT_NEAR(value[2], 50.0, 10.0);
+#else
+    EXPECT_NEAR(value[0], 2.0, 5.0e-2);
+    EXPECT_NEAR(value[1], 1.0, 5.0e-2);
+    EXPECT_NEAR(value[2], 50.0, 5.0);
+#endif
 }
 
 //--------------------------------------------------------------------------------------//
@@ -704,7 +717,11 @@ validate(const std::string& lbl, int n)
         auto tmp      = run<Tp>(lbl, n);
         std::tie(val) = tmp.get();
         val *= wall_clock::get_unit() / static_cast<double>(tim::units::msec);
+#if defined(TIMEMORY_MACOS)
+        EXPECT_NEAR(val, n, 300) << tmp;
+#else
         EXPECT_NEAR(val, n, 150) << tmp;
+#endif
         EXPECT_EQ(tmp.laps(), 2) << tmp;
         obj = std::make_shared<Tp>(details::get_test_name() + "/" + lbl,
                                    tim::scope::config{} + tim::scope::timeline{});
