@@ -1,18 +1,6 @@
-if(TIMEMORY_USE_PYTHON AND TIMEMORY_BUILD_PYTHON_LINE_PROFILER)
-    timemory_checkout_git_submodule(
-        RECURSIVE
-        RELATIVE_PATH external/line-profiler
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        REPO_URL https://github.com/jrmadsen/line_profiler.git
-        REPO_BRANCH timemory)
-
-    timemory_message(STATUS "Adding external/line-profiler...")
-    add_subdirectory(line-profiler)
-
-    if(TARGET libpytimemory AND TARGET _line_profiler)
-        add_dependencies(libpytimemory _line_profiler)
-    endif()
-endif()
+#
+#
+#
 
 if(TIMEMORY_USE_PYTHON AND TIMEMORY_BUILD_PYTHON_HATCHET)
     timemory_checkout_git_submodule(
@@ -22,8 +10,7 @@ if(TIMEMORY_USE_PYTHON AND TIMEMORY_BUILD_PYTHON_HATCHET)
         REPO_URL https://github.com/jrmadsen/hatchet.git
         REPO_BRANCH timemory)
 
-    # line_profiler might have already found Cython
-    if(CYTHON_EXECUTABLE)
+    if(NOT CYTHON_EXECUTABLE)
         find_package(Cython QUIET)
     endif()
 
@@ -84,12 +71,6 @@ if(TIMEMORY_USE_PYTHON AND TIMEMORY_BUILD_PYTHON_HATCHET)
                 OPTIONAL)
         endif()
     endif()
-endif()
-
-if(NOT TARGET _line_profiler)
-    set(TIMEMORY_BUILD_PYTHON_LINE_PROFILER
-        OFF
-        PARENT_SCOPE)
 endif()
 
 if(NOT TARGET hatchet)

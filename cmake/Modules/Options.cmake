@@ -389,8 +389,6 @@ timemory_add_option(
     "Disable arch flags which may cause portability issues (e.g. AVX-512)" OFF)
 timemory_add_option(TIMEMORY_BUILD_PYTHON "Build Python bindings with internal pybind11"
                     ON)
-timemory_add_option(TIMEMORY_BUILD_PYTHON_LINE_PROFILER
-                    "Build customized Python line-profiler" ON)
 timemory_add_option(TIMEMORY_BUILD_PYTHON_HATCHET "Build internal Hatchet distribution"
                     ON)
 timemory_add_option(TIMEMORY_BUILD_LTO "Enable link-time optimizations in build" OFF)

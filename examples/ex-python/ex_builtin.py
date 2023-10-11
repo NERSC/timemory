@@ -2,7 +2,6 @@
 
 """Example
 @PYTHON_EXECUTABLE@ -m timemory.profiler -b -m 10 -- ./@FILENAME@
-@PYTHON_EXECUTABLE@ -m timemory.line_profiler -b -v -- ./@FILENAME@
 @PYTHON_EXECUTABLE@ -m timemory.trace -b -- ./@FILENAME@
 """
 

@@ -46,7 +46,6 @@ environment:
       BUILD_TESTING: "ON"
       BUILD_EXAMPLES: "OFF"
       RUN_EXAMPLES: "OFF"
-      LINE_PROFILER: "ON"
     - PYTHON: 37
       CPP: 14
       CONFIG: Debug
@@ -58,7 +57,6 @@ environment:
       BUILD_SHARED: "OFF"
       BUILD_STATIC: "ON"
       BUILD_TESTING: "OFF"
-      LINE_PROFILER: "OFF"
       BUILD_EXAMPLES: "ON"
       RUN_EXAMPLES: "OFF"
 
@@ -129,7 +127,6 @@ build_script:
     -DTIMEMORY_BUILD_TOOLS="%TOOLS%"
     -DTIMEMORY_BUILD_GOOGLE_TEST="%BUILD_TESTING%"
     -DTIMEMORY_USE_WINSOCK="%WINSOCK%"
-    -DTIMEMORY_BUILD_PYTHON_LINE_PROFILER="%LINE_PROFILER%"
   - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
   - cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%

@@ -231,9 +231,4 @@ timemory_python_console_script("timemory-analyze" "timemory.analyze" "try_analyz
 if(TIMEMORY_USE_PYTHON)
     timemory_python_console_script("timemory-python-profiler" "timemory.profiler" "main")
     timemory_python_console_script("timemory-python-trace" "timemory.trace" "main")
-
-    if(TIMEMORY_BUILD_PYTHON_LINE_PROFILER)
-        timemory_python_console_script("timemory-python-line-profiler"
-                                       "timemory.line_profiler" "main")
-    endif()
 endif()

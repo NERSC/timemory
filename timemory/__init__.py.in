@@ -346,21 +346,6 @@ build_info = sys.modules[__name__].__getattribute__("build_info")
 version = sys.modules[__name__].__getattribute__("version")
 """Version string"""
 
-# this is required for correct pickling
-try:
-    if "line_profiler" not in sys.modules:
-        from . import line_profiler as lineprof
-
-        _lineprof = lineprof._line_profiler
-
-        sys.modules["line_profiler"] = lineprof
-        sys.modules["line_profiler._line_profiler"] = _lineprof
-except (ImportError, AttributeError) as e:
-    if os.path.exists(os.path.join(os.path.dirname(__file__), "line_profiler")):
-        import warnings
-
-        warnings.warn(f"{e}")
-
 # try to import the local hatchet first
 try:
     from . import hatchet as local_hatchet

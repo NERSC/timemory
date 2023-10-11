@@ -268,11 +268,6 @@ add_arg_bool_option("ompt-library", "TIMEMORY_BUILD_OMPT_LIBRARY")
 add_arg_bool_option("ncclp-library", "TIMEMORY_BUILD_NCCLP_LIBRARY")
 add_arg_bool_option("mallocp-library", "TIMEMORY_BUILD_MALLOCP_LIBRARY")
 add_arg_bool_option("python-hatchet", "TIMEMORY_BUILD_PYTHON_HATCHET")
-add_arg_bool_option(
-    "python-line-profiler",
-    "TIMEMORY_BUILD_PYTHON_LINE_PROFILER",
-    doc="Build line_profiler with timemory backend",
-)
 # miscellaneous
 add_arg_bool_option("pybind-install", "PYBIND11_INSTALL", default=False)
 add_arg_bool_option("build-testing", "TIMEMORY_BUILD_TESTING")
@@ -406,7 +401,6 @@ def _generate_dist_info():
                     "timemory-plotter=timemory.plotting.__main__:try_plot",
                     "timemory-roofline=timemory.roofline.__main__:try_plot",
                     "timemory-analyze=timemory.analyze.__main__:try_analyze",
-                    "timemory-python-line-profiler=timemory.line_profiler.__main__:main",
                     "timemory-python-profiler=timemory.profiler.__main__:main",
                     "timemory-python-trace=timemory.trace.__main__:main",
                 ],
@@ -520,7 +514,6 @@ if _use_skbuild:
                     "timemory-plotter=timemory.plotting.__main__:try_plot",
                     "timemory-roofline=timemory.roofline.__main__:try_plot",
                     "timemory-analyze=timemory.analyze.__main__:try_analyze",
-                    "timemory-python-line-profiler=timemory.line_profiler.__main__:main",
                     "timemory-python-profiler=timemory.profiler.__main__:main",
                     "timemory-python-trace=timemory.trace.__main__:main",
                 ],

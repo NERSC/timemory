@@ -1152,51 +1152,6 @@ def run_pyctest():
         )
 
         pyct.test(
-            "timemory-python-line-profiler",
-            [
-                sys.executable,
-                "-m",
-                "timemory.line_profiler",
-                "-v",
-                "-l",
-                "-c",
-                "peak_rss",
-                "--",
-                "./ex_python_external",
-                "12",
-            ],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "120",
-                "ENVIRONMENT": base_env,
-            },
-        )
-
-        pyct.test(
-            "timemory-python-line-profiler-builtin",
-            [
-                sys.executable,
-                "-m",
-                "timemory.line_profiler",
-                "-v",
-                "-l",
-                "-b",
-                "-c",
-                "wall_clock",
-                "--",
-                "./ex_python_builtin",
-                "10",
-            ],
-            {
-                "WORKING_DIRECTORY": pyct.BINARY_DIRECTORY,
-                "LABELS": pyct.PROJECT_NAME,
-                "TIMEOUT": "120",
-                "ENVIRONMENT": base_env,
-            },
-        )
-
-        pyct.test(
             "timemory-python-sample",
             [
                 sys.executable,

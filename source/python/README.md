@@ -25,7 +25,6 @@ PACKAGE CONTENTS
     ert (package)
     hardware_counters (package)
     libs (package)
-    line_profiler (package)
     mpi (package)
     mpi_support (package)
     notebook (package)

@@ -205,10 +205,6 @@ storage from the equation and, in doing so, transforms timemory into a toolkit f
     - `timemory-python-trace`
         - Python line-by-line profiler supporting all timemory components
         - `from timemory.trace import Trace`
-    - `timemory-python-line-profiler`
-        - Python line-by-line profiler based on [line-profiler](https://pypi.org/project/line-profiler/) package
-        - Extended to use components: cpu-clock, memory-usage, context-switches, etc. (all components which collect scalar values)
-        - `from timemory.line_profiler import LineProfiler`
 - Instrumentation Libraries
     - [timemory-mpip](source/tools/timemory-mpip/README.md): MPI Profiling Library (Linux-only)
     - [timemory-ncclp](source/tools/timemory-ncclp/README.md): NCCL Profiling Library (Linux-only)
@@ -243,7 +239,7 @@ main(int argc, char** argv)
 
     // initialize with cmd-line
     timemory_init(argc, argv);
-    
+
     // add argparse support
     timemory_argparse(&argc, &argv);
 
@@ -260,7 +256,7 @@ main(int argc, char** argv)
 
     // Add peak_rss component to specific_t
     mpl::push_back_t<specific_t, comp::peak_rss> wprss{ "with peak_rss" };
-    
+
     // create region collecting only peak_rss
     component_tuple<comp::peak_rss> oprss{ "only peak_rss" };
 
@@ -279,7 +275,7 @@ main(int argc, char** argv)
     runtime::configure<comp::user_global_bundle>({ TIMEMORY_WALL_CLOCK, TIMEMORY_CPU_CLOCK });
     // configure the generic bundle via component instances
     comp::user_global_bundle::configure<comp::page_rss, comp::papi_vector>();
-    
+
     generic_t g{ "generic", quirk::config<quirk::auto_start>{} };
     g.stop();
 
