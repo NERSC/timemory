@@ -232,7 +232,7 @@ jobs:
         run: |
           echo "PATH=${HOME}/miniconda/bin:${PATH}" >> $GITHUB_ENV
           echo "CMAKE_ARGS=-DCMAKE_INSTALL_PREFIX=${HOME}/timemory-install -DTIMEMORY_SOCKET_TESTS=OFF ${{ matrix.CONFIG_ARGS }}" >> $GITHUB_ENV
-          echo "PYCTEST_ARGS=-SF --pyctest-drop-site=my.cdash.org --pyctest-model=Continuous --pyctest-site=GitHub -j 1 --compile-time-perf ${HOME}/ctp -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}" >> $GITHUB_ENV
+          echo "PYCTEST_ARGS=-SF --pyctest-drop-site=my.cdash.org --pyctest-model=Continuous --pyctest-site=GitHub --pyctest-build-name ubuntu-latest-${{ matrix.CC }} -j 1 --compile-time-perf ${HOME}/ctp -cc ${{ matrix.CC }} -cxx ${{ matrix.CXX }} --pyctest-build-type=${{ matrix.BUILD_TYPE }} ${{ matrix.BUILD_ARGS }}" >> $GITHUB_ENV
           env | sort
 
       - name: Checkout Code
