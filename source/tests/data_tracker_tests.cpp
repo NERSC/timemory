@@ -338,7 +338,7 @@ TEST_F(data_tracker_tests, convergence_test)
         tim::trait::runtime_enabled<err_tracker_type_d>::set(true);
 
     auto _run = [&err_diffs, &num_iters, nthreads](size_t i, auto lbl, size_t nitr,
-                                                   size_t  /*modulo*/) {
+                                                   size_t /*modulo*/) {
         details::get_rng().seed(1000 * i);
         auto _name = TIMEMORY_JOIN('/', details::get_test_name(), lbl);
 
@@ -386,7 +386,8 @@ TEST_F(data_tracker_tests, convergence_test)
             // {
             //     tim::auto_lock_t _lk{ tim::type_mutex<decltype(std::cout)>() };
             //     if(tim::settings::debug())
-            //         std::cout << "\niteration " << i << "\n" << _tcout.str() << std::endl;
+            //         std::cout << "\niteration " << i << "\n" << _tcout.str() <<
+            //         std::endl;
             //     std::cout << "\niteration " << i << "\n\t" << _bundle
             //               << "\n\tnum_iter : " << num_iter << "\n\terror    : " << err
             //               << "\n"

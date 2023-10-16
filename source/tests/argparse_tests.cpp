@@ -37,8 +37,8 @@
 #include <thread>
 #include <vector>
 
-static int         test_argc     = 0;
-static char**      test_argv     = nullptr;
+static int         test_argc = 0;
+static char**      test_argv = nullptr;
 static int         _margc    = 0;
 static char**      _margv    = nullptr;
 static int         _log_once = 0;
@@ -200,7 +200,7 @@ parse(argparse_t& parser, Args&&... args)
     test_argc    = sizeof...(Args) + 1;
     test_argv    = new char*[test_argc];
     test_argv[0] = strdup(_arg0);
-    int i    = 1;
+    int i        = 1;
     TIMEMORY_FOLD_EXPRESSION((test_argv[i] = strdup(std::forward<Args>(args)), ++i));
 
     auto err = parse_function()(parser, test_argc, test_argv);

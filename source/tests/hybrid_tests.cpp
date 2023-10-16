@@ -294,7 +294,8 @@ TEST_F(hybrid_tests, hybrid)
 
     auto page_size = tim::units::get_page_size();
 
-    // details::print_info(*l_page, page_size, tim::settings::memory_units(), clock_convert);
+    // details::print_info(*l_page, page_size, tim::settings::memory_units(),
+    // clock_convert);
 
     EXPECT_NEAR(l_page->get(), page_size, 2.0 * page_size) << obj;
 }

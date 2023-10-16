@@ -236,8 +236,8 @@ tracer_function(py::object pframe, const char* swhat, py::object arg)
 
     //
     auto* frame = reinterpret_cast<frame_object_t*>(pframe.ptr());
-    auto _code = get_frame_code(frame);
-    auto _line = get_frame_lineno(frame);
+    auto  _code = get_frame_code(frame);
+    auto  _line = get_frame_lineno(frame);
     auto& _file = _code->co_filename;
     auto& _name = _code->co_name;
 

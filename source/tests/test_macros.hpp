@@ -99,9 +99,9 @@ as_string(const Tp&)
             tim::settings::debug()       = false;                                        \
             tim::settings::json_output() = true;                                         \
             puts("[SetupTestSuite] initializing dmp");                                   \
-            tim::dmp::initialize(test_argc, test_argv);                                          \
+            tim::dmp::initialize(test_argc, test_argv);                                  \
             puts("[SetupTestSuite] initializing timemory");                              \
-            tim::timemory_init(test_argc, test_argv);                                            \
+            tim::timemory_init(test_argc, test_argv);                                    \
             puts("[SetupTestSuite] timemory initialized");                               \
             tim::settings::dart_output() = false;                                        \
             tim::settings::dart_count()  = 1;                                            \
