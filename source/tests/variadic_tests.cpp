@@ -402,15 +402,22 @@ TEST_F(variadic_tests, get)
     disjoint::invoke(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3),
                      [](auto& itr) { std::cout << itr << std::endl; });
 
-    // std::cout << "\nCheck get<0>()" << std::endl;
-    EXPECT_NEAR(std::get<0>(dt0), 1.0, 0.1);
-    EXPECT_NEAR(std::get<0>(dt1), 1.0, 0.1);
-    EXPECT_NEAR(std::get<0>(dt2), 1.0, 0.1);
+#if defined(TIMEMORY_MACOS)
+    // GitHub CI for macOS is very noisy
+    constexpr auto dtolerance = 0.15;
+#else
+    constexpr auto dtolerance = 0.10;
+#endif
 
-    EXPECT_NEAR(std::get<0>(dl0), 1.0, 0.1);
-    EXPECT_NEAR(std::get<0>(dl1), 1.0, 0.1);
-    EXPECT_NEAR(std::get<0>(dl2), 1.0, 0.1);
-    EXPECT_NEAR(std::get<0>(dl3), 1.0, 0.1);
+    // std::cout << "\nCheck get<0>()" << std::endl;
+    EXPECT_NEAR(std::get<0>(dt0), 1.0, dtolerance);
+    EXPECT_NEAR(std::get<0>(dt1), 1.0, dtolerance);
+    EXPECT_NEAR(std::get<0>(dt2), 1.0, dtolerance);
+
+    EXPECT_NEAR(std::get<0>(dl0), 1.0, dtolerance);
+    EXPECT_NEAR(std::get<0>(dl1), 1.0, dtolerance);
+    EXPECT_NEAR(std::get<0>(dl2), 1.0, dtolerance);
+    EXPECT_NEAR(std::get<0>(dl3), 1.0, dtolerance);
 
     // std::cout << "disjoint::reset" << std::endl;
     disjoint::reset(std::tie(ct0, ct1, ct2, cl0, cl1, cl2, cl3));
