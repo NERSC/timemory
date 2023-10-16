@@ -208,7 +208,7 @@ jobs:
             PYTHON_VERSION: '3.10'
             BUILD_TYPE: 'Release'
             PACKAGES: 'clang build-essential ccache graphviz'
-            BUILD_ARGS: '--minimal --build-libs shared --mpi --python --gotcha --unwind --stats --tools avail timem --cxx-standard=17'
+            BUILD_ARGS: '--minimal --build-libs shared --python --gotcha --unwind --stats --tools avail timem --cxx-standard=17'
             CTEST_ARGS: '-V --output-on-failure'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_UNITY_BUILD=OFF -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
           - CC: gcc
@@ -217,7 +217,7 @@ jobs:
             PYTHON_VERSION: '3.10'
             BUILD_TYPE: 'Release'
             PACKAGES: 'gcc g++ gfortran build-essential ccache graphviz'
-            BUILD_ARGS: '--minimal --build-libs shared --mpi --python --gotcha --unwind --stats --tools avail timem --cxx-standard=17'
+            BUILD_ARGS: '--minimal --build-libs shared --python --gotcha --unwind --stats --tools avail timem --cxx-standard=17'
             CTEST_ARGS: '-V --output-on-failure'
             CONFIG_ARGS: '-DTIMEMORY_CCACHE_BUILD=ON -DTIMEMORY_UNITY_BUILD=OFF -DTIMEMORY_BUILD_PYTHON_UNITY=OFF'
 
