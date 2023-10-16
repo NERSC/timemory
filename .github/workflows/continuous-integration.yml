@@ -196,7 +196,7 @@ jobs:
           cmake -B build-examples -DTIMEMORY_BUILD_C_EXAMPLES=ON -Dtimemory_DIR=${HOME}/timemory-install/share/cmake/timemory .
           cmake --build build-examples --target ex_array_of_bundles --parallel 2
 
-  linux-ci-latest:
+  ubuntu-latest:
     runs-on: ubuntu-latest
     continue-on-error: false
     strategy:
@@ -243,8 +243,8 @@ jobs:
       - name: Update container
         run: |
           sudo apt-get update
-          sudo apt-get install -y ${{ matrix.PACKAGES }}
-          sudo scripts/linux-ci.sh
+          sudo apt-get install -y ${{ matrix.PACKAGES }} build-essential wget curl git-core cmake ninja-build python3-pip
+          sudo -H python3 -m pip install -U cmake
 
       - name: Install PyCTest
         run: |
