@@ -499,8 +499,8 @@ settings::format(std::string _prefix, std::string _tag, std::string _suffix,
                  std::string _ext)
 {
     // add period before extension
-    if(_ext.find('.') != 0)
-        _ext = std::string(".") + _ext;
+    if(!_ext.empty() && _ext.find('.') != 0)
+        _ext = std::string{ "." } + _ext;
 
     // if the tag contains the extension, remove it
     auto _ext_pos = _tag.length() - _ext.length();
