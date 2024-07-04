@@ -77,9 +77,8 @@ set(TIMEMORY_BINUTILS_DOWNLOAD_URL
 
 # Add defualt URLs to download binutils from.
 list(APPEND TIMEMORY_BINUTILS_DOWNLOAD_URL
-    "http://ftpmirror.gnu.org/gnu/binutils/binutils-2.40.tar.gz"
-    "http://mirrors.kernel.org/sourceware/binutils/releases/binutils-2.40.tar.gz"
-    )
+     "http://ftpmirror.gnu.org/gnu/binutils/binutils-2.40.tar.gz"
+     "http://mirrors.kernel.org/sourceware/binutils/releases/binutils-2.40.tar.gz")
 
 include(ExternalProject)
 externalproject_add(
